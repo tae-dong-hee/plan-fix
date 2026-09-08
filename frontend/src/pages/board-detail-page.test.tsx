@@ -22,10 +22,10 @@ vi.mock("@/services/course");
 const mockedFetchBoardDetail = fetchBoardDetail as MockedFunction<typeof fetchBoardDetail>;
 const mockedFetchCourse = fetchCourse as MockedFunction<typeof fetchCourse>;
 
-function renderAt(boardId: string, { strict = false }: { strict?: boolean } = {}) {
+function renderAt(boardId: string, { strict = false, from }: { strict?: boolean; from?: unknown } = {}) {
   const tree = (
     <MemoryRouter
-      initialEntries={[`/boards/${boardId}`]}
+      initialEntries={[{ pathname: `/boards/${boardId}`, state: from === undefined ? null : { from } }]}
       future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
     >
       <Routes>
@@ -181,7 +181,7 @@ describe("BoardDetailPage", () => {
     });
   });
 
-  test("clicking back button in header navigates to /main", async () => {
+  test("a directly opened detail falls back to /main when going back", async () => {
     mockedFetchBoardDetail.mockResolvedValue(boardFixture());
 
     renderAt("1");
@@ -191,6 +191,41 @@ describe("BoardDetailPage", () => {
     fireEvent.click(backButton);
 
     expect(mockedNavigate).toHaveBeenCalledWith("/main");
+  });
+
+  test.each(["/boards?sort=latest&page=3", "/boards", "/main?region=강릉"])(
+    "back preserves the source list URL %s",
+    async (from) => {
+      mockedFetchBoardDetail.mockResolvedValue(boardFixture());
+      renderAt("1", { from });
+      await screen.findByRole("heading", { name: "강릉 1박 2일 힐링 코스" });
+
+      fireEvent.click(screen.getByRole("button", { name: "뒤로 가기" }));
+
+      expect(mockedNavigate).toHaveBeenCalledWith(from);
+    },
+  );
+
+  test.each(["https://example.com", "//example.com", "/boards/create", "/boards-other", 42])(
+    "back ignores a source outside the permitted list pages: %s",
+    async (from) => {
+      mockedFetchBoardDetail.mockResolvedValue(boardFixture());
+      renderAt("1", { from });
+      await screen.findByRole("heading", { name: "강릉 1박 2일 힐링 코스" });
+
+      fireEvent.click(screen.getByRole("button", { name: "뒤로 가기" }));
+
+      expect(mockedNavigate).toHaveBeenCalledWith("/main");
+    },
+  );
+
+  test("a missing story can return to the originating list and page", async () => {
+    mockedFetchBoardDetail.mockResolvedValue(null);
+    renderAt("999", { from: "/boards?sort=latest&page=3" });
+
+    fireEvent.click(await screen.findByRole("button", { name: "목록으로 돌아가기" }));
+
+    expect(mockedNavigate).toHaveBeenCalledWith("/boards?sort=latest&page=3");
   });
 
   test("clicking home button in error view navigates to /main", async () => {

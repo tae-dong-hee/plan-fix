@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   Calendar,
   ChevronRight,
@@ -10,6 +10,7 @@ import {
   Lock,
   MapPin,
   Plus,
+  Save,
   Sparkles,
   Trash2,
   X,
@@ -92,6 +93,9 @@ export default function CourseCreatePage() {
   });
 
   const [submitting, setSubmitting] = useState(false);
+  const savingRef = useRef(false);
+  const titleInputRef = useRef<HTMLInputElement>(null);
+  const firstAddSpotButtonRef = useRef<HTMLButtonElement>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // 검색 모달 상태
@@ -108,6 +112,7 @@ export default function CourseCreatePage() {
   const { courseId } = useParams<{ courseId?: string }>();
   const isEditMode = Boolean(courseId);
   const [loadingCourse, setLoadingCourse] = useState(isEditMode);
+  const [cannotEdit, setCannotEdit] = useState(false);
 
   // URL 쿼리 파라미터(?mode=ai)로 진입 시 AI 모달 자동 오픈
   useEffect(() => {
@@ -136,6 +141,7 @@ export default function CourseCreatePage() {
     fetchCourse(courseId)
       .then((data) => {
         if (ignore || !data) return;
+        setCannotEdit(data.isOwner === false);
         setTitle(data.title);
         setDescription(data.description || "");
         if (data.visibility) setVisibility(data.visibility);
@@ -262,6 +268,7 @@ export default function CourseCreatePage() {
   // 장소 추가 완료
   const handleSelectSpot = (spot: PopularSpot) => {
     if (activeDayIndex === null) return;
+    setErrorMessage(null);
     const newDraftSpot: DraftSpot = {
       spotId: spot.spotId,
       title: spot.title,
@@ -386,8 +393,19 @@ export default function CourseCreatePage() {
 
   // 저장 요청
   const handleSaveCourse = async () => {
-    if (!isValid || submitting) return;
+    if (savingRef.current || submitting || loadingCourse || cannotEdit) return;
+    if (!title.trim()) {
+      setErrorMessage("코스 제목을 입력해주세요.");
+      titleInputRef.current?.focus();
+      return;
+    }
+    if (totalSpotCount === 0) {
+      setErrorMessage("최소 1개 이상의 장소를 일정에 추가해야 저장할 수 있습니다.");
+      firstAddSpotButtonRef.current?.focus();
+      return;
+    }
 
+    savingRef.current = true;
     setSubmitting(true);
     setErrorMessage(null);
 
@@ -409,11 +427,15 @@ export default function CourseCreatePage() {
 
       if (isEditMode && courseId) {
         const result = await updateCourse(courseId, payload);
-        navigate(`/courses/${result.courseId}`, { replace: true });
+        navigate(`/courses/${result.courseId}`, { replace: true, state: { courseSaveAction: "updated" } });
       } else {
         const result = await createCourse(payload);
-        sessionStorage.removeItem(DRAFT_STORAGE_KEY);
-        navigate(`/courses/${result.courseId}`, { replace: true });
+        try {
+          sessionStorage.removeItem(DRAFT_STORAGE_KEY);
+        } catch {
+          // 임시 저장소를 사용할 수 없어도 완료된 코스 저장은 성공으로 처리한다.
+        }
+        navigate(`/courses/${result.courseId}`, { replace: true, state: { courseSaveAction: "created" } });
       }
     } catch (err) {
       if (err instanceof UnauthorizedError) {
@@ -429,12 +451,13 @@ export default function CourseCreatePage() {
             : "코스 저장에 실패했습니다."
       );
     } finally {
+      savingRef.current = false;
       setSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-muted/20 pb-20">
+    <div className="min-h-screen bg-muted/20 pb-28 md:pb-16">
       <AppNav />
 
       {loadingCourse ? (
@@ -442,8 +465,17 @@ export default function CourseCreatePage() {
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
           <p className="text-sm text-muted-foreground">코스 정보를 불러오는 중입니다...</p>
         </div>
+      ) : cannotEdit ? (
+        <main className="mx-auto max-w-4xl px-4 pt-8 sm:px-6 sm:pt-10 md:pt-28">
+          <div className="rounded-2xl border border-border bg-background p-8 text-center">
+            <Lock className="mx-auto h-8 w-8 text-primary" />
+            <h1 className="mt-4 text-xl font-bold">코스를 수정할 권한이 없어요</h1>
+            <p className="mt-2 text-sm text-muted-foreground">직접 만든 코스에서 여행 일정을 수정할 수 있어요.</p>
+            <Link to={`/courses/${courseId}`} className="mt-5 inline-flex rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground">코스로 돌아가기</Link>
+          </div>
+        </main>
       ) : (
-        <main className="mx-auto max-w-4xl px-4 pt-6 sm:px-6 sm:pt-8">
+        <main className="mx-auto max-w-4xl px-4 pt-8 sm:px-6 sm:pt-10 md:pt-28">
         {/* 상단 브레드크럼 */}
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <span>여행</span>
@@ -454,7 +486,7 @@ export default function CourseCreatePage() {
         </div>
 
         {/* 헤더 및 저장 버튼 */}
-        <div className="mt-4 flex flex-col justify-between gap-4 border-b border-border pb-5 sm:flex-row sm:items-center">
+        <div className="mt-6 flex flex-col justify-between gap-5 border-b border-border pb-6">
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
               {isEditMode ? "여행 코스 수정하기" : "나만의 여행 코스 만들기"}
@@ -465,7 +497,7 @@ export default function CourseCreatePage() {
                 : "여행 일정과 방문할 명소들을 Day별로 자유롭게 계획해보세요."}
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center justify-end gap-3">
             {/* 빈 화면에서 장소를 하나씩 담는 게 부담스러운 사용자를 위한 진입점 */}
             {!isEditMode && (
               <button
@@ -479,17 +511,11 @@ export default function CourseCreatePage() {
             )}
             <button
               type="button"
-              onClick={() => navigate(-1)}
-              className="rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted"
-            >
-              취소
-            </button>
-            <button
-              type="button"
-              disabled={!isValid || submitting}
+              disabled={submitting}
               onClick={handleSaveCourse}
-              className="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow transition-transform active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow transition hover:bg-primary/90 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             >
+              {submitting ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Save className="h-4 w-4" aria-hidden="true" />}
               {submitting
                 ? isEditMode
                   ? "수정 중..."
@@ -500,6 +526,7 @@ export default function CourseCreatePage() {
             </button>
           </div>
         </div>
+
 
         {/* AI 초안 안내 */}
         {aiNotice && (
@@ -519,7 +546,7 @@ export default function CourseCreatePage() {
 
         {/* 에러 메시지 */}
         {errorMessage && (
-          <div className="mt-4 rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm font-medium text-destructive">
+          <div id="course-save-error" role="alert" className="mt-4 rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm font-medium text-destructive">
             {errorMessage}
           </div>
         )}
@@ -547,11 +574,14 @@ export default function CourseCreatePage() {
               </label>
               <input
                 id="course-title"
+                ref={titleInputRef}
+                aria-invalid={Boolean(errorMessage) && !title.trim()}
+                aria-describedby={errorMessage && !title.trim() ? "course-save-error" : undefined}
                 type="text"
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                onChange={(e) => { setTitle(e.target.value); setErrorMessage(null); }}
                 placeholder="예: 2박 3일 강릉 힐링 힐링 바다 여행"
-                className="mt-1.5 w-full rounded-xl border border-input bg-background px-3.5 py-2.5 text-sm text-foreground shadow-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                className="mt-1.5 w-full scroll-mt-28 rounded-xl border border-input bg-background px-3.5 py-2.5 text-sm text-foreground shadow-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 maxLength={100}
               />
             </div>
@@ -566,7 +596,7 @@ export default function CourseCreatePage() {
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="어떤 테마의 여행인지 간단히 메모해보세요."
                 rows={2}
-                className="mt-1.5 w-full rounded-xl border border-input bg-background px-3.5 py-2.5 text-sm text-foreground shadow-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                className="mt-1.5 w-full scroll-mt-28 rounded-xl border border-input bg-background px-3.5 py-2.5 text-sm text-foreground shadow-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 maxLength={500}
               />
             </div>
@@ -715,8 +745,10 @@ export default function CourseCreatePage() {
                   </div>
                   <button
                     type="button"
+                    ref={dayIndex === 0 ? firstAddSpotButtonRef : undefined}
+                    aria-describedby={dayIndex === 0 && errorMessage && totalSpotCount === 0 ? "course-save-error" : undefined}
                     onClick={() => handleOpenSearchModal(dayIndex)}
-                    className="flex items-center gap-1.5 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/20"
+                    className="flex scroll-mt-28 items-center gap-1.5 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                   >
                     <Plus className="h-3.5 w-3.5" />
                     장소 추가

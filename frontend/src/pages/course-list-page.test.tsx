@@ -3,8 +3,10 @@ import type { Mock } from "vitest";
 import { MemoryRouter } from "react-router-dom";
 import CourseListPage from "./course-list-page";
 import * as courseService from "@/services/course";
+import * as sharingService from "@/services/course-sharing";
 
 vi.mock("@/services/course");
+vi.mock("@/services/course-sharing");
 
 const mockNavigate = vi.fn();
 vi.mock("react-router-dom", async () => {
@@ -40,6 +42,7 @@ const mockCourses: courseService.CourseResponse[] = [
 describe("CourseListPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(sharingService.fetchCourseSharingStatus).mockResolvedValue({ enabled: false });
   });
 
   const renderComponent = () => {
@@ -109,4 +112,18 @@ describe("CourseListPage", () => {
       expect(screen.queryByText("속초 1박 2일 맛집 코스")).not.toBeInTheDocument();
     });
   });
+  it("초대 API가 없어도 목록 탭과 초대 화면 링크를 표시한다", async () => {
+    vi.mocked(courseService.fetchMyCourses).mockResolvedValue(mockCourses);
+    renderComponent();
+    await screen.findByRole("heading", { name: mockCourses[0].title });
+    fireEvent.click(screen.getByRole("button", { name: "초대받은 코스 0" }));
+    expect(screen.getByRole("heading", { name: "아직 초대받은 코스가 없어요" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "초대 화면 보기" })).toHaveAttribute("href", "/invite?preview=1");
+    expect(screen.queryByRole("button", { name: "코스 삭제" })).not.toBeInTheDocument();
+    expect(sharingService.fetchCourseSharingStatus).not.toHaveBeenCalled();
+    expect(sharingService.fetchSharedCourses).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "내가 만든 코스 1" }));
+    expect(screen.getByRole("heading", { name: mockCourses[0].title })).toBeInTheDocument();
+  });
+
 });

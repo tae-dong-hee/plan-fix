@@ -13,6 +13,7 @@ import {
   Pencil,
   Plus,
   Trash2,
+  Users,
 } from "lucide-react";
 import AppNav from "@/components/ui/app-nav";
 import { CourseResponse, deleteCourse, fetchMyCourses } from "@/services/course";
@@ -23,6 +24,11 @@ export default function CourseListPage() {
   const [courses, setCourses] = useState<CourseResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [listMode, setListMode] = useState<"mine" | "shared">("mine");
+  // 초대 목록은 서버 연동 전까지 빈 상태로 보여준다.
+  const visibleCourses = listMode === "shared" ? [] : courses;
+  const visibleLoading = listMode === "mine" && loading;
+  const visibleError = listMode === "mine" ? error : null;
 
   const handleDeleteCourse = async (e: React.MouseEvent, courseId: number) => {
     e.preventDefault();
@@ -86,10 +92,10 @@ export default function CourseListPage() {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen bg-muted/20 pb-20">
+    <div className="min-h-screen bg-muted/20 pb-28 md:pb-16">
       <AppNav />
 
-      <main className="mx-auto max-w-4xl px-4 pt-6 sm:px-6 sm:pt-8">
+      <main className="mx-auto max-w-4xl px-4 pt-8 sm:px-6 sm:pt-10 md:pt-28">
         {/* 상단 브레드크럼 */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -116,14 +122,19 @@ export default function CourseListPage() {
           </p>
         </div>
 
-        {loading ? (
+        <div className="mt-6 flex flex-wrap gap-2" role="group" aria-label="코스 목록 선택">
+          <button type="button" aria-pressed={listMode === "mine"} onClick={() => setListMode("mine")} className={`rounded-xl px-4 py-2.5 text-sm font-bold ${listMode === "mine" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>내가 만든 코스 {courses.length}</button>
+          <button type="button" aria-pressed={listMode === "shared"} onClick={() => setListMode("shared")} className={`inline-flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-bold ${listMode === "shared" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}><Users className="h-4 w-4" />초대받은 코스 0</button>
+        </div>
+
+        {visibleLoading ? (
           <div className="flex h-64 flex-col items-center justify-center gap-3">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
             <p className="text-sm text-muted-foreground">코스 목록을 불러오는 중입니다...</p>
           </div>
-        ) : error ? (
+        ) : visibleError ? (
           <div className="mt-8 rounded-2xl border border-destructive/30 bg-card p-8 text-center shadow-sm">
-            <p className="text-base font-semibold text-destructive">{error}</p>
+            <p className="text-base font-semibold text-destructive">{visibleError}</p>
             <button
               type="button"
               onClick={() => window.location.reload()}
@@ -132,30 +143,30 @@ export default function CourseListPage() {
               다시 시도
             </button>
           </div>
-        ) : courses.length === 0 ? (
+        ) : visibleCourses.length === 0 ? (
           <div className="mt-8 rounded-2xl border border-dashed border-border bg-card/60 p-12 text-center shadow-sm">
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
               <MapPinPlus className="h-7 w-7" />
             </div>
             <h2 className="mt-4 text-lg font-bold text-foreground">
-              생성한 여행 코스가 없습니다.
+              {listMode === "shared" ? "아직 초대받은 코스가 없어요" : "생성한 여행 코스가 없습니다."}
             </h2>
             <p className="mt-1 text-xs text-muted-foreground">
-              강원도의 다양한 인기 명소와 맛집을 골라 나만의 여행 코스를 만들어보세요!
+              {listMode === "shared" ? "초대 기능이 연결되면 함께하는 여행이 여기에 표시돼요." : "강원도의 다양한 인기 명소와 맛집을 골라 나만의 여행 코스를 만들어보세요!"}
             </p>
             <div className="mt-6 flex justify-center">
               <Link
-                to="/courses/create"
+                to={listMode === "shared" ? "/invite?preview=1" : "/courses/create"}
                 className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow transition-transform active:scale-95"
               >
-                <Plus className="h-4 w-4" />
-                첫 여행 코스 만들기
+                {listMode === "shared" ? <Users className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                {listMode === "shared" ? "초대 화면 보기" : "첫 여행 코스 만들기"}
               </Link>
             </div>
           </div>
         ) : (
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
-            {courses.map((course) => {
+            {visibleCourses.map((course) => {
               const totalSpots = course.days.reduce(
                 (sum, day) => sum + day.spots.length,
                 0
@@ -196,7 +207,7 @@ export default function CourseListPage() {
                           {course.createdAt.substring(0, 10)}
                         </span>
                       </div>
-                      <div className="flex items-center gap-1">
+                      {listMode === "mine" && <div className="flex items-center gap-1">
                         <button
                           type="button"
                           aria-label="코스 수정"
@@ -215,9 +226,10 @@ export default function CourseListPage() {
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
-                      </div>
+                      </div>}
                     </div>
 
+                    {listMode === "shared" && <p className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-primary"><Users className="h-3.5 w-3.5" />{course.canEdit ? "함께 편집" : "보기만"}</p>}
                     <h2 className="mt-3 line-clamp-1 text-base font-bold text-foreground group-hover:text-primary">
                       {course.title}
                     </h2>

@@ -5,7 +5,6 @@ import {
   ChevronLeft,
   ImageIcon,
   Loader2,
-  Route as RouteIcon,
   UploadCloud,
   X,
 } from "lucide-react";
@@ -14,10 +13,11 @@ import { type Editor } from "@tiptap/react";
 import AppNav from "@/components/ui/app-nav";
 import BlogEditor from "@/components/editor/blog-editor";
 import SpotSearchModal from "@/components/ui/spot-search-modal";
+import MyCoursePicker from "@/components/ui/my-course-picker";
 import { createBoard, type CreateBoardPayload } from "@/services/board";
 import { fetchMyCourses, type CourseResponse, type CourseSpotSummary } from "@/services/course";
 import { uploadImageFile } from "@/services/image";
-import { type PopularSpot } from "@/services/spots";
+import { UnauthorizedError, type PopularSpot } from "@/services/spots";
 
 export default function BoardCreatePage() {
   const navigate = useNavigate();
@@ -30,6 +30,9 @@ export default function BoardCreatePage() {
 
   // 연동 코스
   const [myCourses, setMyCourses] = useState<CourseResponse[]>([]);
+  const [coursesLoading, setCoursesLoading] = useState(true);
+  const [coursesError, setCoursesError] = useState<string | null>(null);
+  const [coursesReloadKey, setCoursesReloadKey] = useState(0);
   const [selectedCourseId, setSelectedCourseId] = useState<number | null>(null);
 
   // 본문 HTML 및 TipTap 에디터 인스턴스
@@ -46,19 +49,28 @@ export default function BoardCreatePage() {
   // 내 코스 목록 불러오기
   useEffect(() => {
     let cancelled = false;
+    setCoursesLoading(true);
+    setCoursesError(null);
     fetchMyCourses()
       .then((courses) => {
         if (!cancelled) {
           setMyCourses(courses || []);
         }
       })
-      .catch((err) => {
-        console.warn("내 코스 목록 불러오기 실패:", err);
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          setCoursesError(err instanceof UnauthorizedError
+            ? "내 코스를 보려면 로그인이 필요해요."
+            : "내 코스를 불러오지 못했어요. 다시 시도해 주세요.");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setCoursesLoading(false);
       });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [coursesReloadKey]);
 
   // 선택된 코스의 장소들 추출
   const selectedCourse = myCourses.find((c) => c.courseId === selectedCourseId) || null;
@@ -288,46 +300,14 @@ export default function BoardCreatePage() {
           </div>
 
           {/* 3. 내 여행 코스 연결 */}
-          <div className="rounded-xl border border-border/70 bg-card p-4 shadow-2xs">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <RouteIcon className="h-4 w-4 text-primary" />
-                <span className="text-xs font-bold text-foreground sm:text-sm">내 여행 코스 연결</span>
-                <span className="text-xs text-muted-foreground">(선택)</span>
-              </div>
-
-              <select
-                value={selectedCourseId ?? ""}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setSelectedCourseId(val ? Number(val) : null);
-                }}
-                className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs text-foreground focus:border-primary focus:outline-none"
-              >
-                <option value="">코스 선택 안 함</option>
-                {myCourses.map((c) => (
-                  <option key={c.courseId} value={c.courseId}>
-                    {c.title} ({c.days.length}일 코스)
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {selectedCourse && (
-              <div className="mt-3 border-t border-border/50 pt-3">
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <span className="font-semibold text-primary">{selectedCourse.title}</span>
-                  <span>·</span>
-                  <span>총 {selectedCourse.days.length}일 여정</span>
-                  <span>·</span>
-                  <span>장소 {courseSpots.length}곳</span>
-                </div>
-                <p className="mt-1 text-xs text-muted-foreground/80">
-                  아래 에디터 상단에 코스 장소 칩이 표시되어, 클릭 한 번으로 본문에 장소 카드를 넣을 수 있어요.
-                </p>
-              </div>
-            )}
-          </div>
+          <MyCoursePicker
+            courses={myCourses}
+            value={selectedCourseId}
+            onChange={setSelectedCourseId}
+            loading={coursesLoading}
+            error={coursesError}
+            onRetry={() => setCoursesReloadKey((key) => key + 1)}
+          />
 
           {/* 4. 블로그형 리치 텍스트 에디터 */}
           <div>

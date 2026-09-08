@@ -35,6 +35,8 @@ export type CourseResponse = {
   createdAt: string;
   updatedAt: string;
   isOwner?: boolean;
+  canEdit?: boolean;
+  membershipRole?: "OWNER" | "EDITOR" | "VIEWER" | null;
 };
 
 export type CreateCourseDayInput = {
@@ -131,7 +133,7 @@ export async function fetchCourse(courseId: number | string): Promise<CourseResp
   return (await response.json()) as CourseResponse;
 }
 
-export type UpdateCoursePayload = CreateCoursePayload;
+export type UpdateCoursePayload = CreateCoursePayload & { expectedUpdatedAt?: string };
 
 /** 코스 수정 API 호출 */
 export async function updateCourse(
@@ -154,6 +156,9 @@ export async function updateCourse(
 
   if (response.status === 401 || response.status === 403) {
     throw new UnauthorizedError();
+  }
+  if (response.status === 409) {
+    throw new Error("다른 사람이 먼저 일정을 수정했어요. 입력한 내용을 복사해 두고 새로고침한 뒤 다시 저장해 주세요.");
   }
   if (!response.ok) {
     const errorBody = await response.text().catch(() => "");

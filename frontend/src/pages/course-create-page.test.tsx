@@ -4,8 +4,10 @@ import { MemoryRouter, Route, Routes } from "react-router-dom";
 import CourseCreatePage from "./course-create-page";
 import * as courseService from "@/services/course";
 import * as spotService from "@/services/spots";
+import * as sharingService from "@/services/course-sharing";
 
 vi.mock("@/services/course");
+vi.mock("@/services/course-sharing");
 vi.mock("@/services/spots");
 
 const mockNavigate = vi.fn();
@@ -52,13 +54,40 @@ describe("CourseCreatePage", () => {
     expect(screen.getByTestId("day-card-1")).toBeInTheDocument();
     expect(screen.getByTestId("day-card-2")).toBeInTheDocument();
     expect(screen.getByTestId("day-card-3")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "취소" })).not.toBeInTheDocument();
   });
 
-  it("제목이 없거나 담긴 장소가 0개이면 저장 버튼이 비활성화된다", () => {
+  it("빈 제목으로 저장을 누르면 안내를 표시하고 제목 입력란으로 이동한다", () => {
     renderPage();
+    const titleInput = screen.getByPlaceholderText(/2박 3일 강릉 힐링/i);
     const saveButton = screen.getByRole("button", { name: "코스 저장하기" });
-    expect(saveButton).toBeDisabled();
+    expect(saveButton).toBeEnabled();
     expect(screen.getByText(/코스 제목을 입력해주세요/i)).toBeInTheDocument();
+
+    fireEvent.change(titleInput, { target: { value: "   " } });
+    fireEvent.click(saveButton);
+
+    expect(screen.getByRole("alert")).toHaveTextContent("코스 제목을 입력해주세요.");
+    expect(titleInput).toHaveFocus();
+    expect(courseService.createCourse).not.toHaveBeenCalled();
+    expect(sharingService.updateCourseItinerary).not.toHaveBeenCalled();
+    expect(mockNavigate).not.toHaveBeenCalled();
+  });
+
+  it("제목만 입력하고 저장을 누르면 첫 Day의 장소 추가 버튼으로 안내한다", () => {
+    renderPage();
+    fireEvent.change(screen.getByPlaceholderText(/2박 3일 강릉 힐링/i), {
+      target: { value: "강릉 바다 여행" },
+    });
+    const saveButton = screen.getByRole("button", { name: "코스 저장하기" });
+    expect(saveButton).toBeEnabled();
+    fireEvent.click(saveButton);
+
+    expect(screen.getByRole("alert")).toHaveTextContent("최소 1개 이상의 장소를 일정에 추가해야 저장할 수 있습니다.");
+    expect(within(screen.getByTestId("day-card-1")).getByRole("button", { name: /장소 추가/i })).toHaveFocus();
+    expect(courseService.createCourse).not.toHaveBeenCalled();
+    expect(sharingService.updateCourseItinerary).not.toHaveBeenCalled();
+    expect(mockNavigate).not.toHaveBeenCalled();
   });
 
   it("장소 추가를 누르면 모달이 열리고 장소를 선택하면 해당 Day에 추가된다", async () => {
@@ -130,7 +159,38 @@ describe("CourseCreatePage", () => {
           ]),
         })
       );
-      expect(mockNavigate).toHaveBeenCalledWith("/courses/123", { replace: true });
+      expect(mockNavigate).toHaveBeenCalledWith("/courses/123", { replace: true, state: { courseSaveAction: "created" } });
+    });
+  });
+
+  it("저장 중에는 중복 클릭을 막고 응답을 받은 뒤에만 상세 화면으로 이동한다", async () => {
+    let resolveSave!: (value: unknown) => void;
+    (courseService.createCourse as Mock).mockImplementation(
+      () => new Promise((resolve) => { resolveSave = resolve; })
+    );
+    renderPage();
+    fireEvent.change(screen.getByPlaceholderText(/2박 3일 강릉 힐링/i), {
+      target: { value: "강릉 바다 여행" },
+    });
+    fireEvent.click(within(screen.getByTestId("day-card-1")).getByRole("button", { name: /장소 추가/i }));
+    await waitFor(() => expect(screen.getByText("경포해변")).toBeInTheDocument());
+    fireEvent.click(screen.getByRole("button", { name: "선택" }));
+
+    const saveButton = screen.getByRole("button", { name: "코스 저장하기" });
+    fireEvent.click(saveButton);
+    expect(saveButton).toBeDisabled();
+    fireEvent.click(saveButton);
+    fireEvent.click(saveButton);
+    expect(courseService.createCourse).toHaveBeenCalledTimes(1);
+    expect(mockNavigate).not.toHaveBeenCalled();
+    expect(screen.getByDisplayValue("강릉 바다 여행")).toBeInTheDocument();
+
+    await act(async () => {
+      resolveSave({ courseId: 123, title: "강릉 바다 여행", days: [] });
+    });
+    expect(mockNavigate).toHaveBeenCalledExactlyOnceWith("/courses/123", {
+      replace: true,
+      state: { courseSaveAction: "created" },
     });
   });
 
@@ -206,9 +266,12 @@ describe("CourseCreatePage", () => {
     fireEvent.click(saveButton);
 
     await waitFor(() => {
-      expect(screen.getByText("저장 실패 서버 에러")).toBeInTheDocument();
+      expect(screen.getByRole("alert")).toHaveTextContent("저장 실패 서버 에러");
       expect(screen.getByDisplayValue("강릉 바다 여행")).toBeInTheDocument();
+      expect(screen.getByText("경포해변")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "코스 저장하기" })).toBeEnabled();
     });
+    expect(mockNavigate).not.toHaveBeenCalled();
   });
 
   it("수정 모드일 때 기존 코스 정보를 불러오고, 수정 완료 시 updateCourse를 호출한다", async () => {
@@ -285,7 +348,7 @@ describe("CourseCreatePage", () => {
           ]),
         })
       );
-      expect(mockNavigate).toHaveBeenCalledWith("/courses/99", { replace: true });
+      expect(mockNavigate).toHaveBeenCalledWith("/courses/99", { replace: true, state: { courseSaveAction: "updated" } });
     });
   });
 
@@ -322,7 +385,7 @@ describe("CourseCreatePage", () => {
           visibility: "PRIVATE",
         })
       );
-      expect(mockNavigate).toHaveBeenCalledWith("/courses/456", { replace: true });
+      expect(mockNavigate).toHaveBeenCalledWith("/courses/456", { replace: true, state: { courseSaveAction: "created" } });
     });
   });
 
@@ -335,4 +398,39 @@ describe("CourseCreatePage", () => {
       expect(screen.getByText(/어디로 떠나시나요\?/i)).toBeInTheDocument();
     });
   });
+  it("기존 코스 응답으로 수정하면 기존 수정 API에 원래 형식으로 저장한다", async () => {
+    const course: courseService.CourseResponse = {
+      courseId: 99, userId: 3, title: "친구의 코스", description: "함께하는 여행", thumbnail: null,
+      visibility: "PRIVATE", status: "ACTIVE", viewCount: 0, likeCount: 0,
+      startDate: "2026-09-10", endDate: "2026-09-10", isOwner: true,
+      createdAt: "2026-09-09T00:00:00Z", updatedAt: "2026-09-09T01:00:00.123456Z",
+      days: [{ dayNumber: 1, spots: [{ spotId: 101, title: "경포해변", sequence: 0, memo: "오전 산책", category: "관광지", region: null, sigungu: null, address: null, thumbnail: null, latitude: null, longitude: null }] }],
+    };
+    vi.mocked(courseService.fetchCourse).mockResolvedValue(course);
+    vi.mocked(courseService.updateCourse).mockResolvedValue(course);
+    render(<MemoryRouter initialEntries={["/courses/99/edit"]}><Routes><Route path="/courses/:courseId/edit" element={<CourseCreatePage />} /></Routes></MemoryRouter>);
+    expect(await screen.findByDisplayValue("친구의 코스")).toBeEnabled();
+    expect(screen.getByDisplayValue("함께하는 여행")).toBeEnabled();
+    expect(screen.getByTestId("visibility-public-button")).toBeEnabled();
+    fireEvent.change(screen.getByDisplayValue("오전 산책"), { target: { value: "오후 산책" } });
+    fireEvent.click(screen.getByRole("button", { name: "수정 완료" }));
+    await waitFor(() => expect(courseService.updateCourse).toHaveBeenCalledWith("99", {
+      title: "친구의 코스", description: "함께하는 여행", visibility: "PRIVATE",
+      startDate: "2026-09-10", endDate: "2026-09-10",
+      days: [{ dayNumber: 1, spots: [{ spotId: 101, memo: "오후 산책" }] }],
+    }));
+    expect(sharingService.updateCourseItinerary).not.toHaveBeenCalled();
+    expect(mockNavigate).toHaveBeenCalledWith("/courses/99", { replace: true, state: { courseSaveAction: "updated" } });
+  });
+
+  it("보기 전용 사용자가 수정 주소로 들어와도 수정 폼을 열지 않는다", async () => {
+    vi.mocked(courseService.fetchCourse).mockResolvedValue({
+      courseId: 99, title: "보기 전용", description: null, days: [], isOwner: false, canEdit: false, membershipRole: "VIEWER",
+    } as unknown as courseService.CourseResponse);
+    render(<MemoryRouter initialEntries={["/courses/99/edit"]}><Routes><Route path="/courses/:courseId/edit" element={<CourseCreatePage />} /></Routes></MemoryRouter>);
+    expect(await screen.findByRole("heading", { name: "코스를 수정할 권한이 없어요" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "수정 완료" })).not.toBeInTheDocument();
+    expect(sharingService.updateCourseItinerary).not.toHaveBeenCalled();
+  });
+
 });

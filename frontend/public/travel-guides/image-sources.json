@@ -1,0 +1,114 @@
+[
+  {
+    "filename": "random-01.jpg",
+    "sourceURL": "https://picsum.photos/seed/planfix-extra-guide-01/900/600",
+    "finalURL": "https://fastly.picsum.photos/id/176/900/600.jpg?hmac=TTl85m3r3dzatuVRng7ENS6zv3azLTHmv5q3vls13MA",
+    "bytes": 69948,
+    "sha256": "8a816a47d79801aa369a1e4c8ad9d6b2196be30ceb1555f9edc282aa51d5ebb0",
+    "contentType": "image/jpeg"
+  },
+  {
+    "filename": "random-02.jpg",
+    "sourceURL": "https://picsum.photos/seed/planfix-extra-guide-02/900/600",
+    "finalURL": "https://fastly.picsum.photos/id/930/900/600.jpg?hmac=-VvyG-XjlLRggW6xtMd4UHBwxXJ-O8g7EVRpKm9DW0s",
+    "bytes": 49714,
+    "sha256": "a05e5f1aea8447fc75b16e83622a14c8725f7f4299a69a6aebcdd5c982d2638c",
+    "contentType": "image/jpeg"
+  },
+  {
+    "filename": "random-03.jpg",
+    "sourceURL": "https://picsum.photos/seed/planfix-extra-guide-03/900/600",
+    "finalURL": "https://fastly.picsum.photos/id/1043/900/600.jpg?hmac=FFy5LGGKatJg-z-c5Iaj-ZpYuiG04jNJ68xfw8SriEo",
+    "bytes": 134317,
+    "sha256": "d89a0cbf79bed5f7c8cb7ea8018e6aabb8a492f80397f91145b7080a59560956",
+    "contentType": "image/jpeg"
+  },
+  {
+    "filename": "random-04.jpg",
+    "sourceURL": "https://picsum.photos/seed/planfix-extra-guide-04/900/600",
+    "finalURL": "https://fastly.picsum.photos/id/379/900/600.jpg?hmac=fcR29KK8bWgqgZdNSc0lJLUTc4dxOBPG1_cwk9vPezk",
+    "bytes": 83029,
+    "sha256": "5076d0fff259da3730976846ec4e50e4e98b64c9cd2c650de995cf333c4d0d44",
+    "contentType": "image/jpeg"
+  },
+  {
+    "filename": "random-05.jpg",
+    "sourceURL": "https://picsum.photos/seed/planfix-extra-guide-05/900/600",
+    "finalURL": "https://fastly.picsum.photos/id/1059/900/600.jpg?hmac=2loTdZ0DDtNOsg_12j6cIobzWlZwa6aX_sb2fptaYMw",
+    "bytes": 79593,
+    "sha256": "663e9aa3f6708b14b291d0b1c50cb518480bc136dab8ae9da2545a936a353be6",
+    "contentType": "image/jpeg"
+  },
+  {
+    "filename": "random-06.jpg",
+    "sourceURL": "https://picsum.photos/seed/planfix-extra-guide-06/900/600",
+    "finalURL": "https://fastly.picsum.photos/id/845/900/600.jpg?hmac=n7Tb-8EZDHF9lIHI2B3imJm257nWOzSX4C9ZdQhR3Fc",
+    "bytes": 26783,
+    "sha256": "3bf43755ee8064a9b059868b9ad44b604a3bf80aebb2a9108313bd796b6c039c",
+    "contentType": "image/jpeg"
+  },
+  {
+    "filename": "random-07.jpg",
+    "sourceURL": "https://picsum.photos/seed/planfix-extra-guide-07/900/600",
+    "finalURL": "https://fastly.picsum.photos/id/627/900/600.jpg?hmac=7c1alt4tjwdygvoPMeo9ELb_hTTOlq91oiv0A_yobBg",
+    "bytes": 79573,
+    "sha256": "e4409302ffcfc4e39ecd1134ed743e09906e53ffacf155055342cadfc35cedd8",
+    "contentType": "image/jpeg"
+  },
+  {
+    "filename": "random-08.jpg",
+    "sourceURL": "https://picsum.photos/seed/planfix-extra-guide-08/900/600",
+    "finalURL": "https://fastly.picsum.photos/id/328/900/600.jpg?hmac=ku-VVmimmSWyhM7wv1MRUPhI2ksaWCPV-vrlgNWaelA",
+    "bytes": 44136,
+    "sha256": "da1de95aeac04f7147deca28c1ec86fc38d03b0219d210b80233802ef550bd72",
+    "contentType": "image/jpeg"
+  },
+  {
+    "filename": "random-09.jpg",
+    "sourceURL": "https://picsum.photos/seed/planfix-extra-guide-09/900/600",
+    "finalURL": "https://fastly.picsum.photos/id/824/900/600.jpg?hmac=m2k54TT-00I3MTvnp_n_y4INoX47oSXljmHtlQsKm4A",
+    "bytes": 66814,
+    "sha256": "08fae5d0cbc0b73140105244306dadfd3e81b07eb9b98d3de32843974c10be25",
+    "contentType": "image/jpeg"
+  },
+  {
+    "filename": "random-10.jpg",
+    "sourceURL": "https://picsum.photos/seed/planfix-extra-guide-10/900/600",
+    "finalURL": "https://fastly.picsum.photos/id/395/900/600.jpg?hmac=2C8Q8c6cMG-19bv79wAL8KEe3RQwrUDwDhoSgBF7UqY",
+    "bytes": 91157,
+    "sha256": "90722311e8a4411a252b5f4c07539f5fb273fe5f63e138c978962497f0ec04b2",
+    "contentType": "image/jpeg"
+  },
+  {
+    "filename": "random-11.jpg",
+    "sourceURL": "https://picsum.photos/seed/planfix-extra-guide-11/900/600",
+    "finalURL": "https://fastly.picsum.photos/id/791/900/600.jpg?hmac=cP05eBs_v7HNKOX4m1VqFjrENvO-pdg6m5JMJod7kEI",
+    "bytes": 83417,
+    "sha256": "0852bb9daef2f132bc9ec2d99a121e9f3bffb99dc2114accbdcc65a687859866",
+    "contentType": "image/jpeg"
+  },
+  {
+    "filename": "random-12.jpg",
+    "sourceURL": "https://picsum.photos/seed/planfix-extra-guide-12/900/600",
+    "finalURL": "https://fastly.picsum.photos/id/294/900/600.jpg?hmac=RpMEDjalrs7KtyS-bkgjU1Vjoyf3nLOCtPgzaZXiqGM",
+    "bytes": 53781,
+    "sha256": "63b017f4ea7b6e55d79ea5d97d81992dfddf1926083356270823f5988557dcfa",
+    "contentType": "image/jpeg"
+  },
+  {
+    "filename": "random-13.jpg",
+    "sourceURL": "https://picsum.photos/seed/planfix-extra-guide-13/900/600",
+    "finalURL": "https://fastly.picsum.photos/id/282/900/600.jpg?hmac=wAisrYTbLio1eebMt1xJg7cNAqKnj-9LMzaBUwB34TM",
+    "bytes": 41827,
+    "sha256": "ab82cb191ae0663487b4477881f11528a6ae19772e836c931e270495bef67869",
+    "contentType": "image/jpeg"
+  },
+  {
+    "filename": "random-14.jpg",
+    "sourceURL": "https://picsum.photos/seed/planfix-extra-guide-14/900/600",
+    "finalURL": "https://fastly.picsum.photos/id/862/900/600.jpg?hmac=lh8cN-efzelm6rAH8b7PxkEDGk-EbLY0imukeTaqIt4",
+    "bytes": 123618,
+    "sha256": "2f8bb7c721c5083b0a9d29d242b977450705423d68d3474f1a8aa71cd42eab6a",
+    "contentType": "image/jpeg"
+  }
+]

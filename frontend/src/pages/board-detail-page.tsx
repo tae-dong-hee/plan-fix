@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowRight,
   Calendar,
@@ -10,6 +10,7 @@ import {
   Route as RouteIcon,
 } from "lucide-react";
 
+import BoardComments from "@/components/ui/board-comments";
 import AppNav from "@/components/ui/app-nav";
 import { LoaderFour } from "@/components/ui/unique-loader-components";
 import { fetchBoardDetail, likeBoard, unlikeBoard, type BoardDetail } from "@/services/board";
@@ -50,6 +51,11 @@ function formatContentHtml(content: string): string {
 export default function BoardDetailPage() {
   const { boardId } = useParams<{ boardId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const source = (location.state as { from?: unknown } | null)?.from;
+  const backTo = typeof source === "string" && /^\/(?:boards|main)(?:\?[^#]*)?$/.test(source)
+    ? source
+    : "/main";
   // undefined = 로딩 중, null = 없음(404) 또는 에러
   const [board, setBoard] = useState<BoardDetail | null | undefined>(undefined);
   const [linkedCourse, setLinkedCourse] = useState<CourseResponse | null>(null);
@@ -114,7 +120,7 @@ export default function BoardDetailPage() {
   }, [boardId]);
 
   const handleGoBack = () => {
-    navigate("/main");
+    navigate(backTo);
   };
 
   const toggleLike = async () => {
@@ -182,7 +188,7 @@ export default function BoardDetailPage() {
             onClick={handleGoBack}
             className="rounded-full bg-muted px-5 py-3 text-sm font-semibold transition-colors hover:bg-primary/10 hover:text-primary"
           >
-            홈으로 돌아가기
+            {backTo === "/boards" || backTo.startsWith("/boards?") ? "목록으로 돌아가기" : "홈으로 돌아가기"}
           </button>
         </div>
       ) : (
@@ -254,10 +260,10 @@ export default function BoardDetailPage() {
                     <span>좋아요 {board.likeCount.toLocaleString()}</span>
                   </button>
 
-                  <span className="flex items-center gap-1" title="댓글 수">
+                  <a href="#board-comments" className="flex items-center gap-1 transition-colors hover:text-primary" title="댓글 보기">
                     <MessageSquare className="h-4 w-4 text-primary/80" aria-hidden="true" />
                     <span>댓글 {board.commentCount.toLocaleString()}</span>
-                  </span>
+                  </a>
                 </div>
               </div>
             </div>
@@ -365,6 +371,7 @@ export default function BoardDetailPage() {
               </section>
             )}
           </article>
+          <BoardComments key={board.boardId} />
         </main>
       )}
     </div>

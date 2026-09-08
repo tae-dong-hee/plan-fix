@@ -52,6 +52,7 @@ describe("fetchPopularBoards", () => {
     expect(calledUrl.origin + calledUrl.pathname).toBe("http://localhost:8080/api/v1/boards");
     expect(calledUrl.searchParams.get("sort")).toBe("popular");
     expect(calledUrl.searchParams.get("size")).toBe("6");
+    expect(fetchSpy.mock.calls[0][1]).toEqual({ credentials: "include" });
   });
 
   test("size를 지정하지 않으면 기본값 6을 쓴다", async () => {
@@ -96,6 +97,42 @@ describe("fetchPopularBoards", () => {
     const { fetchPopularBoards } = (await import("./board")) as typeof import("./board");
 
     await expect(fetchPopularBoards()).rejects.toThrow("게시글을 불러오지 못했습니다.");
+  });
+});
+
+describe("fetchBoards", () => {
+  const originalApiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+  const originalFetch = global.fetch;
+
+  afterEach(() => {
+    setApiBaseUrl(originalApiBaseUrl);
+    global.fetch = originalFetch;
+    vi.resetModules();
+  });
+
+  test("passes latest sort and page offset while preserving the viewer's like state", async () => {
+    setApiBaseUrl("http://localhost:8080/api/v1");
+    const body = { items: [{ boardId: 7, isLiked: true }], offset: 20, size: 20, totalCount: 21 };
+    const fetchSpy = vi.fn().mockResolvedValue({ ok: true, json: async () => body });
+    global.fetch = fetchSpy as unknown as typeof fetch;
+    vi.resetModules();
+    const { fetchBoards } = await import("./board");
+
+    expect(await fetchBoards({ sort: "latest", offset: 20, size: 20 })).toEqual(body);
+    const url = new URL(fetchSpy.mock.calls[0][0] as string);
+    expect(url.searchParams.get("sort")).toBe("latest");
+    expect(url.searchParams.get("offset")).toBe("20");
+    expect(url.searchParams.get("size")).toBe("20");
+    expect(fetchSpy.mock.calls[0][1]).toEqual({ credentials: "include" });
+  });
+
+  test.each([401, 403])("like authentication failure %s is identifiable by the card", async (status) => {
+    setApiBaseUrl("http://localhost:8080/api/v1");
+    global.fetch = vi.fn().mockResolvedValue({ ok: false, status }) as unknown as typeof fetch;
+    vi.resetModules();
+    const { likeBoard } = await import("./board");
+    const { UnauthorizedError } = await import("./spots");
+    await expect(likeBoard(7)).rejects.toBeInstanceOf(UnauthorizedError);
   });
 });
 

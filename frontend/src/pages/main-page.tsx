@@ -8,9 +8,10 @@ import {
   Heart,
   Info,
   Loader2,
-  MessageSquare,
 } from "lucide-react";
 
+import TravelGuideCarousel from "@/components/ui/travel-guide-carousel";
+import BoardCard from "@/components/ui/board-card";
 import AppNav from "@/components/ui/app-nav";
 import GangwonRegionMap, {
   sigunguCodeByRegion,
@@ -38,29 +39,6 @@ const GANGWON_REGION_CODE = "51";
 const FALLBACK_SPOT_IMAGE =
   "https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=900&q=85";
 
-const guideCards = [
-  {
-    id: "course",
-    getTitle: (region: string) => `${region} 필수\n관광 코스`,
-    image:
-      "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=900&q=85",
-    alt: "해 질 무렵의 바다와 해변",
-  },
-  {
-    id: "food",
-    getTitle: (region: string) => `건강한\n${region} 음식`,
-    image:
-      "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=900&q=85",
-    alt: "채소와 면이 담긴 따뜻한 음식",
-  },
-  {
-    id: "place",
-    getTitle: () => "요즘 떠오르는\n인기 명소",
-    image:
-      "https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=900&q=85",
-    alt: "초록빛 나무가 울창한 숲길",
-  },
-];
 
 export default function MainPage() {
   const navigate = useNavigate();
@@ -194,7 +172,7 @@ export default function MainPage() {
     setPopularBoards(null);
     setPopularBoardsError(false);
 
-    fetchPopularBoards({ size: 6 })
+    fetchPopularBoards({ size: 20 })
       .then((res) => {
         if (!ignore) {
           setPopularBoards(res.items);
@@ -256,6 +234,7 @@ export default function MainPage() {
       boardCarouselRef.current.scrollBy({ left: -scrollAmount, behavior: "smooth" });
     } else {
       boardCarouselRef.current.scrollLeft -= scrollAmount;
+      updateBoardScrollButtons();
     }
   };
 
@@ -266,6 +245,7 @@ export default function MainPage() {
       boardCarouselRef.current.scrollBy({ left: scrollAmount, behavior: "smooth" });
     } else {
       boardCarouselRef.current.scrollLeft += scrollAmount;
+      updateBoardScrollButtons();
     }
   };
 
@@ -376,58 +356,12 @@ export default function MainPage() {
                   제공&nbsp; Open-Meteo
                   <Info className="h-4 w-4" aria-hidden="true" />
                 </p>
-                <a
-                  href="https://open-meteo.com/"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center gap-2 rounded-full bg-muted px-5 py-3 text-sm font-semibold transition-colors hover:bg-muted/80 sm:text-base"
-                >
-                  더보기
-                  <ChevronDown className="h-4 w-4" aria-hidden="true" />
-                </a>
               </div>
             </section>
           </div>
         </section>
 
-        <section className="mx-auto max-w-6xl px-5 py-8 sm:px-8 lg:px-10 lg:py-12">
-          <div>
-            <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">{locationName}에서 뭐 하지?</h2>
-            <p className="mt-2 text-base text-muted-foreground sm:text-lg">
-              {locationName} 여행이 처음인 사람들을 위한 안내서
-            </p>
-          </div>
-
-          <div className="mt-6 grid grid-cols-3 gap-2 sm:gap-4">
-            {guideCards.map((card) => {
-              const title = card.getTitle(locationName);
-
-              return (
-                <article
-                  key={card.id}
-                  className="group relative h-44 overflow-hidden rounded-lg sm:h-72"
-                >
-                <img
-                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  src={card.image}
-                  alt={card.alt}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/5 to-black/5" />
-                <button
-                  type="button"
-                  className="absolute right-3 top-3 flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-black/40 text-white/90 backdrop-blur-sm transition-all hover:bg-black/60 hover:text-white active:scale-90"
-                  aria-label={`${title.replace("\n", " ")} 위시리스트에 추가`}
-                >
-                  <Heart className="h-4.5 w-4.5 sm:h-5 sm:w-5" strokeWidth={2} aria-hidden="true" />
-                </button>
-                <h3 className="absolute bottom-3 left-3 whitespace-pre-line text-sm font-medium leading-relaxed text-white sm:bottom-5 sm:left-5 sm:text-2xl">
-                  {title}
-                </h3>
-              </article>
-              );
-            })}
-          </div>
-        </section>
+        <TravelGuideCarousel locationName={locationName} />
 
         <section className="mx-auto max-w-6xl px-5 pb-12 sm:px-8 lg:px-10">
           <div className="flex items-center justify-between gap-4">
@@ -530,77 +464,73 @@ export default function MainPage() {
         </section>
 
         <section className="mx-auto max-w-6xl px-5 pb-12 sm:px-8 lg:px-10">
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center justify-between gap-4">
             <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">여행 이야기</h2>
-            <Link
-              to="/boards/create"
-              className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-4 py-2 text-xs font-semibold text-primary transition-all hover:bg-primary hover:text-primary-foreground active:scale-95 sm:text-sm"
-            >
-              <span>이야기 올리기</span>
-              <ArrowRight className="h-4 w-4" />
-            </Link>
+            <div className="flex items-center gap-3">
+              <Link
+                to="/boards/create"
+                className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-4 py-2 text-xs font-semibold text-primary transition-colors hover:bg-primary hover:text-primary-foreground sm:text-sm"
+              >
+                이야기 올리기
+              </Link>
+              <Link
+                to="/boards"
+                aria-label="여행 이야기 전체보기"
+                className="inline-flex items-center gap-1 rounded-md py-2 text-sm font-medium transition-colors hover:text-primary"
+              >
+                전체보기
+                <ArrowRight className="h-5 w-5" aria-hidden="true" />
+              </Link>
+            </div>
           </div>
 
-          {popularBoardsError || popularBoards?.length === 0 ? (
+          {popularBoardsError ? (
+            <p role="alert" className="mt-6 text-base text-muted-foreground">게시글을 불러오지 못했어요. 전체보기에서 다시 시도해 주세요.</p>
+          ) : popularBoards === null ? (
+            <div role="status" className="mt-6 flex items-center gap-2 text-muted-foreground">
+              <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
+              여행 이야기를 불러오는 중이에요.
+            </div>
+          ) : popularBoards.length === 0 ? (
             <p className="mt-6 text-base text-muted-foreground">표시할 게시글이 없어요.</p>
           ) : (
             <div className="relative mt-6">
-              {canBoardScrollLeft ? (
-                <button
-                  type="button"
-                  onClick={handleBoardScrollLeft}
-                  className="absolute left-2 top-1/2 z-10 -translate-y-1/2 flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full border border-border/60 bg-background/80 text-foreground shadow-md backdrop-blur-sm transition-all hover:scale-105 hover:bg-background active:scale-95 sm:left-3"
-                  aria-label="이전 게시글 보기"
-                >
-                  <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" aria-hidden="true" />
-                </button>
-              ) : null}
+              <button
+                type="button"
+                onClick={handleBoardScrollLeft}
+                disabled={!canBoardScrollLeft}
+                className="absolute left-2 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-border/60 bg-background/90 text-foreground shadow-md backdrop-blur-sm transition-colors hover:bg-background disabled:cursor-default disabled:opacity-35 sm:left-3 sm:h-12 sm:w-12"
+                aria-label="이전 게시글 보기"
+              >
+                <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" aria-hidden="true" />
+              </button>
 
               <div
                 ref={boardCarouselRef}
                 onScroll={updateBoardScrollButtons}
+                role="region"
+                aria-label="여행 이야기 목록"
+                tabIndex={0}
                 className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide sm:gap-4"
               >
-                {(popularBoards ?? []).map((board) => (
-                  <Link
+                {popularBoards.map((board) => (
+                  <BoardCard
                     key={board.boardId}
-                    to={`/boards/${board.boardId}`}
-                    className="group block w-[42%] shrink-0 overflow-hidden rounded-lg border bg-background shadow-panel snap-start transition-all duration-200 hover:shadow-md sm:w-56"
-                  >
-                    <div className="relative h-40 sm:h-56 overflow-hidden">
-                      <img
-                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                        src={board.thumbnail ?? FALLBACK_SPOT_IMAGE}
-                        alt={board.title}
-                      />
-                    </div>
-                    <div className="p-3 sm:p-4">
-                      <h3 className="truncate text-sm font-semibold sm:text-base">{board.title}</h3>
-                      <div className="mt-1.5 flex items-center gap-3 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Heart className="h-3.5 w-3.5" aria-hidden="true" />
-                          {board.likeCount}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <MessageSquare className="h-3.5 w-3.5" aria-hidden="true" />
-                          {board.commentCount}
-                        </span>
-                      </div>
-                    </div>
-                  </Link>
+                    board={board}
+                    className="w-[42%] shrink-0 snap-start sm:w-56"
+                  />
                 ))}
               </div>
 
-              {canBoardScrollRight ? (
-                <button
-                  type="button"
-                  onClick={handleBoardScrollRight}
-                  className="absolute right-2 top-1/2 z-10 -translate-y-1/2 flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full border border-border/60 bg-background/80 text-foreground shadow-md backdrop-blur-sm transition-all hover:scale-105 hover:bg-background active:scale-95 sm:right-3"
-                  aria-label="다음 게시글 보기"
-                >
-                  <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" aria-hidden="true" />
-                </button>
-              ) : null}
+              <button
+                type="button"
+                onClick={handleBoardScrollRight}
+                disabled={!canBoardScrollRight}
+                className="absolute right-2 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-border/60 bg-background/90 text-foreground shadow-md backdrop-blur-sm transition-colors hover:bg-background disabled:cursor-default disabled:opacity-35 sm:right-3 sm:h-12 sm:w-12"
+                aria-label="다음 게시글 보기"
+              >
+                <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" aria-hidden="true" />
+              </button>
             </div>
           )}
         </section>

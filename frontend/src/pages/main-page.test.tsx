@@ -262,7 +262,7 @@ describe("MainPage popular boards carousel", () => {
     mockedFetch5DayWeather.mockResolvedValue(mockWeatherItems);
   });
 
-  test("fetches popular boards with size 6 on initial load and renders cards", async () => {
+  test("fetches popular boards with size 20 on initial load and renders cards", async () => {
     mockedFetchPopularBoards.mockResolvedValue({
       items: [
         {
@@ -293,7 +293,7 @@ describe("MainPage popular boards carousel", () => {
 
     renderMainPage();
 
-    expect(mockedFetchPopularBoards).toHaveBeenCalledWith({ size: 6 });
+    expect(mockedFetchPopularBoards).toHaveBeenCalledWith({ size: 20 });
 
     expect(await screen.findByText("강릉 카페 투어 추천")).toBeInTheDocument();
     expect(screen.getByText("속초 1박 2일 코스")).toBeInTheDocument();
@@ -306,6 +306,7 @@ describe("MainPage popular boards carousel", () => {
     const link2 = screen.getByText("속초 1박 2일 코스").closest("a");
     expect(link1).toHaveAttribute("href", "/boards/101");
     expect(link2).toHaveAttribute("href", "/boards/102");
+    expect(screen.getByRole("link", { name: "여행 이야기 전체보기" })).toHaveAttribute("href", "/boards");
   });
 
   test("shows empty message when fetch boards fails or returns empty list", async () => {
@@ -348,7 +349,7 @@ describe("MainPage popular boards carousel", () => {
 
     fireEvent.scroll(carouselElement);
 
-    expect(screen.queryByRole("button", { name: "이전 게시글 보기" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "이전 게시글 보기" })).toBeDisabled();
     const rightButton = await screen.findByRole("button", { name: "다음 게시글 보기" });
     expect(rightButton).toBeInTheDocument();
 
@@ -368,6 +369,12 @@ describe("MainPage popular boards carousel", () => {
       expect.objectContaining({ left: expect.any(Number), behavior: "smooth" }),
     );
     expect(scrollByMock.mock.calls[1][0].left).toBeLessThan(0);
+    expect(scrollByMock.mock.calls[0][0].left).toBeGreaterThan(0);
+
+    carouselElement.scrollLeft = 700;
+    fireEvent.scroll(carouselElement);
+    expect(rightButton).toBeDisabled();
+    expect(leftButton).toBeEnabled();
   });
 });
 

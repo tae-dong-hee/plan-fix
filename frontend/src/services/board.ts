@@ -1,9 +1,12 @@
+import { UnauthorizedError } from "@/services/spots";
+
 export type BoardItem = {
   boardId: number;
   title: string;
   thumbnail: string | null;
   userId: number;
   likeCount: number;
+  isLiked?: boolean;
   viewCount: number;
   commentCount: number;
   createdAt: string;
@@ -50,29 +53,41 @@ export type PopularBoardsParams = {
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "");
 
-/** 공개 API라 인증 쿠키가 필요 없다. 백엔드 미설정 환경(예: 테스트)에서는 빈 목록으로 조용히 넘어간다. */
-export async function fetchPopularBoards(params: PopularBoardsParams = {}): Promise<BoardListResult> {
+export type BoardsParams = PopularBoardsParams & {
+  sort?: "popular" | "latest";
+};
+
+/** 공개 목록도 로그인 쿠키를 보내 사용자의 좋아요 상태를 함께 받는다. */
+export async function fetchBoards(params: BoardsParams = {}): Promise<BoardListResult> {
   if (!apiBaseUrl) {
     return {
       items: [],
       offset: params.offset ?? 0,
-      size: params.size ?? 6,
+      size: params.size ?? 20,
       totalCount: 0,
     };
   }
 
-  const query = new URLSearchParams({ sort: "popular", size: String(params.size ?? 6) });
+  const query = new URLSearchParams({
+    sort: params.sort ?? "popular",
+    size: String(params.size ?? 20),
+  });
   if (params.offset !== undefined) {
     query.set("offset", String(params.offset));
   }
 
-  const response = await fetch(`${apiBaseUrl}/boards?${query.toString()}`);
+  const response = await fetch(`${apiBaseUrl}/boards?${query.toString()}`, {
+    credentials: "include",
+  });
   if (!response.ok) {
     throw new Error("게시글을 불러오지 못했습니다.");
   }
 
-  const body = (await response.json()) as BoardListResult;
-  return body;
+  return (await response.json()) as BoardListResult;
+}
+
+export function fetchPopularBoards(params: PopularBoardsParams = {}): Promise<BoardListResult> {
+  return fetchBoards({ ...params, size: params.size ?? 6, sort: "popular" });
 }
 
 /**
@@ -114,7 +129,7 @@ export async function unlikeBoard(boardId: number | string): Promise<BoardLikeSt
 
 async function callBoardLikeApi(boardId: number | string, method: "POST" | "DELETE"): Promise<BoardLikeState> {
   if (!apiBaseUrl) {
-    throw new Error("로그인이 필요합니다.");
+    throw new UnauthorizedError();
   }
 
   const response = await fetch(`${apiBaseUrl}/boards/${boardId}/like`, {
@@ -123,7 +138,7 @@ async function callBoardLikeApi(boardId: number | string, method: "POST" | "DELE
   });
 
   if (response.status === 401 || response.status === 403) {
-    throw new Error("로그인이 필요합니다.");
+    throw new UnauthorizedError();
   }
   if (!response.ok) {
     throw new Error("좋아요 처리에 실패했습니다.");

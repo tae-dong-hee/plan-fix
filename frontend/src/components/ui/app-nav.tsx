@@ -5,7 +5,6 @@ import {
   LogOut,
   Luggage,
   Route,
-  Search,
   UserRound,
 } from "lucide-react";
 
@@ -32,6 +31,7 @@ export default function AppNav({ className = "" }: AppNavProps) {
   // 현재 경로가 메인, 장소, 게시글, 코스생성 관련 페이지일 때 '여행' 메뉴를 활성 상태로 표시
   const isTripActive =
     location.pathname.startsWith("/main") ||
+    location.pathname.startsWith("/travel-guides") ||
     location.pathname.startsWith("/spots") ||
     location.pathname.startsWith("/boards") ||
     location.pathname.startsWith("/courses/create");
@@ -39,7 +39,6 @@ export default function AppNav({ className = "" }: AppNavProps) {
   const isWishlistActive = location.pathname.startsWith("/wishlist");
 
   const navigationItems = [
-    { label: "검색", icon: Search, active: false },
     { label: "내 코스", icon: Route, active: isMyCourseActive },
     { label: "여행", icon: Luggage, active: isTripActive },
     { label: "위시리스트", icon: Heart, active: isWishlistActive },
@@ -141,7 +140,7 @@ export default function AppNav({ className = "" }: AppNavProps) {
             </span>
           </Link>
 
-          <div className="grid h-full grid-cols-5 md:flex md:items-center md:gap-1.5 lg:gap-2">
+          <div className="grid h-full grid-cols-4 md:flex md:items-center md:gap-1.5 lg:gap-2">
             {navigationItems.map((item) => {
               const Icon = item.icon;
               const isProfile = item.label === "프로필";

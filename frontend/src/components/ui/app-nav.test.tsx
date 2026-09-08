@@ -40,7 +40,7 @@ describe("AppNav component", () => {
     renderAppNav();
 
     expect(screen.getByRole("link", { name: "PlanFix 홈" })).toHaveAttribute("href", "/main");
-    expect(screen.getByRole("button", { name: "검색" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "검색" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "내 코스" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "여행" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "위시리스트" })).toBeInTheDocument();
