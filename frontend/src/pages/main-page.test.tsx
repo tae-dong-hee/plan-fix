@@ -377,12 +377,77 @@ describe("MainPage popular spots carousel", () => {
     expect(screen.getByText("안목해변")).toBeInTheDocument();
   });
 
-  test("shows empty message when fetch fails or returns empty list", async () => {
+  test("shows empty message when fetch returns empty list", async () => {
     mockedFetchPopularSpots.mockResolvedValue({ items: [], offset: 0, size: 6, totalCount: 0 });
 
     renderMainPage();
 
     expect(await screen.findByText("표시할 인기 장소가 없어요.")).toBeInTheDocument();
+  });
+
+  test("인기 장소를 조회하는 동안 로딩 상태를 표시한다", async () => {
+    const request = deferred<Awaited<ReturnType<typeof fetchPopularSpots>>>();
+    mockedFetchPopularSpots.mockReturnValueOnce(request.promise);
+    renderMainPage();
+
+    expect(screen.getByText("강원도 인기 장소를 불러오는 중...")).toBeInTheDocument();
+    expect(screen.queryByText("표시할 인기 장소가 없어요.")).not.toBeInTheDocument();
+
+    await act(async () => request.resolve(emptySpotResult));
+    expect(screen.queryByText(/인기 장소를 불러오는 중/)).not.toBeInTheDocument();
+    expect(screen.getByText("표시할 인기 장소가 없어요.")).toBeInTheDocument();
+  });
+
+  test("지역 변경 후 조회에 실패하면 선택한 지역을 유지하며 다시 시도한다", async () => {
+    const retry = deferred<Awaited<ReturnType<typeof fetchPopularSpots>>>();
+    mockedFetchPopularSpots
+      .mockResolvedValueOnce(emptySpotResult)
+      .mockRejectedValueOnce(new Error("Network failed"))
+      .mockReturnValueOnce(retry.promise);
+    renderMainPage();
+    await screen.findByText("표시할 인기 장소가 없어요.");
+
+    fireEvent.click(screen.getByRole("button", { name: "여행 지역 선택: 강원도 / 지역 선택" }));
+    fireEvent.click(screen.getByRole("button", { name: "속초" }));
+    fireEvent.click(screen.getByRole("button", { name: "속초 선택하기" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("인기 장소를 불러오지 못했습니다.");
+    expect(screen.queryByText("표시할 인기 장소가 없어요.")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "인기 장소 다시 시도" }));
+
+    expect(screen.getByText("속초 인기 장소를 불러오는 중...")).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(mockedFetchPopularSpots).toHaveBeenCalledTimes(3);
+    expect(mockedFetchPopularSpots).toHaveBeenLastCalledWith({ region: "51", sigungu: "210", size: 20 });
+
+    await act(async () => retry.resolve({
+      items: [{ spotId: 10, title: "속초해수욕장", category: "관광지", region: "51", sigungu: "210", thumbnail: null }],
+      offset: 0,
+      size: 20,
+      totalCount: 1,
+    }));
+    expect(screen.getByText("속초해수욕장")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "여행 지역 선택: 강원도 / 속초" })).toBeInTheDocument();
+    expect(screen.queryByText(/인기 장소를 불러오는 중/)).not.toBeInTheDocument();
+  });
+
+  test("지역을 바꾼 뒤 도착한 이전 지역 응답이 현재 인기 장소를 덮어쓰지 않는다", async () => {
+    const previousRequest = deferred<Awaited<ReturnType<typeof fetchPopularSpots>>>();
+    mockedFetchPopularSpots.mockReturnValueOnce(previousRequest.promise).mockResolvedValueOnce({
+      items: [{ spotId: 10, title: "속초해수욕장", category: "관광지", region: "51", sigungu: "210", thumbnail: null }],
+      offset: 0,
+      size: 20,
+      totalCount: 1,
+    });
+    renderMainPage();
+    fireEvent.click(screen.getByRole("button", { name: "여행 지역 선택: 강원도 / 지역 선택" }));
+    fireEvent.click(screen.getByRole("button", { name: "속초" }));
+    fireEvent.click(screen.getByRole("button", { name: "속초 선택하기" }));
+    await screen.findByText("속초해수욕장");
+
+    await act(async () => previousRequest.resolve(emptySpotResult));
+    expect(screen.getByText("속초해수욕장")).toBeInTheDocument();
+    expect(screen.queryByText("표시할 인기 장소가 없어요.")).not.toBeInTheDocument();
   });
 
   test("clicking '인기 장소 더보기' navigates to /spots/popular", async () => {

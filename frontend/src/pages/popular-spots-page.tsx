@@ -57,6 +57,7 @@ export default function PopularSpotsPage({ mode = "popular" }: PopularSpotsPageP
   const [popularSpots, setPopularSpots] = useState<PopularSpot[] | null>(null);
   const [totalCount, setTotalCount] = useState(0);
   const [popularSpotsError, setPopularSpotsError] = useState(false);
+  const [spotsReload, setSpotsReload] = useState(0);
   const [likedSpots, setLikedSpots] = useState<Record<number, boolean>>({});
   const [loadingSpots, setLoadingSpots] = useState<Record<number, boolean>>({});
 
@@ -178,7 +179,7 @@ export default function PopularSpotsPage({ mode = "popular" }: PopularSpotsPageP
     return () => {
       ignore = true;
     };
-  }, [selectedRegion, selectedCategory, currentPage, isDiscoverMode]);
+  }, [selectedRegion, selectedCategory, currentPage, isDiscoverMode, spotsReload]);
 
   const handleToggleLike = async (event: React.MouseEvent, spotId: number) => {
     event.preventDefault();
@@ -304,7 +305,21 @@ export default function PopularSpotsPage({ mode = "popular" }: PopularSpotsPageP
           <div className="flex justify-center py-24">
             <LoaderFour text={isDiscoverMode ? "여행 장소를 불러오는 중..." : "인기 장소를 불러오는 중..."} />
           </div>
-        ) : popularSpotsError || popularSpots?.length === 0 ? (
+        ) : popularSpotsError ? (
+          <div role="alert" className="flex flex-col items-center justify-center gap-4 py-24 text-center">
+            <p className="text-base text-muted-foreground">
+              {isDiscoverMode ? "여행 장소를 불러오지 못했습니다." : "인기 장소를 불러오지 못했습니다."}
+            </p>
+            <button
+              type="button"
+              onClick={() => setSpotsReload((value) => value + 1)}
+              aria-label={isDiscoverMode ? "여행 장소 다시 시도" : "인기 장소 다시 시도"}
+              className="rounded-lg border border-border px-3 py-2 font-medium text-primary hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            >
+              다시 시도
+            </button>
+          </div>
+        ) : popularSpots?.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <p className="text-base text-muted-foreground">
               {isDiscoverMode ? "추천할 여행 장소가 없어요." : "표시할 인기 장소가 없어요."}

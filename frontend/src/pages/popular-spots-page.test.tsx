@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { MockedFunction } from "vitest";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 
@@ -125,12 +125,55 @@ describe("PopularSpotsPage", () => {
     expect(screen.getByRole("button", { name: "여행 지역 선택: 속초" })).toBeInTheDocument();
   });
 
-  test("shows empty message when fetch returns empty list or fails", async () => {
+  test("shows empty message when fetch returns empty list", async () => {
     mockedSearchSpots.mockResolvedValue({ items: [], offset: 0, size: 20, totalCount: 0 });
 
     renderPopularSpotsPage();
 
     expect(await screen.findByText("표시할 인기 장소가 없어요.")).toBeInTheDocument();
+  });
+
+  test.each([
+    ["popular", "인기 장소", "속초 인기 장소", "표시할 인기 장소가 없어요."],
+    ["discover", "여행 장소", "속초에서 뭐 하지?", "추천할 여행 장소가 없어요."],
+  ] as const)("%s 조회 실패 후 지역·카테고리·페이지를 유지하며 다시 시도한다", async (mode, label, heading, emptyMessage) => {
+    let resolveRetry!: (response: Awaited<ReturnType<typeof searchSpots>>) => void;
+    const retry = new Promise<Awaited<ReturnType<typeof searchSpots>>>((resolve) => { resolveRetry = resolve; });
+    mockedSearchSpots.mockRejectedValueOnce(new Error("Network failed")).mockReturnValueOnce(retry);
+
+    if (mode === "popular") {
+      renderPopularSpotsPage("/spots/popular?region=속초&category=관광지&page=2");
+    } else {
+      renderDiscoverSpotsPage("/spots?region=속초&category=관광지&page=2");
+    }
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(`${label}를 불러오지 못했습니다.`);
+    expect(screen.queryByText(emptyMessage)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: `${label} 다시 시도` }));
+
+    expect(screen.getByRole("status")).toHaveTextContent(`${label}를 불러오는 중...`);
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(mockedSearchSpots).toHaveBeenCalledTimes(2);
+    expect(mockedSearchSpots).toHaveBeenLastCalledWith({
+      category: "관광지",
+      region: "51",
+      sigungu: "210",
+      sort: mode === "popular" ? "popular" : "latest",
+      size: 20,
+      offset: 20,
+    });
+
+    await act(async () => resolveRetry({
+      items: [{ spotId: 10, title: "속초해수욕장", category: "관광지", region: "51", sigungu: "210", thumbnail: null }],
+      offset: 20,
+      size: 20,
+      totalCount: 21,
+    }));
+    expect(screen.getByRole("heading", { name: "속초해수욕장" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: heading })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "관광지" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "2" })).toHaveAttribute("aria-current", "page");
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
   });
 
   test("clicking back button navigates to /main", async () => {
