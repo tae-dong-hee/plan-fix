@@ -143,3 +143,142 @@
   height: auto;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
+
+/* 작성 화면과 이미 저장된 본문 HTML에 같은 장소 카드 디자인을 적용한다.
+   기존 카드의 두 열 구조를 사용하므로 저장된 게시글을 다시 저장할 필요가 없다. */
+.travel-story-content .travel-spot-card {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  margin: 2rem 0 1rem;
+  padding: 1rem;
+  border: 1px solid hsl(var(--primary) / 0.2);
+  border-radius: 1.25rem;
+  background: linear-gradient(
+    115deg,
+    hsl(var(--primary) / 0.07),
+    hsl(var(--primary) / 0.02) 70%
+  );
+  box-shadow: 0 6px 24px -16px hsl(var(--primary) / 0.3);
+  line-height: 1.5;
+}
+
+.travel-story-content .travel-spot-card:first-child {
+  margin-top: 0;
+}
+
+/* 본문 사진의 여백과 높이가 작은 썸네일에 적용되지 않도록 분리한다. */
+.travel-story-content .travel-spot-card > div:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 6.5rem;
+  width: 6.5rem;
+  height: 6.5rem;
+  overflow: hidden;
+  border: 0;
+  border-radius: 0.875rem;
+  background: hsl(var(--primary) / 0.08);
+  font-size: 1.75rem;
+}
+
+.travel-story-content .travel-spot-card img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  margin: 0;
+  border-radius: 0;
+  object-fit: cover;
+  box-shadow: none;
+}
+
+.travel-story-content .travel-spot-card > div:last-child {
+  flex: 1;
+  min-width: 0;
+}
+
+.travel-story-content .travel-spot-card > div:last-child > div {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.travel-story-content .travel-spot-card h4 {
+  margin: 0;
+  color: hsl(var(--foreground));
+  font-size: 1.125rem;
+  font-weight: 700;
+  line-height: 1.45;
+  letter-spacing: -0.025em;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.travel-story-content .travel-spot-card > div:last-child > div > span {
+  padding: 0.2rem 0.6rem;
+  border-radius: 0.375rem;
+  background: hsl(var(--primary) / 0.12);
+  color: hsl(var(--primary));
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.travel-story-content .travel-spot-card p {
+  margin: 0.375rem 0 0;
+  color: hsl(var(--muted-foreground));
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+/* 장소 다음에 작성하는 후기 문단을 카드 가까이에 정돈한다. */
+.travel-story-content .travel-spot-card + p {
+  min-height: 1.9em;
+  margin: 1rem 0 2rem 0.5rem;
+  padding: 0.25rem 0 0.25rem 1rem;
+  border-left: 2px solid hsl(var(--primary) / 0.35);
+  color: hsl(var(--foreground) / 0.85);
+  font-size: 1rem;
+  line-height: 1.9;
+  overflow-wrap: anywhere;
+}
+
+.tiptap.travel-story-content .travel-spot-card + p.is-empty::before {
+  content: "이 장소에서의 경험을 남겨보세요.";
+  float: left;
+  height: 0;
+  color: hsl(var(--muted-foreground) / 0.7);
+  pointer-events: none;
+}
+
+.tiptap.travel-story-content .travel-spot-card.ProseMirror-selectednode {
+  outline: 2px solid hsl(var(--primary) / 0.6);
+  outline-offset: 3px;
+}
+
+@media (max-width: 639px) {
+  .travel-story-content .travel-spot-card {
+    gap: 0.875rem;
+    padding: 0.875rem;
+    border-radius: 1rem;
+  }
+
+  .travel-story-content .travel-spot-card > div:first-child {
+    flex-basis: 4.5rem;
+    width: 4.5rem;
+    height: 4.5rem;
+    border-radius: 0.625rem;
+  }
+
+  .travel-story-content .travel-spot-card h4 {
+    font-size: 1rem;
+  }
+
+  .travel-story-content .travel-spot-card p {
+    font-size: 0.75rem;
+  }
+}

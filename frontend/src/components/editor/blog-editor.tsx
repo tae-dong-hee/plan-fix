@@ -85,7 +85,7 @@ export default function BlogEditor({
     editorProps: {
       attributes: {
         class:
-          "prose prose-lg max-w-none focus:outline-none min-h-[400px] px-6 py-6 sm:px-8 text-foreground leading-relaxed",
+          "travel-story-content prose prose-lg max-w-none focus:outline-none min-h-[400px] px-4 py-6 sm:px-8 text-foreground leading-relaxed",
       },
       handleDrop: (view, event, _slice, moved) => {
         if (!moved && event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files.length > 0) {

@@ -415,7 +415,7 @@ export default function BoardDetailPage() {
 
             {/* 본문 콘텐츠 */}
             <div
-              className="mt-8 border-t border-border/70 pt-8 text-base leading-relaxed text-foreground/90 break-words sm:text-lg sm:leading-loose
+              className="travel-story-content mt-8 border-t border-border/70 pt-8 text-base leading-relaxed text-foreground/90 break-words sm:text-lg sm:leading-loose
                 [&_p]:mb-4 [&_p]:leading-relaxed
                 [&_h1]:mt-8 [&_h1]:mb-4 [&_h1]:text-2xl [&_h1]:font-bold [&_h1]:text-foreground
                 [&_h2]:mt-6 [&_h2]:mb-3 [&_h2]:text-xl [&_h2]:font-bold [&_h2]:text-foreground
@@ -426,7 +426,6 @@ export default function BoardDetailPage() {
                 [&_blockquote]:my-4 [&_blockquote]:border-l-4 [&_blockquote]:border-primary/50 [&_blockquote]:bg-muted/40 [&_blockquote]:py-2 [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-muted-foreground
                 [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-4 hover:[&_a]:opacity-80
                 [&_img]:my-6 [&_img]:max-w-full [&_img]:rounded-xl [&_img]:shadow-sm
-                [&_.travel-spot-card]:my-6 [&_.travel-spot-card]:flex [&_.travel-spot-card]:items-center [&_.travel-spot-card]:gap-4 [&_.travel-spot-card]:rounded-2xl [&_.travel-spot-card]:border [&_.travel-spot-card]:border-primary/25 [&_.travel-spot-card]:bg-primary/5 [&_.travel-spot-card]:p-4 [&_.travel-spot-card]:shadow-sm
                 [&_strong]:font-semibold [&_strong]:text-foreground"
               dangerouslySetInnerHTML={{ __html: formatContentHtml(board.content) }}
             />
