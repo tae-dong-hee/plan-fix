@@ -71,6 +71,12 @@ export default function BoardDetailPage() {
   const [commentActionId, setCommentActionId] = useState<number | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
 
+  const commentIds = new Set(comments.map((comment) => comment.commentId));
+  // 삭제된 부모는 조회 목록에서 빠지므로 남은 대댓글부터 스레드를 표시한다.
+  const rootComments = comments.filter((comment) =>
+    comment.parentCommentId === null || !commentIds.has(comment.parentCommentId),
+  );
+
   useEffect(() => {
     if (!board?.courseId) {
       setLinkedCourse(null);
@@ -464,8 +470,7 @@ export default function BoardDetailPage() {
               </div>
               {commentNotice && <p className="mt-2 text-sm text-destructive" role="alert">{commentNotice}</p>}
               <div className="mt-4 space-y-3">
-                {comments.length === 0 ? <p className="py-4 text-sm text-muted-foreground">첫 댓글을 남겨보세요.</p> : comments.filter((comment) => comment.parentCommentId === null).map((comment) => {
-                  const children = comments.filter((child) => child.parentCommentId === comment.commentId);
+                {comments.length === 0 ? <p className="py-4 text-sm text-muted-foreground">첫 댓글을 남겨보세요.</p> : rootComments.map((comment) => {
                   const renderComment = (item: BoardComment, depth = 0) => (
                     <div key={item.commentId} className={depth > 0 ? "ml-6 border-l-2 border-primary/20 pl-4" : ""}>
                       <div className="rounded-xl bg-muted/40 px-4 py-3 text-sm">
