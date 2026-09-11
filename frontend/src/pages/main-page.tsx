@@ -137,7 +137,7 @@ export default function MainPage() {
     setGuideSpotsError(false);
 
     searchSpots({
-      region: selectedRegion ? GANGWON_REGION_CODE : undefined,
+      region: GANGWON_REGION_CODE,
       sigungu: selectedRegion ? sigunguCodeByRegion[selectedRegion] : undefined,
       sort: "latest",
       size: 20,
@@ -172,7 +172,7 @@ export default function MainPage() {
     setPopularSpotsError(false);
 
     fetchPopularSpots({
-      region: selectedRegion ? GANGWON_REGION_CODE : undefined,
+      region: GANGWON_REGION_CODE,
       sigungu: selectedRegion ? sigunguCodeByRegion[selectedRegion] : undefined,
       size: 20,
     })
