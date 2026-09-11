@@ -25,12 +25,12 @@ export default function MainCourseCard({
   const credit = getCourseCoverCredit(thumbnail);
 
   return (
-    <article className="relative w-[82%] shrink-0 snap-start sm:w-[46%] lg:w-[calc((100%_-_2.5rem)/3)]">
+    <article className="relative w-[76%] shrink-0 snap-start sm:w-[46%] lg:w-[calc((100%_-_3.75rem)/4)]">
       <Link
         to={`/courses/${course.courseId}`}
-        className="group block rounded-3xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        className="group block rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       >
-        <div className="relative aspect-[4/3] overflow-hidden rounded-3xl bg-zinc-100 dark:bg-zinc-800">
+        <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-zinc-100 dark:bg-zinc-800">
           {thumbnail && thumbnail !== failedThumbnail ? (
             <img
               src={getCourseCoverImageSrc(thumbnail)}
@@ -40,33 +40,32 @@ export default function MainCourseCard({
               className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 motion-reduce:transform-none motion-reduce:transition-none"
             />
           ) : (
-            <div aria-hidden="true" className="absolute inset-0 overflow-hidden bg-gradient-to-br from-violet-400 via-primary to-violet-900">
-              <div className="absolute -right-10 -top-10 h-56 w-56 rounded-full border border-white/15" />
-              <div className="absolute -left-14 top-12 h-48 w-48 rounded-full bg-white/10" />
-              <Route className="absolute left-1/2 top-[38%] h-16 w-16 -translate-x-1/2 -translate-y-1/2 text-white/70" strokeWidth={1.2} />
+            <div aria-hidden="true" className="absolute inset-0 flex items-center justify-center bg-primary/5">
+              <Route className="h-14 w-14 text-primary/35" strokeWidth={1.2} />
             </div>
           )}
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
-          <span className="absolute left-4 top-4 max-w-[calc(100%_-_5.5rem)] truncate rounded-full bg-white/95 px-3 py-1.5 text-xs font-medium text-zinc-800">
+          <span className="absolute left-3 top-3 max-w-[calc(100%_-_5rem)] truncate rounded-full bg-white/95 px-2.5 py-1.5 text-[11px] font-semibold text-zinc-800 shadow-sm">
             {course.dayCount}일 일정
           </span>
-          <div className="absolute inset-x-5 bottom-5 text-white sm:inset-x-6 sm:bottom-6">
-            <h3 className="line-clamp-2 break-keep text-xl font-semibold leading-snug tracking-tight [overflow-wrap:anywhere] sm:text-2xl">
-              {course.title}
-            </h3>
-            <p className="mt-2 flex items-center gap-1 text-xs text-white/85 sm:text-sm">
-              <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
-              방문 {course.spotCount}곳
-            </p>
-          </div>
+        </div>
+        <div className="px-0.5 pb-1 pt-3">
+          <h3 className="line-clamp-2 break-keep text-[15px] font-semibold leading-snug tracking-tight text-foreground [overflow-wrap:anywhere]">
+            {course.title}
+          </h3>
+          <p className="mt-1.5 flex items-center gap-1 text-[13px] text-muted-foreground">
+            <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            방문 {course.spotCount}곳
+          </p>
         </div>
       </Link>
       {credit && thumbnail !== failedThumbnail && (
-        <Link
-          to={`/image-credits#${credit.id}`}
-          aria-label={`${course.title} 사진 출처`}
-          className="absolute bottom-5 right-5 rounded bg-black/25 px-1.5 py-1 text-[10px] text-white/80 transition hover:bg-black/45 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white sm:bottom-6 sm:right-6"
-        >사진 출처</Link>
+        <div className="pointer-events-none absolute inset-x-0 top-0 aspect-[4/3]">
+          <Link
+            to={`/image-credits#${credit.id}`}
+            aria-label={`${course.title} 사진 출처`}
+            className="pointer-events-auto absolute bottom-2.5 right-3 rounded bg-black/40 px-1.5 py-1 text-[10px] text-white transition hover:bg-black/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+          >사진 출처</Link>
+        </div>
       )}
       <button
         type="button"
@@ -74,7 +73,7 @@ export default function MainCourseCard({
         disabled={isLoading || isLikeDisabled}
         aria-pressed={isLiked}
         aria-label={isLiked ? `${course.title} 좋아요 취소` : `${course.title} 좋아요`}
-        className={`absolute right-3 top-3 flex h-11 w-11 items-center justify-center rounded-full bg-white/95 transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70 ${
+        className={`absolute right-2 top-2 flex h-11 w-11 items-center justify-center rounded-full bg-white/95 shadow-sm transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70 ${
           isLiked ? "text-primary" : "text-zinc-700 hover:text-primary"
         }`}
       >

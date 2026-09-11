@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   ArrowRight,
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Heart,
@@ -13,6 +12,7 @@ import {
 import AppNav from "@/components/ui/app-nav";
 import MainCourseCard from "@/components/ui/main-course-card";
 import MainSpotCard from "@/components/ui/main-spot-card";
+import MainTravelHeader from "@/components/ui/main-travel-header";
 import GangwonRegionMap, {
   sigunguCodeByRegion,
   type GangwonRegion,
@@ -53,7 +53,7 @@ function PlaceCarouselControls({
   onPrevious: () => void;
   onNext: () => void;
 }) {
-  const buttonClass = "flex h-10 w-10 items-center justify-center rounded-full border border-border/70 bg-white text-foreground transition-colors hover:border-primary/40 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-default disabled:opacity-30 disabled:hover:border-border/70 disabled:hover:text-foreground dark:bg-background";
+  const buttonClass = "flex h-11 w-11 items-center justify-center rounded-full border border-border bg-background text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-default disabled:opacity-25";
 
   return (
     <div role="group" aria-label={`${label} 넘기기`} className="flex shrink-0 gap-2">
@@ -72,9 +72,6 @@ export default function MainPage() {
   const [selectedRegion, setSelectedRegion] = useState<GangwonRegion | null>(null);
   const [isRegionMapOpen, setIsRegionMapOpen] = useState(false);
   const locationName = selectedRegion ?? "강원도";
-  const locationLabel = selectedRegion
-    ? `강원도 / ${selectedRegion}`
-    : "강원도 / 지역 선택";
 
   const closeRegionMap = useCallback(() => setIsRegionMapOpen(false), []);
   const selectRegion = useCallback((region: GangwonRegion) => {
@@ -421,84 +418,22 @@ export default function MainPage() {
   return (
     <div className="min-h-screen bg-background pb-28 text-foreground md:pb-0 md:pt-16">
       <main>
-        <section className="relative overflow-hidden bg-gradient-to-b from-primary/15 via-primary/5 to-background">
-          <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-[70%] rounded-full bg-background/35 blur-2xl" />
-          <div className="pointer-events-none absolute -left-20 top-24 h-36 w-[85%] rounded-full bg-primary/5 blur-2xl" />
+        <MainTravelHeader
+          selectedRegion={selectedRegion}
+          isRegionMapOpen={isRegionMapOpen}
+          onOpenRegions={() => setIsRegionMapOpen(true)}
+          onSelectRegion={setSelectedRegion}
+          weatherList={weatherList}
+          weatherLoading={weatherLoading}
+          weatherError={weatherError}
+        />
 
-          <div className="relative mx-auto max-w-6xl px-5 pb-8 pt-10 sm:px-8 lg:px-10 lg:pt-14">
-            <button
-              type="button"
-              onClick={() => setIsRegionMapOpen(true)}
-              className="flex items-center gap-3 text-3xl font-semibold tracking-tight sm:text-4xl"
-              aria-label={`여행 지역 선택: ${locationLabel}`}
-              aria-haspopup="dialog"
-              aria-expanded={isRegionMapOpen}
-            >
-              {locationLabel}
-              <ChevronDown className="h-6 w-6 stroke-[3]" aria-hidden="true" />
-            </button>
-
-            <section
-              className="mt-8 rounded-lg border bg-background/95 px-3 py-6 shadow-panel sm:px-6 lg:px-8"
-              aria-labelledby="weather-title"
-            >
-              <h1 id="weather-title" className="sr-only">
-                {locationName} 주간 날씨
-              </h1>
-              {weatherLoading && !weatherList ? (
-                <div className="flex h-36 items-center justify-center gap-2 text-sm text-muted-foreground">
-                  <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                  <span>{locationName} 날씨 정보를 불러오는 중...</span>
-                </div>
-              ) : weatherError && !weatherList ? (
-                <div className="flex h-36 items-center justify-center text-sm text-muted-foreground">
-                  <span>날씨 정보를 불러오지 못했습니다.</span>
-                </div>
-              ) : (
-                <div className="grid grid-cols-5">
-                  {(weatherList ?? []).map((weather, index) => {
-                    const WeatherIcon = weather.icon;
-
-                    return (
-                      <article
-                        key={weather.date}
-                        className={`min-w-0 px-1 text-center sm:px-5 ${
-                          index > 0 ? "border-l" : ""
-                        }`}
-                      >
-                        <h2 className="whitespace-nowrap text-xs font-semibold sm:text-lg">
-                          {weather.date} <span className="text-muted-foreground">({weather.day})</span>
-                        </h2>
-                        <WeatherIcon
-                          className={`mx-auto mt-4 h-7 w-7 sm:mt-5 sm:h-10 sm:w-10 ${weather.iconClass}`}
-                          strokeWidth={1.5}
-                          aria-hidden="true"
-                        />
-                        <p className="mt-3 whitespace-nowrap text-xs font-semibold sm:mt-4 sm:text-lg">
-                          {weather.low}° / {weather.high}°
-                        </p>
-                        <p
-                          className={`mt-2 text-sm font-semibold sm:text-base ${
-                            weather.rainProb > 0 ? "text-blue-500" : "text-muted-foreground/70"
-                          }`}
-                        >
-                          {weather.rainProb}%
-                        </p>
-                      </article>
-                    );
-                  })}
-                </div>
-              )}
-            </section>
-          </div>
-        </section>
-
-        <section className="mx-auto max-w-6xl px-5 py-8 sm:px-8 lg:px-10 lg:py-12" aria-labelledby="discover-title">
+        <section className="mx-auto max-w-7xl px-5 py-8 sm:px-8 sm:py-10 lg:px-10" aria-labelledby="discover-title">
           <div className="flex items-center justify-between gap-4">
-            <h2 id="discover-title" className="text-2xl font-bold tracking-tight sm:text-3xl">강원도에서 뭐 하지?</h2>
+            <h2 id="discover-title" className="text-xl font-bold tracking-tight sm:text-2xl">강원도에서 뭐 하지?</h2>
             <Link
               to="/courses/public"
-              className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full px-2 text-xs font-semibold text-primary transition-colors hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:text-sm"
+              className="inline-flex min-h-11 shrink-0 items-center gap-1 rounded-full px-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:text-sm"
               aria-label="강원도에서 뭐 하지? 전체보기"
             >
               전체보기
@@ -506,7 +441,7 @@ export default function MainPage() {
             </Link>
           </div>
           <div className="mt-2 flex items-center justify-between gap-4">
-            <p className="text-sm leading-relaxed text-muted-foreground sm:text-base">
+            <p className="break-keep text-[13px] leading-relaxed text-muted-foreground sm:text-sm">
               다른 여행자들이 공유한 코스로 여행을 계획해 보세요.
             </p>
             {!!guideCourses?.length && !guideCoursesError && (
@@ -562,9 +497,9 @@ export default function MainPage() {
           )}
         </section>
 
-        <section className="mx-auto max-w-6xl px-5 pb-12 sm:px-8 lg:px-10" aria-labelledby="popular-spots-title">
+        <section className="mx-auto max-w-7xl px-5 pb-12 sm:px-8 lg:px-10" aria-labelledby="popular-spots-title">
           <div className="flex items-center justify-between gap-4">
-            <h2 id="popular-spots-title" className="text-2xl font-bold tracking-tight sm:text-3xl">{locationName}의 인기 장소</h2>
+            <h2 id="popular-spots-title" className="text-xl font-bold tracking-tight sm:text-2xl">{locationName}의 인기 장소</h2>
             <button
               type="button"
               onClick={() => {
@@ -574,7 +509,7 @@ export default function MainPage() {
                   navigate("/spots/popular");
                 }
               }}
-              className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full px-2 text-xs font-semibold text-primary transition-colors hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:text-sm"
+              className="inline-flex min-h-11 shrink-0 items-center gap-1 rounded-full px-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:text-sm"
               aria-label="인기 장소 더보기"
             >
               전체보기
@@ -582,7 +517,7 @@ export default function MainPage() {
             </button>
           </div>
           <div className="mt-2 flex items-center justify-between gap-4">
-            <p className="text-sm leading-relaxed text-muted-foreground sm:text-base">여행자들이 많이 찾는 장소를 둘러보세요.</p>
+            <p className="break-keep text-[13px] leading-relaxed text-muted-foreground sm:text-sm">여행자들이 많이 찾는 장소를 둘러보세요.</p>
             {!!popularSpots?.length && !popularSpotsError && (
               <PlaceCarouselControls
                 label="인기 장소"
@@ -644,9 +579,9 @@ export default function MainPage() {
           )}
         </section>
 
-        <section className="mx-auto max-w-6xl px-5 pb-12 sm:px-8 lg:px-10">
+        <section className="mx-auto max-w-7xl px-5 pb-12 sm:px-8 lg:px-10">
           <div className="flex items-center justify-between gap-4">
-            <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">여행 이야기</h2>
+            <h2 className="text-xl font-bold tracking-tight sm:text-2xl">여행 이야기</h2>
             <Link
               to="/boards/create"
               className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-4 py-2 text-xs font-semibold text-primary transition-all hover:bg-primary hover:text-primary-foreground active:scale-95 sm:text-sm"
@@ -674,23 +609,23 @@ export default function MainPage() {
               <div
                 ref={boardCarouselRef}
                 onScroll={updateBoardScrollButtons}
-                className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide sm:gap-4"
+                className="-mx-1 flex gap-4 overflow-x-auto p-1 snap-x snap-mandatory scrollbar-hide sm:gap-5"
               >
                 {(popularBoards ?? []).map((board) => (
                   <Link
                     key={board.boardId}
                     to={`/boards/${board.boardId}`}
-                    className="group block w-[42%] shrink-0 overflow-hidden rounded-lg border bg-background shadow-panel snap-start transition-all duration-200 hover:shadow-md sm:w-56"
+                    className="group block w-[76%] shrink-0 snap-start rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:w-[46%] lg:w-[calc((100%_-_3.75rem)/4)]"
                   >
-                    <div className="relative h-40 sm:h-56 overflow-hidden">
+                    <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-muted">
                       <img
                         className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                         src={board.thumbnail ?? FALLBACK_SPOT_IMAGE}
                         alt={board.title}
                       />
                     </div>
-                    <div className="p-3 sm:p-4">
-                      <h3 className="truncate text-sm font-semibold sm:text-base">{board.title}</h3>
+                    <div className="px-0.5 pb-1 pt-3">
+                      <h3 className="line-clamp-2 text-[15px] font-semibold leading-snug">{board.title}</h3>
                       <div className="mt-1.5 flex items-center gap-3 text-xs text-muted-foreground">
                         <span className="flex items-center gap-1">
                           <Heart className="h-3.5 w-3.5" aria-hidden="true" />

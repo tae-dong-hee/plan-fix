@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { ChevronDown, ChevronLeft, ChevronRight, Heart, MapPin, X } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, Heart, X } from "lucide-react";
 
 import AppNav from "@/components/ui/app-nav";
+import GangwonRegionSymbol from "@/components/ui/gangwon-region-symbol";
 import GangwonRegionMap, {
   sigunguCodeByRegion,
   type GangwonRegion,
@@ -220,7 +221,7 @@ export default function PopularSpotsPage({ mode = "popular" }: PopularSpotsPageP
       <AppNav />
 
       <header className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur-md md:static md:z-auto md:border-b-0 md:bg-transparent md:backdrop-blur-none">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 sm:px-8 md:pb-0 md:pt-8 lg:px-10">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-5 py-4 sm:px-8 md:pb-0 md:pt-8 lg:px-10">
           <div className="flex items-center gap-3">
             <button
               type="button"
@@ -239,12 +240,12 @@ export default function PopularSpotsPage({ mode = "popular" }: PopularSpotsPageP
             <button
               type="button"
               onClick={() => setIsRegionMapOpen(true)}
-              className="flex items-center gap-1.5 rounded-full border border-border bg-muted/50 px-3.5 py-1.5 text-xs font-semibold transition-colors hover:bg-muted sm:text-sm"
+              className="flex min-h-11 items-center gap-2 rounded-xl border border-border bg-background px-3.5 py-2 text-xs font-semibold transition-colors hover:bg-muted sm:text-sm"
               aria-label={`여행 지역 선택: ${locationName}`}
               aria-haspopup="dialog"
               aria-expanded={isRegionMapOpen}
             >
-              <MapPin className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
+              <GangwonRegionSymbol region={selectedRegion} className="h-5 w-5 text-primary" />
               <span>{selectedRegion ?? "전체 지역"}</span>
               <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
             </button>
@@ -252,7 +253,7 @@ export default function PopularSpotsPage({ mode = "popular" }: PopularSpotsPageP
               <button
                 type="button"
                 onClick={handleClearRegion}
-                className="flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:h-8 sm:w-8"
+                className="flex h-11 w-11 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                 aria-label="지역 필터 해제 (전체 보기)"
               >
                 <X className="h-3.5 w-3.5 sm:h-4 sm:w-4" aria-hidden="true" />
@@ -262,7 +263,7 @@ export default function PopularSpotsPage({ mode = "popular" }: PopularSpotsPageP
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-5 pt-8 sm:px-8 md:pt-6 lg:px-10">
+      <main className="mx-auto max-w-7xl px-5 pt-8 sm:px-8 md:pt-6 lg:px-10">
         <div
           role="group"
           aria-label="카테고리 필터"
@@ -276,10 +277,10 @@ export default function PopularSpotsPage({ mode = "popular" }: PopularSpotsPageP
               }
             }}
             aria-pressed={selectedCategory === null}
-            className={`shrink-0 rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-colors sm:text-sm ${
+            className={`min-h-11 shrink-0 rounded-full border px-4 py-2 text-xs font-semibold transition-colors sm:text-sm ${
               selectedCategory === null
-                ? "border-primary bg-primary text-primary-foreground"
-                : "border-border bg-muted/50 text-foreground hover:bg-muted"
+                ? "border-foreground bg-foreground text-background"
+                : "border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground"
             }`}
           >
             전체
@@ -290,10 +291,10 @@ export default function PopularSpotsPage({ mode = "popular" }: PopularSpotsPageP
               type="button"
               onClick={() => handleToggleCategory(category)}
               aria-pressed={selectedCategory === category}
-              className={`shrink-0 rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-colors sm:text-sm ${
+              className={`min-h-11 shrink-0 rounded-full border px-4 py-2 text-xs font-semibold transition-colors sm:text-sm ${
                 selectedCategory === category
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-border bg-muted/50 text-foreground hover:bg-muted"
+                  ? "border-foreground bg-foreground text-background"
+                  : "border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground"
               }`}
             >
               {category}
@@ -327,7 +328,7 @@ export default function PopularSpotsPage({ mode = "popular" }: PopularSpotsPageP
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-x-4 gap-y-7 sm:grid-cols-3 sm:gap-x-5 sm:gap-y-8 lg:grid-cols-4">
               {(popularSpots ?? []).map((spot) => {
                 const isLiked =
                   likedSpots[spot.spotId] !== undefined
@@ -336,41 +337,39 @@ export default function PopularSpotsPage({ mode = "popular" }: PopularSpotsPageP
                 const isLoading = !!loadingSpots[spot.spotId];
 
                 return (
-                  <Link
-                    key={spot.spotId}
-                    to={`/spots/${spot.spotId}`}
-                    className="group block overflow-hidden rounded-lg border bg-background shadow-panel transition-all duration-200 hover:shadow-md"
-                  >
-                    <div className="relative aspect-[4/3] w-full overflow-hidden">
-                      <img
-                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                        src={spot.thumbnail ?? FALLBACK_SPOT_IMAGE}
-                        alt={spot.title}
-                      />
-                      <span className="absolute left-2.5 top-2.5 rounded-full bg-background/95 px-2.5 py-1 text-xs font-medium shadow sm:left-3 sm:top-3 sm:px-3 sm:py-1.5">
-                        {spot.category}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={(event) => handleToggleLike(event, spot.spotId)}
-                        disabled={isLoading}
-                        className="absolute right-2.5 top-2.5 flex h-8 w-8 items-center justify-center rounded-full bg-black/40 backdrop-blur-sm transition-all hover:bg-black/60 active:scale-90 disabled:opacity-60 sm:right-3 sm:top-3"
-                        aria-pressed={isLiked}
-                        aria-label={isLiked ? `${spot.title} 좋아요 취소` : `${spot.title} 좋아요`}
-                      >
-                        <Heart
-                          className={`h-4.5 w-4.5 transition-colors ${
-                            isLiked ? "fill-rose-500 text-rose-500" : "text-white/90"
-                          }`}
-                          strokeWidth={2}
-                          aria-hidden="true"
+                  <article key={spot.spotId} className="relative">
+                    <Link
+                      to={`/spots/${spot.spotId}`}
+                      className="group block rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                    >
+                      <div className="relative aspect-square overflow-hidden rounded-2xl bg-muted">
+                        <img
+                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105 motion-reduce:transform-none"
+                          src={spot.thumbnail ?? FALLBACK_SPOT_IMAGE}
+                          alt={spot.title}
+                          loading="lazy"
                         />
-                      </button>
-                    </div>
-                    <div className="p-3 sm:p-4">
-                      <h2 className="truncate text-sm font-semibold sm:text-base">{spot.title}</h2>
-                    </div>
-                  </Link>
+                      </div>
+                      <div className="px-0.5 pb-1 pt-3">
+                        <h2 className="line-clamp-2 text-[15px] font-semibold leading-snug">{spot.title}</h2>
+                        <p className="mt-1.5 text-[13px] text-muted-foreground">{spot.category}</p>
+                      </div>
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={(event) => handleToggleLike(event, spot.spotId)}
+                      disabled={isLoading}
+                      className="absolute right-2 top-2 flex h-11 w-11 items-center justify-center rounded-full bg-white/95 shadow-sm transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:opacity-60"
+                      aria-pressed={isLiked}
+                      aria-label={isLiked ? `${spot.title} 좋아요 취소` : `${spot.title} 좋아요`}
+                    >
+                      <Heart
+                        className={`h-5 w-5 ${isLiked ? "fill-primary text-primary" : "text-zinc-700"}`}
+                        strokeWidth={1.8}
+                        aria-hidden="true"
+                      />
+                    </button>
+                  </article>
                 );
               })}
             </div>

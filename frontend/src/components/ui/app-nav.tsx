@@ -112,34 +112,34 @@ export default function AppNav({ className = "" }: AppNavProps) {
       {isProfileMenuOpen ? (
         <div
           data-testid="profile-menu-backdrop"
-          className="fixed inset-0 z-40 bg-foreground/10 backdrop-blur-[1px]"
+          className="fixed inset-0 z-40 bg-foreground/5"
           onClick={() => setIsProfileMenuOpen(false)}
           aria-hidden="true"
         />
       ) : null}
 
       <nav
-        className={`fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 shadow-[0_-8px_32px_hsl(var(--foreground)/0.08)] backdrop-blur-md md:bottom-auto md:top-0 md:border-t-0 md:border-b md:shadow-sm md:backdrop-blur-md ${className}`}
+        className={`fixed inset-x-0 bottom-0 z-40 border-t border-border/70 bg-background md:bottom-auto md:top-0 md:border-t-0 md:border-b ${className}`}
         aria-label="하단 메뉴"
       >
-        <div className="mx-auto h-20 max-w-3xl px-2 sm:h-24 md:flex md:h-16 md:max-w-6xl md:items-center md:justify-between md:px-6 lg:px-8">
+        <div className="mx-auto h-20 max-w-7xl px-5 sm:h-24 sm:px-8 md:flex md:h-16 md:items-center md:justify-between lg:px-10">
           <Link
             to="/main"
-            className="hidden items-center gap-2.5 text-xl font-bold tracking-tight text-foreground transition-opacity hover:opacity-90 md:flex"
+            className="hidden items-center gap-2.5 rounded-lg text-xl font-bold tracking-[-0.06em] text-foreground transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-4 md:flex"
             aria-label="PlanFix 홈"
           >
             <img
               src="/logo.png"
               alt=""
               aria-hidden="true"
-              className="h-8 w-8 rounded-lg object-cover shadow-sm bg-black"
+              className="h-8 w-8 rounded-[10px] bg-black object-cover"
             />
             <span>
               Plan<span className="text-primary">Fix</span>
             </span>
           </Link>
 
-          <div className="grid h-full grid-cols-4 md:flex md:items-center md:gap-1.5 lg:gap-2">
+          <div className="grid h-full grid-cols-4 md:flex md:items-center md:gap-1 lg:gap-2">
             {navigationItems.map((item) => {
               const Icon = item.icon;
               const isProfile = item.label === "프로필";
@@ -150,15 +150,15 @@ export default function AppNav({ className = "" }: AppNavProps) {
                 <div
                   key={item.label}
                   ref={isProfile ? profileContainerRef : undefined}
-                  className="relative flex items-center justify-center"
+                  className="relative flex h-full items-center justify-center"
                 >
                   <button
                     type="button"
                     onClick={() => handleItemClick(item.label)}
-                    className={`relative flex h-full w-full flex-col items-center justify-center gap-1 text-xs transition-colors sm:text-sm md:h-10 md:w-auto md:flex-row md:gap-2 md:rounded-full md:px-4 md:py-2 md:text-sm md:font-medium md:transition-all ${
+                    className={`relative flex h-full w-full flex-col items-center justify-center gap-1.5 text-[11px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary sm:text-xs md:w-auto md:flex-row md:gap-2 md:px-4 md:text-[13px] md:font-medium ${
                       item.active
-                        ? "font-semibold text-primary md:bg-primary/10 md:text-primary md:hover:bg-primary/15"
-                        : "text-muted-foreground hover:text-primary md:hover:bg-muted/70 md:hover:text-foreground"
+                        ? "font-semibold text-primary"
+                        : "text-muted-foreground hover:text-foreground"
                     }`}
                     aria-current={item.active ? "page" : undefined}
                     aria-expanded={
@@ -177,11 +177,11 @@ export default function AppNav({ className = "" }: AppNavProps) {
                     }
                   >
                     {item.active ? (
-                      <span className="absolute inset-y-2 aspect-square rounded-full bg-primary/10 md:hidden" />
+                      <span className="absolute top-0 h-0.5 w-6 rounded-b-full bg-primary md:bottom-0 md:left-4 md:right-4 md:top-auto md:w-auto md:rounded-b-none md:rounded-t-full" />
                     ) : null}
                     <Icon
-                      className="relative h-6 w-6 sm:h-7 sm:w-7 md:h-4 md:w-4"
-                      strokeWidth={item.active ? 2.2 : 1.8}
+                      className="relative h-[22px] w-[22px] sm:h-6 sm:w-6 md:h-[18px] md:w-[18px]"
+                      strokeWidth={item.active ? 2 : 1.7}
                       aria-hidden="true"
                     />
                     <span className="relative">{item.label}</span>
@@ -191,9 +191,9 @@ export default function AppNav({ className = "" }: AppNavProps) {
                     <div
                       role="menu"
                       aria-label="프로필 메뉴"
-                      className="absolute bottom-[calc(100%+8px)] right-0 z-50 min-w-[120px] rounded-xl border border-border bg-background/95 p-1 shadow-lg backdrop-blur-md sm:bottom-[calc(100%+12px)] sm:min-w-[140px] md:bottom-auto md:top-[calc(100%+8px)] md:min-w-[140px] md:shadow-lg"
+                      className="absolute bottom-[calc(100%+8px)] right-0 z-50 min-w-[160px] rounded-2xl border border-border/70 bg-background p-1.5 shadow-[0_8px_30px_hsl(var(--foreground)/0.08)] sm:bottom-[calc(100%+12px)] md:bottom-auto md:top-[calc(100%+8px)]"
                     >
-                      <Link to="/profile" role="menuitem" onClick={() => setIsProfileMenuOpen(false)} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium hover:bg-muted/70">
+                      <Link to="/profile" role="menuitem" onClick={() => setIsProfileMenuOpen(false)} className="flex min-h-11 w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium transition-colors hover:bg-muted/70">
                         <UserRound className="h-4 w-4" aria-hidden="true" />
                         <span>프로필 보기</span>
                       </Link>
@@ -202,7 +202,7 @@ export default function AppNav({ className = "" }: AppNavProps) {
                         role="menuitem"
                         onClick={handleLogout}
                         disabled={isLoggingOut}
-                        className="flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-destructive transition-colors hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm md:justify-start md:px-3 md:py-2 md:text-sm"
+                        className="flex min-h-11 w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         <LogOut className="h-4 w-4 shrink-0" aria-hidden="true" />
                         <span>{isLoggingOut ? "로그아웃 중..." : "로그아웃"}</span>
