@@ -6,7 +6,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Heart,
-  Info,
   Loader2,
   MessageSquare,
 } from "lucide-react";
@@ -489,13 +488,6 @@ export default function MainPage() {
                   })}
                 </div>
               )}
-
-              <div className="mt-7 flex items-center justify-between gap-4 border-t pt-5">
-                <p className="flex items-center gap-2 text-sm text-muted-foreground sm:text-base">
-                  제공&nbsp; Open-Meteo
-                  <Info className="h-4 w-4" aria-hidden="true" />
-                </p>
-              </div>
             </section>
           </div>
         </section>

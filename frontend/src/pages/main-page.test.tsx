@@ -792,7 +792,6 @@ describe("MainPage weather section", () => {
     expect(screen.getByText("(수)")).toBeInTheDocument();
     expect(screen.getByText("19° / 28°")).toBeInTheDocument();
     expect(screen.getByText("20%")).toBeInTheDocument();
-    expect(screen.getByText(/Open-Meteo/)).toBeInTheDocument();
   });
 
   test("fetches weather for selected region when region is changed", async () => {
