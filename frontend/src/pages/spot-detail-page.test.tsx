@@ -152,13 +152,13 @@ test("renders extra photos as a gallery when images are present", async () => {
   renderAt("1");
 
   await screen.findByRole("heading", { name: "국립대관령자연휴양림" });
-  // 메인 사진 1장 + 갤러리 2장
-  expect(screen.getAllByRole("img")).toHaveLength(3);
-  expect(screen.getByAltText("국립대관령자연휴양림 사진 1")).toHaveAttribute(
+  // 메인 사진 1장 + 대표 사진을 포함한 갤러리 3장
+  expect(screen.getAllByRole("img")).toHaveLength(4);
+  expect(screen.getByAltText("국립대관령자연휴양림 사진 2")).toHaveAttribute(
     "src",
     "https://example.com/1.jpg",
   );
-  expect(screen.getByAltText("국립대관령자연휴양림 사진 2")).toHaveAttribute(
+  expect(screen.getByAltText("국립대관령자연휴양림 사진 3")).toHaveAttribute(
     "src",
     "https://example.com/2.jpg",
   );
@@ -265,6 +265,144 @@ function spotFixture(overrides: Partial<SpotDetail>): SpotDetail {
     ...overrides,
   };
 }
+
+test("renders tour markup as readable plain text with line breaks and decoded entities", async () => {
+  mockedFetchSpotDetail.mockResolvedValue(spotFixture({
+    description: '<strong>바다 &amp; 산</strong><BR />가까운&nbsp;여행<img src="invalid" onerror="alert(1)">',
+    info: {
+      tel: null,
+      parkInfo: null,
+      timeInfo: "<b>11:00~20:00</b><br>준비시간 14:30~16:30<br/>마지막 주문 19:30<BR />매장 이용",
+      restInfo: null,
+      firstMenu: null,
+      treatMenu: null,
+      lcnsno: null,
+    },
+  }));
+
+  renderAt("1");
+  await screen.findByRole("heading", { name: "정동진" });
+
+  const description = screen.getByText(/바다 & 산/);
+  expect(description.textContent?.replace(/\u00a0/g, " ")).toBe("바다 & 산\n가까운 여행");
+  expect(description.querySelector("strong, img")).toBeNull();
+  expect(screen.getByText(/11:00~20:00/, { selector: "dd" }).textContent).toBe(
+    "11:00~20:00\n준비시간 14:30~16:30\n마지막 주문 19:30\n매장 이용",
+  );
+});
+
+test("omits usage information when its fields contain only empty markup or whitespace", async () => {
+  mockedFetchSpotDetail.mockResolvedValue(spotFixture({
+    info: {
+      tel: "",
+      parkInfo: "   ",
+      timeInfo: "<br><BR />",
+      restInfo: "&nbsp;",
+      firstMenu: "<span> </span>",
+      treatMenu: null,
+      lcnsno: "\n\t",
+    },
+  }));
+
+  renderAt("1");
+  await screen.findByRole("heading", { name: "정동진" });
+
+  expect(screen.queryByRole("heading", { name: "이용 안내" })).not.toBeInTheDocument();
+  expect(screen.queryByText("이용시간")).not.toBeInTheDocument();
+});
+
+test("preserves the address and exact source hours while discarding active markup", async () => {
+  mockedFetchSpotDetail.mockResolvedValue(spotFixture({
+    title: "봉평막국수",
+    address: '강원특별자치도&nbsp;삼척시<BR data-source="tourapi">회강길 609-28 (자원동)',
+    description: '<p>방문 안내</p><script>alert("untrusted")</script><style>body { display: none; }</style><iframe src="https://example.com/untrusted">숨김</iframe><img src="https://example.com/untrusted" onerror="alert(1)">',
+    info: {
+      tel: "033-575-7676",
+      parkInfo: null,
+      timeInfo: '- 11:00&#126;20:00<br data-source="tourapi">- 준비시간 14:30&#x7e;16:30',
+      restInfo: "매주 수요일",
+      firstMenu: null,
+      treatMenu: null,
+      lcnsno: null,
+    },
+  }));
+
+  renderAt("1");
+  await screen.findByRole("heading", { name: "봉평막국수" });
+
+  const address = screen.getByText(/강원특별자치도 삼척시/);
+  expect(address.textContent).toBe("강원특별자치도 삼척시\n회강길 609-28 (자원동)");
+  expect(address).toHaveClass("whitespace-pre-line");
+  const hours = screen.getByText(/11:00~20:00/, { selector: "dd" });
+  expect(hours.textContent).toBe("- 11:00~20:00\n- 준비시간 14:30~16:30");
+  expect(hours).toHaveClass("whitespace-pre-line");
+  const description = screen.getByText("방문 안내");
+  expect(description.querySelector("script, style, iframe, img")).toBeNull();
+  expect(screen.queryByText(/untrusted|숨김|display: none/)).not.toBeInTheDocument();
+  expect(screen.getAllByRole("img")).toHaveLength(1);
+});
+
+test("gallery selection and wrapping controls keep the main image, thumbnail and counter in sync", async () => {
+  mockedFetchSpotDetail.mockResolvedValue(spotFixture({
+    thumbnail: "https://example.com/main.jpg",
+    images: ["https://example.com/1.jpg", "https://example.com/main.jpg", "https://example.com/2.jpg"],
+  }));
+
+  renderAt("1");
+  await screen.findByRole("heading", { name: "정동진" });
+
+  const coverPhoto = screen.getByRole("button", { name: "정동진 사진 1 보기" });
+  const firstPhoto = screen.getByRole("button", { name: "정동진 사진 2 보기" });
+  const secondPhoto = screen.getByRole("button", { name: "정동진 사진 3 보기" });
+  const counter = screen.getByRole("status", { name: "현재 사진" });
+  expect(screen.getAllByRole("img")).toHaveLength(4);
+  expect(coverPhoto).toHaveAttribute("aria-pressed", "true");
+  expect(counter).toHaveTextContent("1 / 3");
+
+  fireEvent.click(firstPhoto);
+  expect(screen.getByRole("img", { name: "정동진" })).toHaveAttribute("src", "https://example.com/1.jpg");
+  expect(firstPhoto).toHaveAttribute("aria-pressed", "true");
+  expect(secondPhoto).toHaveAttribute("aria-pressed", "false");
+  expect(counter).toHaveTextContent("2 / 3");
+
+  fireEvent.click(secondPhoto);
+  expect(screen.getByRole("img", { name: "정동진" })).toHaveAttribute("src", "https://example.com/2.jpg");
+  expect(firstPhoto).toHaveAttribute("aria-pressed", "false");
+  expect(secondPhoto).toHaveAttribute("aria-pressed", "true");
+  expect(counter).toHaveTextContent("3 / 3");
+
+  fireEvent.click(screen.getByRole("button", { name: "다음 사진" }));
+  expect(screen.getByRole("img", { name: "정동진" })).toHaveAttribute("src", "https://example.com/main.jpg");
+  expect(coverPhoto).toHaveAttribute("aria-pressed", "true");
+  expect(counter).toHaveTextContent("1 / 3");
+
+  fireEvent.click(screen.getByRole("button", { name: "이전 사진" }));
+  expect(screen.getByRole("img", { name: "정동진" })).toHaveAttribute("src", "https://example.com/2.jpg");
+  expect(secondPhoto).toHaveAttribute("aria-pressed", "true");
+  expect(counter).toHaveTextContent("3 / 3");
+});
+
+test("replaces failed photos with the fallback image", async () => {
+  mockedFetchSpotDetail.mockResolvedValue(spotFixture({
+    thumbnail: "https://example.com/broken-main.jpg",
+    images: ["https://example.com/broken-gallery.jpg"],
+  }));
+
+  renderAt("1");
+  await screen.findByRole("heading", { name: "정동진" });
+
+  const mainImage = screen.getByRole("img", { name: "정동진" });
+  fireEvent.error(mainImage);
+  const fallbackSource = mainImage.getAttribute("src");
+  expect(fallbackSource).toBeTruthy();
+  expect(fallbackSource).not.toBe("https://example.com/broken-main.jpg");
+  fireEvent.error(mainImage);
+  expect(mainImage).toHaveAttribute("src", fallbackSource);
+
+  const galleryImage = screen.getByAltText("정동진 사진 2");
+  fireEvent.error(galleryImage);
+  expect(galleryImage).toHaveAttribute("src", fallbackSource);
+});
 
 test("클릭하면 좋아요를 요청하고 하트와 카운트를 갱신한다", async () => {
   mockedFetchSpotDetail.mockResolvedValue(spotFixture({ isLiked: false, likeCount: 3 }));

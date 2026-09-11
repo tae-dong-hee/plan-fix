@@ -1,6 +1,22 @@
-import { useEffect, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { ChevronLeft, Heart } from "lucide-react";
+import { useEffect, useMemo, useRef, useState, type SyntheticEvent } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import {
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  Clock3,
+  Eye,
+  Heart,
+  Images,
+  Info,
+  MapPin,
+  ParkingCircle,
+  Phone,
+  ReceiptText,
+  Utensils,
+  UtensilsCrossed,
+  type LucideIcon,
+} from "lucide-react";
 
 import { LoaderFour } from "@/components/ui/unique-loader-components";
 import AppNav from "@/components/ui/app-nav";
@@ -16,22 +32,54 @@ import {
 const FALLBACK_SPOT_IMAGE =
   "https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=900&q=85";
 
-// [라벨, info 필드]. tel~restInfo는 공통, 나머지 셋은 음식점만 값이 있어 있을 때만 보인다.
-const TOUR_INFO_FIELDS: { label: string; key: keyof SpotTourInfo }[] = [
-  { label: "전화", key: "tel" },
-  { label: "주차", key: "parkInfo" },
-  { label: "이용시간", key: "timeInfo" },
-  { label: "쉬는날", key: "restInfo" },
-  { label: "대표메뉴", key: "firstMenu" },
-  { label: "취급메뉴", key: "treatMenu" },
-  { label: "인허가번호", key: "lcnsno" },
+const TOUR_INFO_FIELDS: { label: string; key: keyof SpotTourInfo; icon: LucideIcon }[] = [
+  { label: "이용시간", key: "timeInfo", icon: Clock3 },
+  { label: "쉬는날", key: "restInfo", icon: CalendarDays },
+  { label: "전화", key: "tel", icon: Phone },
+  { label: "주차", key: "parkInfo", icon: ParkingCircle },
+  { label: "대표메뉴", key: "firstMenu", icon: UtensilsCrossed },
+  { label: "취급메뉴", key: "treatMenu", icon: Utensils },
+  { label: "인허가번호", key: "lcnsno", icon: ReceiptText },
 ];
+
+// 관광 API의 HTML은 실행하지 않고, 줄바꿈과 엔티티만 읽기 쉬운 텍스트로 변환한다.
+function formatTourText(value: string | null | undefined): string {
+  if (!value) return "";
+  // Detached template contents stay inert, including remote images. Return text
+  // only; none of the API's elements are ever inserted into the live page.
+  const template = document.createElement("template");
+  template.innerHTML = value;
+  template.content.querySelectorAll("script, style, noscript, iframe, object, embed, template")
+    .forEach((element) => element.remove());
+  template.content.querySelectorAll("br").forEach((element) => element.replaceWith("\n"));
+  template.content.querySelectorAll("p, div, li, tr, blockquote, pre")
+    .forEach((element) => {
+      element.prepend("\n");
+      element.append("\n");
+    });
+  return (template.content.textContent ?? "")
+    .replace(/\r\n?/g, "\n")
+    .replace(/\u00a0/g, " ")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n[ \t]+/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+function handleImageError(event: SyntheticEvent<HTMLImageElement>) {
+  if (event.currentTarget.src !== FALLBACK_SPOT_IMAGE) {
+    event.currentTarget.src = FALLBACK_SPOT_IMAGE;
+  }
+}
+
+const FOCUS_RING = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background";
 
 export default function SpotDetailPage() {
   const { spotId } = useParams<{ spotId: string }>();
   const navigate = useNavigate();
   // undefined = 로딩 중, null = 없음(404) 또는 에러
   const [spot, setSpot] = useState<SpotDetail | null | undefined>(undefined);
+  const [selectedImage, setSelectedImage] = useState(0);
 
   // 이 API는 호출할 때마다 조회수를 늘린다. React.StrictMode는 개발 모드에서 effect를
   // 마운트→클린업→재마운트로 일부러 두 번 실행하는데, 이때 매번 fetch를 새로 호출하면
@@ -43,6 +91,7 @@ export default function SpotDetailPage() {
     const currentSpotId = spotId ?? "";
     let cancelled = false;
     setSpot(undefined);
+    setSelectedImage(0);
 
     let request = inFlightRequest.current;
     if (!request || request.spotId !== currentSpotId) {
@@ -74,6 +123,18 @@ export default function SpotDetailPage() {
   }, [spotId]);
 
   const [isTogglingLike, setIsTogglingLike] = useState(false);
+  const galleryImages = useMemo(
+    () => spot ? Array.from(new Set([spot.thumbnail, ...spot.images].filter((image): image is string => Boolean(image?.trim())))) : [],
+    [spot?.thumbnail, spot?.images],
+  );
+  const address = useMemo(() => formatTourText(spot?.address), [spot?.address]);
+  const description = useMemo(() => formatTourText(spot?.description), [spot?.description]);
+  const infoFields = useMemo(
+    () => TOUR_INFO_FIELDS.map((field) => ({ ...field, value: formatTourText(spot?.info?.[field.key]) }))
+      .filter(({ value }) => value),
+    [spot?.info],
+  );
+  const activeImage = galleryImages[selectedImage] ?? FALLBACK_SPOT_IMAGE;
 
   const goBack = () => navigate(-1);
 
@@ -112,103 +173,181 @@ export default function SpotDetailPage() {
     <div className="min-h-screen bg-background pb-28 text-foreground md:pb-16 md:pt-16">
       <AppNav />
 
-      <header className="mx-auto flex max-w-3xl items-center px-5 py-4 sm:px-8">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-[30rem] bg-gradient-to-b from-primary/[0.08] to-transparent" aria-hidden="true" />
+
+      <header className="relative mx-auto flex max-w-6xl items-center gap-3 px-5 py-5 sm:px-8 md:py-7 lg:px-10">
         <button
           type="button"
           onClick={goBack}
-          className="flex h-10 w-10 items-center justify-center rounded-full bg-muted transition-colors hover:bg-primary/10 hover:text-primary"
+          className={`flex h-11 w-11 items-center justify-center rounded-full border border-primary/10 bg-background transition-colors hover:bg-primary/10 hover:text-primary ${FOCUS_RING}`}
           aria-label="뒤로 가기"
         >
           <ChevronLeft className="h-5 w-5" aria-hidden="true" />
         </button>
+        <Link to="/spots/popular" className={`rounded-md text-sm text-muted-foreground transition-colors hover:text-primary ${FOCUS_RING}`}>
+          인기 장소
+        </Link>
+        <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/60" aria-hidden="true" />
+        <span className="text-sm font-medium">장소 상세</span>
       </header>
 
       {spot === undefined ? (
-        <div className="flex justify-center py-24">
+        <div className="relative flex justify-center py-24">
           <LoaderFour text="장소 정보를 불러오는 중..." />
         </div>
       ) : spot === null ? (
-        <div className="flex flex-col items-center gap-4 px-5 py-24 text-center">
+        <div className="relative mx-5 flex flex-col items-center gap-4 rounded-3xl border border-primary/10 bg-background px-5 py-24 text-center sm:mx-auto sm:max-w-xl">
+          <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+            <MapPin className="h-6 w-6" aria-hidden="true" />
+          </span>
           <p className="text-base text-muted-foreground">존재하지 않는 장소예요.</p>
           <button
             type="button"
             onClick={goBack}
-            className="rounded-full bg-muted px-5 py-3 text-sm font-semibold transition-colors hover:bg-primary/10 hover:text-primary"
+            className={`rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 ${FOCUS_RING}`}
           >
             돌아가기
           </button>
         </div>
       ) : (
-        <main className="mx-auto max-w-3xl px-5 pb-16 sm:px-8">
-          <div className="relative h-64 overflow-hidden rounded-lg sm:h-96">
-            <img
-              className="h-full w-full object-cover"
-              src={spot.thumbnail ?? FALLBACK_SPOT_IMAGE}
-              alt={spot.title}
-            />
+        <main className="relative mx-auto max-w-6xl px-5 pb-8 sm:px-8 lg:px-10">
+          <div className="mb-7 flex flex-col items-start justify-between gap-5 sm:mb-8 sm:flex-row sm:items-center sm:gap-8">
+            <div className="min-w-0">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/10 bg-primary/[0.08] px-3 py-1.5 text-xs font-semibold text-primary">
+                <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
+                {spot.category}
+              </span>
+              <h1 className="mt-3 break-words text-3xl font-bold leading-tight tracking-tight sm:text-4xl">{spot.title}</h1>
+              {address ? (
+                <p className="mt-3 flex items-start gap-1.5 text-sm leading-relaxed text-muted-foreground">
+                  <MapPin className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                  <span className="min-w-0 whitespace-pre-line break-words">{address}</span>
+                </p>
+              ) : null}
+              <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-muted-foreground sm:text-sm">
+                <span className="inline-flex items-center gap-1.5">
+                  <Heart className="h-4 w-4 text-primary/70" aria-hidden="true" />
+                  좋아요 {spot.likeCount}
+                </span>
+                <span className="h-3 w-px bg-border" aria-hidden="true" />
+                <span className="inline-flex items-center gap-1.5">
+                  <Eye className="h-4 w-4" aria-hidden="true" />
+                  조회수 {spot.viewCount}
+                </span>
+              </div>
+            </div>
             <button
               type="button"
               onClick={toggleLike}
               disabled={isTogglingLike}
-              className="absolute right-4 top-4 flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full bg-black/40 backdrop-blur-md transition-all hover:bg-black/60 hover:scale-105 active:scale-95 disabled:opacity-60"
+              className={`inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-full border px-5 py-3 text-sm font-semibold transition-colors disabled:cursor-wait disabled:opacity-60 ${FOCUS_RING} ${
+                spot.isLiked
+                  ? "border-primary bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
+                  : "border-primary/20 bg-background text-primary shadow-sm hover:bg-primary/5"
+              }`}
               aria-pressed={spot.isLiked}
               aria-label={spot.isLiked ? `${spot.title} 좋아요 취소` : `${spot.title} 좋아요`}
             >
               <Heart
-                className={`h-5 w-5 sm:h-6 sm:w-6 transition-colors ${
-                  spot.isLiked ? "fill-rose-500 text-rose-500" : "text-white/90"
-                }`}
+                className={`h-4 w-4 ${spot.isLiked ? "fill-current" : ""}`}
                 strokeWidth={2}
                 aria-hidden="true"
               />
+              {spot.isLiked ? "위시리스트에 담았어요" : "위시리스트에 담기"}
             </button>
           </div>
 
-          <span className="mt-5 inline-block rounded-full bg-muted px-3 py-1.5 text-xs font-medium sm:text-sm">
-            {spot.category}
-          </span>
-          <h1 className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">{spot.title}</h1>
-          {spot.address ? (
-            <p className="mt-2 text-sm text-muted-foreground sm:text-base">{spot.address}</p>
-          ) : null}
-
-          {spot.description ? (
-            <p className="mt-6 whitespace-pre-line text-sm leading-relaxed sm:text-base">
-              {spot.description}
-            </p>
-          ) : null}
-
-          <div className="mt-6 flex items-center gap-4 text-sm text-muted-foreground sm:text-base">
-            <span>좋아요 {spot.likeCount}</span>
-            <span>조회수 {spot.viewCount}</span>
-          </div>
-
-          {spot.images.length > 0 ? (
-            <div className="mt-8 flex gap-3 overflow-x-auto pb-2">
-              {spot.images.map((image, index) => (
-                <img
-                  key={image}
-                  className="h-28 w-40 shrink-0 rounded-lg object-cover sm:h-36 sm:w-52"
-                  src={image}
-                  alt={`${spot.title} 사진 ${index + 1}`}
-                />
-              ))}
-            </div>
-          ) : null}
-
-          {spot.info ? (
-            <div className="mt-8 border-t pt-6">
-              <h2 className="text-lg font-semibold sm:text-xl">이용 안내</h2>
-              <dl className="mt-3 space-y-2 text-sm sm:text-base">
-                {TOUR_INFO_FIELDS.filter(({ key }) => spot.info?.[key]).map(({ label, key }) => (
-                  <div key={key} className="flex gap-3">
-                    <dt className="w-20 shrink-0 text-muted-foreground">{label}</dt>
-                    <dd>{spot.info?.[key]}</dd>
+          <div className={`grid items-start gap-6 lg:gap-7 ${infoFields.length > 0 ? "lg:grid-cols-[minmax(0,1fr)_360px]" : ""}`}>
+            <div className="min-w-0 space-y-6">
+              <section aria-label="장소 사진" className="overflow-hidden rounded-3xl border border-primary/10 bg-white p-2 shadow-sm dark:bg-background sm:p-3">
+                <div className="relative aspect-[4/3] overflow-hidden rounded-[18px] bg-muted sm:aspect-[16/10]">
+                  <img
+                    className="h-full w-full object-cover"
+                    src={activeImage}
+                    alt={spot.title}
+                    onError={handleImageError}
+                  />
+                  {galleryImages.length > 0 ? (
+                    <div className="absolute bottom-4 right-4 flex items-center gap-1.5 rounded-full bg-black/50 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-md" role="status" aria-label="현재 사진">
+                      <Images className="h-3.5 w-3.5" aria-hidden="true" />
+                      {selectedImage + 1} / {galleryImages.length}
+                    </div>
+                  ) : null}
+                  {galleryImages.length > 1 ? (
+                    <>
+                      <button type="button" aria-label="이전 사진" onClick={() => setSelectedImage((index) => (index - 1 + galleryImages.length) % galleryImages.length)} className={`absolute left-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-zinc-800 shadow-sm transition-colors hover:bg-white ${FOCUS_RING}`}>
+                        <ChevronLeft className="h-5 w-5" aria-hidden="true" />
+                      </button>
+                      <button type="button" aria-label="다음 사진" onClick={() => setSelectedImage((index) => (index + 1) % galleryImages.length)} className={`absolute right-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-zinc-800 shadow-sm transition-colors hover:bg-white ${FOCUS_RING}`}>
+                        <ChevronRight className="h-5 w-5" aria-hidden="true" />
+                      </button>
+                    </>
+                  ) : null}
+                </div>
+                {galleryImages.length > 1 ? (
+                  <div className="mt-2 flex gap-2 overflow-x-auto p-1 sm:mt-3 sm:gap-3" aria-label="사진 선택">
+                    {galleryImages.map((image, index) => (
+                      <button
+                        key={image}
+                        type="button"
+                        aria-label={`${spot.title} 사진 ${index + 1} 보기`}
+                        aria-pressed={activeImage === image}
+                        onClick={() => setSelectedImage(index)}
+                        className={`group h-20 w-28 shrink-0 overflow-hidden rounded-xl border-2 transition-colors sm:h-24 sm:w-32 ${FOCUS_RING} ${activeImage === image ? "border-primary" : "border-transparent opacity-70 hover:opacity-100"}`}
+                      >
+                        <img
+                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105 motion-reduce:transform-none motion-reduce:transition-none"
+                          src={image}
+                          alt={`${spot.title} 사진 ${index + 1}`}
+                          loading="lazy"
+                          onError={handleImageError}
+                        />
+                      </button>
+                    ))}
                   </div>
-                ))}
-              </dl>
+                ) : null}
+              </section>
+
+              {description ? (
+                <section aria-labelledby="spot-description-heading" className="rounded-3xl border border-primary/10 bg-white p-6 shadow-sm dark:bg-background sm:p-7">
+                  <div className="mb-4 flex items-center gap-2.5">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/[0.08] text-primary">
+                      <MapPin className="h-4 w-4" aria-hidden="true" />
+                    </span>
+                    <h2 id="spot-description-heading" className="text-lg font-bold tracking-tight">이런 곳이에요</h2>
+                  </div>
+                  <p className="whitespace-pre-line break-words text-sm leading-7 text-foreground/80">{description}</p>
+                </section>
+              ) : null}
             </div>
-          ) : null}
+
+            {infoFields.length > 0 ? (
+              <section aria-labelledby="spot-info-heading" className="min-w-0 overflow-hidden rounded-3xl border border-primary/10 bg-white shadow-sm dark:bg-background lg:sticky lg:top-24">
+                <div className="border-b border-primary/[0.08] bg-primary/[0.04] px-6 py-5">
+                  <div className="flex items-center gap-2.5">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                      <Info className="h-4 w-4" aria-hidden="true" />
+                    </span>
+                    <h2 id="spot-info-heading" className="text-lg font-bold tracking-tight">이용 안내</h2>
+                  </div>
+                  <p className="mt-2 text-xs leading-relaxed text-muted-foreground">방문 전에 필요한 정보를 확인해 보세요.</p>
+                </div>
+                <dl className="divide-y divide-border/50 px-6">
+                  {infoFields.map(({ label, key, icon: Icon, value }) => (
+                    <div key={key} className="grid grid-cols-[1.125rem_minmax(0,1fr)] gap-x-3 py-4">
+                      <Icon className="mt-0.5 h-4 w-4 text-primary/70" aria-hidden="true" />
+                      <dt className="text-xs font-medium leading-5 text-muted-foreground">{label}</dt>
+                      <dd className={`col-start-2 mt-1 whitespace-pre-line break-words text-sm leading-6 ${key === "firstMenu" ? "font-semibold text-primary" : "text-foreground"}`}>
+                        {key === "tel" && /^[+\d\s()-]+$/.test(value) ? (
+                          <a href={`tel:${value.replace(/[^+\d]/g, "")}`} className={`rounded-sm underline-offset-4 hover:text-primary hover:underline ${FOCUS_RING}`}>{value}</a>
+                        ) : value}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              </section>
+            ) : null}
+          </div>
         </main>
       )}
     </div>
