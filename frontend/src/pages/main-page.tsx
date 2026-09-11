@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 
 import AppNav from "@/components/ui/app-nav";
+import MainSpotCard from "@/components/ui/main-spot-card";
 import GangwonRegionMap, {
   sigunguCodeByRegion,
   type GangwonRegion,
@@ -38,6 +39,33 @@ import { fetchLikedSpots } from "@/services/wishlist";
 const GANGWON_REGION_CODE = "51";
 const FALLBACK_SPOT_IMAGE =
   "https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=900&q=85";
+
+function PlaceCarouselControls({
+  label,
+  canScrollLeft,
+  canScrollRight,
+  onPrevious,
+  onNext,
+}: {
+  label: string;
+  canScrollLeft: boolean;
+  canScrollRight: boolean;
+  onPrevious: () => void;
+  onNext: () => void;
+}) {
+  const buttonClass = "flex h-10 w-10 items-center justify-center rounded-full border border-border/70 bg-white text-foreground transition-colors hover:border-primary/40 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-default disabled:opacity-30 disabled:hover:border-border/70 disabled:hover:text-foreground dark:bg-background";
+
+  return (
+    <div role="group" aria-label={`${label} 넘기기`} className="flex shrink-0 gap-2">
+      <button type="button" onClick={onPrevious} disabled={!canScrollLeft} className={buttonClass} aria-label={`이전 ${label} 보기`}>
+        <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+      </button>
+      <button type="button" onClick={onNext} disabled={!canScrollRight} className={buttonClass} aria-label={`다음 ${label} 보기`}>
+        <ChevronRight className="h-4 w-4" aria-hidden="true" />
+      </button>
+    </div>
+  );
+}
 
 export default function MainPage() {
   const navigate = useNavigate();
@@ -429,24 +457,36 @@ export default function MainPage() {
           </div>
         </section>
 
-        <section className="mx-auto max-w-6xl px-5 py-8 sm:px-8 lg:px-10 lg:py-12">
+        <section className="mx-auto max-w-6xl px-5 py-8 sm:px-8 lg:px-10 lg:py-12" aria-labelledby="discover-title">
           <div className="flex items-center justify-between gap-4">
-            <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">{locationName}에서 뭐 하지?</h2>
+            <h2 id="discover-title" className="text-2xl font-bold tracking-tight sm:text-3xl">{locationName}에서 뭐 하지?</h2>
             <Link
               to={
                 selectedRegion
                   ? `/spots?region=${encodeURIComponent(selectedRegion)}`
                   : "/spots"
               }
-              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-muted transition-colors hover:bg-primary/10 hover:text-primary"
+              className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full px-2 text-xs font-semibold text-primary transition-colors hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:text-sm"
               aria-label={`${locationName}에서 뭐 하지? 전체보기`}
             >
-              <ArrowRight className="h-6 w-6" aria-hidden="true" />
+              전체보기
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </Link>
           </div>
-          <p className="mt-2 text-base text-muted-foreground sm:text-lg">
-            {locationName} 여행이 처음인 사람들을 위한 장소 안내
-          </p>
+          <div className="mt-2 flex items-center justify-between gap-4">
+            <p className="text-sm leading-relaxed text-muted-foreground sm:text-base">
+              {locationName} 여행이 처음인 사람들을 위한 장소 안내
+            </p>
+            {!!guideSpots?.length && !guideSpotsError && (
+              <PlaceCarouselControls
+                label="여행 장소"
+                canScrollLeft={canGuideScrollLeft}
+                canScrollRight={canGuideScrollRight}
+                onPrevious={() => handleGuideScroll(-1)}
+                onNext={() => handleGuideScroll(1)}
+              />
+            )}
+          </div>
 
           {guideSpots === null && !guideSpotsError ? (
             <div role="status" className="mt-6 flex h-44 items-center justify-center gap-2 text-sm text-muted-foreground sm:h-72">
@@ -456,22 +496,11 @@ export default function MainPage() {
           ) : guideSpotsError || (guideSpots?.length ?? 0) === 0 ? (
             <p className="mt-6 text-base text-muted-foreground">추천할 여행 장소가 없어요.</p>
           ) : (
-            <div className="relative mt-6">
-              {canGuideScrollLeft ? (
-                <button
-                  type="button"
-                  onClick={() => handleGuideScroll(-1)}
-                  className="absolute left-2 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-border/60 bg-background/80 text-foreground shadow-md backdrop-blur-sm transition-all hover:scale-105 hover:bg-background active:scale-95 sm:left-3 sm:h-12 sm:w-12"
-                  aria-label="이전 여행 장소 보기"
-                >
-                  <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" aria-hidden="true" />
-                </button>
-              ) : null}
-
+            <div className="mt-5">
               <div
                 ref={guideCarouselRef}
                 onScroll={updateGuideScrollButtons}
-                className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 scrollbar-hide sm:gap-4"
+                className="-mx-1 flex snap-x snap-mandatory scroll-px-1 gap-4 overflow-x-auto p-1 scrollbar-hide sm:gap-5"
                 aria-label={`${locationName} 여행 장소`}
               >
                 {(guideSpots ?? []).map((spot) => {
@@ -482,63 +511,24 @@ export default function MainPage() {
                   const isLoading = !!loadingSpots[spot.spotId];
 
                   return (
-                    <Link
+                    <MainSpotCard
                       key={spot.spotId}
-                      to={`/spots/${spot.spotId}`}
-                      className="group block w-[82%] shrink-0 snap-start overflow-hidden rounded-lg border bg-background shadow-panel sm:w-[46%] lg:w-[38%]"
-                    >
-                      <div className="relative h-44 overflow-hidden sm:h-72">
-                        <img
-                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                          src={spot.thumbnail ?? FALLBACK_SPOT_IMAGE}
-                          alt={spot.title}
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/5 to-black/5" />
-                        <span className="absolute left-3 top-3 rounded-full bg-background/95 px-3 py-1.5 text-xs font-medium shadow sm:left-4 sm:top-4 sm:px-4 sm:py-2 sm:text-sm">
-                          {spot.category}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={(event) => handleToggleLike(event, spot.spotId)}
-                          disabled={isLoading}
-                          className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-black/40 backdrop-blur-sm transition-all hover:bg-black/60 active:scale-90 disabled:opacity-60 sm:h-9 sm:w-9"
-                          aria-pressed={isLiked}
-                          aria-label={isLiked ? `${spot.title} 좋아요 취소` : `${spot.title} 좋아요`}
-                        >
-                          <Heart
-                            className={`h-4.5 w-4.5 transition-colors sm:h-5 sm:w-5 ${
-                              isLiked ? "fill-rose-500 text-rose-500" : "text-white/90"
-                            }`}
-                            strokeWidth={2}
-                            aria-hidden="true"
-                          />
-                        </button>
-                        <h3 className="absolute bottom-3 left-3 right-3 truncate text-lg font-semibold text-white sm:bottom-5 sm:left-5 sm:right-5 sm:text-2xl">
-                          {spot.title}
-                        </h3>
-                      </div>
-                    </Link>
+                      spot={spot}
+                      variant="guide"
+                      isLiked={isLiked}
+                      isLoading={isLoading}
+                      onToggleLike={handleToggleLike}
+                    />
                   );
                 })}
               </div>
-
-              {canGuideScrollRight ? (
-                <button
-                  type="button"
-                  onClick={() => handleGuideScroll(1)}
-                  className="absolute right-2 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-border/60 bg-background/80 text-foreground shadow-md backdrop-blur-sm transition-all hover:scale-105 hover:bg-background active:scale-95 sm:right-3 sm:h-12 sm:w-12"
-                  aria-label="다음 여행 장소 보기"
-                >
-                  <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" aria-hidden="true" />
-                </button>
-              ) : null}
             </div>
           )}
         </section>
 
-        <section className="mx-auto max-w-6xl px-5 pb-12 sm:px-8 lg:px-10">
+        <section className="mx-auto max-w-6xl px-5 pb-12 sm:px-8 lg:px-10" aria-labelledby="popular-spots-title">
           <div className="flex items-center justify-between gap-4">
-            <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">{locationName}의 인기 장소</h2>
+            <h2 id="popular-spots-title" className="text-2xl font-bold tracking-tight sm:text-3xl">{locationName}의 인기 장소</h2>
             <button
               type="button"
               onClick={() => {
@@ -548,32 +538,35 @@ export default function MainPage() {
                   navigate("/spots/popular");
                 }
               }}
-              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-muted transition-colors hover:bg-primary/10 hover:text-primary"
+              className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full px-2 text-xs font-semibold text-primary transition-colors hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:text-sm"
               aria-label="인기 장소 더보기"
             >
-              <ArrowRight className="h-6 w-6" aria-hidden="true" />
+              전체보기
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </button>
+          </div>
+          <div className="mt-2 flex items-center justify-between gap-4">
+            <p className="text-sm leading-relaxed text-muted-foreground sm:text-base">여행자들이 많이 찾는 장소를 둘러보세요.</p>
+            {!!popularSpots?.length && !popularSpotsError && (
+              <PlaceCarouselControls
+                label="인기 장소"
+                canScrollLeft={canScrollLeft}
+                canScrollRight={canScrollRight}
+                onPrevious={handleScrollLeft}
+                onNext={handleScrollRight}
+              />
+            )}
           </div>
 
           {popularSpotsError || popularSpots?.length === 0 ? (
             <p className="mt-6 text-base text-muted-foreground">표시할 인기 장소가 없어요.</p>
           ) : (
-            <div className="relative mt-6">
-              {canScrollLeft ? (
-                <button
-                  type="button"
-                  onClick={handleScrollLeft}
-                  className="absolute left-2 top-1/2 z-10 -translate-y-1/2 flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full border border-border/60 bg-background/80 text-foreground shadow-md backdrop-blur-sm transition-all hover:scale-105 hover:bg-background active:scale-95 sm:left-3"
-                  aria-label="이전 인기 장소 보기"
-                >
-                  <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" aria-hidden="true" />
-                </button>
-              ) : null}
-
+            <div className="mt-5">
               <div
                 ref={carouselRef}
                 onScroll={updateScrollButtons}
-                className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide sm:gap-4"
+                className="-mx-1 flex snap-x snap-mandatory scroll-px-1 gap-4 overflow-x-auto p-1 scrollbar-hide sm:gap-5"
+                aria-label={`${locationName} 인기 장소`}
               >
                 {(popularSpots ?? []).map((spot) => {
                   const isLiked =
@@ -583,55 +576,17 @@ export default function MainPage() {
                   const isLoading = !!loadingSpots[spot.spotId];
 
                   return (
-                    <Link
+                    <MainSpotCard
                       key={spot.spotId}
-                      to={`/spots/${spot.spotId}`}
-                      className="block w-[42%] shrink-0 overflow-hidden rounded-lg border bg-background shadow-panel snap-start sm:w-56"
-                    >
-                      <div className="relative h-40 sm:h-56">
-                        <img
-                          className="h-full w-full object-cover"
-                          src={spot.thumbnail ?? FALLBACK_SPOT_IMAGE}
-                          alt={spot.title}
-                        />
-                        <span className="absolute left-3 top-3 rounded-full bg-background/95 px-3 py-1.5 text-xs font-medium shadow sm:left-4 sm:top-4 sm:px-4 sm:py-2 sm:text-sm">
-                          {spot.category}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={(event) => handleToggleLike(event, spot.spotId)}
-                          disabled={isLoading}
-                          className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-black/40 backdrop-blur-sm transition-all hover:bg-black/60 active:scale-90 disabled:opacity-60"
-                          aria-pressed={isLiked}
-                          aria-label={isLiked ? `${spot.title} 좋아요 취소` : `${spot.title} 좋아요`}
-                        >
-                          <Heart
-                            className={`h-4.5 w-4.5 transition-colors ${
-                              isLiked ? "fill-rose-500 text-rose-500" : "text-white/90"
-                            }`}
-                            strokeWidth={2}
-                            aria-hidden="true"
-                          />
-                        </button>
-                      </div>
-                      <div className="p-3 sm:p-4">
-                        <h3 className="truncate text-sm font-semibold sm:text-base">{spot.title}</h3>
-                      </div>
-                    </Link>
+                      spot={spot}
+                      variant="popular"
+                      isLiked={isLiked}
+                      isLoading={isLoading}
+                      onToggleLike={handleToggleLike}
+                    />
                   );
                 })}
               </div>
-
-              {canScrollRight ? (
-                <button
-                  type="button"
-                  onClick={handleScrollRight}
-                  className="absolute right-2 top-1/2 z-10 -translate-y-1/2 flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full border border-border/60 bg-background/80 text-foreground shadow-md backdrop-blur-sm transition-all hover:scale-105 hover:bg-background active:scale-95 sm:right-3"
-                  aria-label="다음 인기 장소 보기"
-                >
-                  <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" aria-hidden="true" />
-                </button>
-              ) : null}
             </div>
           )}
         </section>

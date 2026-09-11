@@ -281,9 +281,9 @@ describe("MainPage popular spots carousel", () => {
 
     fireEvent.scroll(carouselElement);
 
-    expect(screen.queryByRole("button", { name: "이전 인기 장소 보기" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "이전 인기 장소 보기" })).toBeDisabled();
     const rightButton = await screen.findByRole("button", { name: "다음 인기 장소 보기" });
-    expect(rightButton).toBeInTheDocument();
+    expect(rightButton).toBeEnabled();
 
     fireEvent.click(rightButton);
     expect(scrollByMock).toHaveBeenCalledWith(
@@ -294,7 +294,7 @@ describe("MainPage popular spots carousel", () => {
     fireEvent.scroll(carouselElement);
 
     const leftButton = await screen.findByRole("button", { name: "이전 인기 장소 보기" });
-    expect(leftButton).toBeInTheDocument();
+    expect(leftButton).toBeEnabled();
 
     fireEvent.click(leftButton);
     expect(scrollByMock).toHaveBeenCalledWith(
