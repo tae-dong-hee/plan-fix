@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 
 import AppNav from "@/components/ui/app-nav";
+import MainCourseCard from "@/components/ui/main-course-card";
 import MainSpotCard from "@/components/ui/main-spot-card";
 import GangwonRegionMap, {
   sigunguCodeByRegion,
@@ -24,7 +25,6 @@ import {
 import {
   fetchPopularSpots,
   likeSpot,
-  searchSpots,
   unlikeSpot,
   UnauthorizedError,
   type PopularSpot,
@@ -33,7 +33,8 @@ import {
   fetch5DayWeather,
   type WeatherDayItem,
 } from "@/services/weather";
-import { fetchLikedSpots } from "@/services/wishlist";
+import { fetchPublicCourses, likeCourse, unlikeCourse, type PublicCourseItem } from "@/services/course";
+import { fetchLikedCourses, fetchLikedSpots } from "@/services/wishlist";
 
 // 강원도 전체가 시도코드 "51"(강원특별자치도) 하나뿐이라 상수로 둔다.
 const GANGWON_REGION_CODE = "51";
@@ -83,8 +84,15 @@ export default function MainPage() {
   }, []);
 
   const guideCarouselRef = useRef<HTMLDivElement>(null);
-  const [guideSpots, setGuideSpots] = useState<PopularSpot[] | null>(null);
-  const [guideSpotsError, setGuideSpotsError] = useState(false);
+  const [guideCourses, setGuideCourses] = useState<PublicCourseItem[] | null>(null);
+  const [guideCoursesError, setGuideCoursesError] = useState(false);
+  const [courseReload, setCourseReload] = useState(0);
+  const [likedCourses, setLikedCourses] = useState<Record<number, boolean>>({});
+  const [loadingCourses, setLoadingCourses] = useState<Record<number, boolean>>({});
+  const [courseLikesLoading, setCourseLikesLoading] = useState(true);
+  const [courseLikesError, setCourseLikesError] = useState(false);
+  const [courseLikeError, setCourseLikeError] = useState<string | null>(null);
+  const pendingCourseLikes = useRef(new Set<number>());
   const [canGuideScrollLeft, setCanGuideScrollLeft] = useState(false);
   const [canGuideScrollRight, setCanGuideScrollRight] = useState(false);
 
@@ -133,37 +141,48 @@ export default function MainPage() {
   useEffect(() => {
     let ignore = false;
 
-    setGuideSpots(null);
-    setGuideSpotsError(false);
+    setGuideCourses(null);
+    setGuideCoursesError(false);
+    setCourseLikesLoading(true);
+    setCourseLikesError(false);
+    setCourseLikeError(null);
 
-    searchSpots({
-      region: GANGWON_REGION_CODE,
-      sigungu: selectedRegion ? sigunguCodeByRegion[selectedRegion] : undefined,
-      sort: "latest",
-      size: 20,
-    })
+    // 공개 코스 API는 시·군 필터를 지원하지 않으므로 전체 공개 코스를 조회한다.
+    fetchPublicCourses({ sort: "latest", size: 20 })
       .then((res) => {
         if (!ignore) {
-          setGuideSpots(res.items);
-          const nextLiked: Record<number, boolean> = {};
-          for (const spot of res.items) {
-            if (spot.isLiked !== undefined) {
-              nextLiked[spot.spotId] = spot.isLiked;
-            }
-          }
-          setLikedSpots((prev) => ({ ...prev, ...nextLiked }));
+          setGuideCourses(res.items);
         }
       })
       .catch(() => {
         if (!ignore) {
-          setGuideSpotsError(true);
+          setGuideCoursesError(true);
         }
+      });
+
+    // 공개 목록에는 isLiked가 없으므로 계정의 코스 위시리스트에서 확인한다.
+    fetchLikedCourses()
+      .then((courses) => {
+        if (!ignore) {
+          setLikedCourses(Object.fromEntries(courses.map((course) => [course.courseId, true])));
+        }
+      })
+      .catch((error) => {
+        if (ignore) return;
+        if (error instanceof UnauthorizedError) {
+          setLikedCourses({});
+        } else {
+          setCourseLikesError(true);
+        }
+      })
+      .finally(() => {
+        if (!ignore) setCourseLikesLoading(false);
       });
 
     return () => {
       ignore = true;
     };
-  }, [selectedRegion]);
+  }, [courseReload]);
 
   useEffect(() => {
     let ignore = false;
@@ -272,7 +291,7 @@ export default function MainPage() {
     return () => {
       window.removeEventListener("resize", handleResize);
     };
-  }, [guideSpots, updateGuideScrollButtons]);
+  }, [guideCourses, updateGuideScrollButtons]);
 
   useEffect(() => {
     updateScrollButtons();
@@ -351,9 +370,7 @@ export default function MainPage() {
       return;
     }
 
-    const currentSpot =
-      guideSpots?.find((spot) => spot.spotId === spotId) ??
-      popularSpots?.find((spot) => spot.spotId === spotId);
+    const currentSpot = popularSpots?.find((spot) => spot.spotId === spotId);
     const isCurrentlyLiked =
       likedSpots[spotId] !== undefined ? likedSpots[spotId] : !!currentSpot?.isLiked;
 
@@ -372,6 +389,32 @@ export default function MainPage() {
       }
     } finally {
       setLoadingSpots((prev) => ({ ...prev, [spotId]: false }));
+    }
+  };
+
+  const handleToggleCourseLike = async (event: React.MouseEvent, courseId: number) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (courseLikesLoading || courseLikesError || pendingCourseLikes.current.has(courseId)) return;
+
+    const wasLiked = !!likedCourses[courseId];
+    pendingCourseLikes.current.add(courseId);
+    setCourseLikeError(null);
+    setLikedCourses((prev) => ({ ...prev, [courseId]: !wasLiked }));
+    setLoadingCourses((prev) => ({ ...prev, [courseId]: true }));
+    try {
+      const result = wasLiked ? await unlikeCourse(courseId) : await likeCourse(courseId);
+      setLikedCourses((prev) => ({ ...prev, [courseId]: result.liked }));
+    } catch (error) {
+      setLikedCourses((prev) => ({ ...prev, [courseId]: wasLiked }));
+      if (error instanceof UnauthorizedError) {
+        navigate("/login");
+      } else {
+        setCourseLikeError("코스 찜을 변경하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+      }
+    } finally {
+      pendingCourseLikes.current.delete(courseId);
+      setLoadingCourses((prev) => ({ ...prev, [courseId]: false }));
     }
   };
 
@@ -459,15 +502,11 @@ export default function MainPage() {
 
         <section className="mx-auto max-w-6xl px-5 py-8 sm:px-8 lg:px-10 lg:py-12" aria-labelledby="discover-title">
           <div className="flex items-center justify-between gap-4">
-            <h2 id="discover-title" className="text-2xl font-bold tracking-tight sm:text-3xl">{locationName}에서 뭐 하지?</h2>
+            <h2 id="discover-title" className="text-2xl font-bold tracking-tight sm:text-3xl">강원도에서 뭐 하지?</h2>
             <Link
-              to={
-                selectedRegion
-                  ? `/spots?region=${encodeURIComponent(selectedRegion)}`
-                  : "/spots"
-              }
+              to="/courses/public"
               className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full px-2 text-xs font-semibold text-primary transition-colors hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:text-sm"
-              aria-label={`${locationName}에서 뭐 하지? 전체보기`}
+              aria-label="강원도에서 뭐 하지? 전체보기"
             >
               전체보기
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -475,11 +514,11 @@ export default function MainPage() {
           </div>
           <div className="mt-2 flex items-center justify-between gap-4">
             <p className="text-sm leading-relaxed text-muted-foreground sm:text-base">
-              {locationName} 여행이 처음인 사람들을 위한 장소 안내
+              다른 여행자들이 공유한 코스로 여행을 계획해 보세요.
             </p>
-            {!!guideSpots?.length && !guideSpotsError && (
+            {!!guideCourses?.length && !guideCoursesError && (
               <PlaceCarouselControls
-                label="여행 장소"
+                label="여행 코스"
                 canScrollLeft={canGuideScrollLeft}
                 canScrollRight={canGuideScrollRight}
                 onPrevious={() => handleGuideScroll(-1)}
@@ -488,39 +527,43 @@ export default function MainPage() {
             )}
           </div>
 
-          {guideSpots === null && !guideSpotsError ? (
+          {courseLikeError && <p role="alert" className="mt-4 text-sm text-destructive">{courseLikeError}</p>}
+          {courseLikesError && !guideCoursesError && !!guideCourses?.length && (
+            <div role="alert" className="mt-4 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+              <p>코스 찜 상태를 불러오지 못했습니다.</p>
+              <button type="button" onClick={() => setCourseReload((value) => value + 1)} className="rounded-lg border border-border px-3 py-2 font-medium text-primary hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">찜 상태 다시 확인</button>
+            </div>
+          )}
+          {guideCourses === null && !guideCoursesError ? (
             <div role="status" className="mt-6 flex h-44 items-center justify-center gap-2 text-sm text-muted-foreground sm:h-72">
               <Loader2 className="h-5 w-5 animate-spin text-primary" aria-hidden="true" />
-              <span>여행 장소를 불러오는 중...</span>
+              <span>여행 코스를 불러오는 중...</span>
             </div>
-          ) : guideSpotsError || (guideSpots?.length ?? 0) === 0 ? (
-            <p className="mt-6 text-base text-muted-foreground">추천할 여행 장소가 없어요.</p>
+          ) : guideCoursesError ? (
+            <div role="alert" className="mt-6 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+              <p>여행 코스를 불러오지 못했습니다.</p>
+              <button type="button" onClick={() => setCourseReload((value) => value + 1)} className="rounded-lg border border-border px-3 py-2 font-medium text-primary hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">다시 시도</button>
+            </div>
+          ) : (guideCourses?.length ?? 0) === 0 ? (
+            <p className="mt-6 text-base text-muted-foreground">공개된 여행 코스가 아직 없어요.</p>
           ) : (
             <div className="mt-5">
               <div
                 ref={guideCarouselRef}
                 onScroll={updateGuideScrollButtons}
                 className="-mx-1 flex snap-x snap-mandatory scroll-px-1 gap-4 overflow-x-auto p-1 scrollbar-hide sm:gap-5"
-                aria-label={`${locationName} 여행 장소`}
+                aria-label="여행 코스"
               >
-                {(guideSpots ?? []).map((spot) => {
-                  const isLiked =
-                    likedSpots[spot.spotId] !== undefined
-                      ? likedSpots[spot.spotId]
-                      : !!spot.isLiked;
-                  const isLoading = !!loadingSpots[spot.spotId];
-
-                  return (
-                    <MainSpotCard
-                      key={spot.spotId}
-                      spot={spot}
-                      variant="guide"
-                      isLiked={isLiked}
-                      isLoading={isLoading}
-                      onToggleLike={handleToggleLike}
-                    />
-                  );
-                })}
+                {(guideCourses ?? []).map((course) => (
+                  <MainCourseCard
+                    key={course.courseId}
+                    course={course}
+                    isLiked={!!likedCourses[course.courseId]}
+                    isLoading={courseLikesLoading || !!loadingCourses[course.courseId]}
+                    isLikeDisabled={courseLikesError}
+                    onToggleLike={handleToggleCourseLike}
+                  />
+                ))}
               </div>
             </div>
           )}

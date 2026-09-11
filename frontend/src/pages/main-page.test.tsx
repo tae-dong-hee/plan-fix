@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { MockedFunction } from "vitest";
 import { Sun } from "lucide-react";
 import { MemoryRouter } from "react-router-dom";
@@ -6,14 +6,15 @@ import { MemoryRouter } from "react-router-dom";
 import MainPage from "@/pages/main-page";
 import { signOut } from "@/services/auth";
 import { fetchPopularBoards } from "@/services/board";
+import { fetchPublicCourses, likeCourse, unlikeCourse, type CourseResponse, type PublicCourseItem } from "@/services/course";
 import {
   fetchPopularSpots,
   likeSpot,
-  searchSpots,
   unlikeSpot,
   UnauthorizedError,
 } from "@/services/spots";
 import { fetch5DayWeather } from "@/services/weather";
+import { fetchLikedCourses, fetchLikedSpots } from "@/services/wishlist";
 
 const mockedNavigate = vi.fn();
 vi.mock("react-router-dom", async () => {
@@ -28,9 +29,14 @@ vi.mock("@/services/spots");
 vi.mock("@/services/board");
 vi.mock("@/services/auth");
 vi.mock("@/services/weather");
+vi.mock("@/services/course");
+vi.mock("@/services/wishlist");
 
 const mockedFetchPopularSpots = fetchPopularSpots as MockedFunction<typeof fetchPopularSpots>;
-const mockedSearchSpots = searchSpots as MockedFunction<typeof searchSpots>;
+const mockedFetchPublicCourses = vi.mocked(fetchPublicCourses);
+const mockedFetchLikedCourses = vi.mocked(fetchLikedCourses);
+const mockedLikeCourse = vi.mocked(likeCourse);
+const mockedUnlikeCourse = vi.mocked(unlikeCourse);
 const mockedFetchPopularBoards = fetchPopularBoards as MockedFunction<typeof fetchPopularBoards>;
 const mockedLikeSpot = likeSpot as MockedFunction<typeof likeSpot>;
 const mockedUnlikeSpot = unlikeSpot as MockedFunction<typeof unlikeSpot>;
@@ -61,10 +67,46 @@ const mockWeatherItems = [
 
 const emptySpotResult = { items: [], offset: 0, size: 20, totalCount: 0 };
 
-describe("MainPage travel spot carousel", () => {
+const publicCourse: PublicCourseItem = {
+  courseId: 31,
+  userId: 5,
+  title: "강릉 바다 여행 코스",
+  description: "해변과 카페를 둘러보는 일정",
+  thumbnail: "https://example.com/course.jpg",
+  viewCount: 20,
+  likeCount: 3,
+  dayCount: 2,
+  spotCount: 4,
+  startDate: "2026-09-20",
+  endDate: "2026-09-21",
+  createdAt: "2026-09-12T00:00:00Z",
+};
+const publicCourseResult = { items: [publicCourse], offset: 0, size: 20, totalCount: 1 };
+const likedCourse: CourseResponse = {
+  ...publicCourse,
+  visibility: "PUBLIC",
+  status: "ACTIVE",
+  days: [],
+  updatedAt: publicCourse.createdAt,
+};
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((resolvePromise) => { resolve = resolvePromise; });
+  return { promise, resolve };
+}
+
+beforeEach(() => {
+  mockedFetchPublicCourses.mockReset().mockResolvedValue({ items: [], offset: 0, size: 20, totalCount: 0 });
+  mockedFetchLikedCourses.mockReset().mockResolvedValue([]);
+  vi.mocked(fetchLikedSpots).mockReset().mockResolvedValue([]);
+  mockedLikeCourse.mockReset().mockResolvedValue({ liked: true, likeCount: 4 });
+  mockedUnlikeCourse.mockReset().mockResolvedValue({ liked: false, likeCount: 2 });
+});
+
+describe("MainPage public course carousel", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockedSearchSpots.mockResolvedValue(emptySpotResult);
     mockedFetchPopularSpots.mockResolvedValue(emptySpotResult);
     mockedFetchPopularBoards.mockResolvedValue({ items: [], offset: 0, size: 6, totalCount: 0 });
     mockedFetch5DayWeather.mockResolvedValue(mockWeatherItems);
@@ -76,83 +118,49 @@ describe("MainPage travel spot carousel", () => {
     ["홍천", "720"], ["횡성", "730"], ["영월", "750"], ["평창", "760"],
     ["정선", "770"], ["철원", "780"], ["화천", "790"], ["양구", "800"],
     ["인제", "810"], ["고성", "820"], ["양양", "830"],
-  ])("%s 선택 시 최신·인기 장소 모두 강원 51과 법정동 코드 %s로 조회한다", async (region, sigungu) => {
+  ])("%s 선택 시 인기 장소는 시군 코드 %s로 조회하고 공개 코스는 그대로 유지한다", async (region, sigungu) => {
+    mockedFetchPublicCourses.mockResolvedValue(publicCourseResult);
     renderMainPage();
+    await screen.findByText(publicCourse.title);
 
     fireEvent.click(screen.getByRole("button", { name: "여행 지역 선택: 강원도 / 지역 선택" }));
     fireEvent.click(screen.getByRole("button", { name: region }));
     fireEvent.click(screen.getByRole("button", { name: `${region} 선택하기` }));
 
     await waitFor(() => {
-      expect(mockedSearchSpots).toHaveBeenLastCalledWith({
-        region: "51",
-        sigungu,
-        sort: "latest",
-        size: 20,
-      });
       expect(mockedFetchPopularSpots).toHaveBeenLastCalledWith({
         region: "51",
         sigungu,
         size: 20,
       });
     });
+    expect(mockedFetchPublicCourses).toHaveBeenCalledExactlyOnceWith({ sort: "latest", size: 20 });
+    expect(mockedFetchLikedCourses).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole("heading", { name: "강원도에서 뭐 하지?" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "강원도에서 뭐 하지? 전체보기" })).toHaveAttribute("href", "/courses/public");
   });
 
-  test("loads latest spots and links cards and the full list to their screens", async () => {
-    mockedSearchSpots.mockResolvedValue({
-      items: [
-        {
-          spotId: 31,
-          title: "대관령 양떼목장",
-          category: "관광지",
-          region: "51",
-          sigungu: "760",
-          thumbnail: "https://example.com/sheep.jpg",
-          isLiked: false,
-        },
-      ],
-      offset: 0,
-      size: 20,
-      totalCount: 1,
-    });
-
+  test("최신 공개 코스와 찜 상태를 조회하고 코스 상세 및 전체 목록으로 연결한다", async () => {
+    mockedFetchPublicCourses.mockResolvedValue(publicCourseResult);
     renderMainPage();
 
-    expect(mockedSearchSpots).toHaveBeenCalledWith({
-      region: "51",
-      sigungu: undefined,
-      sort: "latest",
-      size: 20,
-    });
-    expect((await screen.findByText("대관령 양떼목장")).closest("a")).toHaveAttribute(
+    expect(mockedFetchPublicCourses).toHaveBeenCalledWith({ sort: "latest", size: 20 });
+    expect(mockedFetchLikedCourses).toHaveBeenCalledTimes(1);
+    expect((await screen.findByText(publicCourse.title)).closest("a")).toHaveAttribute(
       "href",
-      "/spots/31",
+      "/courses/31",
     );
+    expect(screen.getByText("다른 여행자들이 공유한 코스로 여행을 계획해 보세요.")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "강원도에서 뭐 하지? 전체보기" })).toHaveAttribute(
       "href",
-      "/spots",
+      "/courses/public",
     );
   });
 
-  test("moves the travel spot carousel left and right", async () => {
-    mockedSearchSpots.mockResolvedValue({
-      items: [
-        {
-          spotId: 31,
-          title: "대관령 양떼목장",
-          category: "관광지",
-          region: "51",
-          sigungu: "760",
-          thumbnail: null,
-        },
-      ],
-      offset: 0,
-      size: 20,
-      totalCount: 1,
-    });
-
+  test("여행 코스 카드를 좌우로 넘길 수 있다", async () => {
+    mockedFetchPublicCourses.mockResolvedValue(publicCourseResult);
     renderMainPage();
-    const carousel = await screen.findByLabelText("강원도 여행 장소");
+    const carousel = await screen.findByLabelText("여행 코스");
     const scrollBy = vi.fn();
     carousel.scrollBy = scrollBy;
     Object.defineProperties(carousel, {
@@ -162,48 +170,172 @@ describe("MainPage travel spot carousel", () => {
     });
 
     fireEvent.scroll(carousel);
-    fireEvent.click(await screen.findByRole("button", { name: "다음 여행 장소 보기" }));
+    fireEvent.click(await screen.findByRole("button", { name: "다음 여행 코스 보기" }));
     expect(scrollBy).toHaveBeenCalledWith({ left: 200, behavior: "smooth" });
 
     carousel.scrollLeft = 200;
     fireEvent.scroll(carousel);
-    fireEvent.click(await screen.findByRole("button", { name: "이전 여행 장소 보기" }));
+    fireEvent.click(await screen.findByRole("button", { name: "이전 여행 코스 보기" }));
     expect(scrollBy).toHaveBeenLastCalledWith({ left: -200, behavior: "smooth" });
   });
 
-  test("saves and removes a travel spot through the account wishlist API", async () => {
-    mockedSearchSpots.mockResolvedValue({
-      items: [
-        {
-          spotId: 31,
-          title: "대관령 양떼목장",
-          category: "관광지",
-          region: "51",
-          sigungu: "760",
-          thumbnail: null,
-          isLiked: false,
-        },
-      ],
-      offset: 0,
-      size: 20,
-      totalCount: 1,
+  test("코스 좋아요와 취소는 코스 API만 호출한다", async () => {
+    mockedFetchPublicCourses.mockResolvedValue(publicCourseResult);
+    renderMainPage();
+    const likeButton = await screen.findByRole("button", { name: `${publicCourse.title} 좋아요` });
+    await waitFor(() => expect(likeButton).toBeEnabled());
+    fireEvent.click(likeButton);
+    expect(mockedLikeCourse).toHaveBeenCalledWith(31);
+    const unlikeButton = await screen.findByRole("button", { name: `${publicCourse.title} 좋아요 취소` });
+    await waitFor(() => expect(unlikeButton).toBeEnabled());
+    fireEvent.click(unlikeButton);
+    expect(mockedUnlikeCourse).toHaveBeenCalledWith(31);
+    expect(mockedLikeSpot).not.toHaveBeenCalled();
+    expect(mockedUnlikeSpot).not.toHaveBeenCalled();
+  });
+
+  test("기존에 찜한 코스는 하트가 선택되어 있고 첫 클릭으로 취소한다", async () => {
+    mockedFetchPublicCourses.mockResolvedValue(publicCourseResult);
+    mockedFetchLikedCourses.mockResolvedValue([likedCourse]);
+    renderMainPage();
+    const button = await screen.findByRole("button", { name: `${publicCourse.title} 좋아요 취소` });
+    await waitFor(() => expect(button).toBeEnabled());
+    expect(button).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(button);
+    expect(mockedUnlikeCourse).toHaveBeenCalledWith(31);
+    expect(mockedLikeCourse).not.toHaveBeenCalled();
+  });
+
+  test("초기 찜 목록이 도착할 때까지 코스 좋아요 버튼을 잠근다", async () => {
+    const likedRequest = deferred<CourseResponse[]>();
+    mockedFetchPublicCourses.mockResolvedValue(publicCourseResult);
+    mockedFetchLikedCourses.mockReturnValue(likedRequest.promise);
+    renderMainPage();
+    await screen.findByText(publicCourse.title);
+    const button = screen.getByRole("button", { name: `${publicCourse.title} 좋아요` });
+    expect(button).toBeDisabled();
+    fireEvent.click(button);
+    expect(mockedLikeCourse).not.toHaveBeenCalled();
+
+    await act(async () => likedRequest.resolve([likedCourse]));
+    expect(screen.getByRole("button", { name: `${publicCourse.title} 좋아요 취소` })).toBeEnabled();
+  });
+
+  test("찜 상태 조회 실패는 코스를 계속 보여주고 재확인할 때까지 하트를 잠근다", async () => {
+    mockedFetchPublicCourses.mockResolvedValue(publicCourseResult);
+    mockedFetchLikedCourses.mockRejectedValueOnce(new Error("Server unavailable")).mockResolvedValueOnce([likedCourse]);
+    renderMainPage();
+
+    expect(await screen.findByText(publicCourse.title)).toBeInTheDocument();
+    expect(await screen.findByText("코스 찜 상태를 불러오지 못했습니다.")).toBeInTheDocument();
+    const button = screen.getByRole("button", { name: `${publicCourse.title} 좋아요` });
+    expect(button).toBeDisabled();
+    expect(button.querySelector(".animate-spin")).toBeNull();
+    fireEvent.click(button);
+    expect(mockedLikeCourse).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", { name: "찜 상태 다시 확인" }));
+    const unlikeButton = await screen.findByRole("button", { name: `${publicCourse.title} 좋아요 취소` });
+    await waitFor(() => expect(unlikeButton).toBeEnabled());
+    expect(mockedFetchPublicCourses).toHaveBeenCalledTimes(2);
+    expect(mockedFetchLikedCourses).toHaveBeenCalledTimes(2);
+    expect(screen.queryByText("코스 찜 상태를 불러오지 못했습니다.")).not.toBeInTheDocument();
+    fireEvent.click(unlikeButton);
+    expect(mockedUnlikeCourse).toHaveBeenCalledExactlyOnceWith(31);
+    expect(mockedLikeCourse).not.toHaveBeenCalled();
+  });
+
+  test("비로그인 찜 상태 조회는 공개 코스와 하트를 열어두고 찜 클릭 시 로그인을 요청한다", async () => {
+    mockedFetchPublicCourses.mockResolvedValue(publicCourseResult);
+    mockedFetchLikedCourses.mockRejectedValue(new UnauthorizedError());
+    mockedLikeCourse.mockRejectedValue(new UnauthorizedError());
+    renderMainPage();
+
+    expect(await screen.findByText(publicCourse.title)).toBeInTheDocument();
+    const button = screen.getByRole("button", { name: `${publicCourse.title} 좋아요` });
+    await waitFor(() => expect(button).toBeEnabled());
+    expect(screen.queryByText("코스 찜 상태를 불러오지 못했습니다.")).not.toBeInTheDocument();
+    expect(mockedNavigate).not.toHaveBeenCalled();
+    fireEvent.click(button);
+    await waitFor(() => expect(mockedNavigate).toHaveBeenCalledWith("/login"));
+    expect(mockedLikeCourse).toHaveBeenCalledExactlyOnceWith(31);
+  });
+
+  test("코스와 장소 ID가 같아도 각각의 찜 상태를 따로 관리한다", async () => {
+    mockedFetchPublicCourses.mockResolvedValue(publicCourseResult);
+    mockedFetchPopularSpots.mockResolvedValue({
+      items: [{ spotId: 31, title: "경포해변", category: "관광지", region: "51", sigungu: "150", thumbnail: null, isLiked: false }],
+      offset: 0, size: 20, totalCount: 1,
     });
     mockedLikeSpot.mockResolvedValue({ liked: true, likeCount: 1 });
-    mockedUnlikeSpot.mockResolvedValue({ liked: false, likeCount: 0 });
-
     renderMainPage();
-    fireEvent.click(await screen.findByRole("button", { name: "대관령 양떼목장 좋아요" }));
+    const courseButton = await screen.findByRole("button", { name: `${publicCourse.title} 좋아요` });
+    await waitFor(() => expect(courseButton).toBeEnabled());
+    fireEvent.click(courseButton);
+    expect(await screen.findByRole("button", { name: `${publicCourse.title} 좋아요 취소` })).toHaveAttribute("aria-pressed", "true");
+    const spotButton = screen.getByRole("button", { name: "경포해변 좋아요" });
+    expect(spotButton).toHaveAttribute("aria-pressed", "false");
+    fireEvent.click(spotButton);
     expect(mockedLikeSpot).toHaveBeenCalledWith(31);
+    expect(mockedLikeCourse).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole("button", { name: `${publicCourse.title} 좋아요 취소` })).toHaveAttribute("aria-pressed", "true");
+  });
 
-    fireEvent.click(await screen.findByRole("button", { name: "대관령 양떼목장 좋아요 취소" }));
-    expect(mockedUnlikeSpot).toHaveBeenCalledWith(31);
+  test("좋아요 실패 시 원래 상태로 되돌리고 오류를 알려준다", async () => {
+    mockedFetchPublicCourses.mockResolvedValue(publicCourseResult);
+    mockedLikeCourse.mockRejectedValue(new Error("좋아요 처리에 실패했습니다."));
+    renderMainPage();
+    const button = await screen.findByRole("button", { name: `${publicCourse.title} 좋아요` });
+    await waitFor(() => expect(button).toBeEnabled());
+    fireEvent.click(button);
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("코스 찜을 변경하지 못했습니다.");
+    expect(screen.getByRole("button", { name: `${publicCourse.title} 좋아요` })).toHaveAttribute("aria-pressed", "false");
+  });
+
+  test("좋아요 요청이 인증 오류면 로그인으로 이동한다", async () => {
+    mockedFetchPublicCourses.mockResolvedValue(publicCourseResult);
+    mockedLikeCourse.mockRejectedValue(new UnauthorizedError());
+    renderMainPage();
+    const button = await screen.findByRole("button", { name: `${publicCourse.title} 좋아요` });
+    await waitFor(() => expect(button).toBeEnabled());
+    fireEvent.click(button);
+
+    await waitFor(() => expect(mockedNavigate).toHaveBeenCalledWith("/login"));
+    expect(screen.getByRole("button", { name: `${publicCourse.title} 좋아요` })).toHaveAttribute("aria-pressed", "false");
+  });
+
+  test("코스 목록 조회 중에는 로딩 상태를 보여준다", async () => {
+    const request = deferred<Awaited<ReturnType<typeof fetchPublicCourses>>>();
+    mockedFetchPublicCourses.mockReturnValue(request.promise);
+    renderMainPage();
+    expect(screen.getByText(/코스를 불러오는 중/)).toBeInTheDocument();
+
+    await act(async () => request.resolve(publicCourseResult));
+    expect(screen.getByText(publicCourse.title)).toBeInTheDocument();
+    expect(screen.queryByText(/코스를 불러오는 중/)).not.toBeInTheDocument();
+  });
+
+  test("공개 코스가 없으면 빈 목록 안내를 표시한다", async () => {
+    renderMainPage();
+    expect(await screen.findByText("공개된 여행 코스가 아직 없어요.")).toBeInTheDocument();
+    expect(screen.queryByLabelText("여행 코스")).not.toBeInTheDocument();
+  });
+
+  test("코스 조회 오류 후 다시 시도하면 코스와 찜 상태를 다시 불러온다", async () => {
+    mockedFetchPublicCourses.mockRejectedValueOnce(new Error("Network failed")).mockResolvedValueOnce(publicCourseResult);
+    renderMainPage();
+    fireEvent.click(await screen.findByRole("button", { name: "다시 시도" }));
+
+    expect(await screen.findByText(publicCourse.title)).toBeInTheDocument();
+    expect(mockedFetchPublicCourses).toHaveBeenCalledTimes(2);
+    expect(mockedFetchLikedCourses).toHaveBeenCalledTimes(2);
   });
 });
 
 describe("MainPage popular spots carousel", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockedSearchSpots.mockResolvedValue(emptySpotResult);
     mockedFetchPopularBoards.mockResolvedValue({ items: [], offset: 0, size: 6, totalCount: 0 });
     mockedFetch5DayWeather.mockResolvedValue(mockWeatherItems);
   });
@@ -371,7 +503,8 @@ describe("MainPage popular spots carousel", () => {
     expect(unlikedButton).toHaveAttribute("aria-pressed", "false");
   });
 
-  test("ignores UnauthorizedError silently when like is pressed without authentication", async () => {
+  test("restores the spot like state and requests login when authentication is required", async () => {
+    const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => undefined);
     mockedFetchPopularSpots.mockResolvedValue({
       items: [
         {
@@ -399,15 +532,16 @@ describe("MainPage popular spots carousel", () => {
       expect(mockedLikeSpot).toHaveBeenCalledWith(20);
     });
 
-    // Should remain unliked without throwing error or crashing
     expect(screen.getByRole("button", { name: "오죽헌 좋아요" })).toHaveAttribute("aria-pressed", "false");
+    expect(alertSpy).toHaveBeenCalledWith("로그인이 필요합니다. 로그인 페이지로 이동합니다.");
+    expect(mockedNavigate).toHaveBeenCalledWith("/login");
+    alertSpy.mockRestore();
   });
 });
 
 describe("MainPage popular boards carousel", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockedSearchSpots.mockResolvedValue(emptySpotResult);
     mockedFetchPopularSpots.mockResolvedValue({ items: [], offset: 0, size: 6, totalCount: 0 });
     mockedFetch5DayWeather.mockResolvedValue(mockWeatherItems);
   });
@@ -524,7 +658,6 @@ describe("MainPage popular boards carousel", () => {
 describe("MainPage navigation and logout", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockedSearchSpots.mockResolvedValue(emptySpotResult);
     mockedFetchPopularSpots.mockResolvedValue({ items: [], offset: 0, size: 6, totalCount: 0 });
     mockedFetchPopularBoards.mockResolvedValue({ items: [], offset: 0, size: 6, totalCount: 0 });
     mockedFetch5DayWeather.mockResolvedValue(mockWeatherItems);
@@ -633,7 +766,6 @@ describe("MainPage navigation and logout", () => {
 describe("MainPage weather section", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockedSearchSpots.mockResolvedValue(emptySpotResult);
     mockedFetchPopularSpots.mockResolvedValue({ items: [], offset: 0, size: 6, totalCount: 0 });
     mockedFetchPopularBoards.mockResolvedValue({ items: [], offset: 0, size: 6, totalCount: 0 });
   });

@@ -1,0 +1,706 @@
+{
+  "version": 1,
+  "images": [
+    {
+      "id": "gangwon-course-cover-01",
+      "title": "춘천 소양호의 가을",
+      "sourceTitle": "20241108 쿠키몬스터 소양호.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:20241108_%EC%BF%A0%ED%82%A4%EB%AA%AC%EC%8A%A4%ED%84%B0_%EC%86%8C%EC%96%91%ED%98%B8.jpg",
+      "downloadUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/77/20241108_%EC%BF%A0%ED%82%A4%EB%AA%AC%EC%8A%A4%ED%84%B0_%EC%86%8C%EC%96%91%ED%98%B8.jpg/1280px-20241108_%EC%BF%A0%ED%82%A4%EB%AA%AC%EC%8A%A4%ED%84%B0_%EC%86%8C%EC%96%91%ED%98%B8.jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/7/77/20241108_%EC%BF%A0%ED%82%A4%EB%AA%AC%EC%8A%A4%ED%84%B0_%EC%86%8C%EC%96%91%ED%98%B8.jpg",
+      "author": "쿠키몬스터",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "regions": [
+        "110"
+      ],
+      "themes": [
+        "lake",
+        "mountain"
+      ],
+      "keywords": [
+        "춘천",
+        "소양호",
+        "소양강",
+        "호수",
+        "가을"
+      ],
+      "width": 1280,
+      "height": 606,
+      "bytes": 125177,
+      "sha256": "b8bf288a1fe18f2b1db29ac5292c64709d21c0f0cb4a26b9dd8a8d32fdbe6f4e",
+      "licenseVerifiedAt": "2026-09-12",
+      "licenseEvidence": "Wikimedia Commons ImageDescription, Permission, LicenseShortName and LicenseUrl checked",
+      "modifications": "Unmodified Wikimedia Commons server-provided 1280px thumbnail",
+      "attributionRequired": true,
+      "shareAlike": true,
+      "s3Url": "https://planfix-bucket-975050156432-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/defaults/course-covers/2026-09-v1/gangwon-course-cover-01.jpg"
+    },
+    {
+      "id": "gangwon-course-cover-02",
+      "title": "원주 치악산 비로봉 능선",
+      "sourceTitle": "Chiaksan as seen from Birobong Peak.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Chiaksan_as_seen_from_Birobong_Peak.jpg",
+      "downloadUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d3/Chiaksan_as_seen_from_Birobong_Peak.jpg/1280px-Chiaksan_as_seen_from_Birobong_Peak.jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/d/d3/Chiaksan_as_seen_from_Birobong_Peak.jpg",
+      "author": "Ashy Minivet",
+      "license": "CC0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+      "regions": [
+        "130"
+      ],
+      "themes": [
+        "mountain"
+      ],
+      "keywords": [
+        "원주",
+        "치악산",
+        "비로봉",
+        "등산",
+        "능선"
+      ],
+      "width": 1280,
+      "height": 624,
+      "bytes": 265226,
+      "sha256": "15163315f8c1c63df5774c3a2ae5e7b68b3bdc44417d73dbd18dac928292b4ec",
+      "licenseVerifiedAt": "2026-09-12",
+      "licenseEvidence": "Wikimedia Commons ImageDescription, Permission, LicenseShortName and LicenseUrl checked",
+      "modifications": "Unmodified Wikimedia Commons server-provided 1280px thumbnail",
+      "attributionRequired": false,
+      "shareAlike": false,
+      "s3Url": "https://planfix-bucket-975050156432-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/defaults/course-covers/2026-09-v1/gangwon-course-cover-02.jpg"
+    },
+    {
+      "id": "gangwon-course-cover-03",
+      "title": "원주 치악산 단풍",
+      "sourceTitle": "Chiaksan Foliage.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Chiaksan_Foliage.jpg",
+      "downloadUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/df/Chiaksan_Foliage.jpg/1280px-Chiaksan_Foliage.jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/d/df/Chiaksan_Foliage.jpg",
+      "author": "Lcarrion88",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "regions": [
+        "130"
+      ],
+      "themes": [
+        "forest",
+        "mountain"
+      ],
+      "keywords": [
+        "원주",
+        "치악산",
+        "단풍",
+        "가을",
+        "숲"
+      ],
+      "width": 1280,
+      "height": 960,
+      "bytes": 650098,
+      "sha256": "7403c87999f5871e38f08fa00bdf290e1cbf71a0f8e1a2a3e293fcf4f2c7c880",
+      "licenseVerifiedAt": "2026-09-12",
+      "licenseEvidence": "Wikimedia Commons ImageDescription, Permission, LicenseShortName and LicenseUrl checked",
+      "modifications": "Unmodified Wikimedia Commons server-provided 1280px thumbnail",
+      "attributionRequired": true,
+      "shareAlike": true,
+      "s3Url": "https://planfix-bucket-975050156432-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/defaults/course-covers/2026-09-v1/gangwon-course-cover-03.jpg"
+    },
+    {
+      "id": "gangwon-course-cover-04",
+      "title": "원주 치악산 계곡",
+      "sourceTitle": "Chiaksan Stream.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Chiaksan_Stream.jpg",
+      "downloadUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/45/Chiaksan_Stream.jpg/1280px-Chiaksan_Stream.jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/4/45/Chiaksan_Stream.jpg",
+      "author": "Lcarrion88",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "regions": [
+        "130"
+      ],
+      "themes": [
+        "forest",
+        "river"
+      ],
+      "keywords": [
+        "원주",
+        "치악산",
+        "계곡",
+        "물",
+        "숲"
+      ],
+      "width": 1280,
+      "height": 960,
+      "bytes": 584223,
+      "sha256": "ca182f388ee3fd2af26df831a5ce7bccc7ec79c6f499d745a538943c238ce508",
+      "licenseVerifiedAt": "2026-09-12",
+      "licenseEvidence": "Wikimedia Commons ImageDescription, Permission, LicenseShortName and LicenseUrl checked",
+      "modifications": "Unmodified Wikimedia Commons server-provided 1280px thumbnail",
+      "attributionRequired": true,
+      "shareAlike": true,
+      "s3Url": "https://planfix-bucket-975050156432-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/defaults/course-covers/2026-09-v1/gangwon-course-cover-04.jpg"
+    },
+    {
+      "id": "gangwon-course-cover-05",
+      "title": "원주 치악산 숲길",
+      "sourceTitle": "Chiaksan Trail.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Chiaksan_Trail.jpg",
+      "downloadUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d9/Chiaksan_Trail.jpg/1280px-Chiaksan_Trail.jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/d/d9/Chiaksan_Trail.jpg",
+      "author": "Lcarrion88",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "regions": [
+        "130"
+      ],
+      "themes": [
+        "forest",
+        "mountain"
+      ],
+      "keywords": [
+        "원주",
+        "치악산",
+        "산책",
+        "숲길",
+        "트레킹"
+      ],
+      "width": 1280,
+      "height": 960,
+      "bytes": 693030,
+      "sha256": "028af64af2c801f942e73405f9d8f1c6f21781085794b811b766eacf12c8220d",
+      "licenseVerifiedAt": "2026-09-12",
+      "licenseEvidence": "Wikimedia Commons ImageDescription, Permission, LicenseShortName and LicenseUrl checked",
+      "modifications": "Unmodified Wikimedia Commons server-provided 1280px thumbnail",
+      "attributionRequired": true,
+      "shareAlike": true,
+      "s3Url": "https://planfix-bucket-975050156432-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/defaults/course-covers/2026-09-v1/gangwon-course-cover-05.jpg"
+    },
+    {
+      "id": "gangwon-course-cover-06",
+      "title": "강릉 경포해변",
+      "sourceTitle": "Gyeongpo Beach 20220502 002.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Gyeongpo_Beach_20220502_002.jpg",
+      "downloadUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/31/Gyeongpo_Beach_20220502_002.jpg/1280px-Gyeongpo_Beach_20220502_002.jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/3/31/Gyeongpo_Beach_20220502_002.jpg",
+      "author": "Mobius6",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "regions": [
+        "150"
+      ],
+      "themes": [
+        "coast"
+      ],
+      "keywords": [
+        "강릉",
+        "경포",
+        "경포해변",
+        "해변",
+        "모래",
+        "바다"
+      ],
+      "width": 1280,
+      "height": 853,
+      "bytes": 200629,
+      "sha256": "4f363d32b0bbee2ee2e238673ab97b9adfeeb0e4f486931672a94897ed3a83a5",
+      "licenseVerifiedAt": "2026-09-12",
+      "licenseEvidence": "Wikimedia Commons ImageDescription, Permission, LicenseShortName and LicenseUrl checked",
+      "modifications": "Unmodified Wikimedia Commons server-provided 1280px thumbnail",
+      "attributionRequired": true,
+      "shareAlike": true,
+      "s3Url": "https://planfix-bucket-975050156432-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/defaults/course-covers/2026-09-v1/gangwon-course-cover-06.jpg"
+    },
+    {
+      "id": "gangwon-course-cover-07",
+      "title": "강릉 경포해변 소나무숲",
+      "sourceTitle": "Gyeongpo Beach 20220502 012.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Gyeongpo_Beach_20220502_012.jpg",
+      "downloadUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b0/Gyeongpo_Beach_20220502_012.jpg/1280px-Gyeongpo_Beach_20220502_012.jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/b/b0/Gyeongpo_Beach_20220502_012.jpg",
+      "author": "Mobius6",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "regions": [
+        "150"
+      ],
+      "themes": [
+        "coast",
+        "forest"
+      ],
+      "keywords": [
+        "강릉",
+        "경포",
+        "소나무",
+        "숲",
+        "해변",
+        "바다"
+      ],
+      "width": 1280,
+      "height": 853,
+      "bytes": 487190,
+      "sha256": "1a0b996649ba5e2595551b6303bccc55371e35685c6e589af18e3a289a2b54dd",
+      "licenseVerifiedAt": "2026-09-12",
+      "licenseEvidence": "Wikimedia Commons ImageDescription, Permission, LicenseShortName and LicenseUrl checked",
+      "modifications": "Unmodified Wikimedia Commons server-provided 1280px thumbnail",
+      "attributionRequired": true,
+      "shareAlike": true,
+      "s3Url": "https://planfix-bucket-975050156432-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/defaults/course-covers/2026-09-v1/gangwon-course-cover-07.jpg"
+    },
+    {
+      "id": "gangwon-course-cover-09",
+      "title": "삼척 바다와 해변",
+      "sourceTitle": "Korea-Samcheok-Beach-01.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Korea-Samcheok-Beach-01.jpg",
+      "downloadUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/56/Korea-Samcheok-Beach-01.jpg/1280px-Korea-Samcheok-Beach-01.jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/5/56/Korea-Samcheok-Beach-01.jpg",
+      "author": "pcamp",
+      "license": "CC BY 2.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+      "regions": [
+        "230"
+      ],
+      "themes": [
+        "coast"
+      ],
+      "keywords": [
+        "삼척",
+        "해변",
+        "바다",
+        "파도"
+      ],
+      "width": 1280,
+      "height": 960,
+      "bytes": 165779,
+      "sha256": "504aa5d9960d7b306769afa8eb0eb31160ecdd5890092d4bd60dadcb51b038b5",
+      "licenseVerifiedAt": "2026-09-12",
+      "licenseEvidence": "Wikimedia Commons ImageDescription, Permission, LicenseShortName and LicenseUrl checked",
+      "modifications": "Unmodified Wikimedia Commons server-provided 1280px thumbnail",
+      "attributionRequired": true,
+      "shareAlike": false,
+      "s3Url": "https://planfix-bucket-975050156432-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/defaults/course-covers/2026-09-v1/gangwon-course-cover-09.jpg"
+    },
+    {
+      "id": "gangwon-course-cover-10",
+      "title": "영월 청령포의 억새와 산",
+      "sourceTitle": "Korea Yeongwol Sketch 06 (8228245105).jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Korea_Yeongwol_Sketch_06_(8228245105).jpg",
+      "downloadUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/16/Korea_Yeongwol_Sketch_06_%288228245105%29.jpg/1280px-Korea_Yeongwol_Sketch_06_%288228245105%29.jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/1/16/Korea_Yeongwol_Sketch_06_%288228245105%29.jpg",
+      "author": "Korea.net / Korean Culture and Information Service (Jeon Han)",
+      "license": "CC BY-SA 2.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+      "regions": [
+        "750"
+      ],
+      "themes": [
+        "mountain",
+        "general"
+      ],
+      "keywords": [
+        "영월",
+        "청령포",
+        "억새",
+        "산",
+        "산책"
+      ],
+      "width": 1280,
+      "height": 815,
+      "bytes": 253886,
+      "sha256": "7756e0ba25c0059b6c4dbf20b16aa96daa64f32a86a5f869ac998c5092219ed8",
+      "licenseVerifiedAt": "2026-09-12",
+      "licenseEvidence": "Wikimedia Commons ImageDescription, Permission, LicenseShortName and LicenseUrl checked",
+      "modifications": "Unmodified Wikimedia Commons server-provided 1280px thumbnail",
+      "attributionRequired": true,
+      "shareAlike": true,
+      "s3Url": "https://planfix-bucket-975050156432-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/defaults/course-covers/2026-09-v1/gangwon-course-cover-10.jpg"
+    },
+    {
+      "id": "gangwon-course-cover-11",
+      "title": "태백산 겨울 숲",
+      "sourceTitle": "Parc National Taebaeksan en hiver.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Parc_National_Taebaeksan_en_hiver.jpg",
+      "downloadUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/ea/Parc_National_Taebaeksan_en_hiver.jpg/1280px-Parc_National_Taebaeksan_en_hiver.jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/e/ea/Parc_National_Taebaeksan_en_hiver.jpg",
+      "author": "Franguiche",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "regions": [
+        "190"
+      ],
+      "themes": [
+        "mountain",
+        "forest"
+      ],
+      "keywords": [
+        "태백",
+        "태백산",
+        "겨울",
+        "눈",
+        "숲"
+      ],
+      "width": 1280,
+      "height": 960,
+      "bytes": 155021,
+      "sha256": "9f584e5eabfe77b8de8e987f3839c217243f82ed748752f9cc0268cf54522d8e",
+      "licenseVerifiedAt": "2026-09-12",
+      "licenseEvidence": "Wikimedia Commons ImageDescription, Permission, LicenseShortName and LicenseUrl checked",
+      "modifications": "Unmodified Wikimedia Commons server-provided 1280px thumbnail",
+      "attributionRequired": true,
+      "shareAlike": true,
+      "s3Url": "https://planfix-bucket-975050156432-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/defaults/course-covers/2026-09-v1/gangwon-course-cover-11.jpg"
+    },
+    {
+      "id": "gangwon-course-cover-12",
+      "title": "태백산 문수봉 조망",
+      "sourceTitle": "Taebaeksan main peaks from Munsubong.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Taebaeksan_main_peaks_from_Munsubong.jpg",
+      "downloadUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4b/Taebaeksan_main_peaks_from_Munsubong.jpg/1280px-Taebaeksan_main_peaks_from_Munsubong.jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/4/4b/Taebaeksan_main_peaks_from_Munsubong.jpg",
+      "author": "Dcpeets",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+      "regions": [
+        "190"
+      ],
+      "themes": [
+        "mountain"
+      ],
+      "keywords": [
+        "태백",
+        "태백산",
+        "문수봉",
+        "등산",
+        "산"
+      ],
+      "width": 1280,
+      "height": 960,
+      "bytes": 386191,
+      "sha256": "4cfb827820d9f3ef65c767c138fcbc5fffeceb03539d0c827f3da5e1d202f30d",
+      "licenseVerifiedAt": "2026-09-12",
+      "licenseEvidence": "Wikimedia Commons ImageDescription, Permission, LicenseShortName and LicenseUrl checked",
+      "modifications": "Unmodified Wikimedia Commons server-provided 1280px thumbnail",
+      "attributionRequired": true,
+      "shareAlike": true,
+      "s3Url": "https://planfix-bucket-975050156432-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/defaults/course-covers/2026-09-v1/gangwon-course-cover-12.jpg"
+    },
+    {
+      "id": "gangwon-course-cover-13",
+      "title": "태백산 너덜길",
+      "sourceTitle": "태백산.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:%ED%83%9C%EB%B0%B1%EC%82%B0.jpg",
+      "downloadUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/42/%ED%83%9C%EB%B0%B1%EC%82%B0.jpg/1280px-%ED%83%9C%EB%B0%B1%EC%82%B0.jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/4/42/%ED%83%9C%EB%B0%B1%EC%82%B0.jpg",
+      "author": "최옥석",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+      "regions": [
+        "190"
+      ],
+      "themes": [
+        "mountain",
+        "forest"
+      ],
+      "keywords": [
+        "태백",
+        "태백산",
+        "너덜",
+        "숲",
+        "등산"
+      ],
+      "width": 1280,
+      "height": 853,
+      "bytes": 540228,
+      "sha256": "ac31fd2d710b764de60e6bd30f4a2161975930aadcec47ee8d37fef6e67e63ee",
+      "licenseVerifiedAt": "2026-09-12",
+      "licenseEvidence": "Wikimedia Commons ImageDescription, Permission, LicenseShortName and LicenseUrl checked",
+      "modifications": "Unmodified Wikimedia Commons server-provided 1280px thumbnail",
+      "attributionRequired": true,
+      "shareAlike": true,
+      "s3Url": "https://planfix-bucket-975050156432-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/defaults/course-covers/2026-09-v1/gangwon-course-cover-13.jpg"
+    },
+    {
+      "id": "gangwon-course-cover-14",
+      "title": "강릉 경포해변 서핑보드",
+      "sourceTitle": "Gyeongpo Beach 20220502 016.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Gyeongpo_Beach_20220502_016.jpg",
+      "downloadUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a5/Gyeongpo_Beach_20220502_016.jpg/1280px-Gyeongpo_Beach_20220502_016.jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/a/a5/Gyeongpo_Beach_20220502_016.jpg",
+      "author": "Mobius6",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "regions": [
+        "150"
+      ],
+      "themes": [
+        "coast"
+      ],
+      "keywords": [
+        "강릉",
+        "경포",
+        "경포해변",
+        "서핑",
+        "바다"
+      ],
+      "width": 1280,
+      "height": 853,
+      "bytes": 314253,
+      "sha256": "820ec638b6dfd87ccedd87c5f91569b0612618f8d9844d2e2cd9ca2ecbe2836a",
+      "licenseVerifiedAt": "2026-09-12",
+      "licenseEvidence": "Wikimedia Commons ImageDescription, Permission, LicenseShortName and LicenseUrl checked",
+      "modifications": "Unmodified Wikimedia Commons server-provided 1280px thumbnail",
+      "attributionRequired": true,
+      "shareAlike": true,
+      "s3Url": "https://planfix-bucket-975050156432-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/defaults/course-covers/2026-09-v1/gangwon-course-cover-14.jpg"
+    },
+    {
+      "id": "gangwon-course-cover-15",
+      "title": "평창 대관령 초원과 양",
+      "sourceTitle": "Daegwallyeong.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Daegwallyeong.jpg",
+      "downloadUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/ed/Daegwallyeong.jpg/1280px-Daegwallyeong.jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/e/ed/Daegwallyeong.jpg",
+      "author": "Lim_bau",
+      "license": "CC0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+      "regions": [
+        "760"
+      ],
+      "themes": [
+        "general",
+        "mountain"
+      ],
+      "keywords": [
+        "평창",
+        "대관령",
+        "양떼목장",
+        "목장",
+        "초원",
+        "양"
+      ],
+      "width": 1280,
+      "height": 960,
+      "bytes": 576560,
+      "sha256": "a281a9bf7e661aad3de941d727fb826681a15842fa8b513a5bd54e7d462d4906",
+      "licenseVerifiedAt": "2026-09-12",
+      "licenseEvidence": "Wikimedia Commons ImageDescription, Permission, LicenseShortName and LicenseUrl checked",
+      "modifications": "Unmodified Wikimedia Commons server-provided 1280px thumbnail",
+      "attributionRequired": false,
+      "shareAlike": false,
+      "s3Url": "https://planfix-bucket-975050156432-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/defaults/course-covers/2026-09-v1/gangwon-course-cover-15.jpg"
+    },
+    {
+      "id": "gangwon-course-cover-16",
+      "title": "평창 대관령 양떼목장",
+      "sourceTitle": "Daegwallyeong Sheep.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Daegwallyeong_Sheep.jpg",
+      "downloadUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/5e/Daegwallyeong_Sheep.jpg/1280px-Daegwallyeong_Sheep.jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/5/5e/Daegwallyeong_Sheep.jpg",
+      "author": "Ken Eckert",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "regions": [
+        "760"
+      ],
+      "themes": [
+        "general",
+        "mountain"
+      ],
+      "keywords": [
+        "평창",
+        "대관령",
+        "양떼목장",
+        "목장",
+        "초원",
+        "양"
+      ],
+      "width": 1280,
+      "height": 960,
+      "bytes": 446959,
+      "sha256": "3d47d5bfd9ff2c6e6e25be181340185053034e73037268400854fbb2fbb58c42",
+      "licenseVerifiedAt": "2026-09-12",
+      "licenseEvidence": "Wikimedia Commons ImageDescription, Permission, LicenseShortName and LicenseUrl checked",
+      "modifications": "Unmodified Wikimedia Commons server-provided 1280px thumbnail",
+      "attributionRequired": true,
+      "shareAlike": true,
+      "s3Url": "https://planfix-bucket-975050156432-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/defaults/course-covers/2026-09-v1/gangwon-course-cover-16.jpg"
+    },
+    {
+      "id": "gangwon-course-cover-17",
+      "title": "평창 오대산 겨울 능선",
+      "sourceTitle": "Odaesan Mountain.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Odaesan_Mountain.jpg",
+      "downloadUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a0/Odaesan_Mountain.jpg/1280px-Odaesan_Mountain.jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/a/a0/Odaesan_Mountain.jpg",
+      "author": "Lcarrion88",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "regions": [
+        "760"
+      ],
+      "themes": [
+        "mountain",
+        "forest"
+      ],
+      "keywords": [
+        "평창",
+        "오대산",
+        "월정사",
+        "겨울",
+        "눈",
+        "등산",
+        "산"
+      ],
+      "width": 1280,
+      "height": 960,
+      "bytes": 562000,
+      "sha256": "843d5a06efd92146c0411848b327d788eafe435776bf869ba97dc1554bb37aa1",
+      "licenseVerifiedAt": "2026-09-12",
+      "licenseEvidence": "Wikimedia Commons ImageDescription, Permission, LicenseShortName and LicenseUrl checked",
+      "modifications": "Unmodified Wikimedia Commons server-provided 1280px thumbnail",
+      "attributionRequired": true,
+      "shareAlike": true,
+      "s3Url": "https://planfix-bucket-975050156432-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/defaults/course-covers/2026-09-v1/gangwon-course-cover-17.jpg"
+    },
+    {
+      "id": "gangwon-course-cover-18",
+      "title": "고성 화진포해변",
+      "sourceTitle": "Goseong Hwajinpo Beach 20260418 (05).jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Goseong_Hwajinpo_Beach_20260418_(05).jpg",
+      "downloadUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b9/Goseong_Hwajinpo_Beach_20260418_%2805%29.jpg/1280px-Goseong_Hwajinpo_Beach_20260418_%2805%29.jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/b/b9/Goseong_Hwajinpo_Beach_20260418_%2805%29.jpg",
+      "author": "Treeinkr",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "regions": [
+        "820"
+      ],
+      "themes": [
+        "coast"
+      ],
+      "keywords": [
+        "고성",
+        "화진포",
+        "화진포해변",
+        "해변",
+        "바다"
+      ],
+      "width": 1280,
+      "height": 853,
+      "bytes": 288647,
+      "sha256": "2745778ddf1261bcc705d7e302bf72818a908b09bb0a95161883b9849a53f769",
+      "licenseVerifiedAt": "2026-09-12",
+      "licenseEvidence": "Wikimedia Commons ImageDescription, Permission, LicenseShortName and LicenseUrl checked",
+      "modifications": "Unmodified Wikimedia Commons server-provided 1280px thumbnail",
+      "attributionRequired": true,
+      "shareAlike": true,
+      "s3Url": "https://planfix-bucket-975050156432-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/defaults/course-covers/2026-09-v1/gangwon-course-cover-18.jpg"
+    },
+    {
+      "id": "gangwon-course-cover-19",
+      "title": "철원 한탄강 협곡",
+      "sourceTitle": "한탄강 잔도길 협곡 3.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:%ED%95%9C%ED%83%84%EA%B0%95_%EC%9E%94%EB%8F%84%EA%B8%B8_%ED%98%91%EA%B3%A1_3.jpg",
+      "downloadUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c4/%ED%95%9C%ED%83%84%EA%B0%95_%EC%9E%94%EB%8F%84%EA%B8%B8_%ED%98%91%EA%B3%A1_3.jpg/1280px-%ED%95%9C%ED%83%84%EA%B0%95_%EC%9E%94%EB%8F%84%EA%B8%B8_%ED%98%91%EA%B3%A1_3.jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/c/c4/%ED%95%9C%ED%83%84%EA%B0%95_%EC%9E%94%EB%8F%84%EA%B8%B8_%ED%98%91%EA%B3%A1_3.jpg",
+      "author": "용인 학생",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "regions": [
+        "780"
+      ],
+      "themes": [
+        "river",
+        "mountain"
+      ],
+      "keywords": [
+        "철원",
+        "한탄강",
+        "협곡",
+        "강",
+        "계곡",
+        "물"
+      ],
+      "width": 1280,
+      "height": 622,
+      "bytes": 369711,
+      "sha256": "7b9cc23e6ec2688cbb3aaf7c2d1542ef957e50bfd1429cd3623dd1beab296249",
+      "licenseVerifiedAt": "2026-09-12",
+      "licenseEvidence": "Wikimedia Commons ImageDescription, Permission, LicenseShortName and LicenseUrl checked",
+      "modifications": "Unmodified Wikimedia Commons server-provided 1280px thumbnail",
+      "attributionRequired": true,
+      "shareAlike": true,
+      "s3Url": "https://planfix-bucket-975050156432-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/defaults/course-covers/2026-09-v1/gangwon-course-cover-19.jpg"
+    },
+    {
+      "id": "gangwon-course-cover-20",
+      "title": "양양 인구해변 풍경",
+      "sourceTitle": "Gangwon coast.JPG",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Gangwon_coast.JPG",
+      "downloadUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/5c/Gangwon_coast.JPG/1280px-Gangwon_coast.JPG",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/5/5c/Gangwon_coast.JPG",
+      "author": "EasyKL",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+      "regions": [
+        "830"
+      ],
+      "themes": [
+        "coast",
+        "general"
+      ],
+      "keywords": [
+        "양양",
+        "인구해변",
+        "인구해수욕장",
+        "해안",
+        "해변",
+        "바다"
+      ],
+      "width": 1280,
+      "height": 641,
+      "bytes": 329273,
+      "sha256": "01156dbf0ae63dc6d703748c19df78f64a1434a9b3bd6970c4a5056ba10244de",
+      "licenseVerifiedAt": "2026-09-12",
+      "licenseEvidence": "Wikimedia Commons ImageDescription, Permission, LicenseShortName and LicenseUrl checked",
+      "modifications": "Unmodified Wikimedia Commons server-provided 1280px thumbnail",
+      "attributionRequired": true,
+      "shareAlike": true,
+      "s3Url": "https://planfix-bucket-975050156432-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/defaults/course-covers/2026-09-v1/gangwon-course-cover-20.jpg"
+    },
+    {
+      "id": "gangwon-course-cover-21",
+      "title": "속초 등대해변의 파도",
+      "sourceTitle": "South Korea Sokcho Sea View.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:South_Korea_Sokcho_Sea_View.jpg",
+      "downloadUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/ef/South_Korea_Sokcho_Sea_View.jpg/1280px-South_Korea_Sokcho_Sea_View.jpg",
+      "originalUrl": "https://upload.wikimedia.org/wikipedia/commons/e/ef/South_Korea_Sokcho_Sea_View.jpg",
+      "author": "HE YUNONG",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "regions": [
+        "210"
+      ],
+      "themes": [
+        "coast"
+      ],
+      "keywords": [
+        "속초",
+        "등대해변",
+        "등대해수욕장",
+        "바다",
+        "파도",
+        "해변"
+      ],
+      "width": 1280,
+      "height": 960,
+      "bytes": 366331,
+      "sha256": "e408c0a509263f8a37104a665a6ece1603906555eb127d606c97234b9f4be242",
+      "licenseVerifiedAt": "2026-09-12",
+      "licenseEvidence": "Wikimedia Commons ImageDescription, Permission, LicenseShortName and LicenseUrl checked",
+      "modifications": "Unmodified Wikimedia Commons server-provided 1280px thumbnail",
+      "attributionRequired": true,
+      "shareAlike": true,
+      "s3Url": "https://planfix-bucket-975050156432-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/defaults/course-covers/2026-09-v1/gangwon-course-cover-21.jpg"
+    }
+  ]
+}

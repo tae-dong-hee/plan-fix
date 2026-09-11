@@ -83,6 +83,7 @@ export default function CourseCreatePage() {
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [thumbnail, setThumbnail] = useState<string | null>(null);
   const [visibility, setVisibility] = useState<"PUBLIC" | "PRIVATE">("PUBLIC");
   const [startDate, setStartDate] = useState(todayStr);
   const [endDate, setEndDate] = useState(defaultEndStr);
@@ -138,6 +139,7 @@ export default function CourseCreatePage() {
         if (ignore || !data) return;
         setTitle(data.title);
         setDescription(data.description || "");
+        setThumbnail(data.thumbnail ?? null);
         if (data.visibility) setVisibility(data.visibility);
         if (data.startDate) setStartDate(data.startDate);
         if (data.endDate) setEndDate(data.endDate);
@@ -395,6 +397,7 @@ export default function CourseCreatePage() {
       const payload = {
         title: title.trim(),
         description: description.trim() || null,
+        thumbnail: isEditMode ? thumbnail : null,
         visibility,
         startDate,
         endDate,

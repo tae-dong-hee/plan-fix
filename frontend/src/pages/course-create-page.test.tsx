@@ -90,7 +90,7 @@ describe("CourseCreatePage", () => {
     expect(saveButton).not.toBeDisabled();
   });
 
-  it("저장 버튼 클릭 시 createCourse를 호출하고 상세 화면으로 이동한다", async () => {
+  it("새 코스 저장 시 대표사진은 null로 전송하고 상세 화면으로 이동한다", async () => {
     (courseService.createCourse as Mock).mockResolvedValue({
       courseId: 123,
       title: "강릉 바다 여행",
@@ -122,6 +122,7 @@ describe("CourseCreatePage", () => {
       expect(courseService.createCourse).toHaveBeenCalledWith(
         expect.objectContaining({
           title: "강릉 바다 여행",
+          thumbnail: null,
           days: expect.arrayContaining([
             expect.objectContaining({
               dayNumber: 1,
@@ -211,12 +212,13 @@ describe("CourseCreatePage", () => {
     });
   });
 
-  it("수정 모드일 때 기존 코스 정보를 불러오고, 수정 완료 시 updateCourse를 호출한다", async () => {
+  it("기존 코스 제목을 수정해도 저장된 대표사진을 updateCourse 요청에 보존한다", async () => {
     (courseService.fetchCourse as Mock).mockResolvedValue({
       courseId: 99,
       userId: 1,
       title: "원래 코스 제목",
       description: "원래 코스 설명",
+      thumbnail: "https://example.com/existing-course-cover.jpg",
       startDate: "2026-09-10",
       endDate: "2026-09-11",
       days: [
@@ -277,6 +279,7 @@ describe("CourseCreatePage", () => {
         "99",
         expect.objectContaining({
           title: "수정된 코스 제목",
+          thumbnail: "https://example.com/existing-course-cover.jpg",
           days: expect.arrayContaining([
             expect.objectContaining({
               dayNumber: 1,
