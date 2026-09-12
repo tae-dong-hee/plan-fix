@@ -63,7 +63,7 @@ public class CourseController {
     }
 
     /**
-     * 코스 단건 조회 API (공개 코스 또는 여행 이야기에 연결된 코스는 타인/비회원도 조회 가능)
+     * 코스 단건 조회 API (공개 코스 또는 소유자·수락된 멤버만 조회 가능)
      */
     @GetMapping("/{courseId}")
     public ResponseEntity<CourseResponse> get(
