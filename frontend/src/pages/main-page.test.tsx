@@ -70,6 +70,34 @@ describe("MainPage travel spot carousel", () => {
     mockedFetch5DayWeather.mockResolvedValue(mockWeatherItems);
   });
 
+  test.each([
+    ["춘천", "110"], ["원주", "130"], ["강릉", "150"],
+    ["동해", "170"], ["태백", "190"], ["속초", "210"], ["삼척", "230"],
+    ["홍천", "720"], ["횡성", "730"], ["영월", "750"], ["평창", "760"],
+    ["정선", "770"], ["철원", "780"], ["화천", "790"], ["양구", "800"],
+    ["인제", "810"], ["고성", "820"], ["양양", "830"],
+  ])("%s 선택 시 최신·인기 장소 모두 강원 51과 법정동 코드 %s로 조회한다", async (region, sigungu) => {
+    renderMainPage();
+
+    fireEvent.click(screen.getByRole("button", { name: "여행 지역 선택: 강원도 / 지역 선택" }));
+    fireEvent.click(screen.getByRole("button", { name: region }));
+    fireEvent.click(screen.getByRole("button", { name: `${region} 선택하기` }));
+
+    await waitFor(() => {
+      expect(mockedSearchSpots).toHaveBeenLastCalledWith({
+        region: "51",
+        sigungu,
+        sort: "latest",
+        size: 20,
+      });
+      expect(mockedFetchPopularSpots).toHaveBeenLastCalledWith({
+        region: "51",
+        sigungu,
+        size: 20,
+      });
+    });
+  });
+
   test("loads latest spots and links cards and the full list to their screens", async () => {
     mockedSearchSpots.mockResolvedValue({
       items: [
@@ -78,7 +106,7 @@ describe("MainPage travel spot carousel", () => {
           title: "대관령 양떼목장",
           category: "관광지",
           region: "51",
-          sigungu: "100",
+          sigungu: "760",
           thumbnail: "https://example.com/sheep.jpg",
           isLiked: false,
         },
@@ -91,7 +119,7 @@ describe("MainPage travel spot carousel", () => {
     renderMainPage();
 
     expect(mockedSearchSpots).toHaveBeenCalledWith({
-      region: undefined,
+      region: "51",
       sigungu: undefined,
       sort: "latest",
       size: 20,
@@ -114,7 +142,7 @@ describe("MainPage travel spot carousel", () => {
           title: "대관령 양떼목장",
           category: "관광지",
           region: "51",
-          sigungu: "100",
+          sigungu: "760",
           thumbnail: null,
         },
       ],
@@ -151,7 +179,7 @@ describe("MainPage travel spot carousel", () => {
           title: "대관령 양떼목장",
           category: "관광지",
           region: "51",
-          sigungu: "100",
+          sigungu: "760",
           thumbnail: null,
           isLiked: false,
         },
@@ -180,7 +208,7 @@ describe("MainPage popular spots carousel", () => {
     mockedFetch5DayWeather.mockResolvedValue(mockWeatherItems);
   });
 
-  test("fetches popular spots with size 6 on initial load", async () => {
+  test("fetches popular Gangwon spots with size 20 on initial load", async () => {
     mockedFetchPopularSpots.mockResolvedValue({
       items: [
         {
@@ -208,7 +236,7 @@ describe("MainPage popular spots carousel", () => {
     renderMainPage();
 
     expect(mockedFetchPopularSpots).toHaveBeenCalledWith({
-      region: undefined,
+      region: "51",
       sigungu: undefined,
       size: 20,
     });
@@ -311,7 +339,7 @@ describe("MainPage popular spots carousel", () => {
           title: "속초해수욕장",
           category: "관광지",
           region: "51",
-          sigungu: "160",
+          sigungu: "210",
           thumbnail: null,
         },
       ],

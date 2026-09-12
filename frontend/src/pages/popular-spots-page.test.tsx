@@ -51,7 +51,7 @@ describe("PopularSpotsPage", () => {
     vi.clearAllMocks();
   });
 
-  test("fetches all popular spots with size 20 when no region is specified", async () => {
+  test("fetches only Gangwon popular spots with size 20 when no city is specified", async () => {
     mockedSearchSpots.mockResolvedValue({
       items: [
         {
@@ -80,7 +80,7 @@ describe("PopularSpotsPage", () => {
 
     expect(mockedSearchSpots).toHaveBeenCalledWith({
       category: undefined,
-      region: undefined,
+      region: "51",
       sigungu: undefined,
       sort: "popular",
       size: 20,
@@ -228,7 +228,7 @@ describe("PopularSpotsPage", () => {
     expect(await screen.findByRole("heading", { name: "강원도 인기 장소" })).toBeInTheDocument();
     expect(mockedSearchSpots).toHaveBeenLastCalledWith({
       category: undefined,
-      region: undefined,
+      region: "51",
       sigungu: undefined,
       sort: "popular",
       size: 20,
@@ -257,7 +257,7 @@ describe("PopularSpotsPage", () => {
 
     expect(mockedSearchSpots).toHaveBeenCalledWith({
       category: undefined,
-      region: undefined,
+      region: "51",
       sigungu: undefined,
       sort: "popular",
       size: 20,
@@ -306,7 +306,7 @@ describe("PopularSpotsPage", () => {
     expect(window.scrollTo).toHaveBeenCalledWith({ top: 0, behavior: "smooth" });
     expect(mockedSearchSpots).toHaveBeenLastCalledWith({
       category: undefined,
-      region: undefined,
+      region: "51",
       sigungu: undefined,
       sort: "popular",
       size: 20,
@@ -318,7 +318,7 @@ describe("PopularSpotsPage", () => {
     fireEvent.click(nextButton);
     expect(mockedSearchSpots).toHaveBeenLastCalledWith({
       category: undefined,
-      region: undefined,
+      region: "51",
       sigungu: undefined,
       sort: "popular",
       size: 20,
@@ -361,7 +361,7 @@ describe("PopularSpotsPage", () => {
 
     expect(mockedSearchSpots).toHaveBeenLastCalledWith({
       category: undefined,
-      region: undefined,
+      region: "51",
       sigungu: undefined,
       sort: "popular",
       size: 20,
@@ -390,7 +390,7 @@ describe("PopularSpotsPage", () => {
 
     expect(mockedSearchSpots).toHaveBeenCalledWith({
       category: "음식점",
-      region: undefined,
+      region: "51",
       sigungu: undefined,
       sort: "popular",
       size: 20,
@@ -408,7 +408,7 @@ describe("PopularSpotsPage", () => {
 
     expect(mockedSearchSpots).toHaveBeenCalledWith({
       category: undefined,
-      region: undefined,
+      region: "51",
       sigungu: undefined,
       sort: "popular",
       size: 20,
@@ -426,7 +426,7 @@ describe("PopularSpotsPage", () => {
 
     expect(mockedSearchSpots).toHaveBeenLastCalledWith({
       category: "관광지",
-      region: undefined,
+      region: "51",
       sigungu: undefined,
       sort: "popular",
       size: 20,
@@ -439,7 +439,7 @@ describe("PopularSpotsPage", () => {
 
     expect(mockedSearchSpots).toHaveBeenLastCalledWith({
       category: undefined,
-      region: undefined,
+      region: "51",
       sigungu: undefined,
       sort: "popular",
       size: 20,
@@ -472,7 +472,7 @@ describe("PopularSpotsPage", () => {
 
     expect(mockedSearchSpots).toHaveBeenLastCalledWith({
       category: "숙박",
-      region: undefined,
+      region: "51",
       sigungu: undefined,
       sort: "popular",
       size: 20,
@@ -486,7 +486,10 @@ describe("Discover spots page", () => {
     vi.clearAllMocks();
   });
 
-  test("shows the travel discovery title and loads the newest spots", async () => {
+  test.each([
+    ["/spots", undefined, "강원도"],
+    ["/spots?region=강릉", "150", "강릉"],
+  ] as const)("%s 여행 장소는 강원도 안에서 최신순으로 조회한다", async (initialUrl, sigungu, locationName) => {
     mockedSearchSpots.mockResolvedValue({
       items: [
         {
@@ -503,17 +506,17 @@ describe("Discover spots page", () => {
       totalCount: 1,
     });
 
-    renderDiscoverSpotsPage("/spots?region=강릉");
+    renderDiscoverSpotsPage(initialUrl);
 
     expect(mockedSearchSpots).toHaveBeenCalledWith({
       category: undefined,
       region: "51",
-      sigungu: "150",
+      sigungu,
       sort: "latest",
       size: 20,
       offset: 0,
     });
-    expect(await screen.findByRole("heading", { name: "강릉에서 뭐 하지?" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: `${locationName}에서 뭐 하지?` })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "강릉 중앙시장" })).toBeInTheDocument();
   });
 });

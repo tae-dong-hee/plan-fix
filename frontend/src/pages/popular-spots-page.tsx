@@ -135,7 +135,7 @@ export default function PopularSpotsPage({ mode = "popular" }: PopularSpotsPageP
 
     searchSpots({
       category: selectedCategory ?? undefined,
-      region: selectedRegion ? GANGWON_REGION_CODE : undefined,
+      region: GANGWON_REGION_CODE,
       sigungu: selectedRegion ? sigunguCodeByRegion[selectedRegion] : undefined,
       sort: isDiscoverMode ? "latest" : "popular",
       size: PAGE_SIZE,

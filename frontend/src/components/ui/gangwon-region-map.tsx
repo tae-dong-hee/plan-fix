@@ -195,8 +195,8 @@ const mapScaleByMapId = Object.fromEntries(
 ) as Record<string, number>;
 
 /**
- * 법정동 시군구코드(behind TourAPI/spots API의 sigungu). 시도코드는 강원특별자치도 "51"로 고정이라
- * 이 지도가 강원도 전용인 이상 시군구코드만 있으면 지역 필터링에 충분하다.
+ * TourAPI 법정동 시군구코드(lDongSignguCd). 장소·AI API의 sigungu에 사용한다.
+ * 강원 전체 조회는 region="51", 특정 시군 조회는 region="51"과 sigungu를 함께 보낸다.
  */
 export const sigunguCodeByRegion: Record<GangwonRegion, string> = {
   춘천: "110",
