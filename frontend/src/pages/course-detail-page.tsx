@@ -17,6 +17,8 @@ import {
   Users,
   X,
 } from "lucide-react";
+import { MISSING_SPOT_ADDRESS } from "@/lib/spot-display";
+import SpotImage from "@/components/ui/spot-image";
 import AppNav from "@/components/ui/app-nav";
 import { CourseInviteDialog, CourseInviteShareDialog } from "@/components/ui/course-invite-dialog";
 import { CourseResponse, createCourseInvite, deleteCourse, fetchCourse, fetchCourseMembers, fetchPendingCourseInvites, cancelCourseInvite, removeCourseMember, updateCourseMemberRole, type CourseInviteRole, type CourseMember, type PendingCourseInvite } from "@/services/course";
@@ -356,17 +358,11 @@ export default function CourseDetailPage() {
                                 {idx + 1}
                               </span>
                               <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-muted">
-                                {spot.thumbnail ? (
-                                  <img
-                                    src={spot.thumbnail}
-                                    alt={spot.title}
-                                    className="h-full w-full object-cover"
-                                  />
-                                ) : (
-                                  <div className="flex h-full w-full items-center justify-center text-muted-foreground">
-                                    <MapPin className="h-5 w-5" />
-                                  </div>
-                                )}
+                                <SpotImage
+                                  src={spot.thumbnail}
+                                  alt={spot.title}
+                                  className="h-full w-full object-cover"
+                                />
                               </div>
                             </div>
 
@@ -383,9 +379,7 @@ export default function CourseDetailPage() {
                                 </span>
                               </div>
                               <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                                {spot.address ||
-                                  [spot.region, spot.sigungu].filter(Boolean).join(" ") ||
-                                  "강원특별자치도"}
+                                {spot.address?.trim() || MISSING_SPOT_ADDRESS}
                               </p>
                               {spot.memo && (
                                 <p className="mt-2 rounded-lg bg-muted/50 px-2.5 py-1.5 text-xs text-muted-foreground">

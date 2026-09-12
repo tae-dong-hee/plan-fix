@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { MapPin } from "lucide-react";
+import { hasSpotCoordinates, MISSING_SPOT_LOCATION } from "@/lib/spot-display";
 
 /** 지도에 찍을 장소. 좌표가 없는 장소(수집 데이터 누락)는 렌더링에서 제외된다. */
 export type KakaoMapSpot = {
@@ -66,10 +67,6 @@ function loadKakaoSdk(appKey: string): Promise<void> {
   return sdkLoadPromise;
 }
 
-function hasCoordinates(spot: KakaoMapSpot): boolean {
-  return typeof spot.latitude === "number" && typeof spot.longitude === "number";
-}
-
 /**
  * 장소 목록을 카카오맵에 번호 마커로 표시한다.
  * 키가 없거나 SDK 로드에 실패해도 페이지 전체가 깨지지 않도록 안내 문구로 대체한다.
@@ -95,7 +92,8 @@ export default function KakaoMap({
   const markersRef = useRef<Map<number, { element: HTMLElement; overlay: KakaoNamespace }>>(new Map());
 
   const appKey = import.meta.env.VITE_KAKAO_JS_KEY;
-  const plottable = spots.filter(hasCoordinates);
+  const plottable = spots.filter(hasSpotCoordinates);
+  const hasPlottableSpots = plottable.length > 0;
   // 좌표 배열을 문자열로 만들어 의존성으로 쓴다. 배열 참조가 매 렌더 바뀌어도 재실행되지 않게 한다.
   const positionsKey = plottable.map((s) => `${s.spotId}:${s.latitude},${s.longitude}`).join("|");
 
@@ -104,6 +102,7 @@ export default function KakaoMap({
       setStatus("no-key");
       return;
     }
+    if (!hasPlottableSpots) return;
 
     let cancelled = false;
 
@@ -127,7 +126,7 @@ export default function KakaoMap({
     return () => {
       cancelled = true;
     };
-  }, [appKey]);
+  }, [appKey, hasPlottableSpots]);
 
   // 마커·경로 다시 그리기
   useEffect(() => {
@@ -139,12 +138,12 @@ export default function KakaoMap({
     // 이전에 그린 것 정리
     overlaysRef.current.forEach((overlay) => overlay.setMap(null));
     overlaysRef.current = [];
+    markersRef.current.clear();
 
     if (plottable.length === 0) return;
+    map.relayout?.();
 
     const positions = plottable.map((spot) => new kakao.maps.LatLng(spot.latitude, spot.longitude));
-
-    markersRef.current.clear();
 
     positions.forEach((position: KakaoNamespace, index: number) => {
       const spot = plottable[index];
@@ -196,34 +195,33 @@ export default function KakaoMap({
   }, [highlightedSpotId, status, positionsKey]);
 
   const missingCoordCount = spots.length - plottable.length;
-
-  if (status === "no-key" || status === "error") {
-    return (
-      <div
-        className={`flex flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-border bg-muted/30 p-6 text-center ${className ?? ""}`}
-        role="status"
-      >
-        <MapPin className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
-        <p className="text-xs text-muted-foreground">
-          {status === "no-key"
-            ? "지도 키(VITE_KAKAO_JS_KEY)가 설정되지 않아 지도를 표시할 수 없어요."
-            : "지도를 불러오지 못했어요."}
-        </p>
-      </div>
-    );
-  }
+  const unavailableMessage = !hasPlottableSpots
+    ? (spots.length === 0 ? "지도에 표시할 장소가 없어요." : MISSING_SPOT_LOCATION)
+    : status === "no-key"
+      ? "지도를 준비 중이에요."
+      : status === "error" ? "지도를 불러오지 못했어요." : null;
 
   return (
     <div className={className}>
+      {unavailableMessage && (
+        <div
+          className={`flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-muted/30 p-6 text-center ${mapClassName}`}
+          role="status"
+        >
+          <MapPin className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
+          <p className="text-xs text-muted-foreground">{unavailableMessage}</p>
+        </div>
+      )}
       <div
         ref={containerRef}
+        hidden={Boolean(unavailableMessage)}
         className={`w-full overflow-hidden rounded-xl border border-border bg-muted/30 ${mapClassName}`}
-        aria-label="장소 위치 지도"
-        role="img"
+        aria-label={unavailableMessage ? undefined : "장소 위치 지도"}
+        role={unavailableMessage ? undefined : "img"}
       />
-      {missingCoordCount > 0 && (
+      {missingCoordCount > 0 && hasPlottableSpots && (
         <p className="mt-1.5 text-xs text-muted-foreground">
-          좌표 정보가 없는 장소 {missingCoordCount}곳은 지도에 표시되지 않았어요.
+          위치 정보가 등록되지 않은 장소 {missingCoordCount}곳은 지도에 표시되지 않았어요.
         </p>
       )}
     </div>

@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { Check, Loader2, MapPin, Search, X } from "lucide-react";
+import { MISSING_SPOT_LOCATION } from "@/lib/spot-display";
+import SpotImage from "@/components/ui/spot-image";
 import KakaoMap from "@/components/ui/kakao-map";
 import { SPOT_CATEGORY_OPTIONS } from "@/constants/spot-categories";
 import { PopularSpot, searchSpots } from "@/services/spots";
@@ -278,18 +280,12 @@ export default function SpotSearchModal({
                   >
                     {/* 썸네일 */}
                     <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-muted">
-                      {spot.thumbnail ? (
-                        <img
-                          src={spot.thumbnail}
-                          alt={spot.title}
-                          className="h-full w-full object-cover"
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center text-muted-foreground">
-                          <MapPin className="h-5 w-5" />
-                        </div>
-                      )}
+                      <SpotImage
+                        src={spot.thumbnail}
+                        alt={spot.title}
+                        className="h-full w-full object-cover"
+                        loading="lazy"
+                      />
                     </div>
 
                     {/* 장소 정보 */}
@@ -303,7 +299,7 @@ export default function SpotSearchModal({
                         </span>
                       </div>
                       <p className="mt-1 truncate text-xs text-muted-foreground">
-                        {[spot.region, spot.sigungu].filter(Boolean).join(" ") || "강원특별자치도"}
+                        {[spot.region, spot.sigungu].map((value) => value?.trim()).filter(Boolean).join(" ") || MISSING_SPOT_LOCATION}
                       </p>
                     </div>
 

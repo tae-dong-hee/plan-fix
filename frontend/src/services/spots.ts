@@ -62,7 +62,7 @@ export type SpotDetail = {
   viewCount: number;
   likeCount: number;
   commentCount: number;
-  images: string[];
+  images: (string | null)[] | null;
   info: SpotTourInfo | null;
   isLiked: boolean;
 };
