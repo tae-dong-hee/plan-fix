@@ -35,31 +35,31 @@ export default function PublicCourseListPage() {
   }, [sort]);
 
   return (
-    <div className="min-h-screen bg-muted/20 pb-20 md:pt-20">
+    <div className="min-h-screen bg-background pb-28 sm:pb-32 md:pb-16 md:pt-16">
       <AppNav />
-      <main className="mx-auto max-w-6xl px-4 pt-6 sm:px-6 sm:pt-8">
-        <Link to="/main" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+      <main className="mx-auto max-w-7xl px-5 pt-7 sm:px-8 sm:pt-10 lg:px-10">
+        <Link to="/main" className="inline-flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4" /> 메인으로
         </Link>
-        <div className="mt-5 flex flex-wrap items-end justify-between gap-4 border-b border-border pb-5">
+        <div className="mt-5 flex flex-wrap items-end justify-between gap-5 border-b border-border/70 pb-6">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">여행 코스</h1>
-            <p className="mt-1 text-sm text-muted-foreground">다른 여행자들이 공유한 강원도 여행 일정입니다.</p>
+            <h1 className="text-[26px] font-bold leading-tight tracking-tight sm:text-[30px]">여행 코스</h1>
+            <p className="mt-2 text-[13px] leading-6 text-muted-foreground sm:text-sm">다른 여행자들이 공유한 강원도 여행 일정입니다.</p>
           </div>
-          <div className="flex rounded-xl bg-muted p-1" role="tablist" aria-label="코스 정렬">
+          <div className="flex rounded-full bg-muted/70 p-1" role="tablist" aria-label="코스 정렬">
             <button
               type="button"
               role="tab"
               aria-selected={sort === "latest"}
               onClick={() => setSearchParams({ sort: "latest" })}
-              className={`rounded-lg px-4 py-2 text-sm font-semibold ${sort === "latest" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}
+              className={`min-h-10 rounded-full px-4 text-[13px] font-medium transition-colors ${sort === "latest" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}
             >전체 코스</button>
             <button
               type="button"
               role="tab"
               aria-selected={sort === "popular"}
               onClick={() => setSearchParams({ sort: "popular" })}
-              className={`rounded-lg px-4 py-2 text-sm font-semibold ${sort === "popular" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}
+              className={`min-h-10 rounded-full px-4 text-[13px] font-medium transition-colors ${sort === "popular" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}
             >인기순</button>
           </div>
         </div>
@@ -67,26 +67,26 @@ export default function PublicCourseListPage() {
         {items === null && !error ? (
           <div className="flex h-64 items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
         ) : error ? (
-          <div className="mt-8 rounded-2xl border border-destructive/30 bg-card p-8 text-center text-destructive">코스 목록을 불러오지 못했습니다.</div>
+          <div className="mt-8 rounded-2xl border border-destructive/20 bg-background px-6 py-12 text-center text-sm text-destructive">코스 목록을 불러오지 못했습니다.</div>
         ) : items?.length === 0 ? (
-          <div className="mt-8 rounded-2xl border border-dashed border-border bg-card p-12 text-center text-muted-foreground">공개된 코스가 아직 없습니다.</div>
+          <div className="mt-8 rounded-2xl bg-muted/50 px-6 py-16 text-center text-sm text-muted-foreground">공개된 코스가 아직 없습니다.</div>
         ) : (
           <>
-            <p className="mt-6 text-sm text-muted-foreground">총 {totalCount}개의 코스</p>
-            <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <p className="mt-6 text-[13px] text-muted-foreground">총 {totalCount}개의 코스</p>
+            <div className="mt-5 grid gap-x-5 gap-y-8 sm:grid-cols-2 lg:grid-cols-4">
               {items?.map((course) => {
                 const credit = getCourseCoverCredit(course.thumbnail);
                 return (
-                  <article key={course.courseId} className="relative overflow-hidden rounded-2xl border border-border bg-background shadow-sm transition hover:border-primary/50 hover:shadow-md">
-                    <Link to={`/courses/${course.courseId}`} className="block">
-                      <div className="relative h-44 bg-muted">
-                        <img src={getCourseCoverImageSrc(course.thumbnail || FALLBACK_IMAGE)} alt="" loading="lazy" className="h-full w-full object-cover" />
-                        <span className="absolute bottom-3 left-3 rounded-full bg-background/90 px-3 py-1 text-xs font-semibold">{course.dayCount}일 일정</span>
+                  <article key={course.courseId} className="relative min-w-0">
+                    <Link to={`/courses/${course.courseId}`} className="group block rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-4">
+                      <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-muted">
+                        <img src={getCourseCoverImageSrc(course.thumbnail || FALLBACK_IMAGE)} alt="" loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 motion-reduce:transform-none motion-reduce:transition-none" />
+                        <span className="absolute left-3 top-3 rounded-full bg-white/95 px-2.5 py-1.5 text-[11px] font-semibold text-zinc-800 shadow-sm">{course.dayCount}일 일정</span>
                       </div>
-                      <div className="p-4">
-                        <h2 className="truncate text-base font-bold">{course.title}</h2>
-                        {course.description && <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{course.description}</p>}
-                        <div className="mt-4 flex flex-wrap gap-3 text-xs text-muted-foreground">
+                      <div className="px-0.5 pb-1 pt-3">
+                        <h2 className="line-clamp-2 break-keep text-[15px] font-semibold leading-snug tracking-tight [overflow-wrap:anywhere]">{course.title}</h2>
+                        {course.description && <p className="mt-1.5 line-clamp-2 text-[13px] leading-5 text-muted-foreground">{course.description}</p>}
+                        <div className="mt-3 flex flex-wrap gap-x-3 gap-y-2 text-xs text-muted-foreground">
                           <span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{course.spotCount}곳</span>
                           <span className="inline-flex items-center gap-1"><Heart className="h-3.5 w-3.5" />{course.likeCount}</span>
                           <span className="inline-flex items-center gap-1"><Eye className="h-3.5 w-3.5" />{course.viewCount}</span>
@@ -94,7 +94,11 @@ export default function PublicCourseListPage() {
                         </div>
                       </div>
                     </Link>
-                    {credit && <Link to={`/image-credits#${credit.id}`} aria-label={`${course.title} 사진 출처`} className="absolute right-3 top-3 rounded-full bg-black/45 px-2.5 py-1.5 text-[10px] text-white hover:bg-black/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">사진 출처</Link>}
+                    {credit && (
+                      <div className="pointer-events-none absolute inset-x-0 top-0 aspect-[4/3]">
+                        <Link to={`/image-credits#${credit.id}`} aria-label={`${course.title} 사진 출처`} className="pointer-events-auto absolute bottom-2.5 right-3 rounded bg-black/40 px-1.5 py-1 text-[10px] text-white hover:bg-black/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">사진 출처</Link>
+                      </div>
+                    )}
                   </article>
                 );
               })}

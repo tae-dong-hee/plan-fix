@@ -17,14 +17,14 @@
 @layer base {
   :root {
     color-scheme: light;
-    --background: 252 100% 99%;
-    --foreground: 244 24% 14%;
+    --background: 0 0% 100%;
+    --foreground: 240 7% 14%;
     --primary: 258 82% 61%;
     --primary-foreground: 0 0% 100%;
-    --muted: 252 32% 95%;
-    --muted-foreground: 244 8% 44%;
-    --border: 250 20% 87%;
-    --input: 250 20% 82%;
+    --muted: 240 5% 96%;
+    --muted-foreground: 240 4% 44%;
+    --border: 240 5% 90%;
+    --input: 240 5% 84%;
     --ring: 258 82% 61%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;

@@ -883,3 +883,60 @@ describe("MainPage weather section", () => {
     expect(await screen.findByText("날씨 정보를 불러오지 못했습니다.")).toBeInTheDocument();
   });
 });
+
+describe("MainPage travel header", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockedFetchPublicCourses.mockResolvedValue(publicCourseResult);
+    mockedFetchPopularSpots.mockReset().mockResolvedValue(emptySpotResult);
+    mockedFetchPopularBoards.mockReset().mockResolvedValue({ items: [], offset: 0, size: 6, totalCount: 0 });
+    mockedFetch5DayWeather.mockReset().mockResolvedValue(mockWeatherItems);
+  });
+
+  test.each([
+    ["강릉", "150"], ["속초", "210"], ["양양", "830"],
+    ["춘천", "110"], ["평창", "760"], ["원주", "130"],
+  ])("%s 바로 선택은 날씨와 장소 지역만 변경한다", async (region, sigungu) => {
+    renderMainPage();
+    await screen.findByText(publicCourse.title);
+
+    fireEvent.click(screen.getByRole("button", { name: `${region} 바로 선택` }));
+
+    await waitFor(() => {
+      expect(mockedFetchPopularSpots).toHaveBeenLastCalledWith({ region: "51", sigungu, size: 20 });
+      expect(mockedFetch5DayWeather).toHaveBeenLastCalledWith(region);
+    });
+    expect(screen.getByRole("button", { name: `${region} 바로 선택` })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "강원도 전체 둘러보기" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("heading", { name: `${region} 주간 날씨` })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: `${region}의 인기 장소` })).toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(mockedFetchPublicCourses).toHaveBeenCalledExactlyOnceWith({ sort: "latest", size: 20 });
+    expect(mockedFetchLikedCourses).toHaveBeenCalledTimes(1);
+  });
+
+  test("지역 선택 후 전체를 누르면 시군 필터와 날씨 지역을 초기화하고 코스는 유지한다", async () => {
+    renderMainPage();
+    await screen.findByText(publicCourse.title);
+    fireEvent.click(screen.getByRole("button", { name: "강릉 바로 선택" }));
+    await waitFor(() => expect(mockedFetch5DayWeather).toHaveBeenLastCalledWith("강릉"));
+
+    fireEvent.click(screen.getByRole("button", { name: "강원도 전체 둘러보기" }));
+
+    await waitFor(() => {
+      expect(mockedFetchPopularSpots).toHaveBeenLastCalledWith({ region: "51", sigungu: undefined, size: 20 });
+      expect(mockedFetch5DayWeather).toHaveBeenLastCalledWith(null);
+    });
+    expect(mockedFetchPopularSpots).toHaveBeenCalledTimes(3);
+    expect(mockedFetch5DayWeather).toHaveBeenCalledTimes(3);
+    expect(screen.getByRole("button", { name: "강원도 전체 둘러보기" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "강릉 바로 선택" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("button", { name: "여행 지역 선택: 강원도 / 지역 선택" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "강원도 주간 날씨" })).toBeInTheDocument();
+    expect(mockedFetchPublicCourses).toHaveBeenCalledExactlyOnceWith({ sort: "latest", size: 20 });
+    expect(mockedFetchLikedCourses).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(screen.getByRole("button", { name: "인기 장소 더보기" }));
+    expect(mockedNavigate).toHaveBeenCalledExactlyOnceWith("/spots/popular");
+  });
+});

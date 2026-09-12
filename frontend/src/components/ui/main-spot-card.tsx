@@ -1,5 +1,5 @@
 import type { MouseEvent } from "react";
-import { Heart, Loader2, MapPin } from "lucide-react";
+import { Heart, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { sigunguCodeByRegion } from "@/components/ui/gangwon-region-map";
@@ -33,19 +33,17 @@ export default function MainSpotCard({
     <article
       className={`relative shrink-0 snap-start ${
         isGuide
-          ? "w-[82%] sm:w-[46%] lg:w-[calc((100%_-_2.5rem)/3)]"
-          : "w-[46%] min-w-[150px] sm:w-56 lg:w-[calc((100%_-_3.75rem)/4)]"
+          ? "w-[76%] sm:w-[46%] lg:w-[calc((100%_-_3.75rem)/4)]"
+          : "w-[46%] min-w-[150px] sm:w-56 lg:w-[calc((100%_-_5rem)/5)]"
       }`}
     >
       <Link
         to={`/spots/${spot.spotId}`}
-        className={`group block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
-          isGuide ? "rounded-3xl" : "rounded-[20px]"
-        }`}
+        className="group block rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       >
         <div
-          className={`relative overflow-hidden bg-zinc-100 dark:bg-zinc-800 ${
-            isGuide ? "aspect-[4/3] rounded-3xl" : "aspect-[5/4] rounded-[20px]"
+          className={`relative overflow-hidden rounded-2xl bg-zinc-100 dark:bg-zinc-800 ${
+            isGuide ? "aspect-[4/3]" : "aspect-square"
           }`}
         >
           <img
@@ -59,42 +57,21 @@ export default function MainSpotCard({
               }
             }}
           />
-          {isGuide ? (
-            <>
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
-              <span className="absolute left-4 top-4 max-w-[calc(100%_-_5.5rem)] truncate rounded-full bg-white/95 px-3 py-1.5 text-xs font-medium text-zinc-800">
-                {spot.category}
-              </span>
-              <div className="absolute inset-x-5 bottom-5 text-white sm:inset-x-6 sm:bottom-6">
-                {city ? (
-                  <p className="mb-2 flex items-center gap-1 text-xs text-white/85 sm:text-sm">
-                    <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
-                    {city}
-                  </p>
-                ) : null}
-                <h3 className="line-clamp-2 text-xl font-semibold leading-snug tracking-tight sm:text-2xl">
-                  {spot.title}
-                </h3>
-              </div>
-            </>
-          ) : null}
         </div>
-        {!isGuide ? (
-          <div className="px-0.5 pb-1 pt-3.5">
-            <p className="mb-1.5 flex items-center gap-2 text-xs sm:text-sm">
-              <span className="truncate font-medium text-primary">{spot.category}</span>
-              {city ? (
-                <>
-                  <span className="text-muted-foreground/50" aria-hidden="true">·</span>
-                  <span className="shrink-0 text-muted-foreground">{city}</span>
-                </>
-              ) : null}
-            </p>
-            <h3 className="line-clamp-2 text-base font-semibold leading-snug tracking-tight transition-colors group-hover:text-primary sm:text-lg">
-              {spot.title}
-            </h3>
-          </div>
-        ) : null}
+        <div className="px-0.5 pb-1 pt-3">
+          <h3 className="line-clamp-2 text-[15px] font-semibold leading-snug tracking-tight text-foreground">
+            {spot.title}
+          </h3>
+          <p className="mt-1.5 flex items-center gap-1.5 text-[13px] text-muted-foreground">
+            {city ? (
+              <>
+                <span className="shrink-0">{city}</span>
+                <span aria-hidden="true">·</span>
+              </>
+            ) : null}
+            <span className="truncate">{spot.category}</span>
+          </p>
+        </div>
       </Link>
       <button
         type="button"
@@ -102,7 +79,7 @@ export default function MainSpotCard({
         disabled={isLoading}
         aria-pressed={isLiked}
         aria-label={isLiked ? `${spot.title} 좋아요 취소` : `${spot.title} 좋아요`}
-        className={`absolute right-3 top-3 flex h-11 w-11 items-center justify-center rounded-full bg-white/95 transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-70 ${
+        className={`absolute right-2 top-2 flex h-11 w-11 items-center justify-center rounded-full bg-white/95 shadow-sm transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-70 ${
           isLiked ? "text-primary" : "text-zinc-700 hover:text-primary"
         }`}
       >

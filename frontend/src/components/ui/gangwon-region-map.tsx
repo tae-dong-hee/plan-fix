@@ -299,7 +299,7 @@ export default function GangwonRegionMap({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/25 backdrop-blur-[3px] sm:p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/30 sm:p-5"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
@@ -308,34 +308,34 @@ export default function GangwonRegionMap({
         role="dialog"
         aria-modal="true"
         aria-labelledby="region-dialog-title"
-        className="relative flex h-dvh w-full max-w-5xl flex-col overflow-hidden bg-background shadow-[0_28px_80px_hsl(var(--foreground)/0.24)] sm:h-auto sm:max-h-[92vh] sm:overflow-y-auto sm:rounded-lg sm:border sm:border-border"
+        className="relative flex h-dvh w-full max-w-5xl flex-col overflow-hidden bg-background shadow-[0_16px_48px_hsl(var(--foreground)/0.12)] sm:h-auto sm:max-h-[92dvh] sm:rounded-2xl sm:border sm:border-border/70"
       >
-        <div className="z-20 flex shrink-0 items-center justify-end bg-background/95 px-3 py-2 backdrop-blur sm:px-6 sm:py-3">
+        <div className="z-20 flex shrink-0 items-center justify-end bg-background px-3 py-2 sm:px-4">
           <button
             type="button"
             onClick={onClose}
-            className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="flex h-11 w-11 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             aria-label="지역 선택 창 닫기"
           >
             <X className="h-5 w-5" aria-hidden="true" />
           </button>
         </div>
 
-        <div className="flex min-h-0 flex-1 flex-col px-3 pb-3 sm:block sm:px-8 sm:pb-9">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-5 sm:px-7 sm:pb-7">
           <header className="mx-auto max-w-2xl text-center">
             <h2
               id="region-dialog-title"
-              className="text-xl font-semibold tracking-tight text-foreground sm:text-3xl"
+              className="text-xl font-bold tracking-tight text-foreground sm:text-2xl"
             >
               어디로 떠나볼까요?
             </h2>
-            <p className="mt-1 text-xs leading-5 text-muted-foreground sm:mt-3 sm:text-base sm:leading-6">
+            <p className="mt-2 text-xs leading-6 text-muted-foreground sm:text-[13px]">
               강원도 18개 시·군 중 여행할 지역을 선택해 주세요.
             </p>
           </header>
 
-          <div className="mt-2 grid min-h-0 flex-1 content-start gap-2 sm:mt-6 sm:gap-6 lg:grid-cols-[1fr_240px] lg:items-stretch">
-            <div className="relative overflow-hidden rounded-lg border border-border bg-gradient-to-br from-primary/10 via-background to-muted/40 p-2 sm:p-3">
+          <div className="mt-5 grid content-start gap-4 sm:mt-6 sm:gap-5 lg:grid-cols-[1fr_260px] lg:items-stretch">
+            <div className="relative overflow-hidden rounded-xl bg-muted/40 p-3 sm:p-4">
               <style>{`
                 #gangwon-boundary-map path {
                   fill: hsl(var(--muted));
@@ -352,7 +352,7 @@ export default function GangwonRegionMap({
                     filter 220ms ease;
                 }
                 #gangwon-boundary-map path:hover {
-                  fill: hsl(var(--primary) / 0.28);
+                  fill: hsl(var(--primary) / 0.18);
                   stroke: hsl(var(--primary));
                 }
                 #gangwon-boundary-map path#속초시 {
@@ -382,51 +382,51 @@ export default function GangwonRegionMap({
                 }
               `}</style>
 
-              <div className="relative mx-auto aspect-[800/699] h-[34dvh] max-h-[300px] max-w-full sm:h-auto sm:max-h-none sm:w-full sm:max-w-[680px]">
+              <div className="relative mx-auto aspect-[800/699] w-full max-w-[620px]">
                 <svg className="pointer-events-none absolute h-0 w-0" aria-hidden="true">
                   <defs>
                     <linearGradient id="hovered-region-fill" x1="0" y1="0" x2="0" y2="1">
                       <stop
                         offset="0%"
                         stopColor="hsl(var(--primary))"
-                        stopOpacity="0.58"
+                        stopOpacity="0.68"
                       />
                       <stop
                         offset="100%"
                         stopColor="hsl(var(--primary))"
-                        stopOpacity="0.9"
+                        stopOpacity="0.82"
                       />
                     </linearGradient>
                     <filter id="selected-region-shadow" x="-30%" y="-30%" width="160%" height="160%">
                       <feDropShadow
                         dx="0"
-                        dy="5"
-                        stdDeviation="7"
+                        dy="2"
+                        stdDeviation="3"
                         floodColor="hsl(var(--primary))"
-                        floodOpacity="0.28"
+                        floodOpacity="0.14"
                       />
                     </filter>
                     <filter id="hovered-region-shadow" x="-40%" y="-40%" width="180%" height="195%">
                       <feDropShadow
                         dx="0"
-                        dy="3"
-                        stdDeviation="1.75"
+                        dy="2"
+                        stdDeviation="1.5"
                         floodColor="hsl(var(--background))"
                         floodOpacity="0.95"
                       />
                       <feDropShadow
                         dx="0"
-                        dy="10"
-                        stdDeviation="4"
+                        dy="5"
+                        stdDeviation="3"
                         floodColor="hsl(var(--foreground))"
-                        floodOpacity="0.16"
+                        floodOpacity="0.1"
                       />
                       <feDropShadow
                         dx="0"
-                        dy="15"
-                        stdDeviation="9"
+                        dy="7"
+                        stdDeviation="5"
                         floodColor="hsl(var(--primary))"
-                        floodOpacity="0.36"
+                        floodOpacity="0.14"
                       />
                     </filter>
                   </defs>
@@ -436,7 +436,7 @@ export default function GangwonRegionMap({
                   id="gangwon-boundary-map"
                   data-testid="gangwon-boundary-map"
                   data-active-region={activeRegion ?? ""}
-                  className="absolute inset-0 h-full w-full drop-shadow-[0_16px_18px_rgba(15,23,42,0.12)]"
+                  className="absolute inset-0 h-full w-full"
                   viewBox="0 0 800 699"
                   role="presentation"
                   aria-hidden="true"
@@ -511,49 +511,49 @@ export default function GangwonRegionMap({
                   })}
                 </svg>
               </div>
-              <p className="mt-1 text-center text-xs font-semibold tracking-[0.28em] text-primary sm:mt-2 sm:text-sm">
+              <p className="mt-2 text-center text-[10px] font-semibold tracking-[0.16em] text-muted-foreground sm:text-xs">
                 PlanFix
               </p>
             </div>
 
-            <aside className="flex min-h-0 flex-col rounded-lg border border-border bg-muted/30 p-3 text-foreground sm:p-5">
-              <div className="flex items-center gap-3 sm:block">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary sm:h-11 sm:w-11">
+            <aside className="flex min-h-0 flex-col rounded-xl border border-border/70 bg-background p-4 text-foreground sm:p-5">
+              <div className="flex items-center gap-3 lg:block">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/5 text-primary lg:h-11 lg:w-11">
                   <MapPinned className="h-5 w-5" aria-hidden="true" />
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground sm:mt-5 sm:text-sm">선택한 지역</p>
-                  <p className="text-xl font-semibold tracking-tight sm:mt-1 sm:text-3xl">
+                  <p className="text-[11px] text-muted-foreground lg:mt-4">선택한 지역</p>
+                  <p className="mt-0.5 text-xl font-semibold tracking-tight lg:mt-1 lg:text-[22px]">
                     {activeRegion ?? "지역을 골라주세요"}
                   </p>
                 </div>
               </div>
-              <div className="mt-2 min-h-0 sm:mt-4 sm:min-h-[168px]" aria-live="polite">
+              <div className="mt-3 min-h-0 lg:mt-4 lg:min-h-[168px]" aria-live="polite">
                 {activeGuide ? (
                   <div data-testid="region-guide">
-                    <p className="text-xs leading-5 text-muted-foreground sm:text-sm sm:leading-6">
+                    <p className="text-xs leading-5 text-muted-foreground sm:text-[13px] sm:leading-6">
                       {activeGuide.description}
                     </p>
-                    <div className="mt-2 sm:mt-4">
-                      <p className="flex items-center gap-1.5 text-xs font-semibold text-foreground sm:gap-2 sm:text-sm">
+                    <div className="mt-3 sm:mt-4">
+                      <p className="flex items-center gap-1.5 text-xs font-semibold text-foreground sm:gap-2">
                         <Compass className="h-4 w-4 text-primary" aria-hidden="true" />
                         여행 키워드
                       </p>
                       <div
-                        className="mt-1 flex flex-wrap gap-1.5 pl-5 sm:mt-2 sm:gap-2 sm:pl-6"
+                        className="mt-2 flex flex-wrap gap-1.5 pl-5 sm:pl-6"
                         aria-label={`${activeRegion} 여행 키워드`}
                       >
                         {activeGuide.keywords.map((keyword) => (
                           <span
                             key={keyword}
-                            className="rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary sm:px-2.5 sm:py-1 sm:text-xs"
+                            className="rounded-full bg-primary/5 px-2.5 py-1 text-[11px] font-medium text-primary"
                           >
                             {keyword}
                           </span>
                         ))}
                       </div>
                     </div>
-                    <dl className="mt-2 grid grid-cols-2 gap-3 border-t border-border pt-2 text-xs sm:mt-4 sm:block sm:space-y-3 sm:pt-4 sm:text-sm">
+                    <dl className="mt-3 grid grid-cols-2 gap-3 border-t border-border/70 pt-3 text-xs lg:mt-4 lg:block lg:space-y-4 lg:pt-4">
                       <div>
                         <dt className="flex items-center gap-1.5 font-semibold text-foreground sm:gap-2">
                           <Landmark className="h-4 w-4 text-primary" aria-hidden="true" />
@@ -578,7 +578,7 @@ export default function GangwonRegionMap({
                     </dl>
                   </div>
                 ) : (
-                  <p className="text-xs leading-5 text-muted-foreground sm:text-sm sm:leading-6">
+                  <p className="text-xs leading-5 text-muted-foreground sm:text-[13px] sm:leading-6">
                     지도에서 지역을 누르면 선택됩니다. 마우스뿐 아니라 키보드와 터치로도
                     이용할 수 있어요.
                   </p>
@@ -591,7 +591,7 @@ export default function GangwonRegionMap({
                 onClick={() => {
                   if (pendingRegion) onSelect(pendingRegion);
                 }}
-                className="mt-3 flex h-10 shrink-0 items-center justify-center gap-2 rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground sm:mt-6 sm:h-11 lg:mt-auto"
+                className="mt-4 flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-primary px-5 text-[13px] font-semibold text-primary-foreground transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground lg:mt-auto"
               >
                 <Check className="h-4 w-4" aria-hidden="true" />
                 {pendingRegion ? `${pendingRegion} 선택하기` : "지역 선택하기"}
