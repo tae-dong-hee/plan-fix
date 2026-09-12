@@ -98,6 +98,7 @@ export default function MainPage() {
   const carouselRef = useRef<HTMLDivElement>(null);
   const [popularSpots, setPopularSpots] = useState<PopularSpot[] | null>(null);
   const [popularSpotsError, setPopularSpotsError] = useState(false);
+  const [spotsReload, setSpotsReload] = useState(0);
   const [likedSpots, setLikedSpots] = useState<Record<number, boolean>>({});
   const [loadingSpots, setLoadingSpots] = useState<Record<number, boolean>>({});
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -230,7 +231,7 @@ export default function MainPage() {
     return () => {
       ignore = true;
     };
-  }, [selectedRegion]);
+  }, [selectedRegion, spotsReload]);
 
   useEffect(() => {
     let ignore = false;
@@ -593,7 +594,24 @@ export default function MainPage() {
             )}
           </div>
 
-          {popularSpotsError || popularSpots?.length === 0 ? (
+          {popularSpots === null && !popularSpotsError ? (
+            <div role="status" className="mt-6 flex h-44 items-center justify-center gap-2 text-sm text-muted-foreground sm:h-72">
+              <Loader2 className="h-5 w-5 animate-spin text-primary" aria-hidden="true" />
+              <span>{locationName} 인기 장소를 불러오는 중...</span>
+            </div>
+          ) : popularSpotsError ? (
+            <div role="alert" className="mt-6 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+              <p>인기 장소를 불러오지 못했습니다.</p>
+              <button
+                type="button"
+                onClick={() => setSpotsReload((value) => value + 1)}
+                aria-label="인기 장소 다시 시도"
+                className="rounded-lg border border-border px-3 py-2 font-medium text-primary hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              >
+                다시 시도
+              </button>
+            </div>
+          ) : popularSpots?.length === 0 ? (
             <p className="mt-6 text-base text-muted-foreground">표시할 인기 장소가 없어요.</p>
           ) : (
             <div className="mt-5">
