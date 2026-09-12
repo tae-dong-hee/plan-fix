@@ -30,7 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Service
 public class CourseCoverImageApplicationService {
 
-    private static final int MAX_IMAGES = 20;
+    private static final int MAX_IMAGES = 40;
     private static final int MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 
     private final ObjectProvider<S3Client> s3ClientProvider;
@@ -56,7 +56,7 @@ public class CourseCoverImageApplicationService {
         if (image == null) {
             throw new CoreException(ErrorType.NOT_FOUND, "코스 대표 사진을 찾을 수 없습니다.");
         }
-        // 등록된 ID만 들어오므로 프로세스당 최대 20장, 최대 100MB로 제한된다.
+        // 등록된 ID만 들어오므로 프로세스당 최대 40장, 최대 200MB로 제한된다.
         // computeIfAbsent에서 실패한 요청은 저장하지 않아 다음 요청에서 다시 읽을 수 있다.
         return cache.computeIfAbsent(id, ignored -> load(image));
     }
@@ -102,7 +102,7 @@ public class CourseCoverImageApplicationService {
             Catalog catalog = mapper.readValue(input, Catalog.class);
             if (catalog.version() != 1 || catalog.images() == null || catalog.images().isEmpty()
                     || catalog.images().size() > MAX_IMAGES) {
-                throw new IllegalArgumentException("Course cover catalog must contain 1 to 20 images with version 1.");
+                throw new IllegalArgumentException("Course cover catalog must contain 1 to 40 images with version 1.");
             }
             Map<String, Image> images = new HashMap<>();
             for (Image image : catalog.images()) {
