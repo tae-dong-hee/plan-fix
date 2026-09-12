@@ -162,7 +162,7 @@ export default function CourseDetailPage() {
   }, [courseId, course?.isOwner]);
 
   return (
-    <div className="min-h-screen bg-muted/20 pb-20">
+    <div className="min-h-screen bg-muted/20 pb-20 md:pt-16">
       <AppNav />
 
       <main className="mx-auto max-w-4xl px-4 pt-6 sm:px-6 sm:pt-8">
