@@ -1,11 +1,12 @@
 import { StrictMode } from "react";
 import type { MockedFunction } from "vitest";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 
 import BoardDetailPage from "@/pages/board-detail-page";
-import { fetchBoardDetail, type BoardDetail } from "@/services/board";
+import { createBoardComment, deleteBoardComment, fetchBoardComments, fetchBoardDetail, updateBoardComment, type BoardComment, type BoardDetail } from "@/services/board";
 import { fetchCourse } from "@/services/course";
+import { fetchMyProfile } from "@/services/user";
 
 const mockedNavigate = vi.fn();
 vi.mock("react-router-dom", async () => {
@@ -18,6 +19,7 @@ vi.mock("react-router-dom", async () => {
 
 vi.mock("@/services/board");
 vi.mock("@/services/course");
+vi.mock("@/services/user");
 
 const mockedFetchBoardDetail = fetchBoardDetail as MockedFunction<typeof fetchBoardDetail>;
 const mockedFetchCourse = fetchCourse as MockedFunction<typeof fetchCourse>;
@@ -57,9 +59,156 @@ function boardFixture(overrides: Partial<BoardDetail> = {}): BoardDetail {
   };
 }
 
+function commentFixture(overrides: Partial<BoardComment> = {}): BoardComment {
+  return {
+    commentId: 1,
+    userId: 10,
+    boardId: 1,
+    parentCommentId: null,
+    content: "부모 댓글",
+    status: "ACTIVE",
+    createdAt: "2026-09-01T11:00:00Z",
+    updatedAt: "2026-09-01T11:00:00Z",
+    authorName: "작성자",
+    ...overrides,
+  };
+}
+
+function confirmCommentDeletion(content: string) {
+  const commentCard = screen.getByText(content).parentElement!;
+  fireEvent.click(within(commentCard).getByRole("button", { name: "삭제" }));
+  const confirmation = within(commentCard).getByText("댓글을 삭제할까요?").parentElement!;
+  fireEvent.click(within(confirmation).getByRole("button", { name: "삭제" }));
+}
+
 describe("BoardDetailPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(fetchBoardComments).mockResolvedValue([]);
+    vi.mocked(deleteBoardComment).mockResolvedValue(undefined);
+    vi.mocked(fetchMyProfile).mockResolvedValue({
+      userId: 10,
+      username: "작성자",
+      name: null,
+      email: null,
+      role: "USER",
+      status: "ACTIVE",
+      createdAt: "2026-09-01T10:00:00Z",
+      updatedAt: "2026-09-01T10:00:00Z",
+    });
+  });
+
+  test("삭제된 부모가 목록에 없어도 대댓글과 자손을 기존 스레드와 함께 한 번씩 표시한다", async () => {
+    mockedFetchBoardDetail.mockResolvedValue(boardFixture({ commentCount: 4 }));
+    const comments = [
+      commentFixture({ commentId: 2, parentCommentId: 1, content: "남아 있는 대댓글" }),
+      commentFixture({ commentId: 3, parentCommentId: 2, content: "남아 있는 손자 댓글" }),
+      commentFixture({ commentId: 4, content: "다른 부모 댓글" }),
+      commentFixture({ commentId: 5, parentCommentId: 4, content: "다른 대댓글" }),
+    ];
+    vi.mocked(fetchBoardComments).mockResolvedValue(comments);
+
+    renderAt("1");
+
+    const section = await screen.findByRole("region", { name: "댓글" });
+    for (const comment of comments) {
+      expect(within(section).getAllByText(comment.content)).toHaveLength(1);
+    }
+    expect(within(section).getByRole("heading", { name: "댓글 (4)" })).toBeInTheDocument();
+  });
+
+  test("부모 댓글을 삭제해도 대댓글과 손자 댓글이 남고 댓글 수는 하나만 감소한다", async () => {
+    mockedFetchBoardDetail.mockResolvedValue(boardFixture({ commentCount: 3 }));
+    vi.mocked(fetchBoardComments).mockResolvedValue([
+      commentFixture(),
+      commentFixture({ commentId: 2, parentCommentId: 1, content: "남아 있는 대댓글" }),
+      commentFixture({ commentId: 3, parentCommentId: 2, content: "남아 있는 손자 댓글" }),
+    ]);
+
+    renderAt("1");
+    await screen.findByText("남아 있는 손자 댓글");
+    confirmCommentDeletion("부모 댓글");
+
+    await waitFor(() => expect(screen.queryByText("부모 댓글")).not.toBeInTheDocument());
+    expect(deleteBoardComment).toHaveBeenCalledWith("1", 1);
+    expect(screen.getByText("남아 있는 대댓글")).toBeInTheDocument();
+    expect(screen.getByText("남아 있는 손자 댓글")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "댓글 (2)" })).toBeInTheDocument();
+    expect(screen.getByText("댓글 2")).toBeInTheDocument();
+  });
+
+  test("중간 대댓글을 삭제해도 부모 댓글과 남은 자손을 한 번씩 표시한다", async () => {
+    mockedFetchBoardDetail.mockResolvedValue(boardFixture({ commentCount: 4 }));
+    vi.mocked(fetchBoardComments).mockResolvedValue([
+      commentFixture(),
+      commentFixture({ commentId: 2, parentCommentId: 1, content: "삭제할 중간 대댓글" }),
+      commentFixture({ commentId: 3, parentCommentId: 2, content: "남아 있는 손자 댓글" }),
+      commentFixture({ commentId: 4, parentCommentId: 3, content: "더 깊은 대댓글" }),
+    ]);
+
+    renderAt("1");
+    await screen.findByText("더 깊은 대댓글");
+    confirmCommentDeletion("삭제할 중간 대댓글");
+
+    await waitFor(() => expect(screen.queryByText("삭제할 중간 대댓글")).not.toBeInTheDocument());
+    expect(deleteBoardComment).toHaveBeenCalledWith("1", 2);
+    for (const content of ["부모 댓글", "남아 있는 손자 댓글", "더 깊은 대댓글"]) {
+      expect(screen.getAllByText(content)).toHaveLength(1);
+    }
+    expect(screen.getByRole("heading", { name: "댓글 (3)" })).toBeInTheDocument();
+  });
+
+  test("부모 댓글 삭제가 실패하면 댓글과 대댓글 및 댓글 수를 유지한다", async () => {
+    mockedFetchBoardDetail.mockResolvedValue(boardFixture({ commentCount: 2 }));
+    vi.mocked(fetchBoardComments).mockResolvedValue([
+      commentFixture(),
+      commentFixture({ commentId: 2, parentCommentId: 1, content: "남아 있는 대댓글" }),
+    ]);
+    vi.mocked(deleteBoardComment).mockRejectedValue(new Error("댓글을 삭제하지 못했습니다."));
+
+    renderAt("1");
+    await screen.findByText("남아 있는 대댓글");
+    confirmCommentDeletion("부모 댓글");
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("댓글을 삭제하지 못했습니다.");
+    expect(screen.getByText("부모 댓글")).toBeInTheDocument();
+    expect(screen.getByText("남아 있는 대댓글")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "댓글 (2)" })).toBeInTheDocument();
+    expect(screen.getByText("댓글 2")).toBeInTheDocument();
+  });
+
+  test("부모가 없는 대댓글도 수정, 답글 작성, 삭제할 수 있다", async () => {
+    mockedFetchBoardDetail.mockResolvedValue(boardFixture({ commentCount: 1 }));
+    const orphan = commentFixture({ commentId: 2, parentCommentId: 1, content: "남아 있는 대댓글" });
+    vi.mocked(fetchBoardComments).mockResolvedValue([orphan]);
+    vi.mocked(updateBoardComment).mockResolvedValue({ ...orphan, content: "수정한 대댓글" });
+    vi.mocked(createBoardComment).mockResolvedValue(
+      commentFixture({ commentId: 3, parentCommentId: 2, content: "새로 작성한 답글" }),
+    );
+
+    renderAt("1");
+    const commentCard = (await screen.findByText(orphan.content)).parentElement!;
+    fireEvent.click(within(commentCard).getByRole("button", { name: "수정" }));
+    fireEvent.change(within(commentCard).getByRole("textbox"), { target: { value: "수정한 대댓글" } });
+    fireEvent.click(within(commentCard).getByRole("button", { name: "저장" }));
+
+    const updatedCard = (await screen.findByText("수정한 대댓글")).parentElement!;
+    expect(updateBoardComment).toHaveBeenCalledWith("1", 2, "수정한 대댓글");
+    fireEvent.click(within(updatedCard).getByRole("button", { name: "대댓글" }));
+    fireEvent.change(within(updatedCard).getByPlaceholderText("대댓글을 남겨보세요"), {
+      target: { value: "새로 작성한 답글" },
+    });
+    fireEvent.click(within(updatedCard).getByRole("button", { name: "등록" }));
+
+    await screen.findByText("새로 작성한 답글");
+    expect(createBoardComment).toHaveBeenCalledWith("1", "새로 작성한 답글", 2);
+    expect(screen.getByRole("heading", { name: "댓글 (2)" })).toBeInTheDocument();
+    confirmCommentDeletion("수정한 대댓글");
+
+    await waitFor(() => expect(screen.queryByText("수정한 대댓글")).not.toBeInTheDocument());
+    expect(deleteBoardComment).toHaveBeenCalledWith("1", 2);
+    expect(screen.getByText("새로 작성한 답글")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "댓글 (1)" })).toBeInTheDocument();
   });
 
   test("shows loading status while the detail is being fetched", () => {
