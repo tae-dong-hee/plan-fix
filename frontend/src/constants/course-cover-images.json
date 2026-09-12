@@ -1,0 +1,526 @@
+{
+  "version": 1,
+  "images": [
+    {
+      "id": "gangwon-course-cover-01",
+      "title": "춘천 소양호의 가을",
+      "author": "쿠키몬스터",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:20241108_%EC%BF%A0%ED%82%A4%EB%AA%AC%EC%8A%A4%ED%84%B0_%EC%86%8C%EC%96%91%ED%98%B8.jpg",
+      "regions": [
+        "110"
+      ],
+      "themes": [
+        "lake",
+        "mountain"
+      ],
+      "keywords": [
+        "춘천",
+        "소양호",
+        "소양강",
+        "호수",
+        "가을"
+      ],
+      "url": "https://planfix-bucket-975050156432-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/defaults/course-covers/2026-09-v1/gangwon-course-cover-01.jpg",
+      "s3Key": "defaults/course-covers/2026-09-v1/gangwon-course-cover-01.jpg",
+      "sha256": "b8bf288a1fe18f2b1db29ac5292c64709d21c0f0cb4a26b9dd8a8d32fdbe6f4e",
+      "changes": "Wikimedia Commons 제공 축소본 사용. 카드에서는 화면 비율에 맞춰 일부가 잘려 보일 수 있습니다."
+    },
+    {
+      "id": "gangwon-course-cover-02",
+      "title": "원주 치악산 비로봉 능선",
+      "author": "Ashy Minivet",
+      "license": "CC0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Chiaksan_as_seen_from_Birobong_Peak.jpg",
+      "regions": [
+        "130"
+      ],
+      "themes": [
+        "mountain"
+      ],
+      "keywords": [
+        "원주",
+        "치악산",
+        "비로봉",
+        "등산",
+        "능선"
+      ],
+      "url": "https://planfix-bucket-975050156432-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/defaults/course-covers/2026-09-v1/gangwon-course-cover-02.jpg",
+      "s3Key": "defaults/course-covers/2026-09-v1/gangwon-course-cover-02.jpg",
+      "sha256": "15163315f8c1c63df5774c3a2ae5e7b68b3bdc44417d73dbd18dac928292b4ec",
+      "changes": "Wikimedia Commons 제공 축소본 사용. 카드에서는 화면 비율에 맞춰 일부가 잘려 보일 수 있습니다."
+    },
+    {
+      "id": "gangwon-course-cover-03",
+      "title": "원주 치악산 단풍",
+      "author": "Lcarrion88",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Chiaksan_Foliage.jpg",
+      "regions": [
+        "130"
+      ],
+      "themes": [
+        "forest",
+        "mountain"
+      ],
+      "keywords": [
+        "원주",
+        "치악산",
+        "단풍",
+        "가을",
+        "숲"
+      ],
+      "url": "https://planfix-bucket-975050156432-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/defaults/course-covers/2026-09-v1/gangwon-course-cover-03.jpg",
+      "s3Key": "defaults/course-covers/2026-09-v1/gangwon-course-cover-03.jpg",
+      "sha256": "7403c87999f5871e38f08fa00bdf290e1cbf71a0f8e1a2a3e293fcf4f2c7c880",
+      "changes": "Wikimedia Commons 제공 축소본 사용. 카드에서는 화면 비율에 맞춰 일부가 잘려 보일 수 있습니다."
+    },
+    {
+      "id": "gangwon-course-cover-04",
+      "title": "원주 치악산 계곡",
+      "author": "Lcarrion88",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Chiaksan_Stream.jpg",
+      "regions": [
+        "130"
+      ],
+      "themes": [
+        "forest",
+        "river"
+      ],
+      "keywords": [
+        "원주",
+        "치악산",
+        "계곡",
+        "물",
+        "숲"
+      ],
+      "url": "https://planfix-bucket-975050156432-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/defaults/course-covers/2026-09-v1/gangwon-course-cover-04.jpg",
+      "s3Key": "defaults/course-covers/2026-09-v1/gangwon-course-cover-04.jpg",
+      "sha256": "ca182f388ee3fd2af26df831a5ce7bccc7ec79c6f499d745a538943c238ce508",
+      "changes": "Wikimedia Commons 제공 축소본 사용. 카드에서는 화면 비율에 맞춰 일부가 잘려 보일 수 있습니다."
+    },
+    {
+      "id": "gangwon-course-cover-05",
+      "title": "원주 치악산 숲길",
+      "author": "Lcarrion88",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Chiaksan_Trail.jpg",
+      "regions": [
+        "130"
+      ],
+      "themes": [
+        "forest",
+        "mountain"
+      ],
+      "keywords": [
+        "원주",
+        "치악산",
+        "산책",
+        "숲길",
+        "트레킹"
+      ],
+      "url": "https://planfix-bucket-975050156432-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/defaults/course-covers/2026-09-v1/gangwon-course-cover-05.jpg",
+      "s3Key": "defaults/course-covers/2026-09-v1/gangwon-course-cover-05.jpg",
+      "sha256": "028af64af2c801f942e73405f9d8f1c6f21781085794b811b766eacf12c8220d",
+      "changes": "Wikimedia Commons 제공 축소본 사용. 카드에서는 화면 비율에 맞춰 일부가 잘려 보일 수 있습니다."
+    },
+    {
+      "id": "gangwon-course-cover-06",
+      "title": "강릉 경포해변",
+      "author": "Mobius6",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Gyeongpo_Beach_20220502_002.jpg",
+      "regions": [
+        "150"
+      ],
+      "themes": [
+        "coast"
+      ],
+      "keywords": [
+        "강릉",
+        "경포",
+        "경포해변",
+        "해변",
+        "모래",
+        "바다"
+      ],
+      "url": "https://planfix-bucket-975050156432-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/defaults/course-covers/2026-09-v1/gangwon-course-cover-06.jpg",
+      "s3Key": "defaults/course-covers/2026-09-v1/gangwon-course-cover-06.jpg",
+      "sha256": "4f363d32b0bbee2ee2e238673ab97b9adfeeb0e4f486931672a94897ed3a83a5",
+      "changes": "Wikimedia Commons 제공 축소본 사용. 카드에서는 화면 비율에 맞춰 일부가 잘려 보일 수 있습니다."
+    },
+    {
+      "id": "gangwon-course-cover-07",
+      "title": "강릉 경포해변 소나무숲",
+      "author": "Mobius6",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Gyeongpo_Beach_20220502_012.jpg",
+      "regions": [
+        "150"
+      ],
+      "themes": [
+        "coast",
+        "forest"
+      ],
+      "keywords": [
+        "강릉",
+        "경포",
+        "소나무",
+        "숲",
+        "해변",
+        "바다"
+      ],
+      "url": "https://planfix-bucket-975050156432-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/defaults/course-covers/2026-09-v1/gangwon-course-cover-07.jpg",
+      "s3Key": "defaults/course-covers/2026-09-v1/gangwon-course-cover-07.jpg",
+      "sha256": "1a0b996649ba5e2595551b6303bccc55371e35685c6e589af18e3a289a2b54dd",
+      "changes": "Wikimedia Commons 제공 축소본 사용. 카드에서는 화면 비율에 맞춰 일부가 잘려 보일 수 있습니다."
+    },
+    {
+      "id": "gangwon-course-cover-09",
+      "title": "삼척 바다와 해변",
+      "author": "pcamp",
+      "license": "CC BY 2.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Korea-Samcheok-Beach-01.jpg",
+      "regions": [
+        "230"
+      ],
+      "themes": [
+        "coast"
+      ],
+      "keywords": [
+        "삼척",
+        "해변",
+        "바다",
+        "파도"
+      ],
+      "url": "https://planfix-bucket-975050156432-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/defaults/course-covers/2026-09-v1/gangwon-course-cover-09.jpg",
+      "s3Key": "defaults/course-covers/2026-09-v1/gangwon-course-cover-09.jpg",
+      "sha256": "504aa5d9960d7b306769afa8eb0eb31160ecdd5890092d4bd60dadcb51b038b5",
+      "changes": "Wikimedia Commons 제공 축소본 사용. 카드에서는 화면 비율에 맞춰 일부가 잘려 보일 수 있습니다."
+    },
+    {
+      "id": "gangwon-course-cover-10",
+      "title": "영월 청령포의 억새와 산",
+      "author": "Korea.net / Korean Culture and Information Service (Jeon Han)",
+      "license": "CC BY-SA 2.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Korea_Yeongwol_Sketch_06_(8228245105).jpg",
+      "regions": [
+        "750"
+      ],
+      "themes": [
+        "mountain",
+        "general"
+      ],
+      "keywords": [
+        "영월",
+        "청령포",
+        "억새",
+        "산",
+        "산책"
+      ],
+      "url": "https://planfix-bucket-975050156432-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/defaults/course-covers/2026-09-v1/gangwon-course-cover-10.jpg",
+      "s3Key": "defaults/course-covers/2026-09-v1/gangwon-course-cover-10.jpg",
+      "sha256": "7756e0ba25c0059b6c4dbf20b16aa96daa64f32a86a5f869ac998c5092219ed8",
+      "changes": "Wikimedia Commons 제공 축소본 사용. 카드에서는 화면 비율에 맞춰 일부가 잘려 보일 수 있습니다."
+    },
+    {
+      "id": "gangwon-course-cover-11",
+      "title": "태백산 겨울 숲",
+      "author": "Franguiche",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Parc_National_Taebaeksan_en_hiver.jpg",
+      "regions": [
+        "190"
+      ],
+      "themes": [
+        "mountain",
+        "forest"
+      ],
+      "keywords": [
+        "태백",
+        "태백산",
+        "겨울",
+        "눈",
+        "숲"
+      ],
+      "url": "https://planfix-bucket-975050156432-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/defaults/course-covers/2026-09-v1/gangwon-course-cover-11.jpg",
+      "s3Key": "defaults/course-covers/2026-09-v1/gangwon-course-cover-11.jpg",
+      "sha256": "9f584e5eabfe77b8de8e987f3839c217243f82ed748752f9cc0268cf54522d8e",
+      "changes": "Wikimedia Commons 제공 축소본 사용. 카드에서는 화면 비율에 맞춰 일부가 잘려 보일 수 있습니다."
+    },
+    {
+      "id": "gangwon-course-cover-12",
+      "title": "태백산 문수봉 조망",
+      "author": "Dcpeets",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Taebaeksan_main_peaks_from_Munsubong.jpg",
+      "regions": [
+        "190"
+      ],
+      "themes": [
+        "mountain"
+      ],
+      "keywords": [
+        "태백",
+        "태백산",
+        "문수봉",
+        "등산",
+        "산"
+      ],
+      "url": "https://planfix-bucket-975050156432-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/defaults/course-covers/2026-09-v1/gangwon-course-cover-12.jpg",
+      "s3Key": "defaults/course-covers/2026-09-v1/gangwon-course-cover-12.jpg",
+      "sha256": "4cfb827820d9f3ef65c767c138fcbc5fffeceb03539d0c827f3da5e1d202f30d",
+      "changes": "Wikimedia Commons 제공 축소본 사용. 카드에서는 화면 비율에 맞춰 일부가 잘려 보일 수 있습니다."
+    },
+    {
+      "id": "gangwon-course-cover-13",
+      "title": "태백산 너덜길",
+      "author": "최옥석",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:%ED%83%9C%EB%B0%B1%EC%82%B0.jpg",
+      "regions": [
+        "190"
+      ],
+      "themes": [
+        "mountain",
+        "forest"
+      ],
+      "keywords": [
+        "태백",
+        "태백산",
+        "너덜",
+        "숲",
+        "등산"
+      ],
+      "url": "https://planfix-bucket-975050156432-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/defaults/course-covers/2026-09-v1/gangwon-course-cover-13.jpg",
+      "s3Key": "defaults/course-covers/2026-09-v1/gangwon-course-cover-13.jpg",
+      "sha256": "ac31fd2d710b764de60e6bd30f4a2161975930aadcec47ee8d37fef6e67e63ee",
+      "changes": "Wikimedia Commons 제공 축소본 사용. 카드에서는 화면 비율에 맞춰 일부가 잘려 보일 수 있습니다."
+    },
+    {
+      "id": "gangwon-course-cover-14",
+      "title": "강릉 경포해변 서핑보드",
+      "author": "Mobius6",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Gyeongpo_Beach_20220502_016.jpg",
+      "regions": [
+        "150"
+      ],
+      "themes": [
+        "coast"
+      ],
+      "keywords": [
+        "강릉",
+        "경포",
+        "경포해변",
+        "서핑",
+        "바다"
+      ],
+      "url": "https://planfix-bucket-975050156432-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/defaults/course-covers/2026-09-v1/gangwon-course-cover-14.jpg",
+      "s3Key": "defaults/course-covers/2026-09-v1/gangwon-course-cover-14.jpg",
+      "sha256": "820ec638b6dfd87ccedd87c5f91569b0612618f8d9844d2e2cd9ca2ecbe2836a",
+      "changes": "Wikimedia Commons 제공 축소본 사용. 카드에서는 화면 비율에 맞춰 일부가 잘려 보일 수 있습니다."
+    },
+    {
+      "id": "gangwon-course-cover-15",
+      "title": "평창 대관령 초원과 양",
+      "author": "Lim_bau",
+      "license": "CC0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Daegwallyeong.jpg",
+      "regions": [
+        "760"
+      ],
+      "themes": [
+        "general",
+        "mountain"
+      ],
+      "keywords": [
+        "평창",
+        "대관령",
+        "양떼목장",
+        "목장",
+        "초원",
+        "양"
+      ],
+      "url": "https://planfix-bucket-975050156432-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/defaults/course-covers/2026-09-v1/gangwon-course-cover-15.jpg",
+      "s3Key": "defaults/course-covers/2026-09-v1/gangwon-course-cover-15.jpg",
+      "sha256": "a281a9bf7e661aad3de941d727fb826681a15842fa8b513a5bd54e7d462d4906",
+      "changes": "Wikimedia Commons 제공 축소본 사용. 카드에서는 화면 비율에 맞춰 일부가 잘려 보일 수 있습니다."
+    },
+    {
+      "id": "gangwon-course-cover-16",
+      "title": "평창 대관령 양떼목장",
+      "author": "Ken Eckert",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Daegwallyeong_Sheep.jpg",
+      "regions": [
+        "760"
+      ],
+      "themes": [
+        "general",
+        "mountain"
+      ],
+      "keywords": [
+        "평창",
+        "대관령",
+        "양떼목장",
+        "목장",
+        "초원",
+        "양"
+      ],
+      "url": "https://planfix-bucket-975050156432-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/defaults/course-covers/2026-09-v1/gangwon-course-cover-16.jpg",
+      "s3Key": "defaults/course-covers/2026-09-v1/gangwon-course-cover-16.jpg",
+      "sha256": "3d47d5bfd9ff2c6e6e25be181340185053034e73037268400854fbb2fbb58c42",
+      "changes": "Wikimedia Commons 제공 축소본 사용. 카드에서는 화면 비율에 맞춰 일부가 잘려 보일 수 있습니다."
+    },
+    {
+      "id": "gangwon-course-cover-17",
+      "title": "평창 오대산 겨울 능선",
+      "author": "Lcarrion88",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Odaesan_Mountain.jpg",
+      "regions": [
+        "760"
+      ],
+      "themes": [
+        "mountain",
+        "forest"
+      ],
+      "keywords": [
+        "평창",
+        "오대산",
+        "월정사",
+        "겨울",
+        "눈",
+        "등산",
+        "산"
+      ],
+      "url": "https://planfix-bucket-975050156432-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/defaults/course-covers/2026-09-v1/gangwon-course-cover-17.jpg",
+      "s3Key": "defaults/course-covers/2026-09-v1/gangwon-course-cover-17.jpg",
+      "sha256": "843d5a06efd92146c0411848b327d788eafe435776bf869ba97dc1554bb37aa1",
+      "changes": "Wikimedia Commons 제공 축소본 사용. 카드에서는 화면 비율에 맞춰 일부가 잘려 보일 수 있습니다."
+    },
+    {
+      "id": "gangwon-course-cover-18",
+      "title": "고성 화진포해변",
+      "author": "Treeinkr",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Goseong_Hwajinpo_Beach_20260418_(05).jpg",
+      "regions": [
+        "820"
+      ],
+      "themes": [
+        "coast"
+      ],
+      "keywords": [
+        "고성",
+        "화진포",
+        "화진포해변",
+        "해변",
+        "바다"
+      ],
+      "url": "https://planfix-bucket-975050156432-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/defaults/course-covers/2026-09-v1/gangwon-course-cover-18.jpg",
+      "s3Key": "defaults/course-covers/2026-09-v1/gangwon-course-cover-18.jpg",
+      "sha256": "2745778ddf1261bcc705d7e302bf72818a908b09bb0a95161883b9849a53f769",
+      "changes": "Wikimedia Commons 제공 축소본 사용. 카드에서는 화면 비율에 맞춰 일부가 잘려 보일 수 있습니다."
+    },
+    {
+      "id": "gangwon-course-cover-19",
+      "title": "철원 한탄강 협곡",
+      "author": "용인 학생",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:%ED%95%9C%ED%83%84%EA%B0%95_%EC%9E%94%EB%8F%84%EA%B8%B8_%ED%98%91%EA%B3%A1_3.jpg",
+      "regions": [
+        "780"
+      ],
+      "themes": [
+        "river",
+        "mountain"
+      ],
+      "keywords": [
+        "철원",
+        "한탄강",
+        "협곡",
+        "강",
+        "계곡",
+        "물"
+      ],
+      "url": "https://planfix-bucket-975050156432-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/defaults/course-covers/2026-09-v1/gangwon-course-cover-19.jpg",
+      "s3Key": "defaults/course-covers/2026-09-v1/gangwon-course-cover-19.jpg",
+      "sha256": "7b9cc23e6ec2688cbb3aaf7c2d1542ef957e50bfd1429cd3623dd1beab296249",
+      "changes": "Wikimedia Commons 제공 축소본 사용. 카드에서는 화면 비율에 맞춰 일부가 잘려 보일 수 있습니다."
+    },
+    {
+      "id": "gangwon-course-cover-20",
+      "title": "양양 인구해변 풍경",
+      "author": "EasyKL",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Gangwon_coast.JPG",
+      "regions": [
+        "830"
+      ],
+      "themes": [
+        "coast",
+        "general"
+      ],
+      "keywords": [
+        "양양",
+        "인구해변",
+        "인구해수욕장",
+        "해안",
+        "해변",
+        "바다"
+      ],
+      "url": "https://planfix-bucket-975050156432-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/defaults/course-covers/2026-09-v1/gangwon-course-cover-20.jpg",
+      "s3Key": "defaults/course-covers/2026-09-v1/gangwon-course-cover-20.jpg",
+      "sha256": "01156dbf0ae63dc6d703748c19df78f64a1434a9b3bd6970c4a5056ba10244de",
+      "changes": "Wikimedia Commons 제공 축소본 사용. 카드에서는 화면 비율에 맞춰 일부가 잘려 보일 수 있습니다."
+    },
+    {
+      "id": "gangwon-course-cover-21",
+      "title": "속초 등대해변의 파도",
+      "author": "HE YUNONG",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:South_Korea_Sokcho_Sea_View.jpg",
+      "regions": [
+        "210"
+      ],
+      "themes": [
+        "coast"
+      ],
+      "keywords": [
+        "속초",
+        "등대해변",
+        "등대해수욕장",
+        "바다",
+        "파도",
+        "해변"
+      ],
+      "url": "https://planfix-bucket-975050156432-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/defaults/course-covers/2026-09-v1/gangwon-course-cover-21.jpg",
+      "s3Key": "defaults/course-covers/2026-09-v1/gangwon-course-cover-21.jpg",
+      "sha256": "e408c0a509263f8a37104a665a6ece1603906555eb127d606c97234b9f4be242",
+      "changes": "Wikimedia Commons 제공 축소본 사용. 카드에서는 화면 비율에 맞춰 일부가 잘려 보일 수 있습니다."
+    }
+  ]
+}

@@ -11,6 +11,7 @@ import CourseListPage from "@/pages/course-list-page";
 import CourseInvitePage from "@/pages/course-invite-page";
 import LoginPage from "@/pages/login-page";
 import MainPage from "@/pages/main-page";
+import ImageCreditsPage from "@/pages/image-credits-page";
 import PublicCourseListPage from "@/pages/public-course-list-page";
 import PopularSpotsPage from "@/pages/popular-spots-page";
 import ProfilePage from "@/pages/profile-page";
@@ -27,6 +28,7 @@ export default function App() {
       <Route path="/login/demo" element={<LoginFormDemo />} />
       <Route path="/loading/demo" element={<UniqueLoaderDemo />} />
       <Route path="/main" element={<AuthReturnRedirect><MainPage /></AuthReturnRedirect>} />
+      <Route path="/image-credits" element={<ImageCreditsPage />} />
       <Route path="/wishlist" element={<WishlistPage />} />
       <Route path="/profile" element={<ProfilePage />} />
       <Route path="/search" element={<SearchPage />} />

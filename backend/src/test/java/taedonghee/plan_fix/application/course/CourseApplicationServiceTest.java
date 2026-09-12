@@ -158,7 +158,9 @@ class CourseApplicationServiceTest {
         final InMemorySpotRepository spots = new InMemorySpotRepository();
 
         CourseApplicationService service() {
-            return new CourseApplicationService(courses, spots);
+            return new CourseApplicationService(courses, spots, null, null,
+                    new CourseCoverImageSelector(List.of(new CourseCoverImageSelector.Image(
+                            "fixture", "https://images.example.com/cover.jpg", List.of(), List.of(), List.of()))));
         }
     }
 

@@ -3,6 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { ArrowLeft, CalendarDays, Eye, Heart, Loader2, MapPin } from "lucide-react";
 import AppNav from "@/components/ui/app-nav";
 import { fetchPublicCourses, type PublicCourseItem } from "@/services/course";
+import { getCourseCoverCredit, getCourseCoverImageSrc } from "@/lib/course-cover-images";
 
 const FALLBACK_IMAGE =
   "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=85";
@@ -34,7 +35,7 @@ export default function PublicCourseListPage() {
   }, [sort]);
 
   return (
-    <div className="min-h-screen bg-muted/20 pb-20">
+    <div className="min-h-screen bg-muted/20 pb-20 md:pt-20">
       <AppNav />
       <main className="mx-auto max-w-6xl px-4 pt-6 sm:px-6 sm:pt-8">
         <Link to="/main" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
@@ -73,24 +74,30 @@ export default function PublicCourseListPage() {
           <>
             <p className="mt-6 text-sm text-muted-foreground">총 {totalCount}개의 코스</p>
             <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {items?.map((course) => (
-                <Link key={course.courseId} to={`/courses/${course.courseId}`} className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition hover:border-primary/50 hover:shadow-md">
-                  <div className="relative h-44 bg-muted">
-                    <img src={course.thumbnail || FALLBACK_IMAGE} alt="" className="h-full w-full object-cover" />
-                    <span className="absolute bottom-3 left-3 rounded-full bg-background/90 px-3 py-1 text-xs font-semibold">{course.dayCount}일 일정</span>
-                  </div>
-                  <div className="p-4">
-                    <h2 className="truncate text-base font-bold">{course.title}</h2>
-                    {course.description && <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{course.description}</p>}
-                    <div className="mt-4 flex flex-wrap gap-3 text-xs text-muted-foreground">
-                      <span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{course.spotCount}곳</span>
-                      <span className="inline-flex items-center gap-1"><Heart className="h-3.5 w-3.5" />{course.likeCount}</span>
-                      <span className="inline-flex items-center gap-1"><Eye className="h-3.5 w-3.5" />{course.viewCount}</span>
-                      {course.startDate && <span className="inline-flex items-center gap-1"><CalendarDays className="h-3.5 w-3.5" />{course.startDate}</span>}
-                    </div>
-                  </div>
-                </Link>
-              ))}
+              {items?.map((course) => {
+                const credit = getCourseCoverCredit(course.thumbnail);
+                return (
+                  <article key={course.courseId} className="relative overflow-hidden rounded-2xl border border-border bg-background shadow-sm transition hover:border-primary/50 hover:shadow-md">
+                    <Link to={`/courses/${course.courseId}`} className="block">
+                      <div className="relative h-44 bg-muted">
+                        <img src={getCourseCoverImageSrc(course.thumbnail || FALLBACK_IMAGE)} alt="" loading="lazy" className="h-full w-full object-cover" />
+                        <span className="absolute bottom-3 left-3 rounded-full bg-background/90 px-3 py-1 text-xs font-semibold">{course.dayCount}일 일정</span>
+                      </div>
+                      <div className="p-4">
+                        <h2 className="truncate text-base font-bold">{course.title}</h2>
+                        {course.description && <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{course.description}</p>}
+                        <div className="mt-4 flex flex-wrap gap-3 text-xs text-muted-foreground">
+                          <span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{course.spotCount}곳</span>
+                          <span className="inline-flex items-center gap-1"><Heart className="h-3.5 w-3.5" />{course.likeCount}</span>
+                          <span className="inline-flex items-center gap-1"><Eye className="h-3.5 w-3.5" />{course.viewCount}</span>
+                          {course.startDate && <span className="inline-flex items-center gap-1"><CalendarDays className="h-3.5 w-3.5" />{course.startDate}</span>}
+                        </div>
+                      </div>
+                    </Link>
+                    {credit && <Link to={`/image-credits#${credit.id}`} aria-label={`${course.title} 사진 출처`} className="absolute right-3 top-3 rounded-full bg-black/45 px-2.5 py-1.5 text-[10px] text-white hover:bg-black/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">사진 출처</Link>}
+                  </article>
+                );
+              })}
             </div>
           </>
         )}

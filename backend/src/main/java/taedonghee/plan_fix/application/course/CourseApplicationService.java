@@ -1,5 +1,6 @@
 package taedonghee.plan_fix.application.course;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
@@ -42,18 +43,31 @@ public class CourseApplicationService {
     private final SpotRepository spotRepository;
     private final BoardRepository boardRepository;
     private final CourseMemberJpaRepository courseMemberJpaRepository;
+    private final CourseCoverImageSelector courseCoverImageSelector;
 
     @Autowired
     public CourseApplicationService(
             CourseRepository courseRepository,
             SpotRepository spotRepository,
             @Nullable BoardRepository boardRepository,
-            @Nullable CourseMemberJpaRepository courseMemberJpaRepository
+            @Nullable CourseMemberJpaRepository courseMemberJpaRepository,
+            CourseCoverImageSelector courseCoverImageSelector
     ) {
         this.courseRepository = courseRepository;
         this.spotRepository = spotRepository;
         this.boardRepository = boardRepository;
         this.courseMemberJpaRepository = courseMemberJpaRepository;
+        this.courseCoverImageSelector = courseCoverImageSelector;
+    }
+
+    public CourseApplicationService(
+            CourseRepository courseRepository,
+            SpotRepository spotRepository,
+            @Nullable BoardRepository boardRepository,
+            @Nullable CourseMemberJpaRepository courseMemberJpaRepository
+    ) {
+        this(courseRepository, spotRepository, boardRepository, courseMemberJpaRepository,
+                new CourseCoverImageSelector(new ObjectMapper()));
     }
 
     public CourseApplicationService(CourseRepository courseRepository, SpotRepository spotRepository) {
@@ -123,7 +137,18 @@ public class CourseApplicationService {
         validateListQuery(query);
         CourseSortType sort = parseSort(query.sort());
         List<CourseModel> courses = courseRepository.searchPublic(sort, query.offset(), query.size());
-        return new CourseListResult(courses.stream().map(CourseListResult.Item::from).toList(),
+        Set<Long> spotIds = courses.stream()
+                .filter(course -> course.thumbnail() == null || course.thumbnail().isBlank())
+                .flatMap(course -> course.days().stream())
+                .flatMap(day -> day.spots().stream())
+                .map(CourseSpotModel::spotId)
+                .collect(Collectors.toSet());
+        Map<Long, SpotModel> spotsById = spotIds.isEmpty() ? Map.of()
+                : spotRepository.findAllByIdIn(spotIds).stream()
+                .collect(Collectors.toMap(SpotModel::spotId, Function.identity()));
+        return new CourseListResult(courses.stream()
+                .map(course -> CourseListResult.Item.from(course, courseCoverImageSelector.select(course, spotsById)))
+                .toList(),
                 query.offset(), query.size(), courseRepository.countPublic());
     }
 
