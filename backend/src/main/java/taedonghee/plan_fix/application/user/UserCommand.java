@@ -1,5 +1,7 @@
 package taedonghee.plan_fix.application.user;
 
+import java.time.LocalDate;
+
 /**
  * 사용자 Command DTO
  */
@@ -16,8 +18,12 @@ public final class UserCommand {
             String name,
             String email,
             String loginId,
-            String password
+            String password,
+            LocalDate birthDate
     ) {
+        public Create(String username, String name, String email, String loginId, String password) {
+            this(username, name, email, loginId, password, null);
+        }
     }
 
     /**
@@ -27,6 +33,10 @@ public final class UserCommand {
             String username,
             String name,
             String email
+            , LocalDate birthDate
     ) {
+        public Update(String username, String name, String email) {
+            this(username, name, email, null);
+        }
     }
 }

@@ -28,6 +28,7 @@ type SignupFormProps = {
   message?: SignupFormMessage | null;
   onSubmit?: (values: SignupFormValues) => void | Promise<void>;
   onCheckEmailAvailability?: (email: string) => Promise<EmailAvailabilityResult>;
+  onCheckUsernameAvailability?: (username: string) => Promise<EmailAvailabilityResult>;
   onBackToLogin?: () => void;
   loginHref?: string;
 };
@@ -103,11 +104,14 @@ export default function SignupForm({
   message,
   onSubmit,
   onCheckEmailAvailability,
+  onCheckUsernameAvailability,
   onBackToLogin,
   loginHref = "/login",
 }: SignupFormProps) {
   const [values, setValues] = useState<SignupFormValues>(initialValues);
   const [loginIdError, setLoginIdError] = useState<string | null>(null);
+  const [loginIdStatus, setLoginIdStatus] = useState<"idle" | "checking" | "available" | "unavailable" | "error">("idle");
+  const [loginIdCheckMessage, setLoginIdCheckMessage] = useState<string | null>(null);
   const [nameError, setNameError] = useState<string | null>(null);
   const [passwordFormatError, setPasswordFormatError] = useState<string | null>(null);
   const [passwordConfirmationError, setPasswordConfirmationError] = useState<string | null>(null);
@@ -120,6 +124,8 @@ export default function SignupForm({
 
     if (field === "loginId") {
       setLoginIdError(null);
+      setLoginIdStatus("idle");
+      setLoginIdCheckMessage(null);
     }
 
     if (field === "name") {
@@ -143,6 +149,15 @@ export default function SignupForm({
     if (field === "birthDate") {
       setBirthDateError(null);
     }
+  };
+
+  const handleLoginIdAvailabilityCheck = async () => {
+    const error = getLoginIdError(values.loginId);
+    if (error) { setLoginIdError(error); return; }
+    if (!onCheckUsernameAvailability) return;
+    setLoginIdStatus("checking"); setLoginIdCheckMessage("아이디를 확인하고 있어요.");
+    try { const result = await onCheckUsernameAvailability(values.loginId); setLoginIdStatus(result.available ? "available" : "unavailable"); setLoginIdCheckMessage(result.message); }
+    catch { setLoginIdStatus("error"); setLoginIdCheckMessage("중복 확인 중 오류가 발생했습니다."); }
   };
 
   const handleEmailAvailabilityCheck = async () => {
@@ -234,6 +249,12 @@ export default function SignupForm({
 
     setLoginIdError(null);
 
+    if (loginIdStatus !== "available") {
+      setLoginIdStatus("error");
+      setLoginIdCheckMessage("회원가입 전에 아이디 중복 확인을 완료해 주세요.");
+      return;
+    }
+
     const nextNameError = getNameError(values.name);
 
     if (nextNameError) {
@@ -320,6 +341,7 @@ export default function SignupForm({
               maxLength={20}
               required
             />
+            <button type="button" onClick={() => void handleLoginIdAvailabilityCheck()} disabled={isSubmitting || loginIdStatus === "checking" || !values.loginId} className="h-8 shrink-0 rounded-md bg-primary/10 px-3 text-xs font-semibold text-primary disabled:opacity-50">{loginIdStatus === "checking" ? "확인 중..." : "중복 확인"}</button>
           </span>
           <span
             id="login-id-guidance"
@@ -328,6 +350,7 @@ export default function SignupForm({
           >
             {loginIdError ?? loginIdRequirementText}
           </span>
+          {loginIdCheckMessage && <span className={cn(helperClassName, loginIdStatus === "available" ? "text-emerald-600" : "text-destructive")} role="status">{loginIdCheckMessage}</span>}
         </div>
 
         <div className="block">

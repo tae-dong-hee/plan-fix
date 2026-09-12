@@ -1,6 +1,7 @@
 package taedonghee.plan_fix.interfaces.api.user;
 
 import taedonghee.plan_fix.application.user.UserCommand;
+import java.time.LocalDate;
 
 /**
  * 사용자 API 요청 DTO
@@ -18,14 +19,15 @@ public final class UserRequest {
             String name,
             String email,
             String loginId,
-            String password
+            String password,
+            LocalDate birthDate
     ) {
 
         /**
          * application 입력값 변환
          */
         public UserCommand.Create toCommand() {
-            return new UserCommand.Create(username, name, email, loginId, password);
+            return new UserCommand.Create(username, name, email, loginId, password, birthDate);
         }
     }
 
@@ -35,14 +37,15 @@ public final class UserRequest {
     public record Update(
             String username,
             String name,
-            String email
+            String email,
+            LocalDate birthDate
     ) {
 
         /**
          * application 입력값 변환
          */
         public UserCommand.Update toCommand() {
-            return new UserCommand.Update(username, name, email);
+            return new UserCommand.Update(username, name, email, birthDate);
         }
     }
 }
