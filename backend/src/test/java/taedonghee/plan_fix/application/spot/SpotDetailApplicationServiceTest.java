@@ -177,6 +177,8 @@ class SpotDetailApplicationServiceTest {
         SpotDetailResult result = fixture.service().get(saved.spotId(), null);
 
         assertThat(result.images()).containsExactly("http://example.com/1.jpg", "http://example.com/2.jpg");
+        assertThat(result.thumbnail()).isEqualTo("http://example.com/1.jpg");
+        assertThat(saved.thumbnail()).isNull();
         assertThat(result.info()).isNotNull();
         assertThat(result.info().tel()).isEqualTo("033-000-0000");
         assertThat(result.info().parkInfo()).isEqualTo("가능");
@@ -411,6 +413,11 @@ class SpotDetailApplicationServiceTest {
     static class InMemoryTourDataImageRepository implements TourDataImageRepository {
         private final List<TourDataImageModel> saved = new ArrayList<>();
         private long sequence = 0;
+
+        @Override
+        public List<taedonghee.plan_fix.domain.spot.SpotImageCandidate> findBySpotIds(java.util.Collection<Long> spotIds) {
+            throw new AssertionError("상세 조회는 이미 조회한 사진을 재사용해야 한다");
+        }
 
         @Override
         public TourDataImageModel save(TourDataImageModel image) {

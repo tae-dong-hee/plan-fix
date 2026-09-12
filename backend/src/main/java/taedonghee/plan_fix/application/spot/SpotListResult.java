@@ -22,8 +22,12 @@ public record SpotListResult(List<Item> items, int offset, int size, long totalC
         }
 
         public static Item from(SpotModel spot, boolean isLiked) {
+            return from(spot, isLiked, spot.thumbnail());
+        }
+
+        public static Item from(SpotModel spot, boolean isLiked, String thumbnail) {
             return new Item(spot.spotId(), spot.title(), spot.category(), spot.region(), spot.sigungu(),
-                    spot.thumbnail(), spot.latitude(), spot.longitude(), isLiked);
+                    thumbnail, spot.latitude(), spot.longitude(), isLiked);
         }
     }
 }

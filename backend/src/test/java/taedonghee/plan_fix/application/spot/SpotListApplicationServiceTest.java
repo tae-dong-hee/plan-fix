@@ -24,11 +24,36 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class SpotListApplicationServiceTest {
 
     @Test
+    void 대표사진_상세사진_사진없음을_목록응답에_구분해_반영한다() {
+        InMemorySpotRepository repository = new InMemorySpotRepository();
+        SpotModel cover = repository.save(spot("대표사진", "관광지", "51", "150", "cover.jpg"));
+        SpotModel detail = repository.save(spot("상세사진", "관광지", "51", "150", null));
+        SpotModel empty = repository.save(spot("사진없음", "관광지", "51", "150", null));
+        var images = org.mockito.Mockito.mock(taedonghee.plan_fix.domain.spot.TourDataImageRepository.class);
+        org.mockito.Mockito.when(images.findBySpotIds(java.util.Set.of(detail.spotId(), empty.spotId())))
+                .thenReturn(List.of(new taedonghee.plan_fix.domain.spot.SpotImageCandidate(
+                        detail.spotId(), "https://example.com/detail.jpg", null)));
+        SpotListApplicationService service = new SpotListApplicationService(
+                repository, new NoOpSpotLikeRepository(), new SpotThumbnailResolver(images));
+
+        SpotListResult result = service.list(new SpotListQuery(null, null, null, null, null, 0, 20));
+
+        assertThat(result.items()).extracting(SpotListResult.Item::thumbnail)
+                .containsExactly(null, "https://example.com/detail.jpg", "cover.jpg");
+        assertThat(result.items()).extracting(SpotListResult.Item::spotId)
+                .containsExactly(empty.spotId(), detail.spotId(), cover.spotId());
+        assertThat(result.totalCount()).isEqualTo(3);
+        assertThat(repository.findById(detail.spotId()).orElseThrow().thumbnail()).isNull();
+        org.mockito.Mockito.verify(images).findBySpotIds(java.util.Set.of(detail.spotId(), empty.spotId()));
+        org.mockito.Mockito.verifyNoMoreInteractions(images);
+    }
+
+    @Test
     void 목록과_totalCount를_함께_반환한다() {
         InMemorySpotRepository repository = new InMemorySpotRepository();
         repository.save(spot("정동진", "관광지", "51", "150", "thumb.jpg"));
         repository.save(spot("경포대", "관광지", "51", "150", "thumb2.jpg"));
-        SpotListApplicationService service = new SpotListApplicationService(repository, new NoOpSpotLikeRepository());
+        SpotListApplicationService service = new SpotListApplicationService(repository, new NoOpSpotLikeRepository(), thumbnailResolver());
 
         SpotListResult result = service.list(new SpotListQuery(null, null, null, null, null, 0, 20));
 
@@ -48,7 +73,7 @@ class SpotListApplicationServiceTest {
     @DisplayName("keyword가 주어지면 SpotSearchCondition에 keyword가 전달된다")
     void keyword_is_passed_to_condition() {
         RecordingSpotRepository repository = new RecordingSpotRepository();
-        SpotListApplicationService service = new SpotListApplicationService(repository, new NoOpSpotLikeRepository());
+        SpotListApplicationService service = new SpotListApplicationService(repository, new NoOpSpotLikeRepository(), thumbnailResolver());
 
         service.list(new SpotListQuery(" 속초 ", null, null, null, null, 0, 20));
 
@@ -59,7 +84,7 @@ class SpotListApplicationServiceTest {
     @DisplayName("keyword가 빈 문자열이나 공백이면 null로 정규화된다")
     void blank_keyword_normalizes_to_null() {
         RecordingSpotRepository repository = new RecordingSpotRepository();
-        SpotListApplicationService service = new SpotListApplicationService(repository, new NoOpSpotLikeRepository());
+        SpotListApplicationService service = new SpotListApplicationService(repository, new NoOpSpotLikeRepository(), thumbnailResolver());
 
         service.list(new SpotListQuery("   ", null, null, null, null, 0, 20));
 
@@ -69,7 +94,7 @@ class SpotListApplicationServiceTest {
     @Test
     void offset과_size를_그대로_결과에_담아_돌려준다() {
         InMemorySpotRepository repository = new InMemorySpotRepository();
-        SpotListApplicationService service = new SpotListApplicationService(repository, new NoOpSpotLikeRepository());
+        SpotListApplicationService service = new SpotListApplicationService(repository, new NoOpSpotLikeRepository(), thumbnailResolver());
 
         SpotListResult result = service.list(new SpotListQuery(null, null, null, null, null, 10, 5));
 
@@ -79,7 +104,7 @@ class SpotListApplicationServiceTest {
 
     @Test
     void offset이_음수면_예외가_발생한다() {
-        SpotListApplicationService service = new SpotListApplicationService(new InMemorySpotRepository(), new NoOpSpotLikeRepository());
+        SpotListApplicationService service = new SpotListApplicationService(new InMemorySpotRepository(), new NoOpSpotLikeRepository(), thumbnailResolver());
 
         assertThatThrownBy(() -> service.list(new SpotListQuery(null, null, null, null, null, -1, 20)))
                 .isInstanceOf(CoreException.class);
@@ -87,7 +112,7 @@ class SpotListApplicationServiceTest {
 
     @Test
     void size가_0이면_예외가_발생한다() {
-        SpotListApplicationService service = new SpotListApplicationService(new InMemorySpotRepository(), new NoOpSpotLikeRepository());
+        SpotListApplicationService service = new SpotListApplicationService(new InMemorySpotRepository(), new NoOpSpotLikeRepository(), thumbnailResolver());
 
         assertThatThrownBy(() -> service.list(new SpotListQuery(null, null, null, null, null, 0, 0)))
                 .isInstanceOf(CoreException.class);
@@ -95,7 +120,7 @@ class SpotListApplicationServiceTest {
 
     @Test
     void size가_100을_넘으면_예외가_발생한다() {
-        SpotListApplicationService service = new SpotListApplicationService(new InMemorySpotRepository(), new NoOpSpotLikeRepository());
+        SpotListApplicationService service = new SpotListApplicationService(new InMemorySpotRepository(), new NoOpSpotLikeRepository(), thumbnailResolver());
 
         assertThatThrownBy(() -> service.list(new SpotListQuery(null, null, null, null, null, 0, 101)))
                 .isInstanceOf(CoreException.class);
@@ -104,7 +129,7 @@ class SpotListApplicationServiceTest {
     @Test
     void sort가_없으면_LATEST로_저장소에_넘긴다() {
         RecordingSpotRepository repository = new RecordingSpotRepository();
-        SpotListApplicationService service = new SpotListApplicationService(repository, new NoOpSpotLikeRepository());
+        SpotListApplicationService service = new SpotListApplicationService(repository, new NoOpSpotLikeRepository(), thumbnailResolver());
 
         service.list(new SpotListQuery(null, null, null, null, null, 0, 20));
 
@@ -114,7 +139,7 @@ class SpotListApplicationServiceTest {
     @Test
     void sort_popular이면_POPULAR로_저장소에_넘긴다() {
         RecordingSpotRepository repository = new RecordingSpotRepository();
-        SpotListApplicationService service = new SpotListApplicationService(repository, new NoOpSpotLikeRepository());
+        SpotListApplicationService service = new SpotListApplicationService(repository, new NoOpSpotLikeRepository(), thumbnailResolver());
 
         service.list(new SpotListQuery(null, null, null, null, "popular", 0, 20));
 
@@ -124,7 +149,7 @@ class SpotListApplicationServiceTest {
     @Test
     void sort_latest이면_LATEST로_저장소에_넘긴다() {
         RecordingSpotRepository repository = new RecordingSpotRepository();
-        SpotListApplicationService service = new SpotListApplicationService(repository, new NoOpSpotLikeRepository());
+        SpotListApplicationService service = new SpotListApplicationService(repository, new NoOpSpotLikeRepository(), thumbnailResolver());
 
         service.list(new SpotListQuery(null, null, null, null, "latest", 0, 20));
 
@@ -133,10 +158,14 @@ class SpotListApplicationServiceTest {
 
     @Test
     void sort가_알수없는_값이면_예외가_발생한다() {
-        SpotListApplicationService service = new SpotListApplicationService(new InMemorySpotRepository(), new NoOpSpotLikeRepository());
+        SpotListApplicationService service = new SpotListApplicationService(new InMemorySpotRepository(), new NoOpSpotLikeRepository(), thumbnailResolver());
 
         assertThatThrownBy(() -> service.list(new SpotListQuery(null, null, null, null, "trending", 0, 20)))
                 .isInstanceOf(CoreException.class);
+    }
+
+    private SpotThumbnailResolver thumbnailResolver() {
+        return new SpotThumbnailResolver(org.mockito.Mockito.mock(taedonghee.plan_fix.domain.spot.TourDataImageRepository.class));
     }
 
     private SpotModel spot(String title, String category, String region, String sigungu, String thumbnail) {

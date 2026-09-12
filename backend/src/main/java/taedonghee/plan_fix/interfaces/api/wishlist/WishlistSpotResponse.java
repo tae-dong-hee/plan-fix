@@ -1,6 +1,7 @@
 package taedonghee.plan_fix.interfaces.api.wishlist;
 
 import taedonghee.plan_fix.domain.spot.SpotModel;
+import taedonghee.plan_fix.application.wishlist.WishlistSpotResult;
 
 /**
  * [interfaces] 위시리스트 스팟 응답 DTO
@@ -17,6 +18,10 @@ public record WishlistSpotResponse(
         boolean isLiked
 ) {
     public static WishlistSpotResponse from(SpotModel spot) {
+        return from(WishlistSpotResult.from(spot, spot.thumbnail()));
+    }
+
+    public static WishlistSpotResponse from(WishlistSpotResult spot) {
         return new WishlistSpotResponse(
                 spot.spotId(),
                 spot.title(),
@@ -26,7 +31,7 @@ public record WishlistSpotResponse(
                 spot.address(),
                 spot.thumbnail(),
                 spot.likeCount(),
-                true
+                spot.isLiked()
         );
     }
 }

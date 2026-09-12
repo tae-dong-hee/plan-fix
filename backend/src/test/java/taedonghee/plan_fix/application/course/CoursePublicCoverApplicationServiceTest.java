@@ -1,11 +1,13 @@
 package taedonghee.plan_fix.application.course;
 
 import org.junit.jupiter.api.Test;
+import taedonghee.plan_fix.application.spot.SpotThumbnailResolver;
 import taedonghee.plan_fix.domain.course.CourseModel;
 import taedonghee.plan_fix.domain.course.CourseRepository;
 import taedonghee.plan_fix.domain.course.CourseSortType;
 import taedonghee.plan_fix.domain.spot.SpotModel;
 import taedonghee.plan_fix.domain.spot.SpotRepository;
+import taedonghee.plan_fix.domain.spot.TourDataImageRepository;
 
 import java.util.List;
 import java.util.Optional;
@@ -88,6 +90,7 @@ class CoursePublicCoverApplicationServiceTest {
         CourseCoverImageSelector selector = new CourseCoverImageSelector(List.of(
                 new CourseCoverImageSelector.Image("coast", "https://images.example.com/coast.jpg", List.of("150"), List.of("coast"), List.of("바다")),
                 new CourseCoverImageSelector.Image("lake", "https://images.example.com/lake.jpg", List.of("110"), List.of("lake"), List.of("호수"))));
-        return new CourseApplicationService(courses, spots, null, null, selector);
+        return new CourseApplicationService(courses, spots, null, null, selector,
+                new SpotThumbnailResolver(mock(TourDataImageRepository.class)));
     }
 }

@@ -37,6 +37,11 @@ public record CourseResult(
      * CourseModel과 SpotModel 맵을 응답용 결과 객체로 변환
      */
     public static CourseResult from(CourseModel course, Map<Long, SpotModel> spotsById) {
+        return from(course, spotsById, null);
+    }
+
+    public static CourseResult from(CourseModel course, Map<Long, SpotModel> spotsById,
+                                    Map<Long, String> thumbnails) {
         List<Day> dayResults = new ArrayList<>();
         for (CourseDayModel day : course.days()) {
             List<Spot> spotResults = new ArrayList<>();
@@ -53,7 +58,8 @@ public record CourseResult(
                         spotInfo != null ? spotInfo.region() : null,
                         spotInfo != null ? spotInfo.sigungu() : null,
                         spotInfo != null ? spotInfo.address() : null,
-                        spotInfo != null ? spotInfo.thumbnail() : null,
+                        thumbnails != null ? thumbnails.get(spot.spotId())
+                                : spotInfo != null ? spotInfo.thumbnail() : null,
                         spotInfo != null ? spotInfo.latitude() : null,
                         spotInfo != null ? spotInfo.longitude() : null
                 ));

@@ -4,7 +4,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 import taedonghee.plan_fix.domain.spot.TourDataImageModel;
 import taedonghee.plan_fix.domain.spot.TourDataImageRepository;
+import taedonghee.plan_fix.domain.spot.SpotImageCandidate;
 
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -37,6 +39,14 @@ public class TourDataImageRepositoryImpl implements TourDataImageRepository {
 	@Override
 	public void deleteByTourDataSpotId(Long tourDataSpotId) {
 		tourDataImageJpaRepository.deleteByTourDataSpotId(tourDataSpotId);
+	}
+
+	@Override
+	public List<SpotImageCandidate> findBySpotIds(Collection<Long> spotIds) {
+		if (spotIds == null || spotIds.isEmpty()) {
+			return List.of();
+		}
+		return tourDataImageJpaRepository.findBySpotIds(spotIds);
 	}
 
 	@Override
