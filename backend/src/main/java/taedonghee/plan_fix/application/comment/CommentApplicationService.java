@@ -18,7 +18,7 @@ public class CommentApplicationService {
     public List<CommentResult> list(Long boardId) { return repository.findByBoardIdAndStatusOrderByCreatedAtAscCommentIdAsc(boardId,"ACTIVE").stream().map(this::toResult).toList(); }
     /** 댓글 등록. 대댓글은 같은 게시글에 속한 활성 부모 댓글이 있어야 한다. */
     @Transactional public CommentResult create(Long userId, Long boardId, Long parentId, String content) {
-        validate(content); if(parentId!=null) { CommentJpaEntity p=repository.findById(parentId).filter(x->x.getBoardId().equals(boardId)&&"ACTIVE".equals(x.getStatus())).orElseThrow(()->new CoreException(ErrorType.NOT_FOUND,"parent comment not found.")); }
+        validate(content); if(parentId!=null) { CommentJpaEntity p=repository.findById(parentId).filter(x->x.getBoardId().equals(boardId)&&"ACTIVE".equals(x.getStatus())).orElseThrow(()->new CoreException(ErrorType.NOT_FOUND,"parent comment not found.")); if(p.getParentCommentId()!=null) throw new CoreException(ErrorType.BAD_REQUEST,"대댓글에는 다시 대댓글을 작성할 수 없습니다."); }
         OffsetDateTime now=OffsetDateTime.now(); return toResult(repository.save(CommentJpaEntity.builder().userId(userId).boardId(boardId).parentCommentId(parentId).content(content.strip()).status("ACTIVE").createdAt(now).updatedAt(now).build()));
     }
     /** 작성자만 내용을 수정할 수 있으며, 앞뒤 공백을 제거하고 수정 시각을 갱신한다. */
