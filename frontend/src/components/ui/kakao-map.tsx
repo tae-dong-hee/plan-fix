@@ -2,6 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { MapPin, RefreshCw } from "lucide-react";
 
 import { hasMapCoordinates } from "@/lib/map-coordinates";
+import { chooseInitialMapZoom } from "@/lib/map-initial-zoom";
+import { layoutMapLabels, type MapLabelAnchor } from "@/lib/map-label-layout";
+import { separateMapMarkers } from "@/lib/map-marker-layout";
 import { MISSING_SPOT_LOCATION } from "@/lib/spot-display";
 
 /** 지도에 찍을 장소. 표시할 수 없는 좌표는 원본 목록을 유지한 채 지도에서만 제외한다. */
@@ -115,7 +118,8 @@ export default function KakaoMap({
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<KakaoNamespace>(null);
   const markersRef = useRef<MarkerEntry[]>([]);
-  const viewportRef = useRef<{ bounds: KakaoNamespace; count: number } | null>(null);
+  const layoutLabelsRef = useRef<(() => void) | null>(null);
+  const fitViewportRef = useRef<(() => void) | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "no-key" | "error" | "empty">("loading");
   const [retryCount, setRetryCount] = useState(0);
   const onSpotClickRef = useRef(onSpotClick);
@@ -164,7 +168,6 @@ export default function KakaoMap({
     return () => {
       cancelled = true;
       mapRef.current = null;
-      viewportRef.current = null;
       // SDK가 붙인 자식만 정리한다. React가 관리하는 컨테이너는 항상 유지한다.
       container?.replaceChildren();
     };
@@ -176,7 +179,6 @@ export default function KakaoMap({
     const map = mapRef.current;
     const overlays: KakaoNamespace[] = [];
     markersRef.current = [];
-    viewportRef.current = null;
 
     const positions = plottable.map(({ spot }) => new kakao.maps.LatLng(spot.latitude, spot.longitude));
     positions.forEach((position: KakaoNamespace, index: number) => {
@@ -199,6 +201,68 @@ export default function KakaoMap({
       markersRef.current.push({ spotId: spot.spotId, element, overlay, position });
     });
 
+    let frame: number | undefined;
+    let disposed = false;
+    const measureLabels = (): MapLabelAnchor[] => {
+      const projection = map.getProjection();
+      return markersRef.current.map(({ position, element }) => {
+        const point = projection.containerPointFromCoords(position);
+        const label = element.querySelector<HTMLElement>('[data-role="label"]')!;
+        return {
+          x: point.x,
+          y: point.y,
+          width: label.offsetWidth,
+          height: label.offsetHeight,
+          priority: element.dataset.selected === "true" ? 2 : element.dataset.highlighted === "true" ? 1 : 0,
+        };
+      });
+    };
+    const layoutLabels = () => {
+      if (disposed || !containerRef.current) return;
+      const viewport = { width: containerRef.current.clientWidth, height: containerRef.current.clientHeight };
+      if (!viewport.width || !viewport.height) return;
+      const originalAnchors = measureLabels();
+      const points = separateMapMarkers(originalAnchors, viewport);
+      const anchors = originalAnchors.map((anchor, index) => ({ ...anchor, ...points[index] }));
+      const routePaths = showRoute ? [originalAnchors] : [];
+      anchors.forEach((anchor, index) => {
+        routePaths.push([originalAnchors[index], anchor]);
+      });
+      const placements = layoutMapLabels(anchors, viewport, showRoute, routePaths);
+      markersRef.current.forEach(({ element }, index) => {
+        const dx = anchors[index].x - originalAnchors[index].x;
+        const dy = anchors[index].y - originalAnchors[index].y;
+        element.style.transform = `translate(${dx}px, ${dy}px)`;
+        // 전체 경로를 유지한 채 번호만 벌린 경우 실제 위치와의 연결을 표시한다.
+        const connector = element.querySelector<HTMLElement>('[data-role="connector"]')!;
+        const distance = Math.hypot(dx, dy);
+        connector.style.visibility = distance > 16 ? "visible" : "hidden";
+        connector.style.left = `${16 - dx}px`;
+        connector.style.top = `${16 - dy}px`;
+        connector.style.width = `${distance}px`;
+        connector.style.transform = `rotate(${Math.atan2(dy, dx)}rad)`;
+        const label = element.querySelector<HTMLElement>('[data-role="label"]')!;
+        const placement = placements[index];
+        label.style.visibility = placement ? "visible" : "hidden";
+        if (!placement) return;
+        // CustomOverlay의 크기/좌표는 그대로 두고 이름표만 번호 원 주변으로 옮긴다.
+        label.style.left = `${placement.x - anchors[index].x + 16}px`;
+        label.style.top = `${placement.y - anchors[index].y + 16}px`;
+      });
+    };
+    const scheduleLayout = () => {
+      if (frame !== undefined) cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        frame = undefined;
+        layoutLabels();
+      });
+    };
+    layoutLabelsRef.current = scheduleLayout;
+    const mapEvents = ["bounds_changed", "zoom_changed", "idle"];
+    mapEvents.forEach((event) => kakao.maps.event.addListener(map, event, scheduleLayout));
+    // 웹폰트 적용 후 달라진 실제 글자 폭으로 다시 계산한다.
+    void document.fonts?.ready.then(() => { if (!disposed) scheduleLayout(); });
+
     if (showRoute && positions.length > 1) {
       const primary = containerRef.current
         ? getComputedStyle(containerRef.current).getPropertyValue("--primary").trim()
@@ -217,15 +281,32 @@ export default function KakaoMap({
     if (positions.length > 0) {
       const bounds = new kakao.maps.LatLngBounds();
       positions.forEach((position: KakaoNamespace) => bounds.extend(position));
-      viewportRef.current = { bounds, count: positions.length };
-      map.setBounds(bounds, 48, 48, 48, 48);
-      if (positions.length === 1) map.setLevel(5);
+      const fitViewport = () => {
+        if (disposed || !containerRef.current) return;
+        map.setBounds(bounds, 48, 48, 48, 48);
+        if (positions.length === 1) {
+          map.setLevel(5);
+        } else if (containerRef.current.clientWidth && containerRef.current.clientHeight) {
+          const level = chooseInitialMapZoom(measureLabels(), {
+            width: containerRef.current.clientWidth,
+            height: containerRef.current.clientHeight,
+          }, map.getLevel(), showRoute);
+          if (level !== map.getLevel()) map.setLevel(level);
+        }
+        scheduleLayout();
+      };
+      fitViewportRef.current = fitViewport;
+      fitViewport();
     }
 
     return () => {
+      disposed = true;
+      if (frame !== undefined) cancelAnimationFrame(frame);
+      mapEvents.forEach((event) => kakao.maps.event.removeListener(map, event, scheduleLayout));
+      layoutLabelsRef.current = null;
+      fitViewportRef.current = null;
       overlays.forEach((overlay) => overlay.setMap(null));
       markersRef.current = [];
-      viewportRef.current = null;
     };
   }, [status, positionsKey, showRoute, interactive]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -236,6 +317,7 @@ export default function KakaoMap({
       applyMarkerHighlight(element, highlighted, selected);
       overlay.setZIndex?.(highlighted ? 10 : 1);
     });
+    layoutLabelsRef.current?.();
   }, [highlightedSpotId, focusedSpotId, status, positionsKey, showRoute, interactive]);
 
   useEffect(() => {
@@ -255,10 +337,10 @@ export default function KakaoMap({
         const focused = markersRef.current.find(({ spotId }) => spotId === focusedSpotIdRef.current);
         if (focused) {
           map.panTo(focused.position);
-        } else if (viewportRef.current) {
-          map.setBounds(viewportRef.current.bounds, 48, 48, 48, 48);
-          if (viewportRef.current.count === 1) map.setLevel(5);
+        } else {
+          fitViewportRef.current?.();
         }
+        layoutLabelsRef.current?.();
       });
     };
     const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(resize) : null;
@@ -320,17 +402,17 @@ export default function KakaoMap({
 }
 
 const MARKER_BADGE_BASE_STYLE =
-  "display:flex;align-items:center;justify-content:center;width:100%;height:100%;box-sizing:border-box;" +
+  "position:relative;z-index:1;display:flex;align-items:center;justify-content:center;width:100%;height:100%;box-sizing:border-box;" +
   "border:2px solid #fff;border-radius:9999px;background:hsl(var(--primary,258 82% 61%));" +
   "color:#fff;font-size:12px;font-weight:800;box-shadow:0 2px 8px hsl(var(--primary,258 82% 61%)/.3);" +
   "transform-origin:center;transition:transform .15s ease,box-shadow .15s ease";
 
 const MARKER_LABEL_BASE_STYLE =
-  "position:absolute;left:calc(100% + 8px);top:50%;transform:translateY(-50%);" +
+  "position:absolute;z-index:2;left:0;top:0;visibility:hidden;" +
   "width:max-content;box-sizing:border-box;" +
   "background:hsl(var(--background,0 0% 100%)/.97);color:hsl(var(--foreground,240 7% 14%));" +
   "border:1px solid hsl(var(--primary,258 82% 61%)/.16);border-radius:9px;padding:5px 8px;" +
-  "font-size:11px;font-weight:600;max-width:170px;overflow:hidden;text-overflow:ellipsis;" +
+  "font-size:11px;font-weight:700;max-width:170px;overflow:hidden;text-overflow:ellipsis;" +
   "white-space:nowrap;box-shadow:0 2px 8px rgba(28,27,44,.12);transition:background .15s ease,color .15s ease";
 
 function applyMarkerHighlight(element: HTMLElement, highlighted: boolean, selected: boolean) {
@@ -343,9 +425,10 @@ function applyMarkerHighlight(element: HTMLElement, highlighted: boolean, select
   badge.style.cssText = `${MARKER_BADGE_BASE_STYLE}${highlighted
     ? ";transform:scale(1.16);box-shadow:0 0 0 5px hsl(var(--primary,258 82% 61%)/.18),0 3px 12px rgba(28,27,44,.2)"
     : ""}`;
-  label.style.cssText = `${MARKER_LABEL_BASE_STYLE}${highlighted
-    ? ";background:hsl(var(--primary,258 82% 61%));color:#fff;font-weight:700"
-    : ""}`;
+  // 위치 스타일은 유지해 강조 상태가 바뀌어도 이름표가 원래 자리로 튀지 않는다.
+  label.style.background = highlighted
+    ? "hsl(var(--primary,258 82% 61%))" : "hsl(var(--background,0 0% 100%)/.97)";
+  label.style.color = highlighted ? "#fff" : "hsl(var(--foreground,240 7% 14%))";
 }
 
 /** 장소명을 textContent로 설정해 외부 데이터를 HTML로 해석하지 않는다. */
@@ -362,6 +445,12 @@ function createMarkerElement(
   wrapper.className = "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary";
   wrapper.title = spot.title;
 
+  const connector = document.createElement("span");
+  connector.dataset.role = "connector";
+  connector.setAttribute("aria-hidden", "true");
+  connector.style.cssText = "position:absolute;height:2px;transform-origin:0 50%;visibility:hidden;" +
+    "background:hsl(var(--primary,258 82% 61%)/.5);pointer-events:none;";
+
   const badge = document.createElement("span");
   badge.dataset.role = "badge";
   badge.textContent = String(order);
@@ -371,7 +460,7 @@ function createMarkerElement(
   label.dataset.role = "label";
   label.textContent = spot.title;
   label.style.cssText = MARKER_LABEL_BASE_STYLE;
-  wrapper.append(badge, label);
+  wrapper.append(connector, badge, label);
 
   if (onSpotClick) {
     wrapper.setAttribute("type", "button");
