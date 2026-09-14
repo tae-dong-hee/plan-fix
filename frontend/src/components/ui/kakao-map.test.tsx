@@ -106,6 +106,48 @@ describe("KakaoMap", () => {
     expect(screen.getByText("위치를 확인할 수 없는 장소 5곳은 목록에서 볼 수 있어요.")).toBeInTheDocument();
   });
 
+  test.each([
+    { latitude: null, longitude: null },
+    { latitude: 37.8, longitude: null },
+    { latitude: null, longitude: 128.9 },
+    { latitude: NaN, longitude: 128.9 },
+    { latitude: 37.8, longitude: Infinity },
+    { latitude: 91, longitude: 128.9 },
+    { latitude: 37.8, longitude: 181 },
+    { latitude: 0, longitude: 0 },
+    {},
+  ])("유효한 좌표가 없으면 SDK를 요청하지 않고 위치 누락을 안내한다 (%j)", (coordinates) => {
+    render(<KakaoMap spots={[{ spotId: 1, title: "장소", ...coordinates }]} />);
+
+    expect(screen.getByRole("status")).toHaveTextContent("위치 정보가 등록되지 않은 장소예요.");
+    expect(screen.queryByRole("region", { name: "장소 위치 지도" })).not.toBeInTheDocument();
+    expect(document.querySelector('script[src*="dapi.kakao.com"]')).toBeNull();
+  });
+
+  test("장소 추가·제거 후에도 지도와 방문 번호를 복원한다", async () => {
+    const sdk = installSdkMock();
+    const unavailable = { spotId: 3, title: "위치 없음", latitude: null, longitude: null };
+    const { container, rerender } = render(<KakaoMap spots={[]} onSpotClick={vi.fn()} />);
+    const mapContainer = container.querySelector('[aria-label="장소 위치 지도"]');
+    expect(screen.getByRole("status")).toHaveTextContent("지도에 표시할 장소가 없어요.");
+    expect(sdk.maps).toHaveLength(0);
+
+    rerender(<KakaoMap spots={[unavailable, ...spots]} onSpotClick={vi.fn()} />);
+    await screen.findByRole("button", { name: "2번 경포해변 선택" });
+    const previousOverlays = [...sdk.overlays];
+    const previousRoute = sdk.routes[0];
+
+    rerender(<KakaoMap spots={[unavailable]} onSpotClick={vi.fn()} />);
+    expect(screen.getByRole("status")).toHaveTextContent("위치 정보가 등록되지 않은 장소예요.");
+    previousOverlays.forEach((overlay) => expect(overlay.setMap).toHaveBeenLastCalledWith(null));
+    expect(previousRoute.setMap).toHaveBeenLastCalledWith(null);
+
+    rerender(<KakaoMap spots={[unavailable, ...spots]} onSpotClick={vi.fn()} />);
+    await screen.findByRole("button", { name: "2번 경포해변 선택" });
+    expect(screen.getByRole("region", { name: "장소 위치 지도" })).toBe(mapContainer);
+    expect(sdk.routes[sdk.routes.length - 1].options.path).toHaveLength(2);
+  });
+
   test("선택한 마커로 이동하고 키보드와 최신 클릭 핸들러를 지원한다", async () => {
     const sdk = installSdkMock();
     const firstClick = vi.fn();

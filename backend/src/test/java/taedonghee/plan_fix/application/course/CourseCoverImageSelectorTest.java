@@ -188,9 +188,9 @@ class CourseCoverImageSelectorTest {
     }
 
     @Test
-    void loads_twenty_images_and_ignores_attribution_metadata() throws Exception {
+    void loads_forty_images_and_ignores_attribution_metadata() throws Exception {
         List<Map<String, Object>> images = new ArrayList<>();
-        for (int i = 0; i < 20; i++) {
+        for (int i = 0; i < 40; i++) {
             images.add(Map.of("id", "photo-" + i, "url", url("photo-" + i), "regions", List.of("150"),
                     "themes", List.of("coast"), "keywords", List.of("바다"), "author", "Photographer",
                     "license", "CC BY", "sourceUrl", "https://source.example.com/photo-" + i));
@@ -211,7 +211,43 @@ class CourseCoverImageSelectorTest {
                 .isInstanceOf(IllegalStateException.class).hasMessageContaining("course-cover-images.json");
         assertThatThrownBy(() -> new CourseCoverImageSelector(new ObjectMapper(),
                 new ByteArrayResource("{\"version\":1,\"images\":[]}".getBytes(StandardCharsets.UTF_8))))
-                .isInstanceOf(IllegalStateException.class).hasMessageContaining("exactly 20 images");
+                .isInstanceOf(IllegalStateException.class).hasMessageContaining("1 to 40 images");
+    }
+
+    @Test
+    void generic_accommodation_and_winter_photos_can_match_courses_with_regional_spots() {
+        CourseCoverImageSelector selector = selector(image("local-lake", "110", "lake"),
+                new CourseCoverImageSelector.Image("bedroom", url("bedroom"), List.of(), List.of("accommodation"), List.of()),
+                new CourseCoverImageSelector.Image("snow", url("snow"), List.of(), List.of("winter"), List.of()));
+        Map<Long, SpotModel> spots = Map.of(11L, spot(11, "51", "110", "장소", "관광지", null));
+
+        assertThat(selector.select(course(1, "호캉스 여행", null, null, 11L), spots)).isEqualTo(url("bedroom"));
+        assertThat(selector.select(course(1, "눈꽃 여행", null, null, 11L), spots)).isEqualTo(url("snow"));
+        assertThat(selector.select(course(1, "주말 여행", null, null, 11L),
+                Map.of(11L, spot(11, "51", "110", "장소", "숙박", null)))).isEqualTo(url("bedroom"));
+    }
+
+    @Test
+    void unrelated_generic_photos_do_not_replace_regional_defaults() {
+        CourseCoverImageSelector selector = selector(image("local-lake", "110", "lake"),
+                new CourseCoverImageSelector.Image("bedroom", url("bedroom"), List.of(), List.of("accommodation"), List.of()));
+        for (long id = 1; id <= 30; id++) {
+            assertThat(selector.select(course(id, "주말 여행", null, null, 11L),
+                    Map.of(11L, spot(11, "51", "110", "장소", "관광지", null)))).isEqualTo(url("local-lake"));
+        }
+    }
+
+    @Test
+    void real_catalog_selects_reviewed_accommodation_and_activity_photos_by_content() {
+        CourseCoverImageSelector selector = new CourseCoverImageSelector(new ObjectMapper());
+        Map<Long, SpotModel> spots = Map.of(11L, spot(11, "51", "110", "장소", "관광지", null));
+
+        assertThat(selector.select(course(1, "호캉스 숙소 여행", null, null, 11L), spots))
+                .endsWith("/2026-09-v2/gangwon-course-cover-22.jpg");
+        assertThat(selector.select(course(1, "급류 래프팅", null, null, 11L), spots))
+                .endsWith("/2026-09-v2/gangwon-course-cover-33.jpg");
+        assertThat(selector.select(course(1, "카누 체험", null, null, 11L), spots))
+                .endsWith("/2026-09-v2/gangwon-course-cover-34.jpg");
     }
 
     @Test

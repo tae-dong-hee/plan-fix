@@ -51,7 +51,9 @@ public class CourseCoverImageSelector {
             Map.entry("culture", List.of("문화", "박물관", "미술관", "사찰", "역사", "유적", "전통", "한옥")),
             Map.entry("food", List.of("음식점", "맛집", "시장", "식사", "먹거리", "미식")),
             Map.entry("cafe", List.of("카페", "커피", "찻집", "음료", "디저트")),
-            Map.entry("activity", List.of("레포츠", "액티비티", "서핑", "스키", "레일바이크", "자전거", "패러글라이딩", "래프팅", "캠핑"))
+            Map.entry("activity", List.of("레포츠", "액티비티", "서핑", "스키", "레일바이크", "자전거", "패러글라이딩", "래프팅", "카누", "카약", "캠핑")),
+            Map.entry("accommodation", List.of("숙소", "숙박", "호텔", "리조트", "펜션", "게스트하우스", "호캉스", "글램핑")),
+            Map.entry("winter", List.of("겨울", "설경", "눈꽃", "설원", "눈길", "스키", "스노보드", "눈썰매"))
     );
 
     private final List<Image> images;
@@ -113,7 +115,9 @@ public class CourseCoverImageSelector {
         List<Image> regional = images.stream()
                 .filter(image -> image.regions().stream().anyMatch(regions::contains))
                 .toList();
-        List<Image> candidates = regional.isEmpty() ? images : regional;
+        // 지역을 특정하지 않는 테마 사진(객실·커피 등)은 내용이 일치할 때만 후보에 포함한다.
+        List<Image> candidates = regional.isEmpty() ? images : images.stream()
+                .filter(image -> image.regions().isEmpty() || regional.contains(image)).toList();
 
         StringBuilder text = new StringBuilder();
         appendText(text, course.title(), course.description());
@@ -126,6 +130,8 @@ public class CourseCoverImageSelector {
         MatchScore bestScore = scores.values().stream().max(MATCH_ORDER).orElseThrow();
         if (bestScore.specific() > 0 || bestScore.general() > 0 || bestScore.theme() > 0) {
             candidates = candidates.stream().filter(image -> scores.get(image).equals(bestScore)).toList();
+        } else if (!regional.isEmpty()) {
+            candidates = regional;
         }
 
         // 같은 courseId와 후보 집합이면 재조회·서버 재시작 후에도 같은 사진을 반환한다.
@@ -162,8 +168,9 @@ public class CourseCoverImageSelector {
     private static List<Image> readCatalog(ObjectMapper objectMapper, Resource resource) {
         try (InputStream input = resource.getInputStream()) {
             Catalog catalog = objectMapper.readValue(input, Catalog.class);
-            if (catalog == null || catalog.version() != 1 || catalog.images() == null || catalog.images().size() != 20) {
-                throw new IllegalStateException("Required course-cover-images.json must have version 1 and exactly 20 images.");
+            if (catalog == null || catalog.version() != 1 || catalog.images() == null
+                    || catalog.images().isEmpty() || catalog.images().size() > 40) {
+                throw new IllegalStateException("Required course-cover-images.json must have version 1 and 1 to 40 images.");
             }
             return catalog.images();
         } catch (IOException e) {

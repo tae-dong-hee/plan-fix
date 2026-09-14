@@ -2,6 +2,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 
 import CourseRouteMap from "@/components/ui/course-route-map";
+import { FALLBACK_SPOT_IMAGE } from "@/components/ui/spot-image";
 import type { CourseDay, CourseSpotSummary } from "@/services/course";
 
 type MapSpot = {
@@ -156,6 +157,28 @@ describe("CourseRouteMap", () => {
     expect(latestMapProps().focusRequestId).toBe(firstRequestId! + 1);
     expect(screen.getByRole("button", { name: "경포해변 지도에서 보기" })).toHaveAttribute("aria-pressed", "false");
     expect(screen.getByRole("button", { name: "안목 / 커피거리 지도에서 보기" })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  test("사진과 주소가 누락된 장소도 기본 이미지와 안내를 보여주며 지도 선택을 유지한다", () => {
+    renderRoute([{ dayNumber: 1, spots: [{ ...beach, thumbnail: "  ", address: "  " }, cafe] }]);
+
+    const selected = within(screen.getByRole("region", { name: "선택한 장소" }));
+    expect(selected.getByRole("img", { name: beach.title })).toHaveAttribute("src", FALLBACK_SPOT_IMAGE);
+    expect(selected.getByText("주소 정보가 등록되지 않은 장소예요.")).toBeInTheDocument();
+    expect(within(screen.getByRole("button", { name: "경포해변 지도에서 보기" })).getByText("주소 정보가 등록되지 않은 장소예요.")).toBeInTheDocument();
+    expect(latestMapProps().highlightedSpotId).toBe(beach.spotId);
+
+    fireEvent.click(screen.getByRole("button", { name: "안목 / 커피거리 지도에서 보기" }));
+    expect(selected.getByRole("img", { name: cafe.title })).toHaveAttribute("src", cafe.thumbnail);
+    expect(latestMapProps().focusedSpotId).toBe(cafe.spotId);
+  });
+
+  test("지도에서 선택한 장소의 사진 로딩이 실패하면 기본 이미지로 대체한다", () => {
+    renderRoute();
+    const selected = within(screen.getByRole("region", { name: "선택한 장소" }));
+    fireEvent.error(selected.getByRole("img", { name: beach.title }));
+    expect(selected.getByRole("img", { name: beach.title })).toHaveAttribute("src", FALLBACK_SPOT_IMAGE);
+    expect(selected.getByRole("link", { name: /길찾기/ })).toBeInTheDocument();
   });
 
   test("좌표 없는 장소가 앞에 있어도 첫 유효 장소를 선택하며 방문 순서 번호를 보존한다", () => {

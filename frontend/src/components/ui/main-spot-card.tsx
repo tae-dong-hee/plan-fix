@@ -1,12 +1,11 @@
 import type { MouseEvent } from "react";
 import { Heart, Loader2 } from "lucide-react";
+import SpotImage from "@/components/ui/spot-image";
 import { Link } from "react-router-dom";
 
 import { sigunguCodeByRegion } from "@/components/ui/gangwon-region-map";
 import type { PopularSpot } from "@/services/spots";
 
-const FALLBACK_SPOT_IMAGE =
-  "https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=900&q=85";
 const cityByCode = Object.fromEntries(
   Object.entries(sigunguCodeByRegion).map(([city, code]) => [code, city]),
 );
@@ -46,16 +45,11 @@ export default function MainSpotCard({
             isGuide ? "aspect-[4/3]" : "aspect-square"
           }`}
         >
-          <img
+          <SpotImage
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 motion-reduce:transform-none motion-reduce:transition-none"
-            src={spot.thumbnail || FALLBACK_SPOT_IMAGE}
+            src={spot.thumbnail}
             alt={spot.title}
             loading="lazy"
-            onError={(event) => {
-              if (event.currentTarget.src !== FALLBACK_SPOT_IMAGE) {
-                event.currentTarget.src = FALLBACK_SPOT_IMAGE;
-              }
-            }}
           />
         </div>
         <div className="px-0.5 pb-1 pt-3">

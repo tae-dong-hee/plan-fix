@@ -112,12 +112,27 @@ class CourseCoverImageApplicationServiceTest {
 
     @Test
     void catalogCannotExceedCacheCapacity() {
-        var images = java.util.stream.IntStream.rangeClosed(1, 21).mapToObj(number -> {
+        var images = java.util.stream.IntStream.rangeClosed(1, 41).mapToObj(number -> {
             String id = "cover-" + number;
             return entry(id, "defaults/course-covers/2026-09-v1/" + id + ".jpg", sha);
         }).toList();
 
         assertThatThrownBy(() -> serviceFor(images)).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void expanded_catalog_can_read_last_image_from_its_own_version_path() throws Exception {
+        var images = java.util.stream.IntStream.rangeClosed(1, 40).mapToObj(number -> {
+            String id = "cover-" + number;
+            return entry(id, "defaults/course-covers/2026-09-v2/" + id + ".jpg", sha);
+        }).toList();
+        var expanded = serviceFor(images);
+        when(s3Client.getObjectAsBytes(any(GetObjectRequest.class)))
+                .thenReturn(ResponseBytes.fromByteArray(GetObjectResponse.builder().build(), JPEG));
+
+        assertThat(expanded.get("cover-40").version()).isEqualTo("2026-09-v2");
+        verify(s3Client).getObjectAsBytes(GetObjectRequest.builder().bucket("test-course-bucket")
+                .key("defaults/course-covers/2026-09-v2/cover-40.jpg").build());
     }
 
     private Map<String, String> entry(String id, String key, String checksum) {

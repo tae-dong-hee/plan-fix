@@ -7,10 +7,12 @@ import taedonghee.plan_fix.application.board.BoardApplicationService;
 import taedonghee.plan_fix.application.board.BoardResult;
 import taedonghee.plan_fix.application.course.CourseApplicationService;
 import taedonghee.plan_fix.application.course.CourseResult;
+import taedonghee.plan_fix.application.spot.SpotThumbnailResolver;
 import taedonghee.plan_fix.domain.spot.SpotModel;
 import taedonghee.plan_fix.domain.spot.SpotRepository;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 위시리스트 Application Service
@@ -23,12 +25,17 @@ public class WishlistApplicationService {
     private final SpotRepository spotRepository;
     private final CourseApplicationService courseApplicationService;
     private final BoardApplicationService boardApplicationService;
+    private final SpotThumbnailResolver spotThumbnailResolver;
 
     /**
      * 사용자가 좋아요 누른 스팟 목록 조회
      */
-    public List<SpotModel> listLikedSpots(Long userId) {
-        return spotRepository.findLikedByUserId(userId);
+    public List<WishlistSpotResult> listLikedSpots(Long userId) {
+        List<SpotModel> spots = spotRepository.findLikedByUserId(userId);
+        Map<Long, String> thumbnails = spotThumbnailResolver.resolve(spots);
+        return spots.stream()
+                .map(spot -> WishlistSpotResult.from(spot, thumbnails.get(spot.spotId())))
+                .toList();
     }
 
     /**

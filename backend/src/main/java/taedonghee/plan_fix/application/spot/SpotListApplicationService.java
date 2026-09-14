@@ -24,6 +24,7 @@ public class SpotListApplicationService {
 
     private final SpotRepository spotRepository;
     private final taedonghee.plan_fix.domain.spot.SpotLikeRepository spotLikeRepository;
+    private final SpotThumbnailResolver thumbnailResolver;
 
     public SpotListResult list(SpotListQuery query) {
         return list(query, null);
@@ -44,8 +45,10 @@ public class SpotListApplicationService {
         }
 
         final java.util.Set<Long> finalLikedSpotIds = likedSpotIds;
+        java.util.Map<Long, String> thumbnails = thumbnailResolver.resolve(spots);
         List<SpotListResult.Item> items = spots.stream()
-                .map(spot -> SpotListResult.Item.from(spot, finalLikedSpotIds.contains(spot.spotId())))
+                .map(spot -> SpotListResult.Item.from(spot, finalLikedSpotIds.contains(spot.spotId()),
+                        thumbnails.get(spot.spotId())))
                 .toList();
 
         return new SpotListResult(items, query.offset(), query.size(), totalCount);

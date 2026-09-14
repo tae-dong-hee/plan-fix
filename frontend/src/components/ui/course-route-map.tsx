@@ -3,7 +3,9 @@ import { Link } from "react-router-dom";
 import { ArrowUpRight, MapPin, Navigation, Route } from "lucide-react";
 
 import KakaoMap from "@/components/ui/kakao-map";
+import SpotImage from "@/components/ui/spot-image";
 import { hasMapCoordinates } from "@/lib/map-coordinates";
+import { MISSING_SPOT_ADDRESS } from "@/lib/spot-display";
 import type { CourseDay, CourseSpotSummary } from "@/services/course";
 
 type CourseRouteMapProps = {
@@ -20,12 +22,9 @@ function dayDate(startDate: string | null | undefined, dayNumber: number): strin
 }
 
 function SpotPhoto({ spot, className, descriptive = false }: { spot: CourseSpotSummary; className: string; descriptive?: boolean }) {
-  const [failedUrl, setFailedUrl] = useState<string | null>(null);
   return (
     <div className={`flex shrink-0 items-center justify-center overflow-hidden rounded-xl bg-primary/[0.06] text-primary/50 ${className}`}>
-      {spot.thumbnail && failedUrl !== spot.thumbnail ? (
-        <img src={spot.thumbnail} alt={descriptive ? spot.title || "여행 장소" : ""} className="h-full w-full object-cover" loading="lazy" onError={() => setFailedUrl(spot.thumbnail)} />
-      ) : <MapPin className="h-6 w-6" aria-hidden="true" />}
+      <SpotImage src={spot.thumbnail} alt={descriptive ? spot.title || "여행 장소" : ""} className="h-full w-full object-cover" loading="lazy" />
     </div>
   );
 }
@@ -150,7 +149,7 @@ export default function CourseRouteMap({ days, startDate }: CourseRouteMapProps)
                 <div className="min-w-0 flex-1">
                   <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-primary"><span className="flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">{selectedSpot.sequence + 1}</span>선택한 장소</span>
                   <h3 className="mt-1 break-words text-base font-bold text-foreground sm:text-lg">{selectedSpot.title || "여행 장소"}</h3>
-                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{selectedSpot.address || "주소 정보가 아직 없어요."}</p>
+                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{selectedSpot.address?.trim() || MISSING_SPOT_ADDRESS}</p>
                   {!hasMapCoordinates(selectedSpot) && <p className="mt-1 text-xs text-muted-foreground">위치 정보가 없어 지도에 표시할 수 없어요.</p>}
                 </div>
               </div>
@@ -195,7 +194,7 @@ export default function CourseRouteMap({ days, startDate }: CourseRouteMapProps)
                       <SpotPhoto spot={spot} className="h-14 w-14 sm:h-16 sm:w-16" />
                       <span className="min-w-0 flex-1 self-center">
                         <span className="flex flex-wrap items-center gap-x-2 gap-y-1"><span className="break-words text-sm font-semibold text-foreground">{spot.title || "여행 장소"}</span>{spot.category && <span className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">{spot.category}</span>}</span>
-                        <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">{spot.address || "주소 정보가 아직 없어요."}</span>
+                        <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">{spot.address?.trim() || MISSING_SPOT_ADDRESS}</span>
                         {!hasMapCoordinates(spot) && <span className="mt-1 block text-[11px] text-muted-foreground">위치 정보 없음</span>}
                         {spot.memo && <span className="mt-2 block rounded-lg bg-muted/70 px-2.5 py-1.5 text-xs leading-relaxed text-muted-foreground">💬 {spot.memo}</span>}
                       </span>

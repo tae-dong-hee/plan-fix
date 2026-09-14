@@ -8,7 +8,6 @@ import taedonghee.plan_fix.domain.spot.SpotModel;
 import taedonghee.plan_fix.domain.spot.SpotRepository;
 import taedonghee.plan_fix.domain.spot.SpotSourceType;
 import taedonghee.plan_fix.domain.spot.SpotStatus;
-import taedonghee.plan_fix.domain.spot.TourDataImageModel;
 import taedonghee.plan_fix.domain.spot.TourDataImageRepository;
 import taedonghee.plan_fix.domain.spot.TourDataInfoRepository;
 import taedonghee.plan_fix.domain.spot.TourDataSpotModel;
@@ -17,6 +16,8 @@ import taedonghee.plan_fix.support.error.CoreException;
 import taedonghee.plan_fix.support.error.ErrorType;
 
 import java.util.List;
+import java.util.Arrays;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -55,7 +56,10 @@ public class SpotDetailApplicationService {
             if (tourDataSpot.isPresent()) {
                 TourDataSpotModel source = tourDataSpot.get();
                 images = tourDataImageRepository.findByTourDataSpotId(source.tourDataSpotId()).stream()
-                        .map(TourDataImageModel::originalImage)
+                        .map(image -> SpotThumbnailResolver.select(null,
+                                Arrays.asList(image.originalImage(), image.smallImage())))
+                        .filter(Objects::nonNull)
+                        .distinct()
                         .toList();
                 info = tourDataInfoRepository.findByContentId(source.contentId())
                         .map(SpotDetailResult.TourInfo::from)

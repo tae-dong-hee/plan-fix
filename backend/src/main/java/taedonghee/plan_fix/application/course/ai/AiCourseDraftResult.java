@@ -38,6 +38,10 @@ public record AiCourseDraftResult(
 		String reason
 	) {
 		public static Spot from(SpotModel spot, String reason) {
+			return from(spot, reason, spot.thumbnail());
+		}
+
+		public static Spot from(SpotModel spot, String reason, String thumbnail) {
 			return new Spot(
 				spot.spotId(),
 				spot.title(),
@@ -45,7 +49,7 @@ public record AiCourseDraftResult(
 				spot.region(),
 				spot.sigungu(),
 				spot.address(),
-				spot.thumbnail(),
+				thumbnail,
 				spot.latitude(),
 				spot.longitude(),
 				reason

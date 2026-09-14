@@ -521,6 +521,489 @@
       "s3Key": "defaults/course-covers/2026-09-v1/gangwon-course-cover-21.jpg",
       "sha256": "e408c0a509263f8a37104a665a6ece1603906555eb127d606c97234b9f4be242",
       "changes": "Wikimedia Commons 제공 축소본 사용. 카드에서는 화면 비율에 맞춰 일부가 잘려 보일 수 있습니다."
+    },
+    {
+      "title": "숙소 테마 · 포근한 호텔 객실",
+      "regions": [],
+      "themes": [
+        "accommodation"
+      ],
+      "keywords": [
+        "숙소",
+        "숙박",
+        "호텔",
+        "호캉스",
+        "객실",
+        "침대"
+      ],
+      "id": "gangwon-course-cover-22",
+      "author": "Kurt Kaiser",
+      "license": "CC0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Bed_in_hotel_room_2.jpg",
+      "url": "https://planfix-bucket-975050156432-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/defaults/course-covers/2026-09-v2/gangwon-course-cover-22.jpg",
+      "s3Key": "defaults/course-covers/2026-09-v2/gangwon-course-cover-22.jpg",
+      "sha256": "09efcdf71f694beb8c5f8efcd29284fc5190121ae5b7dd53fff6985b7e3c5715",
+      "changes": "Wikimedia Commons 제공 1280px 축소본을 그대로 사용. 카드에서는 화면 비율에 맞춰 일부가 잘려 보일 수 있습니다. 특정 코스 방문지의 실사로 지정하지 않는 범용 테마 사진."
+    },
+    {
+      "title": "숙소 테마 · 따뜻한 목조 펜션 실내",
+      "regions": [],
+      "themes": [
+        "accommodation"
+      ],
+      "keywords": [
+        "숙소",
+        "숙박",
+        "펜션",
+        "산장",
+        "목조",
+        "오두막"
+      ],
+      "id": "gangwon-course-cover-23",
+      "author": "Nenad Stojković (Shixart1985)",
+      "license": "CC BY 2.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Cozy_wooden_cabin_interior_with_seating_area_and_bedroom_space.jpg",
+      "url": "https://planfix-bucket-975050156432-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/defaults/course-covers/2026-09-v2/gangwon-course-cover-23.jpg",
+      "s3Key": "defaults/course-covers/2026-09-v2/gangwon-course-cover-23.jpg",
+      "sha256": "325e8f02ab53cbc03e089c8a66ea81ae0bea0e189fa305ed7bb67455ee775ba9",
+      "changes": "Wikimedia Commons 제공 1280px 축소본을 그대로 사용. 카드에서는 화면 비율에 맞춰 일부가 잘려 보일 수 있습니다. 특정 코스 방문지의 실사로 지정하지 않는 범용 테마 사진."
+    },
+    {
+      "title": "숙소 테마 · 햇살 아래 글램핑 텐트",
+      "regions": [],
+      "themes": [
+        "accommodation"
+      ],
+      "keywords": [
+        "숙박",
+        "글램핑",
+        "감성캠핑",
+        "텐트"
+      ],
+      "id": "gangwon-course-cover-24",
+      "author": "JLunder96",
+      "license": "CC BY 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Glamping_Thorbjornrud_Hotel.jpg",
+      "url": "https://planfix-bucket-975050156432-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/defaults/course-covers/2026-09-v2/gangwon-course-cover-24.jpg",
+      "s3Key": "defaults/course-covers/2026-09-v2/gangwon-course-cover-24.jpg",
+      "sha256": "ee2488cf6a8cbe04169bfa149d91bc8cf7e4733ee3febf3e66fdc4776a6787f0",
+      "changes": "Wikimedia Commons 제공 1280px 축소본을 그대로 사용. 카드에서는 화면 비율에 맞춰 일부가 잘려 보일 수 있습니다. 특정 코스 방문지의 실사로 지정하지 않는 범용 테마 사진."
+    },
+    {
+      "title": "캠핑 테마 · 잔잔한 물가의 텐트",
+      "regions": [],
+      "themes": [
+        "accommodation",
+        "activity"
+      ],
+      "keywords": [
+        "캠핑",
+        "야영",
+        "텐트",
+        "백패킹"
+      ],
+      "id": "gangwon-course-cover-25",
+      "author": "Nikhil More",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Tent_camping.jpg",
+      "url": "https://planfix-bucket-975050156432-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/defaults/course-covers/2026-09-v2/gangwon-course-cover-25.jpg",
+      "s3Key": "defaults/course-covers/2026-09-v2/gangwon-course-cover-25.jpg",
+      "sha256": "eeb84592c4b4e81ec47a4fa0dbd3493279b6f0c5eb148fccef2fffaa606c71be",
+      "changes": "Wikimedia Commons 제공 1280px 축소본을 그대로 사용. 카드에서는 화면 비율에 맞춰 일부가 잘려 보일 수 있습니다. 특정 코스 방문지의 실사로 지정하지 않는 범용 테마 사진."
+    },
+    {
+      "title": "겨울 테마 · 눈 덮인 숲길",
+      "regions": [],
+      "themes": [
+        "winter"
+      ],
+      "keywords": [
+        "겨울",
+        "설경",
+        "눈길",
+        "설원",
+        "눈꽃",
+        "겨울산책"
+      ],
+      "id": "gangwon-course-cover-26",
+      "author": "George Chernilevsky",
+      "license": "Public domain",
+      "licenseUrl": "https://commons.wikimedia.org/wiki/Template:PD-self",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Forest_road_Slavne_2017_G8.jpg",
+      "url": "https://planfix-bucket-975050156432-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/defaults/course-covers/2026-09-v2/gangwon-course-cover-26.jpg",
+      "s3Key": "defaults/course-covers/2026-09-v2/gangwon-course-cover-26.jpg",
+      "sha256": "776f54a5caeb03d5e81e13676bc22e404c4960a34e4dc2d3d5d383fb6967575c",
+      "changes": "Wikimedia Commons 제공 1280px 축소본을 그대로 사용. 카드에서는 화면 비율에 맞춰 일부가 잘려 보일 수 있습니다. 특정 코스 방문지의 실사로 지정하지 않는 범용 테마 사진."
+    },
+    {
+      "title": "겨울 테마 · 가지에 맺힌 하얀 서리",
+      "regions": [],
+      "themes": [
+        "winter"
+      ],
+      "keywords": [
+        "겨울",
+        "설경",
+        "눈꽃",
+        "상고대",
+        "서리",
+        "설화"
+      ],
+      "id": "gangwon-course-cover-27",
+      "author": "W.carter",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Hoar_frost_on_bare_tree_branches_at_Myrstigen_4.jpg",
+      "url": "https://planfix-bucket-975050156432-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/defaults/course-covers/2026-09-v2/gangwon-course-cover-27.jpg",
+      "s3Key": "defaults/course-covers/2026-09-v2/gangwon-course-cover-27.jpg",
+      "sha256": "dc41ea883172e5234d03724415c740057024206f5013ff9258423a34d903965d",
+      "changes": "Wikimedia Commons 제공 1280px 축소본을 그대로 사용. 카드에서는 화면 비율에 맞춰 일부가 잘려 보일 수 있습니다. 특정 코스 방문지의 실사로 지정하지 않는 범용 테마 사진."
+    },
+    {
+      "title": "강원 겨울 아침의 햇살",
+      "regions": [],
+      "themes": [
+        "winter"
+      ],
+      "keywords": [
+        "겨울",
+        "설경",
+        "겨울일출",
+        "겨울아침"
+      ],
+      "id": "gangwon-course-cover-28",
+      "author": "Jun Yong Park",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Gangwon_Do_South_Korea_(131397671).jpeg",
+      "url": "https://planfix-bucket-975050156432-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/defaults/course-covers/2026-09-v2/gangwon-course-cover-28.jpg",
+      "s3Key": "defaults/course-covers/2026-09-v2/gangwon-course-cover-28.jpg",
+      "sha256": "b008773f3ca7433acd17d59f9f7e13898688734b4edbdcfb692a443c3e0c7ad1",
+      "changes": "Wikimedia Commons 제공 1280px 축소본을 그대로 사용. 카드에서는 화면 비율에 맞춰 일부가 잘려 보일 수 있습니다. 특정 코스 방문지의 실사로 지정하지 않는 범용 테마 사진."
+    },
+    {
+      "title": "속초 바위 해안의 일출",
+      "regions": [
+        "210"
+      ],
+      "themes": [
+        "coast"
+      ],
+      "keywords": [
+        "속초",
+        "일출",
+        "해돋이",
+        "바다",
+        "동해안"
+      ],
+      "id": "gangwon-course-cover-29",
+      "author": "Seongrae Kim",
+      "license": "CC BY 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/3.0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:%EC%86%8D%EC%B4%88_16%EB%85%84_%EC%9D%BC%EC%B6%9C_-_panoramio.jpg",
+      "url": "https://planfix-bucket-975050156432-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/defaults/course-covers/2026-09-v2/gangwon-course-cover-29.jpg",
+      "s3Key": "defaults/course-covers/2026-09-v2/gangwon-course-cover-29.jpg",
+      "sha256": "8507a63f9c10e8f7aa9d8f3901ebc637c2db3fdb7d43430507f8db14ae6d467f",
+      "changes": "Wikimedia Commons 제공 1280px 축소본을 그대로 사용. 카드에서는 화면 비율에 맞춰 일부가 잘려 보일 수 있습니다. 강원도 해당 장소를 촬영한 사진."
+    },
+    {
+      "title": "동해 추암촛대바위 일출",
+      "regions": [
+        "170"
+      ],
+      "themes": [
+        "coast"
+      ],
+      "keywords": [
+        "동해",
+        "추암",
+        "추암촛대바위",
+        "촛대바위",
+        "일출",
+        "해돋이"
+      ],
+      "id": "gangwon-course-cover-30",
+      "author": "동해시 (Donghae City)",
+      "license": "KOGL Type 1",
+      "licenseUrl": "https://www.kogl.or.kr/info/licenseType1.do",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:%EC%B6%94%EC%95%94%EC%B4%9B%EB%8C%80%EB%B0%94%EC%9C%84_2.jpg",
+      "url": "https://planfix-bucket-975050156432-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/defaults/course-covers/2026-09-v2/gangwon-course-cover-30.jpg",
+      "s3Key": "defaults/course-covers/2026-09-v2/gangwon-course-cover-30.jpg",
+      "sha256": "c65f91987ab18eed06e6acfb55f5bad38cebdf7a52f60c0b699fc20119bfb80b",
+      "changes": "Wikimedia Commons 제공 1280px 축소본을 그대로 사용. 카드에서는 화면 비율에 맞춰 일부가 잘려 보일 수 있습니다. 강원도 해당 장소를 촬영한 사진."
+    },
+    {
+      "title": "평창 알펜시아 야간 스키장",
+      "regions": [
+        "760"
+      ],
+      "themes": [
+        "activity",
+        "winter"
+      ],
+      "keywords": [
+        "평창",
+        "알펜시아",
+        "스키",
+        "스키장",
+        "야간스키",
+        "스노보드"
+      ],
+      "id": "gangwon-course-cover-31",
+      "author": "Albert Lee1",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Alpensia.jpg",
+      "url": "https://planfix-bucket-975050156432-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/defaults/course-covers/2026-09-v2/gangwon-course-cover-31.jpg",
+      "s3Key": "defaults/course-covers/2026-09-v2/gangwon-course-cover-31.jpg",
+      "sha256": "ed457d576f73dd5dd49d853fa4076107b6334d77ecf0ba281164622005c3f304",
+      "changes": "Wikimedia Commons 제공 1280px 축소본을 그대로 사용. 카드에서는 화면 비율에 맞춰 일부가 잘려 보일 수 있습니다. 강원도 해당 장소를 촬영한 사진."
+    },
+    {
+      "title": "액티비티 테마 · 파도를 타는 서퍼",
+      "regions": [],
+      "themes": [
+        "activity"
+      ],
+      "keywords": [
+        "서핑",
+        "서퍼",
+        "서프",
+        "수상레포츠",
+        "액티비티"
+      ],
+      "id": "gangwon-course-cover-32",
+      "author": "Dylan Wooters",
+      "license": "CC BY-SA 2.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Surfing_in_Popoyo,_Nicaragua.jpg",
+      "url": "https://planfix-bucket-975050156432-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/defaults/course-covers/2026-09-v2/gangwon-course-cover-32.jpg",
+      "s3Key": "defaults/course-covers/2026-09-v2/gangwon-course-cover-32.jpg",
+      "sha256": "c0e08692324d583ea9ed3536b87e22f6233c27c4aed14d33d45ae70fda8f8769",
+      "changes": "Wikimedia Commons 제공 1280px 축소본을 그대로 사용. 카드에서는 화면 비율에 맞춰 일부가 잘려 보일 수 있습니다. 특정 코스 방문지의 실사로 지정하지 않는 범용 테마 사진."
+    },
+    {
+      "title": "액티비티 테마 · 급류 래프팅",
+      "regions": [],
+      "themes": [
+        "activity"
+      ],
+      "keywords": [
+        "래프팅",
+        "급류",
+        "수상레포츠",
+        "레포츠",
+        "액티비티"
+      ],
+      "id": "gangwon-course-cover-33",
+      "author": "Hamdigumus",
+      "license": "CC0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Rafting,_F%C4%B1rt%C4%B1na_Deresi,_Rize_2014.jpg",
+      "url": "https://planfix-bucket-975050156432-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/defaults/course-covers/2026-09-v2/gangwon-course-cover-33.jpg",
+      "s3Key": "defaults/course-covers/2026-09-v2/gangwon-course-cover-33.jpg",
+      "sha256": "bfdd3e58e502ff2399e2fffefe08fc356198decaa557e4e9d45857b2c9e80145",
+      "changes": "Wikimedia Commons 제공 1280px 축소본을 그대로 사용. 카드에서는 화면 비율에 맞춰 일부가 잘려 보일 수 있습니다. 특정 코스 방문지의 실사로 지정하지 않는 범용 테마 사진."
+    },
+    {
+      "title": "액티비티 테마 · 고요한 호수 카누",
+      "regions": [],
+      "themes": [
+        "activity"
+      ],
+      "keywords": [
+        "카누",
+        "카약",
+        "패들링",
+        "수상레포츠",
+        "액티비티"
+      ],
+      "id": "gangwon-course-cover-34",
+      "author": "Spica-Vega Photo Arts (Banu Nazikcan)",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Sunset_Canoe_Ride_in_Lake_Mert.jpg",
+      "url": "https://planfix-bucket-975050156432-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/defaults/course-covers/2026-09-v2/gangwon-course-cover-34.jpg",
+      "s3Key": "defaults/course-covers/2026-09-v2/gangwon-course-cover-34.jpg",
+      "sha256": "0c75360ddfb8ed729d457abcc67037198315e173cde5db5f212bc96a6c772392",
+      "changes": "Wikimedia Commons 제공 1280px 축소본을 그대로 사용. 카드에서는 화면 비율에 맞춰 일부가 잘려 보일 수 있습니다. 특정 코스 방문지의 실사로 지정하지 않는 범용 테마 사진."
+    },
+    {
+      "title": "액티비티 테마 · 푸른 하늘 패러글라이딩",
+      "regions": [],
+      "themes": [
+        "activity"
+      ],
+      "keywords": [
+        "패러글라이딩",
+        "활공",
+        "하늘체험",
+        "레포츠",
+        "액티비티"
+      ],
+      "id": "gangwon-course-cover-35",
+      "author": "Vyacheslav Argenberg",
+      "license": "CC BY 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Paragliding_in_Arambol_sky,_Goa.jpg",
+      "url": "https://planfix-bucket-975050156432-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/defaults/course-covers/2026-09-v2/gangwon-course-cover-35.jpg",
+      "s3Key": "defaults/course-covers/2026-09-v2/gangwon-course-cover-35.jpg",
+      "sha256": "bbf6ecbe3e80576dfe0b36a6f164c78f4d7a860e5fcac0acfcc4bc34128288c0",
+      "changes": "Wikimedia Commons 제공 1280px 축소본을 그대로 사용. 카드에서는 화면 비율에 맞춰 일부가 잘려 보일 수 있습니다. 특정 코스 방문지의 실사로 지정하지 않는 범용 테마 사진."
+    },
+    {
+      "title": "강릉 찻집의 유리 다관",
+      "regions": [
+        "150"
+      ],
+      "themes": [
+        "cafe"
+      ],
+      "keywords": [
+        "강릉",
+        "찻집",
+        "차한잔",
+        "티타임",
+        "다관",
+        "차마시기"
+      ],
+      "id": "gangwon-course-cover-36",
+      "author": "최광모",
+      "license": "CC0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:20151003%EC%B5%9C%EA%B4%91%EB%AA%A8RX10DSC03041.JPG",
+      "url": "https://planfix-bucket-975050156432-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/defaults/course-covers/2026-09-v2/gangwon-course-cover-36.jpg",
+      "s3Key": "defaults/course-covers/2026-09-v2/gangwon-course-cover-36.jpg",
+      "sha256": "79c02902a7a343f61f85f6be346da8d8cc059bda6e9d86fb47c06917a8336610",
+      "changes": "Wikimedia Commons 제공 1280px 축소본을 그대로 사용. 카드에서는 화면 비율에 맞춰 일부가 잘려 보일 수 있습니다. 강원도 해당 장소를 촬영한 사진."
+    },
+    {
+      "title": "카페 테마 · 라테아트 커피 한 잔",
+      "regions": [],
+      "themes": [
+        "cafe"
+      ],
+      "keywords": [
+        "카페",
+        "커피",
+        "카푸치노",
+        "라테",
+        "라떼",
+        "라테아트"
+      ],
+      "id": "gangwon-course-cover-37",
+      "author": "Vee Satayamas",
+      "license": "CC BY 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:A_cup_of_cappuccino.jpg",
+      "url": "https://planfix-bucket-975050156432-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/defaults/course-covers/2026-09-v2/gangwon-course-cover-37.jpg",
+      "s3Key": "defaults/course-covers/2026-09-v2/gangwon-course-cover-37.jpg",
+      "sha256": "0e98b7a5d043b61d4d110ec7bb80564bcbf5ec3d9842808518262664ebca66ea",
+      "changes": "Wikimedia Commons 제공 1280px 축소본을 그대로 사용. 카드에서는 화면 비율에 맞춰 일부가 잘려 보일 수 있습니다. 특정 코스 방문지의 실사로 지정하지 않는 범용 테마 사진."
+    },
+    {
+      "title": "카페 테마 · 커피와 초콜릿 디저트",
+      "regions": [],
+      "themes": [
+        "cafe"
+      ],
+      "keywords": [
+        "디저트",
+        "케이크",
+        "브라우니",
+        "카페투어",
+        "디저트카페"
+      ],
+      "id": "gangwon-course-cover-38",
+      "author": "TricksterWildcat",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Cappuccino_and_cookie.jpg",
+      "url": "https://planfix-bucket-975050156432-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/defaults/course-covers/2026-09-v2/gangwon-course-cover-38.jpg",
+      "s3Key": "defaults/course-covers/2026-09-v2/gangwon-course-cover-38.jpg",
+      "sha256": "abcd2b99339b4a2a665881946c7e39ecc3b3cfa2d46c6296f00b5cba36ce3620",
+      "changes": "Wikimedia Commons 제공 1280px 축소본을 그대로 사용. 카드에서는 화면 비율에 맞춰 일부가 잘려 보일 수 있습니다. 특정 코스 방문지의 실사로 지정하지 않는 범용 테마 사진."
+    },
+    {
+      "title": "맛집 테마 · 닭갈비 한 접시",
+      "regions": [],
+      "themes": [
+        "food"
+      ],
+      "keywords": [
+        "춘천",
+        "닭갈비",
+        "철판닭갈비",
+        "음식점",
+        "맛집",
+        "미식"
+      ],
+      "id": "gangwon-course-cover-39",
+      "author": "Fumikas Sagisavas",
+      "license": "CC0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Chuncheon_sizzling_chicken_(Dakgalbi).jpg",
+      "url": "https://planfix-bucket-975050156432-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/defaults/course-covers/2026-09-v2/gangwon-course-cover-39.jpg",
+      "s3Key": "defaults/course-covers/2026-09-v2/gangwon-course-cover-39.jpg",
+      "sha256": "7a2809016f3410a5a282a8f689dc8933da59ffe4e22f9ddce4f7ad40c25bc6f5",
+      "changes": "Wikimedia Commons 제공 1280px 축소본을 그대로 사용. 카드에서는 화면 비율에 맞춰 일부가 잘려 보일 수 있습니다. 특정 코스 방문지의 실사로 지정하지 않는 범용 테마 사진."
+    },
+    {
+      "title": "강릉 들깨 막국수 한 상",
+      "regions": [
+        "150"
+      ],
+      "themes": [
+        "food"
+      ],
+      "keywords": [
+        "강릉",
+        "막국수",
+        "들깨막국수",
+        "메밀국수",
+        "음식점",
+        "맛집"
+      ],
+      "id": "gangwon-course-cover-40",
+      "author": "Mobius6",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Deulkkae_makguksu_20220501_001.jpg",
+      "url": "https://planfix-bucket-975050156432-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/defaults/course-covers/2026-09-v2/gangwon-course-cover-40.jpg",
+      "s3Key": "defaults/course-covers/2026-09-v2/gangwon-course-cover-40.jpg",
+      "sha256": "5014d4ce6bacafda672115367078820490b67eeda3f5932959ecc7fa81b6a974",
+      "changes": "Wikimedia Commons 제공 1280px 축소본을 그대로 사용. 카드에서는 화면 비율에 맞춰 일부가 잘려 보일 수 있습니다. 강원도 해당 장소를 촬영한 사진."
+    },
+    {
+      "title": "양양 낙산사의 전통 단청",
+      "regions": [
+        "830"
+      ],
+      "themes": [
+        "culture"
+      ],
+      "keywords": [
+        "양양",
+        "낙산사",
+        "사찰",
+        "전통",
+        "단청",
+        "문화",
+        "역사"
+      ],
+      "id": "gangwon-course-cover-41",
+      "author": "Bernard Gagnon",
+      "license": "CC0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Bell_Pavilion_at_Naksansa_02.jpg",
+      "url": "https://planfix-bucket-975050156432-ap-northeast-2-an.s3.ap-northeast-2.amazonaws.com/defaults/course-covers/2026-09-v2/gangwon-course-cover-41.jpg",
+      "s3Key": "defaults/course-covers/2026-09-v2/gangwon-course-cover-41.jpg",
+      "sha256": "7a840d3a9dc90fa4dbd26d84ac2aca8d049ccc46c3535b6017f263833eaa0e64",
+      "changes": "Wikimedia Commons 제공 1280px 축소본을 그대로 사용. 카드에서는 화면 비율에 맞춰 일부가 잘려 보일 수 있습니다. 강원도 해당 장소를 촬영한 사진."
     }
   ]
 }

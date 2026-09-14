@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type SyntheticEvent } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   CalendarDays,
@@ -20,6 +20,14 @@ import {
 
 import { LoaderFour } from "@/components/ui/unique-loader-components";
 import AppNav from "@/components/ui/app-nav";
+import SpotImage from "@/components/ui/spot-image";
+import {
+  hasSpotCoordinates,
+  MISSING_SPOT_ADDRESS,
+  MISSING_SPOT_DESCRIPTION,
+  MISSING_SPOT_LOCATION,
+  MISSING_SPOT_USAGE,
+} from "@/lib/spot-display";
 import {
   fetchSpotDetail,
   likeSpot,
@@ -28,9 +36,6 @@ import {
   type SpotDetail,
   type SpotTourInfo,
 } from "@/services/spots";
-
-const FALLBACK_SPOT_IMAGE =
-  "https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=900&q=85";
 
 const TOUR_INFO_FIELDS: { label: string; key: keyof SpotTourInfo; icon: LucideIcon }[] = [
   { label: "이용시간", key: "timeInfo", icon: Clock3 },
@@ -64,12 +69,6 @@ function formatTourText(value: string | null | undefined): string {
     .replace(/\n[ \t]+/g, "\n")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
-}
-
-function handleImageError(event: SyntheticEvent<HTMLImageElement>) {
-  if (event.currentTarget.src !== FALLBACK_SPOT_IMAGE) {
-    event.currentTarget.src = FALLBACK_SPOT_IMAGE;
-  }
 }
 
 const FOCUS_RING = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background";
@@ -124,7 +123,8 @@ export default function SpotDetailPage() {
 
   const [isTogglingLike, setIsTogglingLike] = useState(false);
   const galleryImages = useMemo(
-    () => spot ? Array.from(new Set([spot.thumbnail, ...spot.images].filter((image): image is string => Boolean(image?.trim())))) : [],
+    () => spot ? Array.from(new Set([spot.thumbnail, ...(spot.images ?? [])]
+      .map((image) => image?.trim()).filter((image): image is string => Boolean(image)))) : [],
     [spot?.thumbnail, spot?.images],
   );
   const address = useMemo(() => formatTourText(spot?.address), [spot?.address]);
@@ -134,7 +134,7 @@ export default function SpotDetailPage() {
       .filter(({ value }) => value),
     [spot?.info],
   );
-  const activeImage = galleryImages[selectedImage] ?? FALLBACK_SPOT_IMAGE;
+  const activeImage = galleryImages[selectedImage];
 
   const goBack = () => navigate(-1);
 
@@ -218,12 +218,13 @@ export default function SpotDetailPage() {
                 {spot.category}
               </span>
               <h1 className="mt-3 break-words text-3xl font-bold leading-tight tracking-tight sm:text-4xl">{spot.title}</h1>
-              {address ? (
-                <p className="mt-3 flex items-start gap-1.5 text-sm leading-relaxed text-muted-foreground">
-                  <MapPin className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
-                  <span className="min-w-0 whitespace-pre-line break-words">{address}</span>
-                </p>
-              ) : null}
+              <p className="mt-3 flex items-start gap-1.5 text-sm leading-relaxed text-muted-foreground">
+                <MapPin className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                <span className="min-w-0 whitespace-pre-line break-words">{address || MISSING_SPOT_ADDRESS}</span>
+              </p>
+              {!hasSpotCoordinates(spot) && (
+                <p className="mt-2 text-sm text-muted-foreground">{MISSING_SPOT_LOCATION}</p>
+              )}
               <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-muted-foreground sm:text-sm">
                 <span className="inline-flex items-center gap-1.5">
                   <Heart className="h-4 w-4 text-primary/70" aria-hidden="true" />
@@ -257,15 +258,14 @@ export default function SpotDetailPage() {
             </button>
           </div>
 
-          <div className={`grid items-start gap-6 lg:gap-7 ${infoFields.length > 0 ? "lg:grid-cols-[minmax(0,1fr)_360px]" : ""}`}>
+          <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-7">
             <div className="min-w-0 space-y-6">
               <section aria-label="장소 사진" className="overflow-hidden rounded-3xl border border-primary/10 bg-white p-2 shadow-sm dark:bg-background sm:p-3">
                 <div className="relative aspect-[4/3] overflow-hidden rounded-[18px] bg-muted sm:aspect-[16/10]">
-                  <img
+                  <SpotImage
                     className="h-full w-full object-cover"
                     src={activeImage}
                     alt={spot.title}
-                    onError={handleImageError}
                   />
                   {galleryImages.length > 0 ? (
                     <div className="absolute bottom-4 right-4 flex items-center gap-1.5 rounded-full bg-black/50 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-md" role="status" aria-label="현재 사진">
@@ -295,12 +295,11 @@ export default function SpotDetailPage() {
                         onClick={() => setSelectedImage(index)}
                         className={`group h-20 w-28 shrink-0 overflow-hidden rounded-xl border-2 transition-colors sm:h-24 sm:w-32 ${FOCUS_RING} ${activeImage === image ? "border-primary" : "border-transparent opacity-70 hover:opacity-100"}`}
                       >
-                        <img
+                        <SpotImage
                           className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105 motion-reduce:transform-none motion-reduce:transition-none"
                           src={image}
                           alt={`${spot.title} 사진 ${index + 1}`}
                           loading="lazy"
-                          onError={handleImageError}
                         />
                       </button>
                     ))}
@@ -308,30 +307,28 @@ export default function SpotDetailPage() {
                 ) : null}
               </section>
 
-              {description ? (
-                <section aria-labelledby="spot-description-heading" className="rounded-3xl border border-primary/10 bg-white p-6 shadow-sm dark:bg-background sm:p-7">
-                  <div className="mb-4 flex items-center gap-2.5">
-                    <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/[0.08] text-primary">
-                      <MapPin className="h-4 w-4" aria-hidden="true" />
-                    </span>
-                    <h2 id="spot-description-heading" className="text-lg font-bold tracking-tight">이런 곳이에요</h2>
-                  </div>
-                  <p className="whitespace-pre-line break-words text-sm leading-7 text-foreground/80">{description}</p>
-                </section>
-              ) : null}
+              <section aria-labelledby="spot-description-heading" className="rounded-3xl border border-primary/10 bg-white p-6 shadow-sm dark:bg-background sm:p-7">
+                <div className="mb-4 flex items-center gap-2.5">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/[0.08] text-primary">
+                    <MapPin className="h-4 w-4" aria-hidden="true" />
+                  </span>
+                  <h2 id="spot-description-heading" className="text-lg font-bold tracking-tight">이런 곳이에요</h2>
+                </div>
+                <p className="whitespace-pre-line break-words text-sm leading-7 text-foreground/80">{description || MISSING_SPOT_DESCRIPTION}</p>
+              </section>
             </div>
 
-            {infoFields.length > 0 ? (
-              <section aria-labelledby="spot-info-heading" className="min-w-0 overflow-hidden rounded-3xl border border-primary/10 bg-white shadow-sm dark:bg-background lg:sticky lg:top-24">
-                <div className="border-b border-primary/[0.08] bg-primary/[0.04] px-6 py-5">
-                  <div className="flex items-center gap-2.5">
-                    <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                      <Info className="h-4 w-4" aria-hidden="true" />
-                    </span>
-                    <h2 id="spot-info-heading" className="text-lg font-bold tracking-tight">이용 안내</h2>
-                  </div>
-                  <p className="mt-2 text-xs leading-relaxed text-muted-foreground">방문 전에 필요한 정보를 확인해 보세요.</p>
+            <section aria-labelledby="spot-info-heading" className="min-w-0 overflow-hidden rounded-3xl border border-primary/10 bg-white shadow-sm dark:bg-background lg:sticky lg:top-24">
+              <div className="border-b border-primary/[0.08] bg-primary/[0.04] px-6 py-5">
+                <div className="flex items-center gap-2.5">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                    <Info className="h-4 w-4" aria-hidden="true" />
+                  </span>
+                  <h2 id="spot-info-heading" className="text-lg font-bold tracking-tight">이용 안내</h2>
                 </div>
+                <p className="mt-2 text-xs leading-relaxed text-muted-foreground">방문 전에 필요한 정보를 확인해 보세요.</p>
+              </div>
+              {infoFields.length > 0 ? (
                 <dl className="divide-y divide-border/50 px-6">
                   {infoFields.map(({ label, key, icon: Icon, value }) => (
                     <div key={key} className="grid grid-cols-[1.125rem_minmax(0,1fr)] gap-x-3 py-4">
@@ -345,8 +342,10 @@ export default function SpotDetailPage() {
                     </div>
                   ))}
                 </dl>
-              </section>
-            ) : null}
+              ) : (
+                <p className="px-6 py-5 text-sm leading-6 text-muted-foreground">{MISSING_SPOT_USAGE}</p>
+              )}
+            </section>
           </div>
         </main>
       )}

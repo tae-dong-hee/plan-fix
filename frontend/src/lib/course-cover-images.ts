@@ -9,5 +9,6 @@ export function getCourseCoverImageSrc(thumbnail: string): string {
   const credit = getCourseCoverCredit(thumbnail);
   if (!credit) return thumbnail;
   const base = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "") || "/api/v1";
-  return `${base}/images/course-covers/${credit.id}?v=2026-09-v1`;
+  const version = credit.s3Key.split("/")[2];
+  return `${base}/images/course-covers/${credit.id}?v=${version}`;
 }

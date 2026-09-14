@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { MapPin, RefreshCw } from "lucide-react";
 
 import { hasMapCoordinates } from "@/lib/map-coordinates";
+import { MISSING_SPOT_LOCATION } from "@/lib/spot-display";
 
 /** 지도에 찍을 장소. 표시할 수 없는 좌표는 원본 목록을 유지한 채 지도에서만 제외한다. */
 export type KakaoMapSpot = {
@@ -275,7 +276,7 @@ export default function KakaoMap({
   const message = status === "error"
     ? "지도를 불러오지 못했어요."
     : status === "empty"
-      ? "지도에 표시할 장소가 없어요."
+      ? (spots.length === 0 ? "지도에 표시할 장소가 없어요." : MISSING_SPOT_LOCATION)
       : status === "no-key"
         ? "지도를 준비하고 있어요."
         : "지도를 불러오고 있어요.";
@@ -309,7 +310,7 @@ export default function KakaoMap({
           </div>
         )}
       </div>
-      {missingCoordCount > 0 && (
+      {missingCoordCount > 0 && hasPlottable && (
         <p className="mt-1.5 text-xs text-muted-foreground">
           위치를 확인할 수 없는 장소 {missingCoordCount}곳은 목록에서 볼 수 있어요.
         </p>
