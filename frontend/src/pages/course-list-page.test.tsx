@@ -87,6 +87,32 @@ describe("CourseListPage", () => {
     expect(mockNavigate).toHaveBeenCalledWith("/courses/1/edit");
   });
 
+  it("대표 사진이 실패하면 장소 사진을 사용하고 모두 실패해도 코스 정보를 유지한다", async () => {
+    (courseService.fetchMyCourses as Mock).mockResolvedValue([{
+      ...mockCourses[0],
+      thumbnail: "/course-cover.jpg",
+      days: [{
+        dayNumber: 1,
+        spots: [{
+          spotId: 10, sequence: 0, memo: null, title: "속초해변", category: "관광지",
+          region: null, sigungu: null, address: null, thumbnail: "/spot-cover.jpg",
+          latitude: null, longitude: null,
+        }],
+      }],
+    }]);
+
+    renderComponent();
+
+    const card = await screen.findByTestId("course-item-1");
+    expect(card.querySelector("img")).toHaveAttribute("src", "/course-cover.jpg");
+    fireEvent.error(card.querySelector("img")!);
+    expect(card.querySelector("img")).toHaveAttribute("src", "/spot-cover.jpg");
+    fireEvent.error(card.querySelector("img")!);
+    expect(card.querySelector("img")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "속초 1박 2일 맛집 코스 코스 상세 보기" })).toHaveAttribute("href", "/courses/1");
+    expect(screen.getByText("1개 장소")).toBeInTheDocument();
+  });
+
   it("코스 카드에서 삭제 버튼을 누르면 확인 후 deleteCourse를 호출하고 목록에서 제거한다", async () => {
     (courseService.fetchMyCourses as Mock).mockResolvedValue(mockCourses);
     (courseService.deleteCourse as Mock).mockResolvedValue({

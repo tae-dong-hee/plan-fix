@@ -1,20 +1,15 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
-  Calendar,
   ChevronRight,
-  Eye,
-  Globe,
-  Heart,
   Loader2,
-  Lock,
-  MapPin,
   MapPinPlus,
-  Pencil,
   Plus,
-  Trash2,
+  Route,
 } from "lucide-react";
 import AppNav from "@/components/ui/app-nav";
+import InviteTripArtwork from "@/components/ui/invite-trip-artwork";
+import MyCourseCard from "@/components/ui/my-course-card";
 import { CourseResponse, deleteCourse, fetchMyCourses } from "@/services/course";
 import { UnauthorizedError } from "@/services/spots";
 
@@ -24,10 +19,7 @@ export default function CourseListPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const handleDeleteCourse = async (e: React.MouseEvent, courseId: number) => {
-    e.preventDefault();
-    e.stopPropagation();
-
+  const handleDeleteCourse = async (courseId: number) => {
     if (!window.confirm("정말 이 코스를 삭제하시겠습니까?")) {
       return;
     }
@@ -45,9 +37,7 @@ export default function CourseListPage() {
     }
   };
 
-  const handleEditCourse = (e: React.MouseEvent, courseId: number) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleEditCourse = (courseId: number) => {
     navigate(`/courses/${courseId}/edit`);
   };
 
@@ -86,179 +76,67 @@ export default function CourseListPage() {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen bg-background pb-28 sm:pb-32 md:pb-16 md:pt-16">
+    <div className="min-h-screen bg-muted/20 pb-28 sm:pb-32 md:pb-16 md:pt-16">
       <AppNav />
 
       <main className="mx-auto max-w-7xl px-5 pt-7 sm:px-8 sm:pt-10 lg:px-10">
-        {/* 상단 브레드크럼 */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <span>여행</span>
-            <ChevronRight className="h-3.5 w-3.5" />
-            <span className="font-medium text-foreground">내 여행 코스</span>
-          </div>
-          <Link
-            to="/courses/create"
-            className="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-primary px-4 text-[13px] font-semibold text-primary-foreground transition-opacity hover:opacity-90"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            새 코스 만들기
-          </Link>
-        </div>
+        <nav aria-label="현재 위치" className="mb-6 flex items-center gap-1.5 text-xs text-muted-foreground">
+          <Link to="/main" className="transition-colors hover:text-primary">여행</Link>
+          <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
+          <span aria-current="page" className="font-medium text-foreground">내 여행 코스</span>
+        </nav>
 
-        {/* 헤더 */}
-        <div className="mt-5 border-b border-border/70 pb-6">
-          <h1 className="text-[26px] font-bold leading-tight tracking-tight text-foreground sm:text-[30px]">
-            내 여행 코스
-          </h1>
-          <p className="mt-2 text-[13px] leading-6 text-muted-foreground sm:text-sm">
-            직접 계획하고 저장한 강원도 여행 일정 목록입니다.
-          </p>
-        </div>
-
-        {loading ? (
-          <div className="flex h-64 flex-col items-center justify-center gap-3">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="text-sm text-muted-foreground">코스 목록을 불러오는 중입니다...</p>
-          </div>
-        ) : error ? (
-          <div className="mt-8 rounded-2xl border border-destructive/20 bg-background px-6 py-12 text-center">
-            <p className="text-base font-semibold text-destructive">{error}</p>
-            <button
-              type="button"
-              onClick={() => window.location.reload()}
-              className="mt-4 min-h-11 rounded-full bg-primary px-5 py-2.5 text-[13px] font-semibold text-primary-foreground"
-            >
-              다시 시도
-            </button>
-          </div>
-        ) : courses.length === 0 ? (
-          <div className="mt-8 rounded-2xl bg-muted/50 px-6 py-16 text-center">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-background text-muted-foreground">
-              <MapPinPlus className="h-7 w-7" />
-            </div>
-            <h2 className="mt-4 text-base font-semibold text-foreground">
-              생성한 여행 코스가 없습니다.
-            </h2>
-            <p className="mt-2 text-[13px] leading-6 text-muted-foreground">
-              강원도의 다양한 인기 명소와 맛집을 골라 나만의 여행 코스를 만들어보세요!
-            </p>
-            <div className="mt-6 flex justify-center">
-              <Link
-                to="/courses/create"
-                className="inline-flex min-h-11 items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-[13px] font-semibold text-primary-foreground transition-opacity hover:opacity-90"
-              >
-                <Plus className="h-4 w-4" />
-                첫 여행 코스 만들기
+        <section aria-labelledby="my-courses-title" className="relative isolate overflow-hidden rounded-[28px] border border-primary/10 bg-primary/[0.05] p-6 sm:p-8 lg:px-10 lg:py-9">
+          <div aria-hidden="true" className="pointer-events-none absolute -right-16 -top-32 -z-10 h-80 w-80 rounded-full border-[48px] border-primary/[0.035]" />
+          <div className="flex items-center justify-between gap-8">
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold tracking-[0.2em] text-primary sm:text-[11px]">MY TRAVEL COLLECTION</p>
+              <h1 id="my-courses-title" className="mt-3 text-[28px] font-bold leading-tight tracking-tight text-foreground sm:text-[34px]">내 여행 코스</h1>
+              <p className="mt-3 break-keep text-[13px] leading-6 text-muted-foreground sm:text-sm">가고 싶은 곳을 모아, 나만의 강원도 여행으로.<br className="sm:hidden" /> 설레는 다음 여행을 계획해 보세요.</p>
+              <Link to="/courses/create" className="mt-6 inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-primary px-5 py-3 text-[13px] font-semibold text-primary-foreground shadow-[0_6px_18px_-6px_hsl(var(--primary)/0.5)] transition-[background-color,box-shadow] hover:bg-primary/90 hover:shadow-[0_8px_22px_-6px_hsl(var(--primary)/0.6)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-4">
+                <Plus className="h-4 w-4" aria-hidden="true" />
+                새 코스 만들기
               </Link>
             </div>
+            <div className="hidden w-64 shrink-0 lg:block"><InviteTripArtwork /></div>
           </div>
-        ) : (
-          <div className="mt-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-            {courses.map((course) => {
-              const totalSpots = course.days.reduce(
-                (sum, day) => sum + day.spots.length,
-                0
-              );
-              return (
-                <Link
-                  key={course.courseId}
-                  to={`/courses/${course.courseId}`}
-                  data-testid={`course-item-${course.courseId}`}
-                  className="group flex min-w-0 flex-col justify-between rounded-2xl border border-border/80 bg-background p-5 transition-colors hover:border-foreground/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-4"
-                >
-                  <div>
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
-                        <span className="rounded-full bg-muted px-2.5 py-1 text-[11px] font-medium text-foreground">
-                          {course.days.length}일 일정
-                        </span>
-                        <span
-                          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${
-                            course.visibility === "PUBLIC"
-                              ? "bg-muted/70 text-muted-foreground"
-                              : "bg-muted text-muted-foreground"
-                          }`}
-                        >
-                          {course.visibility === "PUBLIC" ? (
-                            <>
-                              <Globe className="h-2.5 w-2.5" />
-                              <span>공개</span>
-                            </>
-                          ) : (
-                            <>
-                              <Lock className="h-2.5 w-2.5" />
-                              <span>비공개</span>
-                            </>
-                          )}
-                        </span>
-                        <span className="basis-full text-[11px] text-muted-foreground">
-                          {course.createdAt.substring(0, 10)}
-                        </span>
-                      </div>
-                      <div className="flex shrink-0 items-center gap-1">
-                        <button
-                          type="button"
-                          aria-label="코스 수정"
-                          title="코스 수정"
-                          onClick={(e) => handleEditCourse(e, course.courseId)}
-                          className="flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          aria-label="코스 삭제"
-                          title="코스 삭제"
-                          onClick={(e) => handleDeleteCourse(e, course.courseId)}
-                          className="flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    </div>
+        </section>
 
-                    <h2 className="mt-4 line-clamp-2 text-base font-semibold leading-snug tracking-tight text-foreground">
-                      {course.title}
-                    </h2>
-
-                    {course.description && (
-                      <p className="mt-2 line-clamp-2 text-[13px] leading-relaxed text-muted-foreground">
-                        {course.description}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-border/60 pt-4 text-xs text-muted-foreground">
-                    <div className="flex items-center gap-3">
-                      {course.startDate && course.endDate ? (
-                        <span className="flex items-center gap-1 truncate">
-                          <Calendar className="h-3.5 w-3.5" />
-                          {course.startDate.substring(5)} ~ {course.endDate.substring(5)}
-                        </span>
-                      ) : (
-                        <span className="flex items-center gap-1">
-                          <MapPin className="h-3.5 w-3.5" />
-                          {totalSpots}개 장소
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2.5">
-                      <span className="flex items-center gap-1">
-                        <Eye className="h-3.5 w-3.5" />
-                        {course.viewCount}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Heart className="h-3.5 w-3.5" />
-                        {course.likeCount}
-                      </span>
-                    </div>
-                  </div>
-                </Link>
-              );
-            })}
+        <section aria-labelledby="saved-courses-title" className="mt-9 sm:mt-10">
+          <div className="mb-5 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <Route className="h-5 w-5 text-primary" strokeWidth={1.8} aria-hidden="true" />
+              <h2 id="saved-courses-title" className="text-base font-bold tracking-tight text-foreground sm:text-lg">저장한 코스</h2>
+              {!loading && !error && <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-primary/10 px-2 text-xs font-bold text-primary">{courses.length}</span>}
+            </div>
+            <p className="hidden text-xs text-muted-foreground sm:block">함께 떠나고 싶은 순간들을 모았어요</p>
           </div>
-        )}
+
+          {loading ? (
+            <div role="status" className="flex h-64 flex-col items-center justify-center gap-3 rounded-3xl border border-border/60 bg-background">
+              <Loader2 className="h-8 w-8 animate-spin text-primary motion-reduce:animate-none" aria-hidden="true" />
+              <p className="text-sm text-muted-foreground">코스 목록을 불러오는 중입니다...</p>
+            </div>
+          ) : error ? (
+            <div role="alert" className="rounded-3xl border border-destructive/20 bg-background px-6 py-12 text-center">
+              <p className="text-base font-semibold text-destructive">{error}</p>
+              <button type="button" onClick={() => window.location.reload()} className="mt-4 min-h-11 rounded-full bg-primary px-5 py-2.5 text-[13px] font-semibold text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">다시 시도</button>
+            </div>
+          ) : courses.length === 0 ? (
+            <div className="rounded-3xl border border-dashed border-primary/20 bg-background px-6 py-16 text-center">
+              <div className="mx-auto flex h-16 w-16 -rotate-6 items-center justify-center rounded-[22px] bg-primary/10 text-primary"><MapPinPlus className="h-8 w-8" strokeWidth={1.5} aria-hidden="true" /></div>
+              <h3 className="mt-6 text-lg font-bold text-foreground">생성한 여행 코스가 없습니다.</h3>
+              <p className="mt-2 break-keep text-[13px] leading-6 text-muted-foreground">강원도의 다양한 인기 명소와 맛집을 골라<br className="sm:hidden" /> 나만의 여행 코스를 만들어보세요!</p>
+              <Link to="/courses/create" className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-[13px] font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-4">
+                <Plus className="h-4 w-4" aria-hidden="true" />첫 여행 코스 만들기
+              </Link>
+            </div>
+          ) : (
+            <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+              {courses.map((course) => <MyCourseCard key={course.courseId} course={course} onEdit={handleEditCourse} onDelete={handleDeleteCourse} />)}
+            </div>
+          )}
+        </section>
       </main>
     </div>
   );
