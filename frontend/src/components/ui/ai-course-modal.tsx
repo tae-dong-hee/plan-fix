@@ -1,5 +1,9 @@
-import { useEffect, useState } from "react";
-import { Loader2, MapPin, Search, Sparkles, X } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  ArrowRight, CalendarDays, Check, ChevronDown, Heart,
+  Loader2, MapPin, Mountain, Plus, Route, Search, SlidersHorizontal,
+  Sparkles, Trees, UserRound, UsersRound, Waves, X,
+} from "lucide-react";
 
 import { sigunguCodeByRegion, type GangwonRegion } from "@/components/ui/gangwon-region-map";
 import {
@@ -9,16 +13,16 @@ import {
   type AiCourseTheme,
 } from "@/services/ai-course";
 import { searchSpots, UnauthorizedError, type PopularSpot } from "@/services/spots";
+import "./ai-course-modal.css";
 
 const GANGWON_REGION_CODE = "51";
-
-const COMPANION_OPTIONS: { value: AiCourseCompanion; label: string }[] = [
-  { value: "SOLO", label: "혼자" },
-  { value: "COUPLE", label: "연인" },
-  { value: "FRIENDS", label: "친구" },
-  { value: "FAMILY", label: "가족(아이 동반)" },
-];
-
+const REGION_OPTIONS = Object.keys(sigunguCodeByRegion) as GangwonRegion[];
+const COMPANION_OPTIONS = [
+  { value: "SOLO", label: "혼자", summary: "나 혼자", icon: UserRound },
+  { value: "COUPLE", label: "연인", summary: "연인과 둘이", icon: Heart },
+  { value: "FRIENDS", label: "친구", summary: "친구와 함께", icon: UsersRound },
+  { value: "FAMILY", label: "가족(아이 동반)", summary: "아이와 가족이 함께", icon: UsersRound },
+] satisfies { value: AiCourseCompanion; label: string; summary: string; icon: typeof Heart }[];
 const THEME_OPTIONS: { value: AiCourseTheme; label: string }[] = [
   { value: "HEALING", label: "힐링·자연" },
   { value: "FOOD", label: "맛집 탐방" },
@@ -26,64 +30,129 @@ const THEME_OPTIONS: { value: AiCourseTheme; label: string }[] = [
   { value: "ACTIVITY", label: "액티비티" },
   { value: "CULTURE", label: "문화·역사" },
 ];
-
-const REGION_OPTIONS = Object.keys(sigunguCodeByRegion) as GangwonRegion[];
+const TRIP_IDEAS: {
+  region: GangwonRegion;
+  title: string;
+  description: string;
+  themes: AiCourseTheme[];
+  icon: typeof Waves;
+  scene: string;
+}[] = [
+  { region: "강릉", title: "바다와 카페", description: "파도 소리, 커피 한 잔", themes: ["HEALING", "CAFE"], icon: Waves, scene: "coast" },
+  { region: "속초", title: "맛집과 산책", description: "맛있게 먹고, 가볍게 걷기", themes: ["HEALING", "FOOD"], icon: Mountain, scene: "sunset" },
+  { region: "춘천", title: "자연 속 쉼", description: "초록빛으로 채우는 하루", themes: ["HEALING"], icon: Trees, scene: "forest" },
+];
 
 type AiCourseModalProps = {
   open: boolean;
-  /** 코스 생성 화면에서 이미 고른 기간. 여기서 다시 묻지 않는다. */
   startDate: string;
   endDate: string;
   onClose: () => void;
   onApply: (draft: AiCourseDraft) => void;
 };
 
+function describeDuration(startDate: string, endDate: string) {
+  const nights = Math.round((Date.parse(endDate) - Date.parse(startDate)) / 86400000);
+  return nights > 0 ? `${nights}박 ${nights + 1}일` : "당일치기";
+}
+
 export default function AiCourseModal({ open, startDate, endDate, onClose, onApply }: AiCourseModalProps) {
   const [region, setRegion] = useState<GangwonRegion | null>(null);
   const [companion, setCompanion] = useState<AiCourseCompanion>("COUPLE");
   const [themes, setThemes] = useState<AiCourseTheme[]>([]);
   const [anchors, setAnchors] = useState<PopularSpot[]>([]);
-
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const [anchorKeyword, setAnchorKeyword] = useState("");
   const [anchorResults, setAnchorResults] = useState<PopularSpot[]>([]);
   const [anchorSearching, setAnchorSearching] = useState(false);
-
+  const [anchorSearchError, setAnchorSearchError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [takingLonger, setTakingLonger] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const dialogRef = useRef<HTMLElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const anchorInputRef = useRef<HTMLInputElement>(null);
+  const callbacksRef = useRef({ onClose, onApply });
+  const requestVersion = useRef(0);
+  const requestPending = useRef(false);
+  callbacksRef.current = { onClose, onApply };
+
+  const closeModal = useCallback(() => {
+    // A dismissed draft must never overwrite the course when its request finishes later.
+    requestVersion.current += 1;
+    requestPending.current = false;
+    setSubmitting(false);
+    callbacksRef.current.onClose();
+  }, []);
 
   useEffect(() => {
-    if (!open) return undefined;
-
+    if (!open) return;
     setRegion(null);
     setCompanion("COUPLE");
     setThemes([]);
     setAnchors([]);
+    setDetailsOpen(false);
     setAnchorKeyword("");
     setAnchorResults([]);
+    setAnchorSearching(false);
+    setAnchorSearchError(null);
+    setSubmitting(false);
     setError(null);
+    requestPending.current = false;
 
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const previousOverflow = document.body.style.overflow;
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
-    };
     document.body.style.overflow = "hidden";
-    document.addEventListener("keydown", handleEscape);
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      document.removeEventListener("keydown", handleEscape);
+    closeButtonRef.current?.focus();
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeModal();
+      }
+      if (event.key !== "Tab") return;
+      const controls = dialogRef.current?.querySelectorAll<HTMLElement>(
+        'button:not(:disabled), input:not(:disabled), select:not(:disabled), [tabindex="0"]',
+      );
+      if (!controls?.length) return;
+      const first = controls[0];
+      const last = controls[controls.length - 1];
+      const outside = !dialogRef.current?.contains(document.activeElement);
+      if (event.shiftKey && (document.activeElement === first || outside)) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && (document.activeElement === last || outside)) {
+        event.preventDefault();
+        first.focus();
+      }
     };
-  }, [open, onClose]);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      requestVersion.current += 1;
+      requestPending.current = false;
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", handleKeyDown);
+      if (previousFocus?.isConnected) previousFocus.focus();
+    };
+  }, [open, closeModal]);
 
-  // 고정 장소 검색 (300ms 디바운스)
   useEffect(() => {
-    if (!open) return undefined;
-    const keyword = anchorKeyword.trim();
-    if (!keyword) {
-      setAnchorResults([]);
-      return undefined;
+    if (!submitting) {
+      setTakingLonger(false);
+      return;
     }
+    closeButtonRef.current?.focus();
+    const timer = setTimeout(() => setTakingLonger(true), 12000);
+    return () => clearTimeout(timer);
+  }, [submitting]);
 
+  useEffect(() => {
+    const keyword = anchorKeyword.trim();
+    setAnchorResults([]);
+    setAnchorSearchError(null);
+    if (!open || !detailsOpen || !keyword || submitting) {
+      setAnchorSearching(false);
+      return;
+    }
     let ignore = false;
     setAnchorSearching(true);
     const timer = setTimeout(() => {
@@ -92,265 +161,263 @@ export default function AiCourseModal({ open, startDate, endDate, onClose, onApp
           if (!ignore) setAnchorResults(res.items ?? []);
         })
         .catch(() => {
-          if (!ignore) setAnchorResults([]);
+          if (!ignore) setAnchorSearchError("장소를 불러오지 못했어요. 검색어를 다시 입력해 주세요.");
         })
         .finally(() => {
           if (!ignore) setAnchorSearching(false);
         });
     }, 300);
-
     return () => {
       ignore = true;
       clearTimeout(timer);
     };
-  }, [anchorKeyword, open]);
+  }, [anchorKeyword, open, detailsOpen, submitting]);
 
   if (!open) return null;
 
-  const toggleTheme = (theme: AiCourseTheme) => {
-    setThemes((prev) => (prev.includes(theme) ? prev.filter((t) => t !== theme) : [...prev, theme]));
-  };
+  const companionSummary = COMPANION_OPTIONS.find((option) => option.value === companion)?.summary;
+  const selectedThemeLabels = THEME_OPTIONS.filter((option) => themes.includes(option.value)).map((option) => option.label);
+  const duration = describeDuration(startDate, endDate);
+  const preferenceSummary = selectedThemeLabels.length ? selectedThemeLabels.join(" · ") : "취향은 AI 추천으로";
 
   const addAnchor = (spot: PopularSpot) => {
-    setAnchors((prev) => (prev.some((s) => s.spotId === spot.spotId) ? prev : [...prev, spot]));
+    setAnchors((prev) => prev.some((anchor) => anchor.spotId === spot.spotId) ? prev : [...prev, spot]);
     setAnchorKeyword("");
-    setAnchorResults([]);
+    anchorInputRef.current?.focus();
   };
 
   const handleSubmit = async () => {
-    if (!region || submitting) return;
-
+    if (requestPending.current) return;
+    requestPending.current = true;
+    const version = ++requestVersion.current;
     setSubmitting(true);
     setError(null);
     try {
       const draft = await fetchAiCourseDraft({
         region: GANGWON_REGION_CODE,
-        sigungu: sigunguCodeByRegion[region],
+        sigungu: region ? sigunguCodeByRegion[region] : undefined,
         startDate,
         endDate,
         themes,
         companion,
-        anchorSpotIds: anchors.map((a) => a.spotId),
+        anchorSpotIds: anchors.map((anchor) => anchor.spotId),
       });
-      onApply(draft);
+      if (version === requestVersion.current) callbacksRef.current.onApply(draft);
     } catch (err) {
-      if (err instanceof UnauthorizedError) {
-        setError("로그인이 필요한 기능이에요.");
-      } else {
-        setError(err instanceof Error ? err.message : "AI 코스를 만들지 못했습니다.");
-      }
+      if (version !== requestVersion.current) return;
+      setError(err instanceof UnauthorizedError
+        ? "로그인이 필요한 기능이에요."
+        : err instanceof Error ? err.message : "AI 코스를 만들지 못했습니다.");
     } finally {
-      setSubmitting(false);
+      if (version === requestVersion.current) {
+        requestPending.current = false;
+        setSubmitting(false);
+      }
     }
   };
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-foreground/30 backdrop-blur-[3px] sm:items-center sm:p-4"
+      className="ai-course-overlay fixed inset-0 z-50 flex items-end justify-center bg-slate-950/40 backdrop-blur-[6px] sm:items-center sm:p-5"
       onMouseDown={(event) => {
-        if (event.target === event.currentTarget) onClose();
+        if (event.target === event.currentTarget) closeModal();
       }}
     >
       <section
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="ai-course-title"
-        className="relative flex h-[88vh] w-full max-w-lg flex-col overflow-hidden rounded-t-3xl border border-border bg-background shadow-2xl sm:h-auto sm:max-h-[88vh] sm:rounded-2xl"
+        aria-describedby="ai-course-description"
+        className="ai-course-dialog relative flex max-h-[94dvh] w-full max-w-[640px] flex-col overflow-hidden rounded-t-[28px] border border-background/60 bg-background text-foreground shadow-[0_32px_100px_-24px_rgba(34,20,65,0.4)] sm:max-h-[92dvh] sm:rounded-[28px]"
       >
-        <header className="flex items-start justify-between border-b border-border px-5 py-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-4.5 w-4.5 text-primary" aria-hidden="true" />
-              <h2 id="ai-course-title" className="text-lg font-bold text-foreground">
-                AI에게 코스 맡기기
-              </h2>
-            </div>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              몇 가지만 알려주시면 {startDate.replace(/-/g, ".")} ~ {endDate.replace(/-/g, ".")} 일정에 맞춰 짜드려요.
-            </p>
+        <header className="relative z-10 flex shrink-0 items-center justify-between px-5 pb-2 pt-5 sm:px-8 sm:pt-6">
+          <div className="flex items-center gap-2 text-primary">
+            <Sparkles className="h-4 w-4" aria-hidden="true" />
+            <h2 id="ai-course-title" className="text-xs font-bold tracking-wide">AI에게 코스 맡기기</h2>
+            <span className="rounded-full border border-primary/15 bg-primary/[0.06] px-1.5 py-0.5 text-[9px] font-bold tracking-wider">AI PLANNER</span>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="창 닫기"
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          >
-            <X className="h-4.5 w-4.5" aria-hidden="true" />
+          <button ref={closeButtonRef} type="button" onClick={closeModal} aria-label="창 닫기" className="ai-course-control flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-primary/10 hover:text-foreground">
+            <X className="h-5 w-5" aria-hidden="true" />
           </button>
         </header>
 
-        <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-4">
-          {/* 지역 */}
-          <section>
-            <h3 className="text-sm font-semibold text-foreground">
-              어디로 떠나시나요? <span className="text-destructive">*</span>
-            </h3>
-            <div role="group" aria-label="지역 선택" className="mt-2 flex flex-wrap gap-1.5">
-              {REGION_OPTIONS.map((name) => (
-                <button
-                  key={name}
-                  type="button"
-                  onClick={() => setRegion(name)}
-                  aria-pressed={region === name}
-                  className={`rounded-full border px-3 py-1 text-xs font-semibold transition-colors ${
-                    region === name
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : "border-border bg-background text-foreground hover:bg-muted"
-                  }`}
-                >
-                  {name}
-                </button>
-              ))}
-            </div>
-          </section>
-
-          {/* 동행 */}
-          <section>
-            <h3 className="text-sm font-semibold text-foreground">누구와 가시나요?</h3>
-            <div role="group" aria-label="동행 선택" className="mt-2 flex flex-wrap gap-1.5">
-              {COMPANION_OPTIONS.map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => setCompanion(option.value)}
-                  aria-pressed={companion === option.value}
-                  className={`rounded-full border px-3 py-1 text-xs font-semibold transition-colors ${
-                    companion === option.value
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : "border-border bg-background text-foreground hover:bg-muted"
-                  }`}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-          </section>
-
-          {/* 테마 */}
-          <section>
-            <h3 className="text-sm font-semibold text-foreground">
-              어떤 여행을 원하세요? <span className="font-normal text-muted-foreground">(복수 선택)</span>
-            </h3>
-            <div role="group" aria-label="테마 선택" className="mt-2 flex flex-wrap gap-1.5">
-              {THEME_OPTIONS.map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => toggleTheme(option.value)}
-                  aria-pressed={themes.includes(option.value)}
-                  className={`rounded-full border px-3 py-1 text-xs font-semibold transition-colors ${
-                    themes.includes(option.value)
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : "border-border bg-background text-foreground hover:bg-muted"
-                  }`}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-          </section>
-
-          {/* 고정 장소 */}
-          <section>
-            <h3 className="text-sm font-semibold text-foreground">
-              꼭 가고 싶은 곳이 있나요? <span className="font-normal text-muted-foreground">(선택)</span>
-            </h3>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              여기 넣은 곳은 반드시 코스에 들어가고, 그 주변으로 일정이 짜여요.
-            </p>
-
-            {anchors.length > 0 && (
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                {anchors.map((anchor) => (
-                  <span
-                    key={anchor.spotId}
-                    className="flex items-center gap-1 rounded-full bg-primary/10 py-1 pl-3 pr-1 text-xs font-semibold text-primary"
-                  >
-                    {anchor.title}
-                    <button
-                      type="button"
-                      onClick={() => setAnchors((prev) => prev.filter((s) => s.spotId !== anchor.spotId))}
-                      aria-label={`${anchor.title} 고정 해제`}
-                      className="flex h-5 w-5 items-center justify-center rounded-full transition-colors hover:bg-primary/20"
-                    >
-                      <X className="h-3 w-3" aria-hidden="true" />
-                    </button>
-                  </span>
-                ))}
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-5 sm:px-8 sm:pb-6">
+          {submitting ? (
+            <div className="ai-course-enter flex min-h-[450px] flex-col items-center justify-center py-8 text-center" role="status" aria-live="polite">
+              <div className="ai-course-orbit" aria-hidden="true">
+                <span className="ai-course-orbit-ring" />
+                <div className="ai-course-orb"><Sparkles className="h-9 w-9" /></div>
+                <span className="ai-course-orbit-star"><Sparkles className="h-4 w-4" /></span>
               </div>
-            )}
-
-            <div className="relative mt-2">
-              <Search
-                className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground"
-                aria-hidden="true"
-              />
-              <input
-                type="text"
-                value={anchorKeyword}
-                onChange={(e) => setAnchorKeyword(e.target.value)}
-                placeholder="장소 이름으로 검색 (예: 경포해변)"
-                aria-label="고정할 장소 검색"
-                className="w-full rounded-xl border border-input bg-background py-2 pl-9 pr-3 text-xs text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-              />
+              <p className="mt-6 text-xs font-semibold tracking-[0.18em] text-primary">DESIGNED FOR YOU</p>
+              <h3 className="mt-3 text-2xl font-bold tracking-tight">나만의 여행을 그리는 중이에요</h3>
+              <p id="ai-course-description" className="mt-3 max-w-xs text-sm leading-6 text-muted-foreground">
+                {takingLonger ? "장소를 꼼꼼히 살펴보느라 조금 더 걸리고 있어요." : "취향에 맞는 장소와 이동 순서를 함께 살펴보고 있어요."}
+              </p>
+              <div className="mt-5 flex flex-wrap justify-center gap-2 text-xs text-primary">
+                <span className="rounded-full bg-primary/[0.07] px-3 py-1.5">{region ?? "강원 어디든"}</span>
+                <span className="rounded-full bg-primary/[0.07] px-3 py-1.5">{duration}</span>
+                <span className="rounded-full bg-primary/[0.07] px-3 py-1.5">{companionSummary}</span>
+              </div>
+              <div className="mt-8 flex w-full max-w-xs items-center gap-3 rounded-2xl border border-primary/10 bg-primary/[0.025] p-4" aria-hidden="true">
+                <Route className="h-6 w-6 shrink-0 text-primary/50" />
+                <div className="flex-1 space-y-2"><div className="ai-course-shimmer h-2 w-3/4 rounded-full" /><div className="ai-course-shimmer h-2 w-full rounded-full" /></div>
+                <Loader2 className="h-4 w-4 animate-spin text-primary motion-reduce:animate-none" />
+              </div>
             </div>
+          ) : (
+            <div className="ai-course-enter">
+              <div className="relative pb-6 pt-5 sm:pt-6">
+                <div className="ai-course-hero-glow" aria-hidden="true" />
+                <div className="relative flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-[25px] font-bold leading-[1.45] tracking-[-0.045em] sm:text-[30px]">
+                      여행의 설렘만 남겨두세요.<br />
+                      <span className="text-primary">코스는 AI가 짜드릴게요.</span>
+                    </p>
+                    <p id="ai-course-description" className="mt-3 text-xs leading-5 text-muted-foreground sm:text-sm">장소 찾기부터 동선까지, 가볍게 시작하는 나만의 여행.</p>
+                  </div>
+                  <div className="ai-course-hero-icon hidden shrink-0 min-[420px]:flex" aria-hidden="true">
+                    <Sparkles className="h-8 w-8" strokeWidth={1.5} />
+                    <span className="absolute -right-1 top-0 rounded-full border border-primary/10 bg-background p-1.5 text-primary"><Plus className="h-3 w-3" /></span>
+                  </div>
+                </div>
+              </div>
 
-            {anchorSearching && (
-              <p className="mt-2 text-xs text-muted-foreground">검색 중...</p>
-            )}
+              <section className="relative rounded-[20px] border border-primary/20 bg-gradient-to-br from-primary/[0.055] via-background to-primary/[0.025] p-4 sm:p-5">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h3 className="text-xs font-semibold text-muted-foreground">어디로 떠나시나요?</h3>
+                  <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                    <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />
+                    {startDate.replace(/-/g, ".")} ~ {endDate.replace(/-/g, ".")}
+                    <span className="font-semibold text-primary">{duration}</span>
+                  </span>
+                </div>
+                <div className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-2 text-lg font-semibold tracking-tight sm:text-xl">
+                  <div className="relative inline-flex items-center">
+                    <MapPin className="pointer-events-none absolute left-3 h-4 w-4 text-primary" aria-hidden="true" />
+                    <select aria-label="여행 지역" value={region ?? ""} onChange={(event) => setRegion((event.target.value || null) as GangwonRegion | null)} className="ai-course-control max-w-full appearance-none rounded-xl border border-primary/20 bg-background py-2 pl-9 pr-8 text-base font-bold text-primary shadow-sm">
+                      <option value="">강원 어디든</option>
+                      {REGION_OPTIONS.map((name) => <option key={name} value={name}>{name}</option>)}
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute right-2.5 h-3.5 w-3.5 text-primary" aria-hidden="true" />
+                  </div>
+                  <span>{region ? "에서" : "좋아요,"}</span>
+                  <span>{companionSummary} 떠날래요.</span>
+                </div>
+                <div className="mt-4 flex items-start gap-2 border-t border-primary/10 pt-3 text-xs leading-5 text-muted-foreground" aria-live="polite">
+                  <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" aria-hidden="true" />
+                  <p>{selectedThemeLabels.length ? `${preferenceSummary} 중심으로 코스를 구성할게요.` : "취향을 고르지 않아도 괜찮아요. 어울리는 장소를 추천해 드릴게요."}{anchors.length > 0 && ` 꼭 갈 장소 ${anchors.length}곳도 함께 담을게요.`}</p>
+                </div>
+              </section>
 
-            {anchorResults.length > 0 && (
-              <ul className="mt-2 space-y-1">
-                {anchorResults.map((spot) => (
-                  <li key={spot.spotId}>
-                    <button
-                      type="button"
-                      onClick={() => addAnchor(spot)}
-                      className="flex w-full items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-left text-xs transition-colors hover:border-primary/50 hover:bg-muted/40"
-                    >
-                      <MapPin className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
-                      <span className="truncate font-medium text-foreground">{spot.title}</span>
-                      <span className="ml-auto shrink-0 text-[11px] text-muted-foreground">{spot.category}</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
+              <section className="mt-6" aria-labelledby="ai-course-ideas-title">
+                <div className="mb-3 flex items-center justify-between gap-2">
+                  <h3 id="ai-course-ideas-title" className="shrink-0 text-sm font-semibold">이런 여행은 어때요?</h3>
+                  <span className="hidden text-[11px] text-muted-foreground min-[400px]:block">마음에 드는 여행으로 가볍게 시작</span>
+                </div>
+                <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
+                  {TRIP_IDEAS.map((idea) => {
+                    const selected = region === idea.region && themes.length === idea.themes.length && idea.themes.every((theme) => themes.includes(theme));
+                    const Icon = idea.icon;
+                    return (
+                      <button key={idea.region} type="button" aria-label={`${idea.region} ${idea.title}`} aria-pressed={selected} onClick={() => { setRegion(idea.region); setThemes([...idea.themes]); }} className={`ai-course-control group overflow-hidden rounded-2xl border text-left transition duration-200 motion-reduce:transition-none ${selected ? "border-primary bg-primary/[0.035] shadow-[0_0_0_1px_hsl(var(--primary))]" : "border-border/80 bg-background hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md motion-reduce:hover:translate-y-0"}`}>
+                        <div className={`ai-course-scene ai-course-scene-${idea.scene}`} aria-hidden="true">
+                          <span className="ai-course-scene-sun" /><span className="ai-course-scene-land" />
+                          <Icon className="relative z-10 h-7 w-7" strokeWidth={1.5} />
+                          {selected && <span className="absolute right-2 top-2 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-white"><Check className="h-3 w-3" /></span>}
+                          <span className="absolute bottom-2 left-2.5 z-10 text-[10px] font-semibold tracking-wide sm:left-3">{idea.region}</span>
+                        </div>
+                        <div className="px-2.5 py-3 sm:px-3">
+                          <p className="text-xs font-bold sm:text-sm">{idea.title}</p>
+                          <p className="mt-1 hidden text-[10px] leading-4 text-muted-foreground min-[400px]:block sm:text-[11px]">{idea.description}</p>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </section>
 
-          {error && (
-            <p role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-xs font-medium text-destructive">
-              {error}
-            </p>
+              <section className="mt-5 rounded-2xl border border-border/80">
+                <button type="button" aria-expanded={detailsOpen} aria-controls="ai-course-preferences" onClick={() => setDetailsOpen((prev) => !prev)} className="ai-course-control flex w-full items-center gap-2.5 rounded-2xl px-4 py-3.5 text-left transition-colors hover:bg-muted/50">
+                  <SlidersHorizontal className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                  <span className="text-xs font-semibold">취향 더 알려주기</span>
+                  <span className="min-w-0 flex-1 truncate text-[11px] text-muted-foreground">{detailsOpen ? "선택한 만큼 더 나답게" : `${companionSummary} · ${preferenceSummary}`}</span>
+                  <ChevronDown className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${detailsOpen ? "rotate-180" : ""}`} aria-hidden="true" />
+                </button>
+                {detailsOpen && (
+                  <div id="ai-course-preferences" className="ai-course-enter space-y-5 border-t border-border/70 p-4">
+                    <fieldset>
+                      <legend className="text-xs font-semibold">누구와 함께하나요?</legend>
+                      <div className="mt-2.5 flex flex-wrap gap-2">
+                        {COMPANION_OPTIONS.map(({ value, label, icon: Icon }) => (
+                          <button key={value} type="button" aria-pressed={companion === value} onClick={() => setCompanion(value)} className={`ai-course-control flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs transition-colors ${companion === value ? "border-primary/35 bg-primary/[0.08] font-semibold text-primary" : "border-border text-muted-foreground hover:bg-muted"}`}>
+                            <Icon className="h-3.5 w-3.5" aria-hidden="true" />{label}
+                          </button>
+                        ))}
+                      </div>
+                    </fieldset>
+                    <fieldset>
+                      <legend className="text-xs font-semibold">어떤 순간을 담을까요? <span className="ml-1 font-normal text-muted-foreground">여러 개 선택할 수 있어요</span></legend>
+                      <div className="mt-2.5 flex flex-wrap gap-2">
+                        {THEME_OPTIONS.map(({ value, label }) => (
+                          <button key={value} type="button" aria-pressed={themes.includes(value)} onClick={() => setThemes((prev) => prev.includes(value) ? prev.filter((theme) => theme !== value) : [...prev, value])} className={`ai-course-control flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs transition-colors ${themes.includes(value) ? "border-primary/35 bg-primary/[0.08] font-semibold text-primary" : "border-border text-muted-foreground hover:bg-muted"}`}>
+                            {themes.includes(value) ? <Check className="h-3 w-3" aria-hidden="true" /> : <Plus className="h-3 w-3" aria-hidden="true" />}{label}
+                          </button>
+                        ))}
+                      </div>
+                    </fieldset>
+                    <div>
+                      <label htmlFor="ai-course-anchor" className="text-xs font-semibold">꼭 가고 싶은 곳도 담아둘까요? <span className="ml-1 font-normal text-muted-foreground">선택</span></label>
+                      <p className="mt-1 text-[11px] leading-5 text-muted-foreground">이 장소를 포함해 주변으로 코스를 구성해 드릴게요.</p>
+                      {anchors.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          {anchors.map((anchor) => (
+                            <span key={anchor.spotId} className="flex max-w-full items-center gap-1 rounded-lg bg-primary/[0.08] py-1 pl-2.5 pr-1 text-xs font-medium text-primary">
+                              <MapPin className="h-3 w-3 shrink-0" aria-hidden="true" /><span className="truncate">{anchor.title}</span>
+                              <button type="button" onClick={() => setAnchors((prev) => prev.filter((spot) => spot.spotId !== anchor.spotId))} aria-label={`${anchor.title} 고정 해제`} className="ai-course-control flex h-6 w-6 shrink-0 items-center justify-center rounded-md hover:bg-primary/10"><X className="h-3 w-3" aria-hidden="true" /></button>
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      <div className="relative mt-2.5">
+                        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+                        <input ref={anchorInputRef} id="ai-course-anchor" type="text" value={anchorKeyword} onChange={(event) => setAnchorKeyword(event.target.value)} placeholder="장소 이름으로 검색 (예: 경포해변)" aria-label="고정할 장소 검색" autoComplete="off" className="ai-course-control w-full rounded-xl border border-input bg-background py-2.5 pl-9 pr-3 text-xs placeholder:text-muted-foreground" />
+                      </div>
+                      <div aria-live="polite">
+                        {anchorSearching && <p className="mt-2 text-xs text-muted-foreground">검색 중...</p>}
+                        {anchorSearchError && <p className="mt-2 text-xs text-destructive">{anchorSearchError}</p>}
+                        {!anchorSearching && !anchorSearchError && anchorKeyword.trim() && anchorResults.length === 0 && <p className="mt-2 text-xs text-muted-foreground">검색 결과가 없어요. 다른 장소 이름을 입력해 보세요.</p>}
+                      </div>
+                      {anchorResults.length > 0 && (
+                        <ul className="mt-2 space-y-1">
+                          {anchorResults.map((spot) => {
+                            const added = anchors.some((anchor) => anchor.spotId === spot.spotId);
+                            return (
+                              <li key={spot.spotId}>
+                                <button type="button" disabled={added} onClick={() => addAnchor(spot)} className="ai-course-control flex w-full items-center gap-2 rounded-xl border border-border p-3 text-left text-xs hover:border-primary/40 hover:bg-primary/[0.03] disabled:opacity-50">
+                                  <MapPin className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden="true" /><span className="min-w-0 flex-1 truncate font-medium">{spot.title}</span><span className="text-[10px] text-muted-foreground">{added ? "담았어요" : spot.category}</span>{added ? <Check className="h-3.5 w-3.5" aria-hidden="true" /> : <Plus className="h-3.5 w-3.5 text-primary" aria-hidden="true" />}
+                                </button>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </section>
+              {error && <p role="alert" className="mt-4 rounded-xl bg-destructive/10 px-4 py-3 text-xs font-medium leading-5 text-destructive">{error}</p>}
+            </div>
           )}
         </div>
 
-        <footer className="flex shrink-0 items-center justify-end gap-2 border-t border-border px-5 py-3">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-xl px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          >
-            취소
+        <footer className="relative shrink-0 border-t border-border/70 bg-background px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-4 sm:px-8 sm:pb-5">
+          <button type="button" onClick={handleSubmit} disabled={submitting} className="ai-course-control ai-course-submit flex w-full items-center justify-center gap-2 rounded-2xl px-5 py-3.5 text-sm font-bold text-white transition duration-200 hover:brightness-105 active:scale-[0.99] disabled:pointer-events-none disabled:opacity-70 motion-reduce:transform-none">
+            {submitting ? <><Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />코스 짜는 중...</> : <><Sparkles className="h-4 w-4" aria-hidden="true" />AI로 코스 만들기<ArrowRight className="ml-1 h-4 w-4" aria-hidden="true" /></>}
           </button>
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={!region || submitting}
-            className="flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:pointer-events-none disabled:opacity-40"
-          >
-            {submitting ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                코스 짜는 중...
-              </>
-            ) : (
-              <>
-                <Sparkles className="h-4 w-4" aria-hidden="true" />
-                코스 만들기
-              </>
-            )}
-          </button>
+          <p className="mt-2.5 text-center text-[11px] text-muted-foreground">{submitting ? "창을 닫으면 이번 코스는 적용되지 않아요." : "완성된 코스는 자유롭게 수정할 수 있어요."}</p>
         </footer>
       </section>
     </div>
