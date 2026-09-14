@@ -30,6 +30,9 @@ export type AiCourseDraftSpot = {
 export type AiCourseDraftDay = {
   dayNumber: number;
   spots: AiCourseDraftSpot[];
+  /** 이전 서버의 응답에는 없을 수 있다. */
+  routeStatus?: "ROAD_DISTANCE" | "UNAVAILABLE" | "NOT_NEEDED";
+  drivingDistanceMeters?: number | null;
 };
 
 export type AiCourseDraft = {

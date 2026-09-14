@@ -46,6 +46,12 @@ gemini:
   api-key: ${GEMINI_API_KEY:}
   model-name: ${GEMINI_MODEL:gemini-3.5-flash-lite}
 
+# 자동차 길찾기에 사용하도록 지정한 REST 키.
+# JavaScript 지도 키는 길찾기 인증에 사용할 수 없다.
+routing:
+  kakao:
+    api-key: ${KAKAO_MOBILITY_REST_API_KEY:}
+
 aws:
   s3:
     bucket: ${AWS_S3_BUCKET:planfix-bucket}
@@ -61,4 +67,3 @@ springdoc:
     # 프로필별 파일이 아니라 공통에 두는 이유: 로컬 기동도 기본 프로필(prod)로 돌아가고 있어
     # application-local.yml에 넣으면 적용되지 않는다.
     with-credentials: true
-

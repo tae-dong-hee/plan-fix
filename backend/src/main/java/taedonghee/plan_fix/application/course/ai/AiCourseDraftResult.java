@@ -21,7 +21,13 @@ public record AiCourseDraftResult(
 	String generatedBy
 ) {
 
-	public record Day(int dayNumber, List<Spot> spots) {
+	public record Day(
+		int dayNumber,
+		List<Spot> spots,
+		/** ROAD_DISTANCE: 조회한 도로거리로 최적화, UNAVAILABLE: 추천 순서 유지. */
+		String routeStatus,
+		Long drivingDistanceMeters
+	) {
 	}
 
 	public record Spot(

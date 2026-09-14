@@ -49,6 +49,7 @@ public class AiCourseDraftApplicationService {
 	private final AiCourseLlmPlanner llmPlanner;
 	private final AiCoursePlanValidator planValidator;
 	private final SpotThumbnailResolver spotThumbnailResolver;
+	private final RoadCourseOptimizer roadCourseOptimizer;
 	private final CoursePlanner coursePlanner = new CoursePlanner();
 
 	public AiCourseDraftResult createDraft(Long userId, AiCourseCommand command) {
@@ -149,16 +150,18 @@ public class AiCourseDraftApplicationService {
 		Map<Long, String> thumbnails = spotThumbnailResolver.resolve(
 			plannedDays.stream().flatMap(List::stream).distinct().toList());
 
+		List<RoadCourseOptimizer.Result> orderedDays = roadCourseOptimizer.optimizeDays(plannedDays);
 		List<AiCourseDraftResult.Day> days = new java.util.ArrayList<>();
-		for (int i = 0; i < plannedDays.size(); i++) {
-			List<AiCourseDraftResult.Spot> spots = plannedDays.get(i).stream()
+		for (int i = 0; i < orderedDays.size(); i++) {
+			RoadCourseOptimizer.Result orderedDay = orderedDays.get(i);
+			List<AiCourseDraftResult.Spot> spots = orderedDay.spots().stream()
 				.map(spot -> {
 					// LLM이 써준 이유가 있으면 그걸 쓰고, 없으면 규칙 기반 문구로 채운다.
 					String reason = llmReasons.getOrDefault(spot.spotId(), reasonFor(spot, anchorsById));
 					return AiCourseDraftResult.Spot.from(spot, reason, thumbnails.get(spot.spotId()));
 				})
 				.toList();
-			days.add(new AiCourseDraftResult.Day(i + 1, spots));
+			days.add(new AiCourseDraftResult.Day(i + 1, spots, orderedDay.routeStatus(), orderedDay.drivingDistanceMeters()));
 		}
 
 		return new AiCourseDraftResult(

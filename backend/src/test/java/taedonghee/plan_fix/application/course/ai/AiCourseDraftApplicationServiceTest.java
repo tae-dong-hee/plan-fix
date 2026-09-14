@@ -27,6 +27,48 @@ class AiCourseDraftApplicationServiceTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
+    void llm과_추천규칙_초안_모두_마지막에_실제_도로거리로_순서를_정한다(boolean useLlm) {
+        SpotRepository spots = mock(SpotRepository.class);
+        TourDataImageRepository images = mock(TourDataImageRepository.class);
+        AiCourseLlmPlanner planner = mock(AiCourseLlmPlanner.class);
+        List<SpotModel> candidates = List.of(spot(1, "one.jpg"), spot(2, "two.jpg"), spot(3, "three.jpg"));
+        when(spots.searchActive(any(), any(), eq(0), eq(2000))).thenReturn(candidates);
+        LlmCoursePlan plan = new LlmCoursePlan(List.of(new LlmCoursePlan.Day(1, List.of(
+                new LlmCoursePlan.Entry(1L, "첫 장소의 매력"),
+                new LlmCoursePlan.Entry(2L, "두 번째 장소의 매력"),
+                new LlmCoursePlan.Entry(3L, "세 번째 장소의 매력")))));
+        when(planner.plan(anyList(), anyList(), eq(1), anyList(), any()))
+                .thenReturn(useLlm ? Optional.of(plan) : Optional.empty());
+        RoadDistanceProvider roads = selected -> {
+            long[][] costsById = {{0, 9000, 1000}, {1000, 0, 9000}, {9000, 1000, 0}};
+            long[][] costs = new long[selected.size()][selected.size()];
+            for (int i = 0; i < selected.size(); i++) {
+                for (int j = 0; j < selected.size(); j++) {
+                    costs[i][j] = costsById[selected.get(i).spotId().intValue() - 1][selected.get(j).spotId().intValue() - 1];
+                }
+            }
+            return Optional.of(costs);
+        };
+        AiCourseDraftApplicationService service = new AiCourseDraftApplicationService(spots, planner,
+                new AiCoursePlanValidator(), new SpotThumbnailResolver(images), new RoadCourseOptimizer(roads));
+        LocalDate date = LocalDate.of(2026, 9, 14);
+
+        AiCourseDraftResult result = service.createDraft(null,
+                new AiCourseCommand("51", "150", date, date, List.of(), CourseCompanion.COUPLE, List.of()));
+
+        assertThat(result.generatedBy()).isEqualTo(useLlm ? "LLM" : "RULE_BASED");
+        assertThat(result.days().get(0).spots()).extracting(AiCourseDraftResult.Spot::spotId)
+                .containsExactly(1L, 3L, 2L);
+        assertThat(result.days().get(0).routeStatus()).isEqualTo("ROAD_DISTANCE");
+        assertThat(result.days().get(0).drivingDistanceMeters()).isEqualTo(2000L);
+        assertThat(result.days().get(0).spots()).extracting(AiCourseDraftResult.Spot::thumbnail)
+                .containsExactly("one.jpg", "three.jpg", "two.jpg");
+        if (useLlm) assertThat(result.days().get(0).spots().get(1).reason()).isEqualTo("세 번째 장소의 매력");
+        verify(spots, never()).save(any());
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
     void resolves_photos_after_planning_without_changing_source_quality_scores(boolean useLlm) {
         SpotRepository spots = mock(SpotRepository.class);
         TourDataImageRepository images = mock(TourDataImageRepository.class);
@@ -43,7 +85,8 @@ class AiCourseDraftApplicationServiceTest {
         when(images.findBySpotIds(Set.of(2L))).thenReturn(List.of(
                 new SpotImageCandidate(2L, "https://images.example.com/detail.jpg", null)));
         AiCourseDraftApplicationService service = new AiCourseDraftApplicationService(spots, planner,
-                new AiCoursePlanValidator(), new SpotThumbnailResolver(images));
+                new AiCoursePlanValidator(), new SpotThumbnailResolver(images),
+                new RoadCourseOptimizer(ignored -> Optional.empty()));
         LocalDate date = LocalDate.of(2026, 9, 13);
 
         AiCourseDraftResult result = service.createDraft(null,
