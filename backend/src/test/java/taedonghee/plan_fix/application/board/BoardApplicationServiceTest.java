@@ -254,6 +254,14 @@ class BoardApplicationServiceTest {
         }
 
         @Override
+        public void incrementViewCount(Long boardId) {
+            findById(boardId).ifPresent(b -> save(BoardModel.reconstruct(
+                    b.boardId(), b.courseId(), b.userId(), b.title(), b.content(),
+                    b.thumbnail(), b.status(), b.viewCount() + 1, b.likeCount(), b.commentCount(), b.images(),
+                    b.createdAt(), b.updatedAt())));
+        }
+
+        @Override
         public void incrementLikeCount(Long boardId) {
             findById(boardId).ifPresent(b -> {
                 saved.remove(b);
