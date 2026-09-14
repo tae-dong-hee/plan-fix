@@ -12,6 +12,7 @@ import taedonghee.plan_fix.support.error.CoreException;
 import taedonghee.plan_fix.support.error.ErrorType;
 
 import java.util.List;
+import java.time.LocalDate;
 
 /**
  * 사용자 Application Service
@@ -35,7 +36,7 @@ public class UserApplicationService {
 
         // 자체 가입은 닉네임 입력란이 없으므로 loginId를 username 초기값으로 사용한다
         String username = command.username() == null ? command.loginId() : command.username();
-        UserModel newUser = UserModel.create(username, command.name(), command.email()); // 사용자 도메인 모델 생성
+        UserModel newUser = UserModel.create(username, command.name(), command.email(), command.birthDate()); // 사용자 도메인 모델 생성
 
         validateUniqueUsername(username); // username 중복 검증
         validateUniqueEmail(command.email()); // email 중복 검증
@@ -60,7 +61,7 @@ public class UserApplicationService {
         if (command.email() != null && !command.email().equals(user.getEmail())) {
             validateUniqueEmail(command.email());
         }
-        return UserResult.from(userRepository.save(user.updateProfile(command.username(), command.name(), command.email())));
+        return UserResult.from(userRepository.save(user.updateProfile(command.username(), command.name(), command.email(), command.birthDate())));
     }
 
     /**
@@ -85,6 +86,15 @@ public class UserApplicationService {
         return userRepository.findAll().stream()
                 .map(UserResult::from)
                 .toList();
+    }
+
+    /** 회원가입 전 아이디 사용 가능 여부를 조회한다. */
+    public boolean isUsernameAvailable(String username) {
+        return username != null
+                && !username.isBlank()
+                // 자체 가입 시 아이디가 닉네임 초기값으로도 사용되므로 두 컬럼 모두 확인한다.
+                && !userCredentialRepository.existsByLoginId(username)
+                && !userRepository.existsByUsername(username);
     }
 
     /**
