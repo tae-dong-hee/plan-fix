@@ -107,10 +107,14 @@ describe("CourseDetailPage", () => {
     await waitFor(() => {
       expect(screen.getByText("강릉 바다 여행")).toBeInTheDocument();
       expect(screen.getByText("2박 3일 힐링 코스")).toBeInTheDocument();
-      expect(screen.getByText("경포해변")).toBeInTheDocument();
-      expect(screen.getByText("💬 오전 10시 도착")).toBeInTheDocument();
-      expect(screen.getByText("아직 계획이 없어요.")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "경포해변 지도에서 보기" })).toBeInTheDocument();
+      expect(screen.getByText(/오전 10시 도착/)).toBeInTheDocument();
     });
+
+    expect(screen.queryByText("아직 계획이 없어요.")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("tab", { name: "Day 2" }));
+    expect(screen.getByText("아직 계획이 없어요.")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "경포해변 지도에서 보기" })).not.toBeInTheDocument();
   });
 
   it("수정 링크와 삭제 버튼이 렌더링되고 삭제 시 확인 후 deleteCourse를 호출한다", async () => {
