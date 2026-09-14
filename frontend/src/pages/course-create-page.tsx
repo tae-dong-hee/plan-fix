@@ -23,6 +23,7 @@ import SpotSearchModal from "@/components/ui/spot-search-modal";
 import { createCourse, fetchCourse, updateCourse } from "@/services/course";
 import { type AiCourseDraft } from "@/services/ai-course";
 import { PopularSpot, UnauthorizedError } from "@/services/spots";
+import { aiCourseNotice } from "@/lib/ai-course-notice";
 
 const DRAFT_STORAGE_KEY = "planfix:course-draft";
 
@@ -365,11 +366,7 @@ export default function CourseCreatePage() {
       setTitle(draft.title);
     }
     setAiModalOpen(false);
-    setAiNotice(
-      draft.generatedBy === "LLM"
-        ? "AI가 짠 초안이에요. 마음에 안 드는 곳은 지우거나 순서를 바꿔보세요."
-        : "AI 응답을 받지 못해 추천 규칙으로 대신 짰어요. 자유롭게 고쳐서 쓰세요.",
-    );
+    setAiNotice(aiCourseNotice(draft));
   };
 
   // 메모 변경
