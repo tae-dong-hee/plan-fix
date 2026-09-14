@@ -135,7 +135,7 @@ export default function CourseRouteMap({ days, startDate }: CourseRouteMapProps)
             focusedSpotId={focusedSpotId}
             focusRequestId={focusRequestId}
             onSpotClick={(spot) => selectSpot(spot.spotId)}
-            mapClassName="h-72 sm:h-96"
+            mapClassName="h-96 sm:h-[34rem]"
           />
           <div className="flex flex-wrap items-center justify-between gap-2 px-1 py-3 text-[11px] text-muted-foreground">
             <span className="inline-flex items-center gap-2"><span className="w-5 border-t-2 border-dashed border-primary/70" aria-hidden="true" />점선은 장소의 방문 순서를 보여줘요.</span>
