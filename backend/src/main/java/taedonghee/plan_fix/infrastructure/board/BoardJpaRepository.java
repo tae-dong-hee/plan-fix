@@ -67,6 +67,16 @@ public interface BoardJpaRepository extends JpaRepository<BoardJpaEntity, Long> 
     @Query("UPDATE BoardJpaEntity b SET b.viewCount = b.viewCount + 1 WHERE b.boardId = :boardId")
     void incrementViewCount(@Param("boardId") Long boardId);
 
+    /** 댓글 등록 시 댓글 수를 원자적으로 증가한다. */
+    @org.springframework.data.jpa.repository.Modifying
+    @Query("UPDATE BoardJpaEntity b SET b.commentCount = b.commentCount + 1 WHERE b.boardId = :boardId")
+    void incrementCommentCount(@Param("boardId") Long boardId);
+
+    /** 댓글 삭제 시 댓글 수를 원자적으로 감소한다. */
+    @org.springframework.data.jpa.repository.Modifying
+    @Query("UPDATE BoardJpaEntity b SET b.commentCount = CASE WHEN b.commentCount > 0 THEN b.commentCount - 1 ELSE 0 END WHERE b.boardId = :boardId")
+    void decrementCommentCount(@Param("boardId") Long boardId);
+
     /**
      * like_count를 DB에서 직접 +1 한다.
      */

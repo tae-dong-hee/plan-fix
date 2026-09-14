@@ -1,29 +1,35 @@
 import { useEffect, useRef, useState } from "react";
-import { MapPin } from "lucide-react";
-import { hasSpotCoordinates, MISSING_SPOT_LOCATION } from "@/lib/spot-display";
+import { MapPin, RefreshCw } from "lucide-react";
 
-/** 지도에 찍을 장소. 좌표가 없는 장소(수집 데이터 누락)는 렌더링에서 제외된다. */
+import { hasMapCoordinates } from "@/lib/map-coordinates";
+import { MISSING_SPOT_LOCATION } from "@/lib/spot-display";
+
+/** 지도에 찍을 장소. 표시할 수 없는 좌표는 원본 목록을 유지한 채 지도에서만 제외한다. */
 export type KakaoMapSpot = {
   spotId: number;
   title: string;
   latitude?: number | null;
   longitude?: number | null;
+  /** 목록에 표시한 방문 번호. 생략하면 좌표 필터링 전 목록 순서를 사용한다. */
+  markerNumber?: number;
 };
 
 type KakaoMapProps = {
   spots: KakaoMapSpot[];
-  /** 마커를 방문 순서대로 선으로 이을지 여부. */
+  /** 지점 사이를 방문 순서대로 직선으로 연결한다. */
   showRoute?: boolean;
-  /** 넘기면 마커를 클릭할 수 있게 되고, 클릭한 장소를 인자로 받는다. */
   onSpotClick?: (spot: KakaoMapSpot) => void;
-  /** 목록에서 마우스를 올린 장소. 해당 마커를 강조한다. */
+  /** 목록에서 마우스를 올린 장소를 강조한다. */
   highlightedSpotId?: number | null;
+  /** 선택한 장소를 강조하고 해당 위치로 지도를 이동한다. */
+  focusedSpotId?: number | null;
+  /** 같은 장소를 다시 선택할 때에도 중심을 이동하기 위한 요청 번호. */
+  focusRequestId?: number;
   className?: string;
-  /** 지도 영역 자체의 크기 클래스. 기본값 대신 컨테이너를 꽉 채우고 싶을 때 쓴다. */
   mapClassName?: string;
 };
 
-// SDK가 window에 주입되는 전역 객체라 타입이 없다. 이 파일 안에서만 느슨하게 다룬다.
+// 외부 SDK의 전역 타입을 이 파일 안으로 제한한다.
 type KakaoNamespace = any; // eslint-disable-line @typescript-eslint/no-explicit-any
 
 declare global {
@@ -32,91 +38,123 @@ declare global {
   }
 }
 
-/** 여러 지도 인스턴스가 동시에 떠도 스크립트는 한 번만 넣는다. */
 let sdkLoadPromise: Promise<void> | null = null;
 
+/** 여러 지도에서 SDK를 공유하며, 실패하거나 시간 초과하면 재시도할 수 있다. */
 function loadKakaoSdk(appKey: string): Promise<void> {
-  if (window.kakao?.maps?.LatLng) {
+  if (window.kakao?.maps?.Map && window.kakao?.maps?.LatLng) {
     return Promise.resolve();
   }
-  if (sdkLoadPromise) {
-    return sdkLoadPromise;
-  }
+  if (sdkLoadPromise) return sdkLoadPromise;
 
-  sdkLoadPromise = new Promise<void>((resolve, reject) => {
+  const promise = new Promise<void>((resolve, reject) => {
     const script = document.createElement("script");
-    // autoload=false로 받아서 kakao.maps.load()로 초기화 시점을 직접 잡는다.
-    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${appKey}&autoload=false`;
+    let settled = false;
+    const finish = (error?: Error) => {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(timeout);
+      script.onload = null;
+      script.onerror = null;
+      if (error) {
+        script.remove();
+        reject(error);
+      } else {
+        resolve();
+      }
+    };
+    const timeout = window.setTimeout(
+      () => finish(new Error("Map SDK load timed out")),
+      12_000,
+    );
+    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${encodeURIComponent(appKey)}&autoload=false`;
     script.async = true;
     script.onload = () => {
-      if (!window.kakao?.maps) {
-        sdkLoadPromise = null;
-        reject(new Error("Kakao Maps SDK를 초기화하지 못했습니다."));
+      if (!window.kakao?.maps?.load) {
+        finish(new Error("Map SDK is unavailable"));
         return;
       }
-      window.kakao.maps.load(() => resolve());
+      try {
+        window.kakao.maps.load(() => {
+          finish(window.kakao?.maps?.Map && window.kakao?.maps?.LatLng
+            ? undefined
+            : new Error("Map SDK initialization failed"));
+        });
+      } catch {
+        finish(new Error("Map SDK initialization failed"));
+      }
     };
-    script.onerror = () => {
-      // 실패한 프로미스를 캐시에 남기면 영구히 재시도가 막힌다.
-      sdkLoadPromise = null;
-      reject(new Error("Kakao Maps SDK를 불러오지 못했습니다."));
-    };
+    script.onerror = () => finish(new Error("Map SDK load failed"));
     document.head.appendChild(script);
   });
-
-  return sdkLoadPromise;
+  sdkLoadPromise = promise;
+  const clearPendingLoad = () => {
+    if (sdkLoadPromise === promise) sdkLoadPromise = null;
+  };
+  void promise.then(clearPendingLoad, clearPendingLoad);
+  return promise;
 }
 
-/**
- * 장소 목록을 카카오맵에 번호 마커로 표시한다.
- * 키가 없거나 SDK 로드에 실패해도 페이지 전체가 깨지지 않도록 안내 문구로 대체한다.
- */
+type MarkerEntry = {
+  spotId: number;
+  element: HTMLElement;
+  overlay: KakaoNamespace;
+  position: KakaoNamespace;
+};
+
 export default function KakaoMap({
   spots,
   showRoute = true,
   onSpotClick,
   highlightedSpotId,
+  focusedSpotId,
+  focusRequestId,
   className,
   mapClassName = "h-56 sm:h-64",
 }: KakaoMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<KakaoNamespace>(null);
-  const overlaysRef = useRef<KakaoNamespace[]>([]);
-  const [status, setStatus] = useState<"loading" | "ready" | "no-key" | "error">("loading");
-
-  // 마커는 콜백이 바뀔 때마다 다시 그리지 않는다. 대신 ref로 항상 최신 핸들러를 호출한다.
+  const markersRef = useRef<MarkerEntry[]>([]);
+  const viewportRef = useRef<{ bounds: KakaoNamespace; count: number } | null>(null);
+  const [status, setStatus] = useState<"loading" | "ready" | "no-key" | "error" | "empty">("loading");
+  const [retryCount, setRetryCount] = useState(0);
   const onSpotClickRef = useRef(onSpotClick);
   onSpotClickRef.current = onSpotClick;
+  const focusedSpotIdRef = useRef(focusedSpotId);
+  focusedSpotIdRef.current = focusedSpotId;
 
-  // 호버 강조는 마커를 다시 그리지 않고 DOM 스타일만 바꿔서 처리한다.
-  const markersRef = useRef<Map<number, { element: HTMLElement; overlay: KakaoNamespace }>>(new Map());
-
-  const appKey = import.meta.env.VITE_KAKAO_JS_KEY;
-  const plottable = spots.filter(hasSpotCoordinates);
-  const hasPlottableSpots = plottable.length > 0;
-  // 좌표 배열을 문자열로 만들어 의존성으로 쓴다. 배열 참조가 매 렌더 바뀌어도 재실행되지 않게 한다.
-  const positionsKey = plottable.map((s) => `${s.spotId}:${s.latitude},${s.longitude}`).join("|");
+  const appKey = import.meta.env.VITE_KAKAO_JS_KEY?.trim();
+  const plottable = spots
+    .map((spot, index) => ({ spot, markerNumber: spot.markerNumber ?? index + 1 }))
+    .filter(({ spot }) => hasMapCoordinates(spot));
+  const hasPlottable = plottable.length > 0;
+  // 배열 참조나 클릭 핸들러가 바뀌어도 같은 지도를 다시 그리지 않는다.
+  const positionsKey = JSON.stringify(plottable.map(({ spot, markerNumber }) => [
+    spot.spotId, spot.title, spot.latitude, spot.longitude, markerNumber,
+  ]));
+  const interactive = Boolean(onSpotClick);
 
   useEffect(() => {
+    if (!hasPlottable) {
+      setStatus("empty");
+      return;
+    }
     if (!appKey) {
       setStatus("no-key");
       return;
     }
-    if (!hasPlottableSpots) return;
 
     let cancelled = false;
-
+    const container = containerRef.current;
+    setStatus("loading");
     loadKakaoSdk(appKey)
       .then(() => {
-        if (cancelled || !containerRef.current) return;
+        if (cancelled || !container) return;
         const kakao = window.kakao;
-
-        if (!mapRef.current) {
-          mapRef.current = new kakao.maps.Map(containerRef.current, {
-            center: new kakao.maps.LatLng(37.8228, 128.1555), // 강원도 중앙 근처
-            level: 9,
-          });
-        }
+        mapRef.current = new kakao.maps.Map(container, {
+          center: new kakao.maps.LatLng(37.8228, 128.1555),
+          level: 9,
+        });
         setStatus("ready");
       })
       .catch(() => {
@@ -125,103 +163,156 @@ export default function KakaoMap({
 
     return () => {
       cancelled = true;
+      mapRef.current = null;
+      viewportRef.current = null;
+      // SDK가 붙인 자식만 정리한다. React가 관리하는 컨테이너는 항상 유지한다.
+      container?.replaceChildren();
     };
-  }, [appKey, hasPlottableSpots]);
+  }, [appKey, retryCount, hasPlottable]);
 
-  // 마커·경로 다시 그리기
   useEffect(() => {
     if (status !== "ready" || !mapRef.current) return;
-
     const kakao = window.kakao;
     const map = mapRef.current;
+    const overlays: KakaoNamespace[] = [];
+    markersRef.current = [];
+    viewportRef.current = null;
 
-    // 이전에 그린 것 정리
-    overlaysRef.current.forEach((overlay) => overlay.setMap(null));
-    overlaysRef.current = [];
-    markersRef.current.clear();
-
-    if (plottable.length === 0) return;
-    map.relayout?.();
-
-    const positions = plottable.map((spot) => new kakao.maps.LatLng(spot.latitude, spot.longitude));
-
+    const positions = plottable.map(({ spot }) => new kakao.maps.LatLng(spot.latitude, spot.longitude));
     positions.forEach((position: KakaoNamespace, index: number) => {
-      const spot = plottable[index];
+      const { spot, markerNumber } = plottable[index];
       const element = createMarkerElement(
         spot,
-        index + 1,
-        onSpotClick ? (s) => onSpotClickRef.current?.(s) : undefined,
+        markerNumber,
+        interactive ? (selectedSpot) => onSpotClickRef.current?.(selectedSpot) : undefined,
       );
       const overlay = new kakao.maps.CustomOverlay({
         position,
-        yAnchor: 1,
-        clickable: Boolean(onSpotClick),
+        // 이름표의 길이와 무관하게 번호 원의 중심을 실제 좌표에 맞춘다.
+        xAnchor: 0.5,
+        yAnchor: 0.5,
+        clickable: interactive,
         content: element,
       });
       overlay.setMap(map);
-      overlaysRef.current.push(overlay);
-      markersRef.current.set(spot.spotId, { element, overlay });
+      overlays.push(overlay);
+      markersRef.current.push({ spotId: spot.spotId, element, overlay, position });
     });
 
     if (showRoute && positions.length > 1) {
+      const primary = containerRef.current
+        ? getComputedStyle(containerRef.current).getPropertyValue("--primary").trim()
+        : "";
       const polyline = new kakao.maps.Polyline({
         path: positions,
         strokeWeight: 3,
-        strokeColor: "#7c3aed",
-        strokeOpacity: 0.8,
+        strokeColor: primary ? `hsl(${primary})` : "#7B4AED",
+        strokeOpacity: 0.75,
         strokeStyle: "shortdash",
       });
       polyline.setMap(map);
-      overlaysRef.current.push(polyline);
+      overlays.push(polyline);
     }
 
-    // 모든 장소가 한 화면에 들어오도록 맞춘다.
-    const bounds = new kakao.maps.LatLngBounds();
-    positions.forEach((position: KakaoNamespace) => bounds.extend(position));
-    map.setBounds(bounds);
-    // 한 곳만 있으면 setBounds가 과하게 확대되므로 적당히 되돌린다.
-    if (positions.length === 1) {
-      map.setLevel(5);
+    if (positions.length > 0) {
+      const bounds = new kakao.maps.LatLngBounds();
+      positions.forEach((position: KakaoNamespace) => bounds.extend(position));
+      viewportRef.current = { bounds, count: positions.length };
+      map.setBounds(bounds, 48, 48, 48, 48);
+      if (positions.length === 1) map.setLevel(5);
     }
-  }, [status, positionsKey, showRoute]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // 강조 상태만 갱신 (마커 재생성 없음)
+    return () => {
+      overlays.forEach((overlay) => overlay.setMap(null));
+      markersRef.current = [];
+      viewportRef.current = null;
+    };
+  }, [status, positionsKey, showRoute, interactive]); // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
-    markersRef.current.forEach(({ element, overlay }, spotId) => {
-      applyMarkerHighlight(element, spotId === highlightedSpotId);
-      // 강조된 마커가 다른 마커에 가리지 않도록 위로 올린다
-      overlay.setZIndex?.(spotId === highlightedSpotId ? 10 : 1);
+    markersRef.current.forEach(({ element, overlay, spotId }) => {
+      const selected = spotId === focusedSpotId;
+      const highlighted = selected || spotId === highlightedSpotId;
+      applyMarkerHighlight(element, highlighted, selected);
+      overlay.setZIndex?.(highlighted ? 10 : 1);
     });
-  }, [highlightedSpotId, status, positionsKey]);
+  }, [highlightedSpotId, focusedSpotId, status, positionsKey, showRoute, interactive]);
+
+  useEffect(() => {
+    const marker = markersRef.current.find(({ spotId }) => spotId === focusedSpotId);
+    if (marker) mapRef.current?.panTo(marker.position);
+  }, [focusedSpotId, focusRequestId, status, positionsKey, showRoute, interactive]);
+
+  useEffect(() => {
+    if (status !== "ready" || !containerRef.current || !mapRef.current) return;
+    const map = mapRef.current;
+    let frame: number | undefined;
+    const resize = () => {
+      if (frame !== undefined) cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        if (mapRef.current !== map) return;
+        map.relayout();
+        const focused = markersRef.current.find(({ spotId }) => spotId === focusedSpotIdRef.current);
+        if (focused) {
+          map.panTo(focused.position);
+        } else if (viewportRef.current) {
+          map.setBounds(viewportRef.current.bounds, 48, 48, 48, 48);
+          if (viewportRef.current.count === 1) map.setLevel(5);
+        }
+      });
+    };
+    const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(resize) : null;
+    observer?.observe(containerRef.current);
+    window.addEventListener("resize", resize);
+    resize();
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener("resize", resize);
+      if (frame !== undefined) cancelAnimationFrame(frame);
+    };
+  }, [status]);
 
   const missingCoordCount = spots.length - plottable.length;
-  const unavailableMessage = !hasPlottableSpots
-    ? (spots.length === 0 ? "지도에 표시할 장소가 없어요." : MISSING_SPOT_LOCATION)
-    : status === "no-key"
-      ? "지도를 준비 중이에요."
-      : status === "error" ? "지도를 불러오지 못했어요." : null;
+  const message = status === "error"
+    ? "지도를 불러오지 못했어요."
+    : status === "empty"
+      ? (spots.length === 0 ? "지도에 표시할 장소가 없어요." : MISSING_SPOT_LOCATION)
+      : status === "no-key"
+        ? "지도를 준비하고 있어요."
+        : "지도를 불러오고 있어요.";
 
   return (
     <div className={className}>
-      {unavailableMessage && (
+      <div className={`relative isolate w-full overflow-hidden rounded-xl border border-border bg-muted/30 ${mapClassName}`}>
         <div
-          className={`flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-muted/30 p-6 text-center ${mapClassName}`}
-          role="status"
-        >
-          <MapPin className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
-          <p className="text-xs text-muted-foreground">{unavailableMessage}</p>
-        </div>
-      )}
-      <div
-        ref={containerRef}
-        hidden={Boolean(unavailableMessage)}
-        className={`w-full overflow-hidden rounded-xl border border-border bg-muted/30 ${mapClassName}`}
-        aria-label={unavailableMessage ? undefined : "장소 위치 지도"}
-        role={unavailableMessage ? undefined : "img"}
-      />
-      {missingCoordCount > 0 && hasPlottableSpots && (
+          ref={containerRef}
+          className="h-full w-full"
+          aria-label="장소 위치 지도"
+          aria-hidden={status !== "ready"}
+          role="region"
+        />
+        {status !== "ready" && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-background/95 p-6 text-center" role="status">
+            <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+              <MapPin className={`h-6 w-6 ${status === "loading" ? "animate-pulse" : ""}`} aria-hidden="true" />
+            </span>
+            <p className="text-sm text-muted-foreground">{message}</p>
+            {status === "error" && (
+              <button
+                type="button"
+                onClick={() => setRetryCount((count) => count + 1)}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-xs font-semibold text-primary transition hover:bg-primary/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              >
+                <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
+                다시 시도
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+      {missingCoordCount > 0 && hasPlottable && (
         <p className="mt-1.5 text-xs text-muted-foreground">
-          위치 정보가 등록되지 않은 장소 {missingCoordCount}곳은 지도에 표시되지 않았어요.
+          위치를 확인할 수 없는 장소 {missingCoordCount}곳은 목록에서 볼 수 있어요.
         </p>
       )}
     </div>
@@ -229,42 +320,47 @@ export default function KakaoMap({
 }
 
 const MARKER_BADGE_BASE_STYLE =
-  "display:flex;align-items:center;justify-content:center;width:22px;height:22px;" +
-  "border-radius:9999px;background:#7c3aed;color:#fff;font-size:12px;font-weight:700;" +
-  "box-shadow:0 2px 6px rgba(0,0,0,.3);transition:transform .12s ease,background .12s ease";
+  "display:flex;align-items:center;justify-content:center;width:100%;height:100%;box-sizing:border-box;" +
+  "border:2px solid #fff;border-radius:9999px;background:hsl(var(--primary,258 82% 61%));" +
+  "color:#fff;font-size:12px;font-weight:800;box-shadow:0 2px 8px hsl(var(--primary,258 82% 61%)/.3);" +
+  "transform-origin:center;transition:transform .15s ease,box-shadow .15s ease";
 
 const MARKER_LABEL_BASE_STYLE =
-  "background:rgba(255,255,255,.95);border-radius:6px;padding:2px 6px;font-size:11px;" +
-  "white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.2);transition:background .12s ease,color .12s ease";
+  "position:absolute;left:calc(100% + 8px);top:50%;transform:translateY(-50%);" +
+  "width:max-content;box-sizing:border-box;" +
+  "background:hsl(var(--background,0 0% 100%)/.97);color:hsl(var(--foreground,240 7% 14%));" +
+  "border:1px solid hsl(var(--primary,258 82% 61%)/.16);border-radius:9px;padding:5px 8px;" +
+  "font-size:11px;font-weight:600;max-width:170px;overflow:hidden;text-overflow:ellipsis;" +
+  "white-space:nowrap;box-shadow:0 2px 8px rgba(28,27,44,.12);transition:background .15s ease,color .15s ease";
 
-/** 목록에서 호버한 장소의 마커를 키우고 색을 바꿔 눈에 띄게 한다. */
-function applyMarkerHighlight(element: HTMLElement, highlighted: boolean) {
+function applyMarkerHighlight(element: HTMLElement, highlighted: boolean, selected: boolean) {
   const badge = element.querySelector<HTMLElement>('[data-role="badge"]');
   const label = element.querySelector<HTMLElement>('[data-role="label"]');
   if (!badge || !label) return;
-
-  if (highlighted) {
-    badge.style.cssText = `${MARKER_BADGE_BASE_STYLE};background:#db2777;transform:scale(1.35)`;
-    label.style.cssText = `${MARKER_LABEL_BASE_STYLE};background:#db2777;color:#fff;font-weight:700`;
-  } else {
-    badge.style.cssText = MARKER_BADGE_BASE_STYLE;
-    label.style.cssText = MARKER_LABEL_BASE_STYLE;
-  }
+  element.dataset.highlighted = String(highlighted);
+  element.dataset.selected = String(selected);
+  if (element instanceof HTMLButtonElement) element.setAttribute("aria-pressed", String(selected));
+  badge.style.cssText = `${MARKER_BADGE_BASE_STYLE}${highlighted
+    ? ";transform:scale(1.16);box-shadow:0 0 0 5px hsl(var(--primary,258 82% 61%)/.18),0 3px 12px rgba(28,27,44,.2)"
+    : ""}`;
+  label.style.cssText = `${MARKER_LABEL_BASE_STYLE}${highlighted
+    ? ";background:hsl(var(--primary,258 82% 61%));color:#fff;font-weight:700"
+    : ""}`;
 }
 
-/**
- * 마커를 DOM으로 직접 만든다. 장소 이름을 textContent로 넣기 때문에
- * HTML 문자열을 조립할 때처럼 이스케이프를 신경 쓸 필요가 없다.
- */
+/** 장소명을 textContent로 설정해 외부 데이터를 HTML로 해석하지 않는다. */
 function createMarkerElement(
   spot: KakaoMapSpot,
   order: number,
   onSpotClick?: (spot: KakaoMapSpot) => void,
 ): HTMLElement {
-  const wrapper = document.createElement("div");
-  wrapper.style.cssText = `display:flex;align-items:center;gap:4px;transform:translateY(-4px);${
-    onSpotClick ? "cursor:pointer;" : ""
-  }`;
+  const wrapper = document.createElement(onSpotClick ? "button" : "div");
+  // SDK가 측정하는 영역은 번호 원 하나로 고정하고 이름표는 영역 밖에 배치한다.
+  wrapper.style.cssText = "position:relative;display:block;width:32px;height:32px;overflow:visible;" +
+    "padding:0;border:0;border-radius:9999px;background:transparent;font:inherit;" +
+    (onSpotClick ? "cursor:pointer;" : "");
+  wrapper.className = "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary";
+  wrapper.title = spot.title;
 
   const badge = document.createElement("span");
   badge.dataset.role = "badge";
@@ -275,14 +371,12 @@ function createMarkerElement(
   label.dataset.role = "label";
   label.textContent = spot.title;
   label.style.cssText = MARKER_LABEL_BASE_STYLE;
-
   wrapper.append(badge, label);
 
   if (onSpotClick) {
-    wrapper.setAttribute("role", "button");
-    wrapper.setAttribute("aria-label", `${spot.title} 선택`);
+    wrapper.setAttribute("type", "button");
+    wrapper.setAttribute("aria-label", `${order}번 ${spot.title} 선택`);
     wrapper.addEventListener("click", () => onSpotClick(spot));
   }
-
   return wrapper;
 }

@@ -103,8 +103,13 @@ public class BoardApplicationService {
     /**
      * 게시글 단건 조회 처리 (조회자 좋아요 여부 반영)
      */
+    @Transactional
     public BoardResult get(Long boardId, Long viewerUserId) {
+        // 상세 조회가 성공한 게시글만 조회수에 반영되도록 먼저 활성 게시글인지 확인한다.
         BoardModel board = getActiveBoardOrThrow(boardId);
+        boardRepository.incrementViewCount(boardId);
+        // 원자적 증가 후 최신 view_count를 다시 읽어 응답한다.
+        board = getActiveBoardOrThrow(boardId);
         boolean isLiked = viewerUserId != null && boardLikeRepository.existsByUserIdAndBoardId(viewerUserId, boardId);
         return BoardResult.from(board, isLiked);
     }

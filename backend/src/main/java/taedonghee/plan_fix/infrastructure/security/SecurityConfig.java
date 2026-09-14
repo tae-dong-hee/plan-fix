@@ -56,6 +56,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .dispatcherTypeMatchers(jakarta.servlet.DispatcherType.ASYNC).permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/users").permitAll()
+                        // 회원가입 전에도 아이디 사용 가능 여부를 확인할 수 있어야 한다.
+                        .requestMatchers(HttpMethod.GET, "/api/v1/users/username-availability").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/logout").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/auth/kakao", "/api/v1/auth/kakao/callback").permitAll()

@@ -33,6 +33,9 @@ public interface BoardRepository {
      */
     long countActive();
 
+    /** 게시글 조회수 1 증가 (DB 원자적 update) */
+    void incrementViewCount(Long boardId);
+
     /**
      * 좋아요 수 1 증가 (DB 원자적 update)
      */

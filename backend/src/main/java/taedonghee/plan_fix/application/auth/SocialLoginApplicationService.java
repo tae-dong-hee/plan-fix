@@ -90,7 +90,7 @@ public class SocialLoginApplicationService {
         }
 
         UserModel created = userRepository.save(
-                UserModel.create(uniqueUsername(kakaoUser.nickname()), null, verifiedEmail));
+                    UserModel.create(uniqueUsername(kakaoUser.nickname()), null, verifiedEmail, null));
         socialAccountRepository.save(SocialAccountModel.create(
                 created.getUserId(), SocialProvider.KAKAO, kakaoUser.id(), kakaoUser.email()));
         return created;

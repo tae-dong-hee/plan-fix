@@ -183,18 +183,16 @@ public class CourseApplicationService {
      * 코스 단건 조회 처리
      * - requesterId가 코스 작성자이거나,
      * - PUBLIC 공개 코스이거나,
-     * - 활성 여행 이야기에 연결된 코스인 경우 조회 허용
+     * - 초대를 수락한 활성 멤버인 경우 조회 허용
      */
     public CourseResult getCourse(Long requesterId, Long courseId) {
         CourseModel course = getActiveCourseOrThrow(courseId);
 
         boolean isOwner = requesterId != null && requesterId.equals(course.userId());
         boolean isPublic = course.visibility() == CourseVisibility.PUBLIC;
-        boolean isAttachedToActiveBoard = boardRepository != null && boardRepository.existsActiveByCourseId(courseId);
-
         boolean isMember = courseMemberJpaRepository != null && requesterId != null
                 && courseMemberJpaRepository.existsByCourseIdAndUserId(courseId, requesterId);
-        if (!isOwner && !isMember && !isPublic && !isAttachedToActiveBoard) {
+        if (!isOwner && !isMember && !isPublic) {
             throw new CoreException(ErrorType.FORBIDDEN, "Only course owner can access private course.");
         }
 

@@ -7,7 +7,7 @@ import SignupForm, {
   type SignupFormValues,
 } from "@/components/ui/signup-form";
 import { authPathWithReturnTo, getInviteReturnTo } from "@/lib/auth-return-to";
-import { isUserApiConfigured, signUp } from "@/services/user";
+import { checkUsernameAvailability, isUserApiConfigured, signUp } from "@/services/user";
 
 const emailCheckDelay = 450;
 const redirectDelay = 1500;
@@ -44,6 +44,7 @@ export default function SignupPage() {
         password: values.password,
         name: values.name || null,
         email: values.email || null,
+        birthDate: values.birthDate || null,
       });
 
       setMessage({
@@ -90,6 +91,7 @@ export default function SignupPage() {
           message={message}
           onSubmit={handleSubmit}
           onCheckEmailAvailability={handleCheckEmailAvailability}
+          onCheckUsernameAvailability={async (username) => checkUsernameAvailability(username)}
           loginHref={loginPath}
           onBackToLogin={() => navigate(loginPath)}
         />

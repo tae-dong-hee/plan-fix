@@ -4,6 +4,7 @@ export type SignUpRequest = {
   name?: string | null;
   email?: string | null;
   username?: string | null;
+  birthDate?: string | null;
 };
 
 export type SignUpResponse = {
@@ -22,6 +23,13 @@ const apiBaseUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "");
 
 export function isUserApiConfigured() {
   return Boolean(apiBaseUrl);
+}
+
+export async function checkUsernameAvailability(username: string): Promise<{ available: boolean; message: string }> {
+  if (!apiBaseUrl) throw new Error("VITE_API_BASE_URL이 설정되지 않았습니다.");
+  const response = await fetch(`${apiBaseUrl}/users/username-availability?username=${encodeURIComponent(username)}`, { credentials: "include" });
+  if (!response.ok) throw new Error("아이디 중복 확인에 실패했습니다.");
+  return (await response.json()) as { available: boolean; message: string };
 }
 
 export async function signUp(payload: SignUpRequest): Promise<SignUpResponse> {

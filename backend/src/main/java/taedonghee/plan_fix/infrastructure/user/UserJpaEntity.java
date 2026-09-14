@@ -17,6 +17,7 @@ import taedonghee.plan_fix.domain.user.UserRole;
 import taedonghee.plan_fix.domain.user.UserStatus;
 
 import java.time.OffsetDateTime;
+import java.time.LocalDate;
 
 /**
  * users 테이블 JPA 매핑 엔티티
@@ -47,6 +48,9 @@ public class UserJpaEntity {
     @Column(length = 255)
     private String email;
 
+    @Column(name = "birth_date")
+    private LocalDate birthDate;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private UserRole role;
@@ -70,6 +74,7 @@ public class UserJpaEntity {
             String username,
             String name,
             String email,
+            LocalDate birthDate,
             UserRole role,
             UserStatus status,
             OffsetDateTime createdAt,
@@ -79,6 +84,7 @@ public class UserJpaEntity {
         this.username = username;
         this.name = name;
         this.email = email;
+        this.birthDate = birthDate;
         this.role = role;
         this.status = status;
         this.createdAt = createdAt;
