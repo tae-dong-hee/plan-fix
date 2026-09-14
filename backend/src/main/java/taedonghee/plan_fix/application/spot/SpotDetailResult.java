@@ -48,7 +48,7 @@ public record SpotDetailResult(
                 spot.address(),
                 spot.latitude(),
                 spot.longitude(),
-                spot.thumbnail(),
+                SpotThumbnailResolver.select(spot.thumbnail(), images),
                 spot.description(),
                 viewCount,
                 spot.likeCount(),

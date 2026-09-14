@@ -4,6 +4,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 
 import SpotDetailPage from "@/pages/spot-detail-page";
+import { FALLBACK_SPOT_IMAGE } from "@/components/ui/spot-image";
 import { fetchSpotDetail, likeSpot, unlikeSpot, UnauthorizedError, type SpotDetail } from "@/services/spots";
 
 vi.mock("@/services/spots");
@@ -97,10 +98,13 @@ test("renders the spot detail once it loads", async () => {
   expect(screen.getByText("동해안의 대표 해변")).toBeInTheDocument();
   expect(screen.getByText("좋아요 3")).toBeInTheDocument();
   expect(screen.getByText("조회수 11")).toBeInTheDocument();
+  expect(screen.queryByText("주소 정보가 등록되지 않은 장소예요.")).not.toBeInTheDocument();
+  expect(screen.queryByText("위치 정보가 등록되지 않은 장소예요.")).not.toBeInTheDocument();
+  expect(screen.queryByText("장소 정보가 등록되지 않은 장소예요.")).not.toBeInTheDocument();
   expect(mockedFetchSpotDetail).toHaveBeenCalledWith("1");
 });
 
-test("omits the address and description when they are missing", async () => {
+test("shows a default photo and clear notices when spot data is missing", async () => {
   mockedFetchSpotDetail.mockResolvedValue({
     spotId: 2,
     title: "이름만 있는 장소",
@@ -115,7 +119,7 @@ test("omits the address and description when they are missing", async () => {
     viewCount: 0,
     likeCount: 0,
     commentCount: 0,
-    images: [],
+    images: null,
     info: null,
     isLiked: false,
   });
@@ -124,9 +128,14 @@ test("omits the address and description when they are missing", async () => {
 
   expect(await screen.findByRole("heading", { name: "이름만 있는 장소" })).toBeInTheDocument();
   expect(screen.queryByText("null")).not.toBeInTheDocument();
-  expect(screen.queryByText("이용 안내")).not.toBeInTheDocument();
+  expect(screen.getByText("주소 정보가 등록되지 않은 장소예요.")).toBeInTheDocument();
+  expect(screen.getByText("위치 정보가 등록되지 않은 장소예요.")).toBeInTheDocument();
+  expect(screen.getByText("장소 정보가 등록되지 않은 장소예요.")).toBeInTheDocument();
+  expect(screen.getByText("이용 정보가 등록되지 않은 장소예요.")).toBeInTheDocument();
   // 메인 사진 하나만 있어야 한다 (갤러리 없음)
   expect(screen.getAllByRole("img")).toHaveLength(1);
+  expect(screen.getByRole("img")).toHaveAttribute("src", FALLBACK_SPOT_IMAGE);
+  expect(screen.queryByRole("button", { name: "다음 사진" })).not.toBeInTheDocument();
 });
 
 test("renders extra photos as a gallery when images are present", async () => {
@@ -291,8 +300,12 @@ test("renders tour markup as readable plain text with line breaks and decoded en
   );
 });
 
-test("omits usage information when its fields contain only empty markup or whitespace", async () => {
+test("treats empty markup, whitespace and null gallery entries as missing data", async () => {
   mockedFetchSpotDetail.mockResolvedValue(spotFixture({
+    address: "&nbsp;",
+    description: "<p><br></p>",
+    thumbnail: "  ",
+    images: [null, "", "  "],
     info: {
       tel: "",
       parkInfo: "   ",
@@ -307,7 +320,10 @@ test("omits usage information when its fields contain only empty markup or white
   renderAt("1");
   await screen.findByRole("heading", { name: "정동진" });
 
-  expect(screen.queryByRole("heading", { name: "이용 안내" })).not.toBeInTheDocument();
+  expect(screen.getByText("주소 정보가 등록되지 않은 장소예요.")).toBeInTheDocument();
+  expect(screen.getByText("장소 정보가 등록되지 않은 장소예요.")).toBeInTheDocument();
+  expect(screen.getByText("이용 정보가 등록되지 않은 장소예요.")).toBeInTheDocument();
+  expect(screen.getByRole("img")).toHaveAttribute("src", FALLBACK_SPOT_IMAGE);
   expect(screen.queryByText("이용시간")).not.toBeInTheDocument();
 });
 

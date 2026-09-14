@@ -2,6 +2,7 @@ package taedonghee.plan_fix.application.course;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import taedonghee.plan_fix.application.spot.SpotThumbnailResolver;
 import taedonghee.plan_fix.domain.course.CourseDayModel;
 import taedonghee.plan_fix.domain.course.CourseModel;
 import taedonghee.plan_fix.domain.course.CourseRepository;
@@ -15,6 +16,8 @@ import taedonghee.plan_fix.domain.spot.SpotSearchCondition;
 import taedonghee.plan_fix.domain.spot.SpotSortType;
 import taedonghee.plan_fix.domain.spot.SpotSourceType;
 import taedonghee.plan_fix.domain.spot.SpotStatus;
+import taedonghee.plan_fix.domain.spot.SpotImageCandidate;
+import taedonghee.plan_fix.domain.spot.TourDataImageRepository;
 import taedonghee.plan_fix.support.error.CoreException;
 
 import java.time.LocalDate;
@@ -22,9 +25,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.*;
 
 class CourseApplicationServiceTest {
 
@@ -144,6 +149,67 @@ class CourseApplicationServiceTest {
         assertThat(fixture.spots.findAllByIdInCallCount - callsBefore).isEqualTo(1);
     }
 
+    @Test
+    void course_responses_use_saved_details_without_changing_spots_or_course_cover() {
+        Fixture fixture = new Fixture();
+        SpotModel missing = fixture.spots.save(SpotModel.builder().sourceType(SpotSourceType.TOUR_API)
+                .title("상세사진 있는 장소").category("관광지").build());
+        when(fixture.images.findBySpotIds(Set.of(missing.spotId()))).thenReturn(List.of(
+                new SpotImageCandidate(missing.spotId(), "https://images.example.com/detail.jpg", null)));
+        CourseApplicationService service = fixture.service();
+        List<CourseDayModel> days = List.of(new CourseDayModel(1,
+                List.of(new CourseSpotModel(missing.spotId(), "메모"))));
+
+        CourseResult created = service.create(10L, new CourseCommand.Create(
+                "Course", null, "https://images.example.com/course.jpg", CourseVisibility.PUBLIC,
+                null, null, days));
+        CourseResult updated = service.update(10L, created.courseId(), new CourseCommand.Update(
+                "Updated", null, created.thumbnail(), CourseVisibility.PUBLIC, null, null, days));
+        CourseResult detail = service.getCourse(null, created.courseId());
+        for (CourseResult result : List.of(created, updated, detail)) {
+            assertThat(result.days().getFirst().spots().getFirst().thumbnail())
+                    .isEqualTo("https://images.example.com/detail.jpg");
+            assertThat(result.thumbnail()).isEqualTo("https://images.example.com/course.jpg");
+        }
+
+        service.create(10L, new CourseCommand.Create("Second", null, null, null, null, null, days));
+        clearInvocations(fixture.images);
+        List<CourseResult> listed = service.listMine(10L);
+        assertThat(listed).hasSize(2).allSatisfy(result ->
+                assertThat(result.days().getFirst().spots().getFirst().thumbnail())
+                        .isEqualTo("https://images.example.com/detail.jpg"));
+        verify(fixture.images, times(1)).findBySpotIds(Set.of(missing.spotId()));
+        verifyNoMoreInteractions(fixture.images);
+        assertThat(missing.thumbnail()).isNull();
+        assertThat(fixture.spots.findById(missing.spotId()).orElseThrow().thumbnail()).isNull();
+    }
+
+    @Test
+    void liked_courses_resolve_shared_spot_photos_in_one_batch() {
+        CourseRepository courses = mock(CourseRepository.class);
+        SpotRepository spots = mock(SpotRepository.class);
+        TourDataImageRepository images = mock(TourDataImageRepository.class);
+        SpotModel missing = SpotModel.builder().spotId(11L).sourceType(SpotSourceType.TOUR_API)
+                .title("상세사진 있는 장소").category("관광지").build();
+        when(courses.findLikedByUserId(10L)).thenReturn(List.of(
+                CourseCoverImageSelectorTest.course(1, "첫 코스", null, null, 11L),
+                CourseCoverImageSelectorTest.course(2, "다음 코스", null, null, 11L)));
+        when(spots.findAllByIdIn(Set.of(11L))).thenReturn(List.of(missing));
+        when(images.findBySpotIds(Set.of(11L))).thenReturn(List.of(
+                new SpotImageCandidate(11L, "https://images.example.com/detail.jpg", null)));
+        CourseApplicationService service = new CourseApplicationService(courses, spots, null, null,
+                mock(CourseCoverImageSelector.class), new SpotThumbnailResolver(images));
+
+        assertThat(service.listLiked(10L)).hasSize(2).allSatisfy(result ->
+                assertThat(result.days().getFirst().spots().getFirst().thumbnail())
+                        .isEqualTo("https://images.example.com/detail.jpg"));
+        verify(images, times(1)).findBySpotIds(Set.of(11L));
+        verifyNoMoreInteractions(images);
+        verify(spots, never()).save(any());
+        verify(courses, never()).save(any());
+        assertThat(missing.thumbnail()).isNull();
+    }
+
     private static SpotModel spot(String title, String category, SpotStatus status) {
         return SpotModel.builder()
                 .sourceType(SpotSourceType.NATIVE)
@@ -156,11 +222,13 @@ class CourseApplicationServiceTest {
     static class Fixture {
         final InMemoryCourseRepository courses = new InMemoryCourseRepository();
         final InMemorySpotRepository spots = new InMemorySpotRepository();
+        final TourDataImageRepository images = mock(TourDataImageRepository.class);
 
         CourseApplicationService service() {
             return new CourseApplicationService(courses, spots, null, null,
                     new CourseCoverImageSelector(List.of(new CourseCoverImageSelector.Image(
-                            "fixture", "https://images.example.com/cover.jpg", List.of(), List.of(), List.of()))));
+                            "fixture", "https://images.example.com/cover.jpg", List.of(), List.of(), List.of()))),
+                    new SpotThumbnailResolver(images));
         }
     }
 

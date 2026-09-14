@@ -5,6 +5,7 @@ import taedonghee.plan_fix.domain.user.UserRole;
 import taedonghee.plan_fix.domain.user.UserStatus;
 
 import java.time.OffsetDateTime;
+import java.time.LocalDate;
 
 /**
  * 사용자 결과 DTO
@@ -14,6 +15,7 @@ public record UserResult(
         String username,
         String name,
         String email,
+        LocalDate birthDate,
         UserRole role,
         UserStatus status,
         OffsetDateTime createdAt,
@@ -29,6 +31,7 @@ public record UserResult(
                 user.getUsername(),
                 user.getName(),
                 user.getEmail(),
+                user.getBirthDate(),
                 user.getRole(),
                 user.getStatus(),
                 user.getCreatedAt(),

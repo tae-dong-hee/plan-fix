@@ -12,6 +12,8 @@ import {
   MessageSquare,
   Route,
 } from "lucide-react";
+import { MISSING_SPOT_ADDRESS } from "@/lib/spot-display";
+import SpotImage from "@/components/ui/spot-image";
 import AppNav from "@/components/ui/app-nav";
 import { unlikeSpot, UnauthorizedError } from "@/services/spots";
 import { unlikeCourse, CourseResponse } from "@/services/course";
@@ -264,17 +266,11 @@ export default function WishlistPage() {
                         className="group relative flex min-w-0 flex-col rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-4"
                       >
                         <div className="relative aspect-square w-full overflow-hidden rounded-2xl bg-muted">
-                          {spot.thumbnail ? (
-                            <img
-                              src={spot.thumbnail}
-                              alt={spot.title}
-                              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 motion-reduce:transform-none motion-reduce:transition-none"
-                            />
-                          ) : (
-                            <div className="flex h-full w-full items-center justify-center bg-muted/80 text-muted-foreground">
-                              <Compass className="h-8 w-8 stroke-[1.5]" />
-                            </div>
-                          )}
+                          <SpotImage
+                            src={spot.thumbnail}
+                            alt={spot.title}
+                            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 motion-reduce:transform-none motion-reduce:transition-none"
+                          />
                           <button
                             type="button"
                             onClick={(e) => handleUnlikeSpot(e, spot.spotId)}
@@ -296,8 +292,7 @@ export default function WishlistPage() {
                               {spot.title}
                             </h3>
                             <p className="mt-1.5 line-clamp-2 text-[13px] leading-5 text-muted-foreground">
-                              {spot.address ||
-                                [spot.region, spot.sigungu].filter(Boolean).join(" ")}
+                              {spot.address?.trim() || MISSING_SPOT_ADDRESS}
                             </p>
                           </div>
                           <div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 text-xs text-muted-foreground">

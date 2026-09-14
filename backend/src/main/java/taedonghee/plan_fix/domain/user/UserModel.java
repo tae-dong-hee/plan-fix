@@ -4,6 +4,7 @@ import taedonghee.plan_fix.support.error.CoreException;
 import taedonghee.plan_fix.support.error.ErrorType;
 
 import java.time.OffsetDateTime;
+import java.time.LocalDate;
 import java.util.regex.Pattern;
 
 /**
@@ -30,6 +31,7 @@ public class UserModel {
     private final String username;
     private final String name;
     private final String email;
+    private final LocalDate birthDate;
     private final UserRole role;
     private final UserStatus status;
     private final OffsetDateTime createdAt;
@@ -40,6 +42,7 @@ public class UserModel {
             String username,
             String name,
             String email,
+            LocalDate birthDate,
             UserRole role,
             UserStatus status,
             OffsetDateTime createdAt,
@@ -53,6 +56,7 @@ public class UserModel {
         this.username = username;
         this.name = name;
         this.email = email;
+        this.birthDate = birthDate;
         this.role = role == null ? UserRole.USER : role;
         this.status = status == null ? UserStatus.ACTIVE : status;
         this.createdAt = createdAt;
@@ -62,9 +66,14 @@ public class UserModel {
     /**
      * 신규 사용자 생성
      */
-    public static UserModel create(String username, String name, String email) {
+    public static UserModel create(String username, String name, String email, LocalDate birthDate) {
         OffsetDateTime now = OffsetDateTime.now();
-        return new UserModel(null, username, name, email, UserRole.USER, UserStatus.ACTIVE, now, now);
+        return new UserModel(null, username, name, email, birthDate, UserRole.USER, UserStatus.ACTIVE, now, now);
+    }
+
+    /** 기존 호출부 호환용 생년월일 없는 생성 */
+    public static UserModel create(String username, String name, String email) {
+        return create(username, name, email, null);
     }
 
     /**
@@ -76,22 +85,35 @@ public class UserModel {
             String username,
             String name,
             String email,
+            LocalDate birthDate,
             UserRole role,
             UserStatus status,
             OffsetDateTime createdAt,
             OffsetDateTime updatedAt
     ) {
-        return new UserModel(userId, username, name, email, role, status, createdAt, updatedAt);
+        return new UserModel(userId, username, name, email, birthDate, role, status, createdAt, updatedAt);
+    }
+
+    /** 기존 호출부 호환용 생년월일 없는 복원 */
+    public static UserModel reconstruct(Long userId, String username, String name, String email,
+                                       UserRole role, UserStatus status,
+                                       OffsetDateTime createdAt, OffsetDateTime updatedAt) {
+        return reconstruct(userId, username, name, email, null, role, status, createdAt, updatedAt);
     }
 
     /**
      * 사용자 프로필 수정
      */
-    public UserModel updateProfile(String username, String name, String email) {
+    public UserModel updateProfile(String username, String name, String email, LocalDate birthDate) {
         if (status == UserStatus.WITHDRAWN) {
             throw new CoreException(ErrorType.CONFLICT, "탈퇴한 사용자는 수정할 수 없습니다. userId=" + userId);
         }
-        return new UserModel(userId, username, name, email, role, status, createdAt, OffsetDateTime.now());
+        return new UserModel(userId, username, name, email, birthDate, role, status, createdAt, OffsetDateTime.now());
+    }
+
+    /** 기존 호출부 호환용 생년월일 유지 */
+    public UserModel updateProfile(String username, String name, String email) {
+        return updateProfile(username, name, email, birthDate);
     }
 
     /**
@@ -101,7 +123,7 @@ public class UserModel {
         if (status == UserStatus.WITHDRAWN) {
             throw new CoreException(ErrorType.CONFLICT, "이미 탈퇴한 사용자입니다. userId=" + userId);
         }
-        return new UserModel(userId, username, name, email, role, UserStatus.WITHDRAWN, createdAt, OffsetDateTime.now());
+        return new UserModel(userId, username, name, email, birthDate, role, UserStatus.WITHDRAWN, createdAt, OffsetDateTime.now());
     }
 
     /**
@@ -172,6 +194,10 @@ public class UserModel {
 
     public String getEmail() {
         return email;
+    }
+
+    public LocalDate getBirthDate() {
+        return birthDate;
     }
 
     public UserRole getRole() {

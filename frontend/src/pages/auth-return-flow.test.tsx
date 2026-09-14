@@ -1,5 +1,5 @@
 import { StrictMode } from "react";
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 
 import AuthReturnRedirect from "@/components/auth-return-redirect";
@@ -18,6 +18,7 @@ vi.mock("@/services/auth", () => ({
 vi.mock("@/services/user", () => ({
   isUserApiConfigured: () => true,
   signUp: vi.fn(async () => ({})),
+  checkUsernameAvailability: vi.fn(async () => ({ available: true, message: "사용 가능한 아이디입니다." })),
 }));
 
 vi.mock("@/components/ui/travel-globe-transition", () => ({
@@ -92,7 +93,9 @@ test("회원가입 성공 후 로그인 화면에도 초대 복귀 주소가 남
     fireEvent.change(screen.getByLabelText(label), { target: { value } });
   }
   await act(async () => {
-    fireEvent.click(screen.getByRole("button", { name: "중복 확인" }));
+    for (const label of ["아이디", "이메일"]) {
+      fireEvent.click(within(screen.getByLabelText(label).parentElement!).getByRole("button", { name: "중복 확인" }));
+    }
     await vi.advanceTimersByTimeAsync(450);
   });
   await act(async () => {

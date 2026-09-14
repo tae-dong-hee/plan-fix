@@ -33,6 +33,12 @@ public class UserController {
         return ResponseEntity.ok(UserResponse.from(userApplicationService.get(principal.id())));
     }
 
+    @GetMapping("/username-availability")
+    public ResponseEntity<UsernameAvailabilityResponse> usernameAvailability(@org.springframework.web.bind.annotation.RequestParam String username) {
+        boolean available = userApplicationService.isUsernameAvailable(username);
+        return ResponseEntity.ok(new UsernameAvailabilityResponse(available, available ? "사용 가능한 아이디입니다." : "이미 사용 중인 아이디입니다."));
+    }
+
     /** 현재 로그인한 사용자 프로필 수정 API */
     @PatchMapping("/me")
     public ResponseEntity<UserResponse> updateMe(
@@ -88,4 +94,6 @@ public class UserController {
     public ResponseEntity<UserResponse> withdraw(@PathVariable Long userId) {
         return ResponseEntity.ok(UserResponse.from(userApplicationService.withdraw(userId)));
     }
+
+    public record UsernameAvailabilityResponse(boolean available, String message) { }
 }

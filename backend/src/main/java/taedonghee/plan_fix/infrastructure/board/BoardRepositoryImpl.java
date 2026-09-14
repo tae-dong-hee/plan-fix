@@ -84,6 +84,11 @@ public class BoardRepositoryImpl implements BoardRepository {
     }
 
     @Override
+    public void incrementViewCount(Long boardId) {
+        boardJpaRepository.incrementViewCount(boardId);
+    }
+
+    @Override
     public void incrementLikeCount(Long boardId) {
         boardJpaRepository.incrementLikeCount(boardId);
     }

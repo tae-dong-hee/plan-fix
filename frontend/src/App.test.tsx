@@ -1,9 +1,20 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 
 import App from "@/App";
 import LoginForm from "@/components/ui/login-form";
 import SignupForm from "@/components/ui/signup-form";
+
+const availableUsername = async () => ({ available: true, message: "사용 가능한 아이디입니다." });
+
+function availabilityButton(label: string) {
+  return within(screen.getByLabelText(label).parentElement!).getByRole("button", { name: "중복 확인" });
+}
+
+async function checkUsername() {
+  fireEvent.click(availabilityButton("아이디"));
+  expect(await screen.findByText("사용 가능한 아이디입니다.")).toBeInTheDocument();
+}
 
 test("renders the login screen", () => {
   render(
@@ -177,12 +188,13 @@ test("formats the signup birth date as yyyy-mm-dd", () => {
   expect(birthDateInput).toHaveAttribute("maxlength", "10");
 });
 
-test("rejects an invalid signup birth date", () => {
-  render(<SignupForm />);
+test("rejects an invalid signup birth date", async () => {
+  render(<SignupForm onCheckUsernameAvailability={availableUsername} />);
 
   fireEvent.change(screen.getByLabelText("아이디"), {
     target: { value: "testuser1" },
   });
+  await checkUsername();
   fireEvent.change(screen.getByLabelText("이름"), {
     target: { value: "김태용" },
   });
@@ -201,6 +213,7 @@ test("validates matching passwords on the signup form", async () => {
   render(
     <SignupForm
       onSubmit={handleSubmit}
+      onCheckUsernameAvailability={availableUsername}
       onCheckEmailAvailability={async () => ({
         available: true,
         message: "사용 가능한 이메일입니다.",
@@ -211,6 +224,7 @@ test("validates matching passwords on the signup form", async () => {
   fireEvent.change(screen.getByLabelText("아이디"), {
     target: { value: "testuser1" },
   });
+  await checkUsername();
   fireEvent.change(screen.getByLabelText("이름"), {
     target: { value: "김태용" },
   });
@@ -218,7 +232,7 @@ test("validates matching passwords on the signup form", async () => {
   fireEvent.change(screen.getByLabelText("이메일"), {
     target: { value: "new@planfix.kr" },
   });
-  fireEvent.click(screen.getByRole("button", { name: "중복 확인" }));
+  fireEvent.click(availabilityButton("이메일"));
   expect(await screen.findByText("사용 가능한 이메일입니다.")).toBeInTheDocument();
 
   fireEvent.change(screen.getByLabelText("비밀번호"), {
@@ -238,6 +252,7 @@ test("validates the signup password format", async () => {
   render(
     <SignupForm
       onSubmit={handleSubmit}
+      onCheckUsernameAvailability={availableUsername}
       onCheckEmailAvailability={async () => ({
         available: true,
         message: "사용 가능한 이메일입니다.",
@@ -248,6 +263,7 @@ test("validates the signup password format", async () => {
   fireEvent.change(screen.getByLabelText("아이디"), {
     target: { value: "testuser1" },
   });
+  await checkUsername();
   fireEvent.change(screen.getByLabelText("이름"), {
     target: { value: "김태용" },
   });
@@ -255,7 +271,7 @@ test("validates the signup password format", async () => {
   fireEvent.change(screen.getByLabelText("이메일"), {
     target: { value: "new@planfix.kr" },
   });
-  fireEvent.click(screen.getByRole("button", { name: "중복 확인" }));
+  fireEvent.click(availabilityButton("이메일"));
   expect(await screen.findByText("사용 가능한 이메일입니다.")).toBeInTheDocument();
 
   fireEvent.change(screen.getByLabelText("비밀번호"), {
@@ -280,6 +296,7 @@ test.each([
   render(
     <SignupForm
       onSubmit={handleSubmit}
+      onCheckUsernameAvailability={availableUsername}
       onCheckEmailAvailability={async () => ({
         available: true,
         message: "사용 가능한 이메일입니다.",
@@ -290,6 +307,7 @@ test.each([
   fireEvent.change(screen.getByLabelText("아이디"), {
     target: { value: "testuser1" },
   });
+  await checkUsername();
   fireEvent.change(screen.getByLabelText("이름"), {
     target: { value: signupName },
   });
@@ -297,7 +315,7 @@ test.each([
   fireEvent.change(screen.getByLabelText("이메일"), {
     target: { value: "new@planfix.kr" },
   });
-  fireEvent.click(screen.getByRole("button", { name: "중복 확인" }));
+  fireEvent.click(availabilityButton("이메일"));
   expect(await screen.findByText("사용 가능한 이메일입니다.")).toBeInTheDocument();
 
   const passwordInput = screen.getByLabelText("비밀번호");
@@ -331,7 +349,7 @@ test("shows the email duplication result on the signup form", async () => {
   fireEvent.change(screen.getByLabelText("이메일"), {
     target: { value: "demo@planfix.kr" },
   });
-  fireEvent.click(screen.getByRole("button", { name: "중복 확인" }));
+  fireEvent.click(availabilityButton("이메일"));
 
   expect(await screen.findByRole("alert")).toHaveTextContent("이미 사용 중인 이메일입니다.");
 });

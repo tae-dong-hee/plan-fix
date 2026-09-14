@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import taedonghee.plan_fix.application.spot.SpotThumbnailResolver;
 import taedonghee.plan_fix.domain.spot.SpotModel;
 import taedonghee.plan_fix.domain.spot.SpotRepository;
 import taedonghee.plan_fix.domain.spot.SpotSearchCondition;
@@ -47,6 +48,7 @@ public class AiCourseDraftApplicationService {
 	private final SpotRepository spotRepository;
 	private final AiCourseLlmPlanner llmPlanner;
 	private final AiCoursePlanValidator planValidator;
+	private final SpotThumbnailResolver spotThumbnailResolver;
 	private final CoursePlanner coursePlanner = new CoursePlanner();
 
 	public AiCourseDraftResult createDraft(Long userId, AiCourseCommand command) {
@@ -144,6 +146,8 @@ public class AiCourseDraftApplicationService {
 
 		Map<Long, SpotModel> anchorsById = anchors.stream()
 			.collect(Collectors.toMap(SpotModel::spotId, Function.identity(), (a, b) -> a));
+		Map<Long, String> thumbnails = spotThumbnailResolver.resolve(
+			plannedDays.stream().flatMap(List::stream).distinct().toList());
 
 		List<AiCourseDraftResult.Day> days = new java.util.ArrayList<>();
 		for (int i = 0; i < plannedDays.size(); i++) {
@@ -151,7 +155,7 @@ public class AiCourseDraftApplicationService {
 				.map(spot -> {
 					// LLM이 써준 이유가 있으면 그걸 쓰고, 없으면 규칙 기반 문구로 채운다.
 					String reason = llmReasons.getOrDefault(spot.spotId(), reasonFor(spot, anchorsById));
-					return AiCourseDraftResult.Spot.from(spot, reason);
+					return AiCourseDraftResult.Spot.from(spot, reason, thumbnails.get(spot.spotId()));
 				})
 				.toList();
 			days.add(new AiCourseDraftResult.Day(i + 1, spots));

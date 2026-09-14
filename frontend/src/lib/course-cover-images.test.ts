@@ -24,6 +24,16 @@ describe("코스 기본 사진", () => {
     }
   });
 
+  it("추가 사진은 해당 S3 버전으로 요청하고 기존 사진의 캐시 버전은 유지한다", () => {
+    vi.stubEnv("VITE_API_BASE_URL", "/api/v1");
+    const added = catalog.images.find((image) => image.s3Key.includes("/2026-09-v2/"))!;
+    expect(getCourseCoverImageSrc(added.url)).toBe(
+      `/api/v1/images/course-covers/${added.id}?v=2026-09-v2`,
+    );
+    expect(getCourseCoverCredit(added.url)?.sourceUrl).toBe(added.sourceUrl);
+    expect(getCourseCoverImageSrc(catalog.images[0].url)).toContain("?v=2026-09-v1");
+  });
+
   it("상대 API 경로를 지원하고 사진이 없으면 출처를 표시하지 않는다", () => {
     vi.stubEnv("VITE_API_BASE_URL", "/api/v1");
     const cover = catalog.images[0];

@@ -76,6 +76,7 @@ public class UserRepositoryImpl implements UserRepository {
                 .username(user.getUsername())
                 .name(user.getName())
                 .email(user.getEmail())
+                .birthDate(user.getBirthDate())
                 .role(user.getRole())
                 .status(user.getStatus())
                 .createdAt(user.getCreatedAt())
@@ -92,6 +93,7 @@ public class UserRepositoryImpl implements UserRepository {
                 entity.getUsername(),
                 entity.getName(),
                 entity.getEmail(),
+                entity.getBirthDate(),
                 entity.getRole(),
                 entity.getStatus(),
                 entity.getCreatedAt(),

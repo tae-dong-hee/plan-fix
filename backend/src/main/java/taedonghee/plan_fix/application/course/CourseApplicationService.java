@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import taedonghee.plan_fix.application.spot.SpotThumbnailResolver;
 import taedonghee.plan_fix.domain.board.BoardRepository;
 import taedonghee.plan_fix.domain.course.CourseDayModel;
 import taedonghee.plan_fix.domain.course.CourseModel;
@@ -44,6 +45,7 @@ public class CourseApplicationService {
     private final BoardRepository boardRepository;
     private final CourseMemberJpaRepository courseMemberJpaRepository;
     private final CourseCoverImageSelector courseCoverImageSelector;
+    private final SpotThumbnailResolver spotThumbnailResolver;
 
     @Autowired
     public CourseApplicationService(
@@ -51,27 +53,31 @@ public class CourseApplicationService {
             SpotRepository spotRepository,
             @Nullable BoardRepository boardRepository,
             @Nullable CourseMemberJpaRepository courseMemberJpaRepository,
-            CourseCoverImageSelector courseCoverImageSelector
+            CourseCoverImageSelector courseCoverImageSelector,
+            SpotThumbnailResolver spotThumbnailResolver
     ) {
         this.courseRepository = courseRepository;
         this.spotRepository = spotRepository;
         this.boardRepository = boardRepository;
         this.courseMemberJpaRepository = courseMemberJpaRepository;
         this.courseCoverImageSelector = courseCoverImageSelector;
+        this.spotThumbnailResolver = spotThumbnailResolver;
     }
 
     public CourseApplicationService(
             CourseRepository courseRepository,
             SpotRepository spotRepository,
             @Nullable BoardRepository boardRepository,
-            @Nullable CourseMemberJpaRepository courseMemberJpaRepository
+            @Nullable CourseMemberJpaRepository courseMemberJpaRepository,
+            SpotThumbnailResolver spotThumbnailResolver
     ) {
         this(courseRepository, spotRepository, boardRepository, courseMemberJpaRepository,
-                new CourseCoverImageSelector(new ObjectMapper()));
+                new CourseCoverImageSelector(new ObjectMapper()), spotThumbnailResolver);
     }
 
-    public CourseApplicationService(CourseRepository courseRepository, SpotRepository spotRepository) {
-        this(courseRepository, spotRepository, null, null);
+    public CourseApplicationService(CourseRepository courseRepository, SpotRepository spotRepository,
+                                    SpotThumbnailResolver spotThumbnailResolver) {
+        this(courseRepository, spotRepository, null, null, spotThumbnailResolver);
     }
 
     /**
@@ -84,7 +90,7 @@ public class CourseApplicationService {
         Set<Long> spotIds = collectSpotIds(course.days());
         Map<Long, SpotModel> spotsById = validateAndGetActiveSpots(spotIds);
         CourseModel saved = courseRepository.save(course);
-        return CourseResult.from(saved, spotsById);
+        return CourseResult.from(saved, spotsById, spotThumbnailResolver.resolve(spotsById.values()));
     }
 
     /**
@@ -107,9 +113,10 @@ public class CourseApplicationService {
 
         Map<Long, SpotModel> spotsById = spotRepository.findAllByIdIn(allSpotIds).stream()
                 .collect(Collectors.toMap(SpotModel::spotId, Function.identity()));
+        Map<Long, String> thumbnails = spotThumbnailResolver.resolve(spotsById.values());
 
         return courses.stream()
-                .map(course -> CourseResult.from(course, spotsById))
+                .map(course -> CourseResult.from(course, spotsById, thumbnails))
                 .toList();
     }
 
@@ -126,9 +133,10 @@ public class CourseApplicationService {
 
         Map<Long, SpotModel> spotsById = spotRepository.findAllByIdIn(allSpotIds).stream()
                 .collect(Collectors.toMap(SpotModel::spotId, Function.identity()));
+        Map<Long, String> thumbnails = spotThumbnailResolver.resolve(spotsById.values());
 
         return courses.stream()
-                .map(course -> CourseResult.from(course, spotsById))
+                .map(course -> CourseResult.from(course, spotsById, thumbnails))
                 .toList();
     }
 
@@ -175,18 +183,16 @@ public class CourseApplicationService {
      * 코스 단건 조회 처리
      * - requesterId가 코스 작성자이거나,
      * - PUBLIC 공개 코스이거나,
-     * - 활성 여행 이야기에 연결된 코스인 경우 조회 허용
+     * - 초대를 수락한 활성 멤버인 경우 조회 허용
      */
     public CourseResult getCourse(Long requesterId, Long courseId) {
         CourseModel course = getActiveCourseOrThrow(courseId);
 
         boolean isOwner = requesterId != null && requesterId.equals(course.userId());
         boolean isPublic = course.visibility() == CourseVisibility.PUBLIC;
-        boolean isAttachedToActiveBoard = boardRepository != null && boardRepository.existsActiveByCourseId(courseId);
-
         boolean isMember = courseMemberJpaRepository != null && requesterId != null
                 && courseMemberJpaRepository.existsByCourseIdAndUserId(courseId, requesterId);
-        if (!isOwner && !isMember && !isPublic && !isAttachedToActiveBoard) {
+        if (!isOwner && !isMember && !isPublic) {
             throw new CoreException(ErrorType.FORBIDDEN, "Only course owner can access private course.");
         }
 
@@ -194,7 +200,7 @@ public class CourseApplicationService {
         Map<Long, SpotModel> spotsById = spotRepository.findAllByIdIn(spotIds).stream()
                 .collect(Collectors.toMap(SpotModel::spotId, Function.identity()));
 
-        return CourseResult.from(course, spotsById);
+        return CourseResult.from(course, spotsById, spotThumbnailResolver.resolve(spotsById.values()));
     }
 
     /**
@@ -245,7 +251,7 @@ public class CourseApplicationService {
         Map<Long, SpotModel> spotsById = validateAndGetActiveSpots(spotIds);
 
         CourseModel saved = courseRepository.save(updated);
-        return CourseResult.from(saved, spotsById);
+        return CourseResult.from(saved, spotsById, spotThumbnailResolver.resolve(spotsById.values()));
     }
 
     /**
@@ -256,7 +262,7 @@ public class CourseApplicationService {
         CourseModel course = getActiveCourseOrThrow(courseId);
         course.ensureOwner(userId); // 작성자만 삭제 가능
         CourseModel deleted = courseRepository.save(course.delete());
-        return CourseResult.from(deleted, Map.of());
+        return CourseResult.from(deleted, Map.of(), Map.of());
     }
 
     /**

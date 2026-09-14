@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { ChevronDown, ChevronLeft, ChevronRight, Heart, X } from "lucide-react";
 
+import SpotImage from "@/components/ui/spot-image";
 import AppNav from "@/components/ui/app-nav";
 import GangwonRegionSymbol from "@/components/ui/gangwon-region-symbol";
 import GangwonRegionMap, {
@@ -21,8 +22,6 @@ import { fetchLikedSpots } from "@/services/wishlist";
 
 const GANGWON_REGION_CODE = "51";
 const PAGE_SIZE = 20;
-const FALLBACK_SPOT_IMAGE =
-  "https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=900&q=85";
 
 function getPageNumbers(current: number, total: number): number[] {
   if (total <= 5) {
@@ -343,9 +342,9 @@ export default function PopularSpotsPage({ mode = "popular" }: PopularSpotsPageP
                       className="group block rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                     >
                       <div className="relative aspect-square overflow-hidden rounded-2xl bg-muted">
-                        <img
+                        <SpotImage
                           className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105 motion-reduce:transform-none"
-                          src={spot.thumbnail ?? FALLBACK_SPOT_IMAGE}
+                          src={spot.thumbnail}
                           alt={spot.title}
                           loading="lazy"
                         />

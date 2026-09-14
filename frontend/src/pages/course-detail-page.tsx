@@ -18,6 +18,7 @@ import {
   X,
 } from "lucide-react";
 import AppNav from "@/components/ui/app-nav";
+import CourseRouteMap from "@/components/ui/course-route-map";
 import { CourseInviteDialog, CourseInviteShareDialog } from "@/components/ui/course-invite-dialog";
 import { CourseResponse, createCourseInvite, deleteCourse, fetchCourse, fetchCourseMembers, fetchPendingCourseInvites, cancelCourseInvite, removeCourseMember, updateCourseMemberRole, type CourseInviteRole, type CourseMember, type PendingCourseInvite } from "@/services/course";
 import { UnauthorizedError } from "@/services/spots";
@@ -162,10 +163,10 @@ export default function CourseDetailPage() {
   }, [courseId, course?.isOwner]);
 
   return (
-    <div className="min-h-screen bg-muted/20 pb-20 md:pt-16">
+    <div className="min-h-screen bg-muted/20 pb-28 md:pb-16">
       <AppNav />
 
-      <main className="mx-auto max-w-4xl px-4 pt-6 sm:px-6 sm:pt-8">
+      <main className="mx-auto max-w-4xl px-4 pt-6 sm:px-6 sm:pt-8 md:pt-24">
         {/* 상단 브레드크럼 */}
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <Link to="/courses" className="hover:text-foreground">
@@ -246,7 +247,7 @@ export default function CourseDetailPage() {
                 </div>
 
                 {course.isOwner !== false && (
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <button type="button" onClick={() => { setInviteToast(null); setInviteDialogOpen(true); }} className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground transition-colors hover:opacity-90">
                       <UserPlus className="h-3.5 w-3.5" /> <span>친구 초대</span>
                     </button>
@@ -315,92 +316,7 @@ export default function CourseDetailPage() {
               </div>
             </div>
 
-            {/* Day별 일정 리스트 */}
-            <div className="space-y-6">
-              {course.days.map((day) => (
-                <section
-                  key={day.dayNumber}
-                  data-testid={`day-detail-${day.dayNumber}`}
-                  className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm"
-                >
-                  {/* Day 헤더 */}
-                  <div className="flex items-center justify-between border-b border-border bg-muted/30 px-5 py-3.5 sm:px-6">
-                    <div className="flex items-center gap-3">
-                      <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary font-bold text-xs text-primary-foreground">
-                        D{day.dayNumber}
-                      </span>
-                      <h2 className="text-base font-bold text-foreground">
-                        Day {day.dayNumber}
-                      </h2>
-                    </div>
-                    <span className="text-xs text-muted-foreground">
-                      {day.spots.length}개 장소
-                    </span>
-                  </div>
-
-                  {/* Day 스팟 목록 */}
-                  <div className="p-4 sm:p-6">
-                    {day.spots.length === 0 ? (
-                      <div className="rounded-xl border border-dashed border-border py-8 text-center text-xs text-muted-foreground">
-                        아직 계획이 없어요.
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        {day.spots.map((spot, idx) => (
-                          <div
-                            key={spot.spotId}
-                            className="flex flex-col gap-3 rounded-xl border border-border bg-background p-3.5 shadow-sm transition-colors hover:border-primary/40 sm:flex-row sm:items-center sm:gap-4 sm:p-4"
-                          >
-                            <div className="flex items-center gap-3">
-                              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[11px] font-bold text-primary">
-                                {idx + 1}
-                              </span>
-                              <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-muted">
-                                {spot.thumbnail ? (
-                                  <img
-                                    src={spot.thumbnail}
-                                    alt={spot.title}
-                                    className="h-full w-full object-cover"
-                                  />
-                                ) : (
-                                  <div className="flex h-full w-full items-center justify-center text-muted-foreground">
-                                    <MapPin className="h-5 w-5" />
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-2">
-                                <Link
-                                  to={`/spots/${spot.spotId}`}
-                                  className="truncate text-sm font-bold text-foreground hover:text-primary"
-                                >
-                                  {spot.title}
-                                </Link>
-                                <span className="shrink-0 rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-                                  {spot.category}
-                                </span>
-                              </div>
-                              <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                                {spot.address ||
-                                  [spot.region, spot.sigungu].filter(Boolean).join(" ") ||
-                                  "강원특별자치도"}
-                              </p>
-                              {spot.memo && (
-                                <p className="mt-2 rounded-lg bg-muted/50 px-2.5 py-1.5 text-xs text-muted-foreground">
-                                  💬 {spot.memo}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </section>
-              ))}
-            </div>
+            <CourseRouteMap key={course.courseId} days={course.days} startDate={course.startDate} />
 
             {/* 하단 액션 버튼 */}
             <div className="flex justify-end gap-3 pt-4">

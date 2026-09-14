@@ -14,6 +14,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
+import SpotImage from "@/components/ui/spot-image";
 import AiCourseModal from "@/components/ui/ai-course-modal";
 import AppNav from "@/components/ui/app-nav";
 import DateRangeModal from "@/components/ui/date-range-modal";
@@ -799,17 +800,11 @@ export default function CourseCreatePage() {
                               {spotIndex + 1}
                             </span>
                             <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-muted">
-                              {spot.thumbnail ? (
-                                <img
-                                  src={spot.thumbnail}
-                                  alt={spot.title}
-                                  className="h-full w-full object-cover"
-                                />
-                              ) : (
-                                <div className="flex h-full w-full items-center justify-center text-muted-foreground">
-                                  <MapPin className="h-4 w-4" />
-                                </div>
-                              )}
+                              <SpotImage
+                                src={spot.thumbnail}
+                                alt={spot.title}
+                                className="h-full w-full object-cover"
+                              />
                             </div>
                           </div>
 
