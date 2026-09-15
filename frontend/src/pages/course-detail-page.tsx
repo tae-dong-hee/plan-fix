@@ -20,7 +20,22 @@ import {
 import AppNav from "@/components/ui/app-nav";
 import CourseRouteMap from "@/components/ui/course-route-map";
 import { CourseInviteDialog, CourseInviteShareDialog } from "@/components/ui/course-invite-dialog";
-import { CourseResponse, createCourseInvite, deleteCourse, fetchCourse, fetchCourseMembers, fetchPendingCourseInvites, cancelCourseInvite, removeCourseMember, updateCourseMemberRole, type CourseInviteRole, type CourseMember, type PendingCourseInvite } from "@/services/course";
+import {
+  CourseResponse,
+  cancelCourseInvite,
+  createCourseInvite,
+  deleteCourse,
+  fetchCourse,
+  fetchCourseMembers,
+  fetchDayAccommodations,
+  fetchPendingCourseInvites,
+  removeCourseMember,
+  updateCourseMemberRole,
+  type CourseInviteRole,
+  type CourseMember,
+  type DayAccommodation,
+  type PendingCourseInvite,
+} from "@/services/course";
 import { UnauthorizedError } from "@/services/spots";
 
 type InviteToast =
@@ -32,6 +47,7 @@ export default function CourseDetailPage() {
   const navigate = useNavigate();
 
   const [course, setCourse] = useState<CourseResponse | null>(null);
+  const [dayAccommodations, setDayAccommodations] = useState<DayAccommodation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -133,6 +149,13 @@ export default function CourseDetailPage() {
         const res = await fetchCourse(courseId);
         if (!ignore) {
           setCourse(res);
+          if (res?.isOwner) {
+            void fetchDayAccommodations(courseId)
+              .then((values) => {
+                if (!ignore) setDayAccommodations(values);
+              })
+              .catch(() => undefined);
+          }
         }
       } catch (err) {
         if (err instanceof UnauthorizedError) {
@@ -316,7 +339,7 @@ export default function CourseDetailPage() {
               </div>
             </div>
 
-            <CourseRouteMap key={course.courseId} days={course.days} startDate={course.startDate} />
+            <CourseRouteMap key={course.courseId} days={course.days} startDate={course.startDate} accommodations={dayAccommodations} />
 
             {/* 하단 액션 버튼 */}
             <div className="flex justify-end gap-3 pt-4">
