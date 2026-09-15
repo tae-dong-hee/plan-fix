@@ -64,6 +64,11 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/spots", "/api/v1/spots/*").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/boards", "/api/v1/boards/*").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/courses/*").permitAll()
+                        // 공개 코스의 지도도 도로 경로를 표시할 수 있도록 허용한다. 키는 서버에만 보관한다.
+                        .requestMatchers(HttpMethod.POST, "/api/v1/routes/driving").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/locations/geocode").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/locations/search").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/locations/address-suggestions").permitAll()
                         // 카카오톡 초대 링크를 연 비회원도 코스 제목·초대 권한을 확인할 수 있다.
                         // 실제 참여(POST /accept)는 인증이 필요하다.
                         .requestMatchers(HttpMethod.GET, "/api/v1/course-invites/*").permitAll()

@@ -6,6 +6,7 @@ import { chooseInitialMapZoom } from "@/lib/map-initial-zoom";
 import { layoutMapLabels, type MapLabelAnchor } from "@/lib/map-label-layout";
 import { separateMapMarkers } from "@/lib/map-marker-layout";
 import { MISSING_SPOT_LOCATION } from "@/lib/spot-display";
+import { fetchDrivingRoute, type DrivingRoutePoint } from "@/services/course";
 
 /** 지도에 찍을 장소. 표시할 수 없는 좌표는 원본 목록을 유지한 채 지도에서만 제외한다. */
 export type KakaoMapSpot = {
@@ -19,8 +20,10 @@ export type KakaoMapSpot = {
 
 type KakaoMapProps = {
   spots: KakaoMapSpot[];
-  /** 지점 사이를 방문 순서대로 직선으로 연결한다. */
+  /** 지점 사이를 방문 순서대로 자동차 도로 경로로 연결한다. */
   showRoute?: boolean;
+  /** 마지막 방문지에서 첫 지점(예: 숙소)으로 돌아오는 경로를 포함한다. */
+  returnToStart?: boolean;
   onSpotClick?: (spot: KakaoMapSpot) => void;
   /** 목록에서 마우스를 올린 장소를 강조한다. */
   highlightedSpotId?: number | null;
@@ -108,6 +111,7 @@ type MarkerEntry = {
 export default function KakaoMap({
   spots,
   showRoute = true,
+  returnToStart = false,
   onSpotClick,
   highlightedSpotId,
   focusedSpotId,
@@ -122,6 +126,7 @@ export default function KakaoMap({
   const fitViewportRef = useRef<(() => void) | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "no-key" | "error" | "empty">("loading");
   const [retryCount, setRetryCount] = useState(0);
+  const [roadPaths, setRoadPaths] = useState<DrivingRoutePoint[][] | null>(null);
   const onSpotClickRef = useRef(onSpotClick);
   onSpotClickRef.current = onSpotClick;
   const focusedSpotIdRef = useRef(focusedSpotId);
@@ -137,6 +142,24 @@ export default function KakaoMap({
     spot.spotId, spot.title, spot.latitude, spot.longitude, markerNumber,
   ]));
   const interactive = Boolean(onSpotClick);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!showRoute || plottable.length < 2) {
+      setRoadPaths(null);
+      return;
+    }
+    setRoadPaths(null);
+    const points = plottable.map(({ spot }) => ({ latitude: spot.latitude!, longitude: spot.longitude! }));
+    if (returnToStart && points.length > 1) points.push(points[0]);
+    void fetchDrivingRoute(points)
+      .then((route) => {
+        if (!cancelled && route) setRoadPaths(route.paths);
+      });
+    return () => { cancelled = true; };
+  }, [positionsKey, showRoute, returnToStart]); // 좌표·방문 순서가 바뀔 때만 다시 조회한다.
+
+  const roadPathsKey = JSON.stringify(roadPaths);
 
   useEffect(() => {
     if (!hasPlottable) {
@@ -267,8 +290,10 @@ export default function KakaoMap({
       const primary = containerRef.current
         ? getComputedStyle(containerRef.current).getPropertyValue("--primary").trim()
         : "";
+      const fallbackPath = returnToStart ? [...positions, positions[0]] : positions;
+      const routePath = roadPaths?.flatMap((path) => path.map((point) => new kakao.maps.LatLng(point.latitude, point.longitude))) ?? fallbackPath;
       const polyline = new kakao.maps.Polyline({
-        path: positions,
+        path: routePath,
         strokeWeight: 3,
         strokeColor: primary ? `hsl(${primary})` : "#7B4AED",
         strokeOpacity: 0.75,
@@ -308,7 +333,7 @@ export default function KakaoMap({
       overlays.forEach((overlay) => overlay.setMap(null));
       markersRef.current = [];
     };
-  }, [status, positionsKey, showRoute, interactive]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [status, positionsKey, roadPathsKey, showRoute, returnToStart, interactive]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     markersRef.current.forEach(({ element, overlay, spotId }) => {

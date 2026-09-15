@@ -252,6 +252,112 @@ export async function fetchCourse(courseId: number | string): Promise<CourseResp
 
 export type UpdateCoursePayload = CreateCoursePayload;
 
+export type CourseAccommodation = {
+  name: string;
+  address?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  memo?: string | null;
+};
+
+export async function geocodeAccommodationAddress(
+  address: string,
+): Promise<{ address: string; latitude: number; longitude: number } | null> {
+  const base = getApiBaseUrl();
+  if (!base || !address.trim()) return null;
+  const response = await fetch(`${base}/locations/geocode`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ address }),
+  });
+  if (!response.ok) return null;
+  return await response.json();
+}
+
+export type AccommodationSearchResult = {
+  type: "ADDRESS" | "PLACE";
+  name: string;
+  address: string;
+  latitude: number;
+  longitude: number;
+};
+
+export async function searchAccommodation(query: string): Promise<AccommodationSearchResult[]> {
+  const base = getApiBaseUrl();
+  if (!base || query.trim().length < 2) return [];
+  try {
+    const response = await fetch(`${base}/locations/search`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ address: query }),
+    });
+    return response.ok ? await response.json() as AccommodationSearchResult[] : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function searchAddressSuggestions(query: string): Promise<AccommodationSearchResult[]> {
+  const base = getApiBaseUrl();
+  if (!base || query.trim().length < 2) return [];
+  try {
+    const response = await fetch(`${base}/locations/address-suggestions`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ address: query }),
+    });
+    return response.ok ? await response.json() as AccommodationSearchResult[] : [];
+  } catch {
+    return [];
+  }
+}
+
+export type DayAccommodation = CourseAccommodation & { dayNumber: number };
+
+export async function fetchDayAccommodations(courseId: number | string): Promise<DayAccommodation[]> {
+  const base = getApiBaseUrl();
+  if (!base) return [];
+  const response = await fetch(`${base}/courses/${courseId}/day-accommodations`, {
+    credentials: "include",
+  });
+  return response.ok ? await response.json() as DayAccommodation[] : [];
+}
+
+export async function saveDayAccommodations(courseId: number | string, values: DayAccommodation[]): Promise<void> {
+  const base = getApiBaseUrl();
+  if (!base) throw new UnauthorizedError();
+  const response = await fetch(`${base}/courses/${courseId}/day-accommodations`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(values),
+  });
+  if (!response.ok) throw new Error("날짜별 숙소를 저장하지 못했습니다.");
+}
+
+export type DrivingRoutePoint = { latitude: number; longitude: number };
+export type DrivingRoute = { paths: DrivingRoutePoint[][] };
+
+/** 서버가 카카오 자동차 길찾기로 계산한 실제 도로 좌표를 가져온다. */
+export async function fetchDrivingRoute(points: DrivingRoutePoint[]): Promise<DrivingRoute | null> {
+  const apiBaseUrl = getApiBaseUrl();
+  if (points.length < 2 || !apiBaseUrl) return null;
+  try {
+    const response = await fetch(`${apiBaseUrl}/routes/driving`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ points }),
+    });
+    if (!response.ok) return null;
+    const route = await response.json() as DrivingRoute;
+    return Array.isArray(route.paths) && route.paths.every((path) => Array.isArray(path) && path.length >= 2)
+      ? route : null;
+  } catch {
+    return null;
+  }
+}
+
 /** 코스 수정 API 호출 */
 export async function updateCourse(
   courseId: number | string,

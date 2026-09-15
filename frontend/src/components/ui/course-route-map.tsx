@@ -6,11 +6,12 @@ import KakaoMap from "@/components/ui/kakao-map";
 import SpotImage from "@/components/ui/spot-image";
 import { hasMapCoordinates } from "@/lib/map-coordinates";
 import { MISSING_SPOT_ADDRESS } from "@/lib/spot-display";
-import type { CourseDay, CourseSpotSummary } from "@/services/course";
+import type { CourseDay, CourseSpotSummary, DayAccommodation } from "@/services/course";
 
 type CourseRouteMapProps = {
   days: CourseDay[];
   startDate?: string | null;
+  accommodations?: DayAccommodation[];
 };
 
 function dayDate(startDate: string | null | undefined, dayNumber: number): string | null {
@@ -19,6 +20,12 @@ function dayDate(startDate: string | null | undefined, dayNumber: number): strin
   if (Number.isNaN(date.getTime())) return null;
   date.setDate(date.getDate() + dayNumber - 1);
   return new Intl.DateTimeFormat("ko-KR", { month: "numeric", day: "numeric", weekday: "short" }).format(date);
+}
+
+function hasAccommodationCoordinates(
+  accommodation: DayAccommodation | undefined,
+): accommodation is DayAccommodation & { latitude: number; longitude: number } {
+  return accommodation?.latitude != null && accommodation.longitude != null;
 }
 
 function SpotPhoto({ spot, className, descriptive = false }: { spot: CourseSpotSummary; className: string; descriptive?: boolean }) {
@@ -30,7 +37,7 @@ function SpotPhoto({ spot, className, descriptive = false }: { spot: CourseSpotS
 }
 
 /** 코스 상세 응답만으로 선택한 일차의 지도와 장소 목록을 함께 표시한다. */
-export default function CourseRouteMap({ days, startDate }: CourseRouteMapProps) {
+export default function CourseRouteMap({ days, startDate, accommodations = [] }: CourseRouteMapProps) {
   const id = useId();
   const tabsRef = useRef<Array<HTMLButtonElement | null>>([]);
   const orderedDays = [...days].sort((a, b) => a.dayNumber - b.dayNumber);
@@ -45,7 +52,37 @@ export default function CourseRouteMap({ days, startDate }: CourseRouteMapProps)
   const selectedSpot = spots.find((spot) => spot.spotId === selectedSpotId)
     ?? spots.find(hasMapCoordinates) ?? spots[0];
   const dateLabel = day ? dayDate(startDate, day.dayNumber) : null;
-  const mapSpots = spots.map((spot) => ({ ...spot, markerNumber: spot.sequence + 1 }));
+  const accommodation = accommodations.find((item) => item.dayNumber === day?.dayNumber);
+  const previousAccommodation = accommodations.find(
+    (item) => item.dayNumber === (day?.dayNumber ?? 1) - 1,
+  );
+  const startAccommodation = day?.dayNumber === 1 ? accommodation : previousAccommodation;
+  const hasAccommodationLocation = hasAccommodationCoordinates(accommodation);
+  const hasStartAccommodationLocation = hasAccommodationCoordinates(startAccommodation);
+  const sameAccommodation = hasStartAccommodationLocation
+    && hasAccommodationLocation
+    && startAccommodation.latitude === accommodation.latitude
+    && startAccommodation.longitude === accommodation.longitude;
+  const mapSpots = [
+    ...(hasStartAccommodationLocation ? [{
+      spotId: -(day?.dayNumber ?? 1) * 2,
+      title: `출발 숙소 · ${startAccommodation.name}`,
+      latitude: startAccommodation.latitude,
+      longitude: startAccommodation.longitude,
+      markerNumber: 1,
+    }] : []),
+    ...spots.map((spot) => ({
+      ...spot,
+      markerNumber: spot.sequence + (hasStartAccommodationLocation ? 2 : 1),
+    })),
+    ...(!sameAccommodation && hasAccommodationLocation ? [{
+      spotId: -(day?.dayNumber ?? 1) * 2 - 1,
+      title: `도착 숙소 · ${accommodation.name}`,
+      latitude: accommodation.latitude,
+      longitude: accommodation.longitude,
+      markerNumber: spots.length + (hasStartAccommodationLocation ? 2 : 1),
+    }] : []),
+  ];
   const highlightedSpotId = hoveredSpotId ?? selectedSpot?.spotId ?? null;
   const directionsUrl = selectedSpot && hasMapCoordinates(selectedSpot)
     ? `https://map.kakao.com/link/to/${encodeURIComponent(selectedSpot.title || "여행 장소")},${selectedSpot.latitude},${selectedSpot.longitude}`
@@ -136,11 +173,13 @@ export default function CourseRouteMap({ days, startDate }: CourseRouteMapProps)
             focusRequestId={focusRequestId}
             onSpotClick={(spot) => selectSpot(spot.spotId)}
             mapClassName="h-96 sm:h-[34rem]"
+            returnToStart={sameAccommodation}
           />
           <div className="flex flex-wrap items-center justify-between gap-2 px-1 py-3 text-[11px] text-muted-foreground">
             <span className="inline-flex items-center gap-2"><span className="w-5 border-t-2 border-dashed border-primary/70" aria-hidden="true" />점선은 장소의 방문 순서를 보여줘요.</span>
             <span>장소를 선택하면 자세히 볼 수 있어요.</span>
           </div>
+          {accommodation && <div className="mb-4 rounded-xl border border-primary/15 bg-primary/[0.04] px-4 py-3"><p className="text-xs font-bold text-primary">🏠 Day {day.dayNumber} 도착 숙소</p><p className="mt-1 text-sm font-semibold">{accommodation.name}</p><p className="text-xs text-muted-foreground">{accommodation.address}</p>{previousAccommodation && <p className="mt-1 text-[11px] text-muted-foreground">{previousAccommodation.name}에서 출발해 이 숙소로 이동합니다.</p>}</div>}
 
           {selectedSpot && (
             <div role="region" aria-label="선택한 장소" className="rounded-2xl border border-primary/20 bg-primary/[0.04] p-4 sm:p-5">

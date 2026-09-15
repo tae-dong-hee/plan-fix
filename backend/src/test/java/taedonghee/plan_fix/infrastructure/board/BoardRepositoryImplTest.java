@@ -32,6 +32,9 @@ class BoardRepositoryImplTest {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private CommentJpaRepository commentJpaRepository;
+
     private Long userId;
 
     @BeforeEach
@@ -144,6 +147,33 @@ class BoardRepositoryImplTest {
         assertThat(found.images()).hasSize(2);
         assertThat(found.images().get(0).imageUrl()).isEqualTo("https://example.com/1.jpg");
         assertThat(found.images().get(1).imageUrl()).isEqualTo("https://example.com/2.jpg");
+    }
+
+    @Test
+    void searchActive는_활성_댓글의_실제_개수를_반환한다() {
+        BoardModel saved = saveBoard(BoardStatus.ACTIVE, 0, 0, List.of());
+        saveComment(saved.boardId(), "ACTIVE");
+        saveComment(saved.boardId(), "ACTIVE");
+        saveComment(saved.boardId(), "DELETED");
+
+        BoardModel found = boardRepository.searchActive(BoardSortType.LATEST, 0, 100).stream()
+                .filter(board -> board.boardId().equals(saved.boardId()))
+                .findFirst()
+                .orElseThrow();
+
+        assertThat(found.commentCount()).isEqualTo(2);
+    }
+
+    private void saveComment(Long boardId, String status) {
+        OffsetDateTime now = OffsetDateTime.now();
+        commentJpaRepository.save(CommentJpaEntity.builder()
+                .userId(userId)
+                .boardId(boardId)
+                .content("테스트 댓글")
+                .status(status)
+                .createdAt(now)
+                .updatedAt(now)
+                .build());
     }
 
     private BoardModel saveBoard(BoardStatus status, long likeCount, long viewCount, List<BoardImageModel> images) {
