@@ -2,6 +2,7 @@ package taedonghee.plan_fix.support.error;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
@@ -37,6 +38,14 @@ public class GlobalExceptionHandler {
 		ErrorType errorType = ErrorType.NOT_FOUND;
 		return ResponseEntity.status(errorType.getStatus())
 			.body(ErrorResponse.of(errorType, "요청한 리소스를 찾을 수 없습니다."));
+	}
+
+	/** 잘못된 enum을 포함한 요청 JSON은 입력 오류로 응답한다. */
+	@ExceptionHandler(HttpMessageNotReadableException.class)
+	public ResponseEntity<ErrorResponse> handleUnreadableRequest(HttpMessageNotReadableException e) {
+		ErrorType errorType = ErrorType.BAD_REQUEST;
+		return ResponseEntity.status(errorType.getStatus())
+			.body(ErrorResponse.of(errorType, "요청 값의 형식 또는 선택 항목이 올바르지 않습니다."));
 	}
 
 	/**

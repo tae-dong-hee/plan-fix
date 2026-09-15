@@ -4,9 +4,14 @@ import { MemoryRouter, Route, Routes } from "react-router-dom";
 import CourseCreatePage from "./course-create-page";
 import * as courseService from "@/services/course";
 import * as spotService from "@/services/spots";
+import { fetchAiCourseDraft } from "@/services/ai-course";
 
 vi.mock("@/services/course");
 vi.mock("@/services/spots");
+vi.mock("@/services/ai-course", async () => ({
+  ...await vi.importActual<typeof import("@/services/ai-course")>("@/services/ai-course"),
+  fetchAiCourseDraft: vi.fn(),
+}));
 
 const mockNavigate = vi.fn();
 vi.mock("react-router-dom", async () => {
@@ -123,6 +128,8 @@ describe("CourseCreatePage", () => {
         expect.objectContaining({
           title: "강릉 바다 여행",
           thumbnail: null,
+          generatedBy: "MANUAL",
+          themes: [],
           days: expect.arrayContaining([
             expect.objectContaining({
               dayNumber: 1,
@@ -212,12 +219,17 @@ describe("CourseCreatePage", () => {
     });
   });
 
-  it("기존 코스 제목을 수정해도 저장된 대표사진을 updateCourse 요청에 보존한다", async () => {
+  it.each([
+    { generatedBy: "LLM", themes: ["HEALING"] },
+    { generatedBy: null, themes: undefined },
+  ])("기존 코스 제목을 수정해도 대표사진과 생성 정보($generatedBy)를 보존한다", async ({ generatedBy, themes }) => {
     (courseService.fetchCourse as Mock).mockResolvedValue({
       courseId: 99,
       userId: 1,
       title: "원래 코스 제목",
       description: "원래 코스 설명",
+      generatedBy,
+      themes,
       thumbnail: "https://example.com/existing-course-cover.jpg",
       startDate: "2026-09-10",
       endDate: "2026-09-11",
@@ -280,6 +292,8 @@ describe("CourseCreatePage", () => {
         expect.objectContaining({
           title: "수정된 코스 제목",
           thumbnail: "https://example.com/existing-course-cover.jpg",
+          generatedBy,
+          themes,
           days: expect.arrayContaining([
             expect.objectContaining({
               dayNumber: 1,
@@ -327,6 +341,42 @@ describe("CourseCreatePage", () => {
       );
       expect(mockNavigate).toHaveBeenCalledWith("/courses/456", { replace: true });
     });
+  });
+
+  it.each(["LLM", "RULE_BASED"] as const)("%s 초안의 생성 방식과 선택 테마를 임시저장 복원 후에도 코스에 저장한다", async (generatedBy) => {
+    vi.mocked(fetchAiCourseDraft).mockImplementation(async (request) => ({
+      title: "취향을 담은 여행",
+      startDate: request.startDate,
+      endDate: request.endDate,
+      generatedBy,
+      days: [
+        { dayNumber: 1, spots: [{
+          spotId: 101, title: "경포해변", category: "관광지", region: "51", sigungu: "150",
+          address: null, thumbnail: null, latitude: null, longitude: null, reason: "바다를 즐길 수 있어요.",
+        }] },
+        { dayNumber: 2, spots: [] },
+        { dayNumber: 3, spots: [] },
+      ],
+    }));
+    vi.mocked(courseService.createCourse).mockResolvedValue({ courseId: 123 } as courseService.CourseResponse);
+    const page = renderPage();
+    fireEvent.click(screen.getByRole("button", { name: "AI에게 맡기기" }));
+    fireEvent.click(screen.getByRole("button", { name: "힐링·자연" }));
+    fireEvent.click(screen.getByRole("button", { name: "카페 투어" }));
+    fireEvent.click(screen.getByRole("button", { name: "AI로 코스 만들기" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(JSON.parse(sessionStorage.getItem("planfix:course-draft")!)).toEqual(expect.objectContaining({
+      generatedBy, themes: ["HEALING", "CAFE"],
+    }));
+
+    page.unmount();
+    renderPage();
+    expect(screen.getByText(generatedBy === "LLM" ? "AI로 만든 코스" : "맞춤 추천 코스")).toBeInTheDocument();
+    expect(screen.getByText("카페 투어")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "코스 저장하기" }));
+    await waitFor(() => expect(courseService.createCourse).toHaveBeenCalledWith(expect.objectContaining({
+      generatedBy, themes: ["HEALING", "CAFE"],
+    })));
   });
 
   it("URL에 mode=ai가 있는 경우 자동으로 AI 코스 모달이 열린다", async () => {

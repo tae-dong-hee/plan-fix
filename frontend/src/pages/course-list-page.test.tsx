@@ -73,18 +73,40 @@ describe("CourseListPage", () => {
     });
   });
 
-  it("코스 카드에서 수정 버튼을 누르면 편집 페이지로 이동한다", async () => {
+  it("코스 카드는 상세 링크를 제공하고 수정·삭제 버튼은 표시하지 않는다", async () => {
     (courseService.fetchMyCourses as Mock).mockResolvedValue(mockCourses);
 
     renderComponent();
 
-    await waitFor(() => {
-      expect(screen.getByRole("button", { name: "코스 수정" })).toBeInTheDocument();
-    });
+    expect(await screen.findByRole("link", { name: "속초 1박 2일 맛집 코스 코스 상세 보기" })).toHaveAttribute("href", "/courses/1");
+    expect(screen.queryByRole("button", { name: "코스 수정" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "코스 삭제" })).not.toBeInTheDocument();
+  });
 
-    fireEvent.click(screen.getByRole("button", { name: "코스 수정" }));
+  it("저장한 AI 코스의 출처와 선택 테마를 카드 링크 안에서 보여준다", async () => {
+    vi.mocked(courseService.fetchMyCourses).mockResolvedValue([{
+      ...mockCourses[0], generatedBy: "LLM", themes: ["HEALING", "CAFE"],
+    }]);
 
-    expect(mockNavigate).toHaveBeenCalledWith("/courses/1/edit");
+    renderComponent();
+
+    const cardLink = await screen.findByRole("link", { name: "속초 1박 2일 맛집 코스 코스 상세 보기" });
+    expect(cardLink).toHaveAttribute("href", "/courses/1");
+    expect(cardLink).toHaveTextContent("AI 생성");
+    expect(cardLink).toHaveTextContent("힐링·자연");
+    expect(cardLink).toHaveTextContent("카페 투어");
+  });
+
+  it("생성 정보가 없는 기존 코스는 제목에 AI가 있어도 출처와 테마를 추측하지 않는다", async () => {
+    vi.mocked(courseService.fetchMyCourses).mockResolvedValue([{
+      ...mockCourses[0], title: "속초 힐링자연 AI",
+    }]);
+
+    renderComponent();
+
+    await screen.findByRole("heading", { name: "속초 힐링자연 AI" });
+    expect(screen.queryByText("AI 생성")).not.toBeInTheDocument();
+    expect(screen.queryByText("힐링·자연")).not.toBeInTheDocument();
   });
 
   it("대표 사진이 실패하면 장소 사진을 사용하고 모두 실패해도 코스 정보를 유지한다", async () => {
@@ -113,26 +135,4 @@ describe("CourseListPage", () => {
     expect(screen.getByText("1개 장소")).toBeInTheDocument();
   });
 
-  it("코스 카드에서 삭제 버튼을 누르면 확인 후 deleteCourse를 호출하고 목록에서 제거한다", async () => {
-    (courseService.fetchMyCourses as Mock).mockResolvedValue(mockCourses);
-    (courseService.deleteCourse as Mock).mockResolvedValue({
-      ...mockCourses[0],
-      status: "DELETED",
-    });
-    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
-
-    renderComponent();
-
-    await waitFor(() => {
-      expect(screen.getByRole("button", { name: "코스 삭제" })).toBeInTheDocument();
-    });
-
-    fireEvent.click(screen.getByRole("button", { name: "코스 삭제" }));
-
-    expect(confirmSpy).toHaveBeenCalledWith("정말 이 코스를 삭제하시겠습니까?");
-    await waitFor(() => {
-      expect(courseService.deleteCourse).toHaveBeenCalledWith(1);
-      expect(screen.queryByText("속초 1박 2일 맛집 코스")).not.toBeInTheDocument();
-    });
-  });
 });
