@@ -1,4 +1,7 @@
 import { UnauthorizedError } from "./spots";
+import type { AiCourseTheme } from "./ai-course";
+
+export type CourseGenerationSource = "LLM" | "RULE_BASED" | "MANUAL";
 
 export type CourseSpotSummary = {
   spotId: number;
@@ -35,6 +38,8 @@ export type CourseResponse = {
   createdAt: string;
   updatedAt: string;
   isOwner?: boolean;
+  generatedBy?: CourseGenerationSource | null;
+  themes?: AiCourseTheme[];
 };
 
 export type CourseInviteRole = "VIEWER" | "EDITOR";
@@ -122,6 +127,8 @@ export type PublicCourseItem = {
   startDate: string | null;
   endDate: string | null;
   createdAt: string;
+  generatedBy?: CourseGenerationSource | null;
+  themes?: AiCourseTheme[];
 };
 
 export type PublicCourseList = {
@@ -144,6 +151,8 @@ export type CreateCoursePayload = {
   startDate?: string | null;
   endDate?: string | null;
   days: CreateCourseDayInput[];
+  generatedBy?: CourseGenerationSource | null;
+  themes?: AiCourseTheme[];
 };
 
 function getApiBaseUrl(): string | undefined {

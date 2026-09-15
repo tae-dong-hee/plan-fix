@@ -2,6 +2,9 @@ package taedonghee.plan_fix.interfaces.api.course;
 
 import taedonghee.plan_fix.application.course.CourseListResult;
 
+import taedonghee.plan_fix.domain.course.CourseGenerationSource;
+import taedonghee.plan_fix.domain.course.CourseTravelTheme;
+
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -26,12 +29,14 @@ public record CourseListResponse(List<Item> items, int offset, int size, long to
             int spotCount,
             LocalDate startDate,
             LocalDate endDate,
-            OffsetDateTime createdAt
+            OffsetDateTime createdAt,
+            CourseGenerationSource generatedBy,
+            List<CourseTravelTheme> themes
     ) {
         public static Item from(CourseListResult.Item item) {
             return new Item(item.courseId(), item.userId(), item.title(), item.description(), item.thumbnail(),
                     item.viewCount(), item.likeCount(), item.dayCount(), item.spotCount(), item.startDate(),
-                    item.endDate(), item.createdAt());
+                    item.endDate(), item.createdAt(), item.generatedBy(), item.themes());
         }
     }
 }

@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  ArrowRight, CalendarDays, Check, ChevronDown, Heart,
+  ArrowRight, CalendarDays, Check, ChevronDown, Coffee, Heart, Landmark,
   Loader2, MapPin, Mountain, Plus, Route, Search, SlidersHorizontal,
-  Sparkles, Trees, UserRound, UsersRound, Waves, X,
+  Sparkles, Trees, UserRound, UsersRound, Utensils, X,
 } from "lucide-react";
 
 import { sigunguCodeByRegion, type GangwonRegion } from "@/components/ui/gangwon-region-map";
@@ -23,24 +23,18 @@ const COMPANION_OPTIONS = [
   { value: "FRIENDS", label: "친구", summary: "친구와 함께", icon: UsersRound },
   { value: "FAMILY", label: "가족(아이 동반)", summary: "아이와 가족이 함께", icon: UsersRound },
 ] satisfies { value: AiCourseCompanion; label: string; summary: string; icon: typeof Heart }[];
-const THEME_OPTIONS: { value: AiCourseTheme; label: string }[] = [
-  { value: "HEALING", label: "힐링·자연" },
-  { value: "FOOD", label: "맛집 탐방" },
-  { value: "CAFE", label: "카페 투어" },
-  { value: "ACTIVITY", label: "액티비티" },
-  { value: "CULTURE", label: "문화·역사" },
-];
-const TRIP_IDEAS: {
-  region: GangwonRegion;
-  title: string;
+const THEME_OPTIONS: {
+  value: AiCourseTheme;
+  label: string;
   description: string;
-  themes: AiCourseTheme[];
-  icon: typeof Waves;
+  icon: typeof Trees;
   scene: string;
 }[] = [
-  { region: "강릉", title: "바다와 카페", description: "파도 소리, 커피 한 잔", themes: ["HEALING", "CAFE"], icon: Waves, scene: "coast" },
-  { region: "속초", title: "맛집과 산책", description: "맛있게 먹고, 가볍게 걷기", themes: ["HEALING", "FOOD"], icon: Mountain, scene: "sunset" },
-  { region: "춘천", title: "자연 속 쉼", description: "초록빛으로 채우는 하루", themes: ["HEALING"], icon: Trees, scene: "forest" },
+  { value: "HEALING", label: "힐링·자연", description: "가볍게 쉬어가기", icon: Trees, scene: "forest" },
+  { value: "FOOD", label: "맛집 탐방", description: "맛있는 한 끼", icon: Utensils, scene: "sunset" },
+  { value: "CAFE", label: "카페 투어", description: "커피와 여유", icon: Coffee, scene: "cafe" },
+  { value: "ACTIVITY", label: "액티비티", description: "활기찬 하루", icon: Mountain, scene: "coast" },
+  { value: "CULTURE", label: "문화·역사", description: "이야기가 있는 곳", icon: Landmark, scene: "culture" },
 ];
 
 type AiCourseModalProps = {
@@ -48,7 +42,7 @@ type AiCourseModalProps = {
   startDate: string;
   endDate: string;
   onClose: () => void;
-  onApply: (draft: AiCourseDraft) => void;
+  onApply: (draft: AiCourseDraft, themes: AiCourseTheme[]) => void;
 };
 
 function describeDuration(startDate: string, endDate: string) {
@@ -72,6 +66,7 @@ export default function AiCourseModal({ open, startDate, endDate, onClose, onApp
   const dialogRef = useRef<HTMLElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const anchorInputRef = useRef<HTMLInputElement>(null);
+  const themeButtonRefs = useRef<Partial<Record<AiCourseTheme, HTMLButtonElement | null>>>({});
   const callbacksRef = useRef({ onClose, onApply });
   const requestVersion = useRef(0);
   const requestPending = useRef(false);
@@ -176,9 +171,15 @@ export default function AiCourseModal({ open, startDate, endDate, onClose, onApp
   if (!open) return null;
 
   const companionSummary = COMPANION_OPTIONS.find((option) => option.value === companion)?.summary;
-  const selectedThemeLabels = THEME_OPTIONS.filter((option) => themes.includes(option.value)).map((option) => option.label);
+  const selectedThemeOptions = THEME_OPTIONS.filter((option) => themes.includes(option.value));
+  const selectedThemeLabels = selectedThemeOptions.map((option) => option.label);
   const duration = describeDuration(startDate, endDate);
   const preferenceSummary = selectedThemeLabels.length ? selectedThemeLabels.join(" · ") : "취향은 AI 추천으로";
+
+  const removeTheme = (value: AiCourseTheme) => {
+    setThemes((prev) => prev.filter((theme) => theme !== value));
+    themeButtonRefs.current[value]?.focus();
+  };
 
   const addAnchor = (spot: PopularSpot) => {
     setAnchors((prev) => prev.some((anchor) => anchor.spotId === spot.spotId) ? prev : [...prev, spot]);
@@ -202,7 +203,7 @@ export default function AiCourseModal({ open, startDate, endDate, onClose, onApp
         companion,
         anchorSpotIds: anchors.map((anchor) => anchor.spotId),
       });
-      if (version === requestVersion.current) callbacksRef.current.onApply(draft);
+      if (version === requestVersion.current) callbacksRef.current.onApply(draft, [...themes]);
     } catch (err) {
       if (version !== requestVersion.current) return;
       setError(err instanceof UnauthorizedError
@@ -312,26 +313,37 @@ export default function AiCourseModal({ open, startDate, endDate, onClose, onApp
                 </div>
               </section>
 
-              <section className="mt-6" aria-labelledby="ai-course-ideas-title">
-                <div className="mb-3 flex items-center justify-between gap-2">
-                  <h3 id="ai-course-ideas-title" className="shrink-0 text-sm font-semibold">이런 여행은 어때요?</h3>
-                  <span className="hidden text-[11px] text-muted-foreground min-[400px]:block">마음에 드는 여행으로 가볍게 시작</span>
+              <section className="mt-6" aria-labelledby="ai-course-themes-title" aria-describedby="ai-course-themes-description">
+                <div className="mb-3">
+                  <h3 id="ai-course-themes-title" className="text-sm font-semibold">어떤 여행을 하고 싶으세요?</h3>
+                  <p id="ai-course-themes-description" className="mt-1 text-xs leading-5 text-muted-foreground">좋아하는 테마를 골라주세요. 여러 개 선택할 수 있어요.</p>
                 </div>
-                <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
-                  {TRIP_IDEAS.map((idea) => {
-                    const selected = region === idea.region && themes.length === idea.themes.length && idea.themes.every((theme) => themes.includes(theme));
-                    const Icon = idea.icon;
+                <div role="group" aria-labelledby="ai-course-selected-themes" className="mb-3 rounded-xl border border-primary/15 bg-primary/[0.045] p-3">
+                  <div className="flex items-center gap-2 text-xs font-semibold">
+                    <span id="ai-course-selected-themes">선택한 테마</span>
+                    <span className="text-primary">{selectedThemeOptions.length}개</span>
+                  </div>
+                  <div className="mt-2 flex min-h-8 flex-wrap items-center gap-2">
+                    {selectedThemeOptions.length ? selectedThemeOptions.map(({ value, label }) => (
+                      <button key={value} type="button" aria-label={`${label} 선택 해제`} onClick={() => removeTheme(value)} className="ai-course-control inline-flex min-h-8 items-center gap-1.5 rounded-full border border-primary/20 bg-background px-3 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/10">
+                        {label}<X className="h-3 w-3 shrink-0" aria-hidden="true" />
+                      </button>
+                    )) : <p className="text-xs text-muted-foreground">아직 선택한 테마가 없어요.</p>}
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-5">
+                  {THEME_OPTIONS.map(({ value, label, description, icon: Icon, scene }) => {
+                    const selected = themes.includes(value);
                     return (
-                      <button key={idea.region} type="button" aria-label={`${idea.region} ${idea.title}`} aria-pressed={selected} onClick={() => { setRegion(idea.region); setThemes([...idea.themes]); }} className={`ai-course-control group overflow-hidden rounded-2xl border text-left transition duration-200 motion-reduce:transition-none ${selected ? "border-primary bg-primary/[0.035] shadow-[0_0_0_1px_hsl(var(--primary))]" : "border-border/80 bg-background hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md motion-reduce:hover:translate-y-0"}`}>
-                        <div className={`ai-course-scene ai-course-scene-${idea.scene}`} aria-hidden="true">
+                      <button key={value} ref={(element) => { themeButtonRefs.current[value] = element; }} type="button" aria-label={label} aria-pressed={selected} onClick={() => setThemes((prev) => prev.includes(value) ? prev.filter((theme) => theme !== value) : [...prev, value])} className={`ai-course-control group min-w-0 overflow-hidden rounded-2xl border text-center transition duration-200 motion-reduce:transition-none ${selected ? "border-primary bg-primary/[0.035] shadow-[0_0_0_1px_hsl(var(--primary))]" : "border-border/80 bg-background hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md motion-reduce:hover:translate-y-0"}`}>
+                        <div className={`ai-course-scene ai-course-scene-${scene}`} aria-hidden="true">
                           <span className="ai-course-scene-sun" /><span className="ai-course-scene-land" />
                           <Icon className="relative z-10 h-7 w-7" strokeWidth={1.5} />
                           {selected && <span className="absolute right-2 top-2 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-white"><Check className="h-3 w-3" /></span>}
-                          <span className="absolute bottom-2 left-2.5 z-10 text-[10px] font-semibold tracking-wide sm:left-3">{idea.region}</span>
                         </div>
-                        <div className="px-2.5 py-3 sm:px-3">
-                          <p className="text-xs font-bold sm:text-sm">{idea.title}</p>
-                          <p className="mt-1 hidden text-[10px] leading-4 text-muted-foreground min-[400px]:block sm:text-[11px]">{idea.description}</p>
+                        <div className="px-2 py-3">
+                          <p className="text-xs font-bold">{label}</p>
+                          <p className="mt-1 hidden text-[10px] leading-4 text-muted-foreground min-[400px]:block">{description}</p>
                         </div>
                       </button>
                     );
@@ -354,16 +366,6 @@ export default function AiCourseModal({ open, startDate, endDate, onClose, onApp
                         {COMPANION_OPTIONS.map(({ value, label, icon: Icon }) => (
                           <button key={value} type="button" aria-pressed={companion === value} onClick={() => setCompanion(value)} className={`ai-course-control flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs transition-colors ${companion === value ? "border-primary/35 bg-primary/[0.08] font-semibold text-primary" : "border-border text-muted-foreground hover:bg-muted"}`}>
                             <Icon className="h-3.5 w-3.5" aria-hidden="true" />{label}
-                          </button>
-                        ))}
-                      </div>
-                    </fieldset>
-                    <fieldset>
-                      <legend className="text-xs font-semibold">어떤 순간을 담을까요? <span className="ml-1 font-normal text-muted-foreground">여러 개 선택할 수 있어요</span></legend>
-                      <div className="mt-2.5 flex flex-wrap gap-2">
-                        {THEME_OPTIONS.map(({ value, label }) => (
-                          <button key={value} type="button" aria-pressed={themes.includes(value)} onClick={() => setThemes((prev) => prev.includes(value) ? prev.filter((theme) => theme !== value) : [...prev, value])} className={`ai-course-control flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs transition-colors ${themes.includes(value) ? "border-primary/35 bg-primary/[0.08] font-semibold text-primary" : "border-border text-muted-foreground hover:bg-muted"}`}>
-                            {themes.includes(value) ? <Check className="h-3 w-3" aria-hidden="true" /> : <Plus className="h-3 w-3" aria-hidden="true" />}{label}
                           </button>
                         ))}
                       </div>

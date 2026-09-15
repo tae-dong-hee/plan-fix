@@ -127,6 +127,8 @@ public class CourseRepositoryImpl implements CourseRepository {
                 .description(course.description())
                 .thumbnail(course.thumbnail())
                 .visibility(course.visibility())
+                .generatedBy(course.generatedBy())
+                .themes(course.themes())
                 .status(course.status())
                 .viewCount(course.viewCount())
                 .likeCount(course.likeCount())
@@ -166,6 +168,6 @@ public class CourseRepositoryImpl implements CourseRepository {
         return CourseModel.reconstruct(entity.getCourseId(), entity.getUserId(), entity.getTitle(),
                 entity.getDescription(), entity.getThumbnail(), entity.getVisibility(), entity.getStatus(),
                 entity.getViewCount(), entity.getLikeCount(), entity.getStartDate(), entity.getEndDate(),
-                days, entity.getCreatedAt(), entity.getUpdatedAt());
+                days, entity.getCreatedAt(), entity.getUpdatedAt(), entity.getGeneratedBy(), entity.getThemes());
     }
 }
