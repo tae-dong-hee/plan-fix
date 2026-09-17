@@ -32,6 +32,14 @@ public record DetailImageResponse(Response response) {
 			&& "0000".equals(response.header().resultCode());
 	}
 
+	public String resultCode() {
+		return response == null || response.header() == null ? null : response.header().resultCode();
+	}
+
+	public String resultMessage() {
+		return response == null || response.header() == null ? null : response.header().resultMsg();
+	}
+
 	public int totalCount() {
 		if (response == null || response.body() == null) {
 			return 0;
