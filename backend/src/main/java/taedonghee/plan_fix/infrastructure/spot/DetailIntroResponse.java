@@ -34,6 +34,14 @@ public record DetailIntroResponse(Response response) {
 			&& "0000".equals(response.header().resultCode());
 	}
 
+	public String resultCode() {
+		return response == null || response.header() == null ? null : response.header().resultCode();
+	}
+
+	public String resultMessage() {
+		return response == null || response.header() == null ? null : response.header().resultMsg();
+	}
+
 	public DetailIntroItem firstItem() {
 		if (response == null || response.body() == null || response.body().items() == null
 			|| response.body().items().item() == null || response.body().items().item().isEmpty()) {

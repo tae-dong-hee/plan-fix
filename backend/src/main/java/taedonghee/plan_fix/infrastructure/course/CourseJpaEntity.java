@@ -1,6 +1,7 @@
 package taedonghee.plan_fix.infrastructure.course;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -16,6 +17,10 @@ import lombok.NoArgsConstructor;
 import taedonghee.plan_fix.domain.course.CourseStatus;
 import taedonghee.plan_fix.domain.course.CourseVisibility;
 
+import taedonghee.plan_fix.domain.course.CourseGenerationSource;
+import taedonghee.plan_fix.domain.course.CourseTravelTheme;
+
+import java.util.List;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 
@@ -55,6 +60,14 @@ public class CourseJpaEntity {
     private CourseVisibility visibility;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "generated_by", length = 20)
+    private CourseGenerationSource generatedBy;
+
+    @Convert(converter = CourseThemesConverter.class)
+    @Column(name = "themes", length = 100)
+    private List<CourseTravelTheme> themes;
+
+    @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
     private CourseStatus status;
 
@@ -80,13 +93,16 @@ public class CourseJpaEntity {
     private CourseJpaEntity(Long courseId, Long userId, String title, String description, String thumbnail,
                             CourseVisibility visibility, CourseStatus status, long viewCount, long likeCount,
                             LocalDate startDate, LocalDate endDate,
-                            OffsetDateTime createdAt, OffsetDateTime updatedAt) {
+                            OffsetDateTime createdAt, OffsetDateTime updatedAt,
+                            CourseGenerationSource generatedBy, List<CourseTravelTheme> themes) {
         this.courseId = courseId;
         this.userId = userId;
         this.title = title;
         this.description = description;
         this.thumbnail = thumbnail;
         this.visibility = visibility;
+        this.generatedBy = generatedBy;
+        this.themes = themes == null ? List.of() : List.copyOf(themes);
         this.status = status;
         this.viewCount = viewCount;
         this.likeCount = likeCount;

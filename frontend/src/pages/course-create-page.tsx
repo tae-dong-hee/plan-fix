@@ -19,7 +19,9 @@ import AiCourseModal from "@/components/ui/ai-course-modal";
 import AppNav from "@/components/ui/app-nav";
 import DateRangeModal from "@/components/ui/date-range-modal";
 import KakaoMap from "@/components/ui/kakao-map";
+import CourseMetadata from "@/components/ui/course-metadata";
 import SpotSearchModal from "@/components/ui/spot-search-modal";
+<<<<<<< HEAD
 import AccommodationSearchModal from "@/components/ui/accommodation-search-modal";
 import {
   createCourse,
@@ -30,6 +32,10 @@ import {
   type DayAccommodation,
 } from "@/services/course";
 import { type AiCourseDraft } from "@/services/ai-course";
+=======
+import { createCourse, fetchCourse, updateCourse, type CourseGenerationSource } from "@/services/course";
+import { type AiCourseDraft, type AiCourseTheme } from "@/services/ai-course";
+>>>>>>> origin/main
 import { PopularSpot, UnauthorizedError } from "@/services/spots";
 import { aiCourseNotice } from "@/lib/ai-course-notice";
 
@@ -55,7 +61,12 @@ export type CourseDraft = {
   startDate: string;
   endDate: string;
   days: DraftSpot[][];
+<<<<<<< HEAD
   dayAccommodations?: Record<number, DayAccommodation>;
+=======
+  generatedBy?: CourseGenerationSource | null;
+  themes?: AiCourseTheme[];
+>>>>>>> origin/main
 };
 
 function formatDate(date: Date): string {
@@ -95,6 +106,8 @@ export default function CourseCreatePage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [thumbnail, setThumbnail] = useState<string | null>(null);
+  const [generatedBy, setGeneratedBy] = useState<CourseGenerationSource | null>("MANUAL");
+  const [themes, setThemes] = useState<AiCourseTheme[]>([]);
   const [visibility, setVisibility] = useState<"PUBLIC" | "PRIVATE">("PUBLIC");
   const [startDate, setStartDate] = useState(todayStr);
   const [endDate, setEndDate] = useState(defaultEndStr);
@@ -153,6 +166,8 @@ export default function CourseCreatePage() {
         setTitle(data.title);
         setDescription(data.description || "");
         setThumbnail(data.thumbnail ?? null);
+        setGeneratedBy(data.generatedBy ?? null);
+        setThemes(data.themes ?? []);
         if (data.visibility) setVisibility(data.visibility);
         if (data.startDate) setStartDate(data.startDate);
         if (data.endDate) setEndDate(data.endDate);
@@ -207,6 +222,8 @@ export default function CourseCreatePage() {
         const parsed = JSON.parse(saved) as CourseDraft;
         if (parsed.title !== undefined) setTitle(parsed.title);
         if (parsed.description !== undefined) setDescription(parsed.description);
+        setGeneratedBy(parsed.generatedBy ?? null);
+        setThemes(parsed.themes ?? []);
         if (parsed.visibility) setVisibility(parsed.visibility);
         if (parsed.startDate) setStartDate(parsed.startDate);
         if (parsed.endDate) setEndDate(parsed.endDate);
@@ -231,13 +248,22 @@ export default function CourseCreatePage() {
         startDate,
         endDate,
         days,
+<<<<<<< HEAD
         dayAccommodations,
+=======
+        generatedBy,
+        themes,
+>>>>>>> origin/main
       };
       sessionStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
     } catch {
       // sessionStorage 저장 오류 무시
     }
+<<<<<<< HEAD
   }, [isEditMode, title, description, visibility, startDate, endDate, days, dayAccommodations]);
+=======
+  }, [isEditMode, title, description, visibility, startDate, endDate, days, generatedBy, themes]);
+>>>>>>> origin/main
 
   // 여행 기간(시작일~종료일) 한 번에 변경 - 캘린더 모달에서 적용 버튼을 누르면 호출됨
   const handleApplyDateRange = (newStart: string, newEnd: string) => {
@@ -362,7 +388,7 @@ export default function CourseCreatePage() {
    * 사용자가 드래그로 고치고 기존 저장 버튼으로 넘어가게 하기 위함이다.
    * 추천 이유는 메모 칸에 넣어 화면에 보이면서 그대로 수정·저장될 수 있게 한다.
    */
-  const handleApplyAiDraft = (draft: AiCourseDraft) => {
+  const handleApplyAiDraft = (draft: AiCourseDraft, selectedThemes: AiCourseTheme[]) => {
     const draftDays: DraftSpot[][] = draft.days.map((day) =>
       day.spots.map((spot) => ({
         spotId: spot.spotId,
@@ -378,6 +404,8 @@ export default function CourseCreatePage() {
     );
 
     setDays(draftDays.length > 0 ? draftDays : days);
+    setGeneratedBy(draft.generatedBy === "LLM" || draft.generatedBy === "RULE_BASED" ? draft.generatedBy : null);
+    setThemes([...selectedThemes]);
     if (!title.trim()) {
       setTitle(draft.title);
     }
@@ -413,6 +441,9 @@ export default function CourseCreatePage() {
         description: description.trim() || null,
         thumbnail: isEditMode ? thumbnail : null,
         visibility,
+        generatedBy,
+        // 이전 서버가 메타데이터를 돌려주지 않은 수정 화면에서는 기존 테마를 지우지 않는다.
+        themes: isEditMode && generatedBy === null && themes.length === 0 ? undefined : themes,
         startDate,
         endDate,
         days: days.map((daySpots, idx) => ({
@@ -558,6 +589,7 @@ export default function CourseCreatePage() {
         {/* 기본 정보 설정 카드 */}
         <div className="mt-6 rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-6">
           <h2 className="text-base font-semibold text-foreground">여행 기본 정보</h2>
+          <CourseMetadata generatedBy={generatedBy} themes={themes} className="mt-3" />
 
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2">

@@ -2,6 +2,8 @@ package taedonghee.plan_fix.application.course;
 
 import taedonghee.plan_fix.domain.course.CourseDayModel;
 import taedonghee.plan_fix.domain.course.CourseVisibility;
+import taedonghee.plan_fix.domain.course.CourseGenerationSource;
+import taedonghee.plan_fix.domain.course.CourseTravelTheme;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -24,8 +26,15 @@ public final class CourseCommand {
             CourseVisibility visibility,
             LocalDate startDate,
             LocalDate endDate,
-            List<CourseDayModel> days
+            List<CourseDayModel> days,
+            CourseGenerationSource generatedBy,
+            List<CourseTravelTheme> themes
     ) {
+        public Create(String title, String description, String thumbnail, CourseVisibility visibility,
+                      LocalDate startDate, LocalDate endDate, List<CourseDayModel> days) {
+            this(title, description, thumbnail, visibility, startDate, endDate, days, null, null);
+        }
+
     }
 
     /**
@@ -38,7 +47,14 @@ public final class CourseCommand {
             CourseVisibility visibility,
             LocalDate startDate,
             LocalDate endDate,
-            List<CourseDayModel> days
+            List<CourseDayModel> days,
+            CourseGenerationSource generatedBy,
+            List<CourseTravelTheme> themes
     ) {
+        public Update(String title, String description, String thumbnail, CourseVisibility visibility,
+                      LocalDate startDate, LocalDate endDate, List<CourseDayModel> days) {
+            this(title, description, thumbnail, visibility, startDate, endDate, days, null, null);
+        }
+
     }
 }

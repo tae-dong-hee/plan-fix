@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 
 import type { PublicCourseItem } from "@/services/course";
 import { getCourseCoverCredit, getCourseCoverImageSrc } from "@/lib/course-cover-images";
+import CourseMetadata, { CourseSummaryBadges } from "@/components/ui/course-metadata";
 
 type MainCourseCardProps = {
   course: PublicCourseItem;
@@ -44,14 +45,13 @@ export default function MainCourseCard({
               <Route className="h-14 w-14 text-primary/35" strokeWidth={1.2} />
             </div>
           )}
-          <span className="absolute left-3 top-3 max-w-[calc(100%_-_5rem)] truncate rounded-full bg-white/95 px-2.5 py-1.5 text-[11px] font-semibold text-zinc-800 shadow-sm">
-            {course.dayCount}일 일정
-          </span>
         </div>
         <div className="px-0.5 pb-1 pt-3">
           <h3 className="line-clamp-2 break-keep text-[15px] font-semibold leading-snug tracking-tight text-foreground [overflow-wrap:anywhere]">
             {course.title}
           </h3>
+          <CourseSummaryBadges generatedBy={course.generatedBy} dayCount={course.dayCount} className="mt-2.5" />
+          <CourseMetadata themes={course.themes} className="mt-2" />
           <p className="mt-1.5 flex items-center gap-1 text-[13px] text-muted-foreground">
             <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
             방문 {course.spotCount}곳
@@ -63,7 +63,7 @@ export default function MainCourseCard({
           <Link
             to={`/image-credits#${credit.id}`}
             aria-label={`${course.title} 사진 출처`}
-            className="pointer-events-auto absolute bottom-2.5 right-3 rounded bg-black/40 px-1.5 py-1 text-[10px] text-white transition hover:bg-black/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            className="pointer-events-auto absolute left-3 top-3 rounded bg-black/40 px-1.5 py-1 text-[10px] text-white transition hover:bg-black/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
           >사진 출처</Link>
         </div>
       )}

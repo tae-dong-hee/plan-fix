@@ -86,7 +86,8 @@ public class CourseApplicationService {
     @Transactional
     public CourseResult create(Long userId, CourseCommand.Create command) {
         CourseModel course = CourseModel.create(userId, command.title(), command.description(), command.thumbnail(),
-                command.visibility(), command.startDate(), command.endDate(), command.days());
+                command.visibility(), command.startDate(), command.endDate(), command.days(),
+                command.generatedBy(), command.themes());
         Set<Long> spotIds = collectSpotIds(course.days());
         Map<Long, SpotModel> spotsById = validateAndGetActiveSpots(spotIds);
         CourseModel saved = courseRepository.save(course);
@@ -246,7 +247,8 @@ public class CourseApplicationService {
         }
 
         CourseModel updated = course.update(command.title(), command.description(), command.thumbnail(),
-                command.visibility(), command.startDate(), command.endDate(), command.days());
+                command.visibility(), command.startDate(), command.endDate(), command.days(),
+                command.generatedBy(), command.themes());
         Set<Long> spotIds = collectSpotIds(updated.days());
         Map<Long, SpotModel> spotsById = validateAndGetActiveSpots(spotIds);
 

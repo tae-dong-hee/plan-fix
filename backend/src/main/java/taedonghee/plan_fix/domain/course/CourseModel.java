@@ -25,6 +25,8 @@ public class CourseModel {
     private final String description;
     private final String thumbnail;
     private final CourseVisibility visibility;
+    private final CourseGenerationSource generatedBy;
+    private final List<CourseTravelTheme> themes;
     private final CourseStatus status;
     private final long viewCount;
     private final long likeCount;
@@ -40,7 +42,8 @@ public class CourseModel {
     private CourseModel(Long courseId, Long userId, String title, String description, String thumbnail,
                         CourseVisibility visibility, CourseStatus status, long viewCount, long likeCount,
                         LocalDate startDate, LocalDate endDate, List<CourseDayModel> days,
-                        OffsetDateTime createdAt, OffsetDateTime updatedAt) {
+                        OffsetDateTime createdAt, OffsetDateTime updatedAt,
+                        CourseGenerationSource generatedBy, List<CourseTravelTheme> themes) {
         validate(userId, title, description, thumbnail, viewCount, likeCount, startDate, endDate, days);
         this.courseId = courseId;
         this.userId = userId;
@@ -48,6 +51,8 @@ public class CourseModel {
         this.description = normalizeOptional(description);
         this.thumbnail = normalizeOptional(thumbnail);
         this.visibility = visibility == null ? CourseVisibility.PRIVATE : visibility;
+        this.generatedBy = generatedBy;
+        this.themes = normalizeThemes(themes);
         this.status = status == null ? CourseStatus.ACTIVE : status;
         this.viewCount = viewCount;
         this.likeCount = likeCount;
@@ -64,9 +69,16 @@ public class CourseModel {
     public static CourseModel create(Long userId, String title, String description, String thumbnail,
                                      CourseVisibility visibility, LocalDate startDate, LocalDate endDate,
                                      List<CourseDayModel> days) {
+        return create(userId, title, description, thumbnail, visibility, startDate, endDate, days, null, null);
+    }
+
+    public static CourseModel create(Long userId, String title, String description, String thumbnail,
+                                     CourseVisibility visibility, LocalDate startDate, LocalDate endDate,
+                                     List<CourseDayModel> days, CourseGenerationSource generatedBy,
+                                     List<CourseTravelTheme> themes) {
         OffsetDateTime now = OffsetDateTime.now();
         return new CourseModel(null, userId, title, description, thumbnail, visibility, CourseStatus.ACTIVE,
-                0L, 0L, startDate, endDate, days, now, now);
+                0L, 0L, startDate, endDate, days, now, now, generatedBy, themes);
     }
 
     /**
@@ -76,8 +88,17 @@ public class CourseModel {
                                           String thumbnail, CourseVisibility visibility, CourseStatus status,
                                           long viewCount, long likeCount, LocalDate startDate, LocalDate endDate,
                                           List<CourseDayModel> days, OffsetDateTime createdAt, OffsetDateTime updatedAt) {
+        return reconstruct(courseId, userId, title, description, thumbnail, visibility, status,
+                viewCount, likeCount, startDate, endDate, days, createdAt, updatedAt, null, null);
+    }
+
+    public static CourseModel reconstruct(Long courseId, Long userId, String title, String description,
+                                          String thumbnail, CourseVisibility visibility, CourseStatus status,
+                                          long viewCount, long likeCount, LocalDate startDate, LocalDate endDate,
+                                          List<CourseDayModel> days, OffsetDateTime createdAt, OffsetDateTime updatedAt,
+                                          CourseGenerationSource generatedBy, List<CourseTravelTheme> themes) {
         return new CourseModel(courseId, userId, title, description, thumbnail, visibility, status,
-                viewCount, likeCount, startDate, endDate, days, createdAt, updatedAt);
+                viewCount, likeCount, startDate, endDate, days, createdAt, updatedAt, generatedBy, themes);
     }
 
     /**
@@ -85,9 +106,17 @@ public class CourseModel {
      */
     public CourseModel update(String title, String description, String thumbnail, CourseVisibility visibility,
                               LocalDate startDate, LocalDate endDate, List<CourseDayModel> days) {
+        return update(title, description, thumbnail, visibility, startDate, endDate, days, null, null);
+    }
+
+    /** 생략한 생성 정보는 유지하며, 빈 테마 목록은 기존 선택을 해제한다. */
+    public CourseModel update(String title, String description, String thumbnail, CourseVisibility visibility,
+                              LocalDate startDate, LocalDate endDate, List<CourseDayModel> days,
+                              CourseGenerationSource generatedBy, List<CourseTravelTheme> themes) {
         ensureActive();
         return new CourseModel(courseId, userId, title, description, thumbnail, visibility, status,
-                viewCount, likeCount, startDate, endDate, days, createdAt, OffsetDateTime.now());
+                viewCount, likeCount, startDate, endDate, days, createdAt, OffsetDateTime.now(),
+                generatedBy == null ? this.generatedBy : generatedBy, themes == null ? this.themes : themes);
     }
 
     /**
@@ -98,7 +127,7 @@ public class CourseModel {
             return this;
         }
         return new CourseModel(courseId, userId, title, description, thumbnail, visibility, CourseStatus.DELETED,
-                viewCount, likeCount, startDate, endDate, days, createdAt, OffsetDateTime.now());
+                viewCount, likeCount, startDate, endDate, days, createdAt, OffsetDateTime.now(), generatedBy, themes);
     }
 
     /**
@@ -183,6 +212,17 @@ public class CourseModel {
         }
     }
 
+    private static List<CourseTravelTheme> normalizeThemes(List<CourseTravelTheme> themes) {
+        if (themes == null) {
+            return List.of();
+        }
+        if (themes.size() > CourseTravelTheme.values().length || themes.stream().anyMatch(Objects::isNull)
+                || themes.stream().distinct().count() != themes.size()) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "themes must contain distinct supported themes.");
+        }
+        return List.copyOf(themes);
+    }
+
     private String normalizeRequired(String value) {
         return value.strip();
     }
@@ -200,6 +240,8 @@ public class CourseModel {
     public String title() { return title; }
     public String description() { return description; }
     public String thumbnail() { return thumbnail; }
+    public CourseGenerationSource generatedBy() { return generatedBy; }
+    public List<CourseTravelTheme> themes() { return themes; }
     public CourseVisibility visibility() { return visibility; }
     public CourseStatus status() { return status; }
     public long viewCount() { return viewCount; }

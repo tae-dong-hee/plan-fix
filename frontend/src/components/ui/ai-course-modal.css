@@ -48,6 +48,8 @@
 .ai-course-scene-coast { color: #347c9a; background: linear-gradient(145deg, #e7f4fa, #d7edf5); }
 .ai-course-scene-sunset { color: #ae7956; background: linear-gradient(145deg, #fff2e6, #f9e6d6); }
 .ai-course-scene-forest { color: #53816b; background: linear-gradient(145deg, #ecf4e9, #dcebdd); }
+.ai-course-scene-cafe { color: #9a7055; background: linear-gradient(145deg, #f6eee7, #ebdccc); }
+.ai-course-scene-culture { color: #8a6baa; background: linear-gradient(145deg, #f2edf8, #e8ddf3); }
 
 .ai-course-scene-sun {
   position: absolute;

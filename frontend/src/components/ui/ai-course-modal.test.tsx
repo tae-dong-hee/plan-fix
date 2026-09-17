@@ -65,7 +65,7 @@ describe("AiCourseModal", () => {
     expect(screen.queryByRole("textbox", { name: "고정할 장소 검색" })).not.toBeInTheDocument();
     fireEvent.click(submit);
 
-    await waitFor(() => expect(onApply).toHaveBeenCalledWith(draft));
+    await waitFor(() => expect(onApply).toHaveBeenCalledWith(draft, []));
     const request = vi.mocked(fetchAiCourseDraft).mock.calls[0][0];
     expect(request).toEqual(expect.objectContaining({
       region: "51",
@@ -79,40 +79,85 @@ describe("AiCourseModal", () => {
   });
 
   it.each([
-    { name: "강릉 바다와 카페", region: "강릉" as const, themes: ["HEALING", "CAFE"] },
-    { name: "속초 맛집과 산책", region: "속초" as const, themes: ["HEALING", "FOOD"] },
-    { name: "춘천 자연 속 쉼", region: "춘천" as const, themes: ["HEALING"] },
-  ])("'$name' 추천으로 여행지와 취향을 한 번에 적용한다", async ({ name, region, themes }) => {
+    { name: "힐링·자연", theme: "HEALING" },
+    { name: "맛집 탐방", theme: "FOOD" },
+    { name: "카페 투어", theme: "CAFE" },
+    { name: "액티비티", theme: "ACTIVITY" },
+    { name: "문화·역사", theme: "CULTURE" },
+  ])("'$name' 테마를 세부 설정을 열지 않고 선택하며 여행지를 유지한다", async ({ name, theme }) => {
     const { onApply } = renderModal();
+    const region = screen.getByRole("combobox", { name: "여행 지역" });
+    fireEvent.change(region, { target: { value: "춘천" } });
+    const themeButton = screen.getByRole("button", { name });
 
-    fireEvent.click(screen.getByRole("button", { name: new RegExp(name) }));
-    expect(screen.getByRole("combobox", { name: "여행 지역" })).toHaveValue(region);
+    expect(themeButton).toHaveAttribute("aria-pressed", "false");
+    fireEvent.click(themeButton);
+    expect(themeButton).toHaveAttribute("aria-pressed", "true");
+    expect(region).toHaveValue("춘천");
+    expect(screen.queryByRole("textbox", { name: "고정할 장소 검색" })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "AI로 코스 만들기" }));
 
-    await waitFor(() => expect(onApply).toHaveBeenCalledWith(draft));
+    await waitFor(() => expect(onApply).toHaveBeenCalledWith(draft, [theme]));
     expect(vi.mocked(fetchAiCourseDraft).mock.calls[0][0]).toEqual(expect.objectContaining({
-      sigungu: sigunguCodeByRegion[region],
-      themes,
+      sigungu: sigunguCodeByRegion.춘천,
+      themes: [theme],
     }));
   });
 
-  it("추천을 고른 뒤 여행지와 동행, 테마를 직접 조정할 수 있다", async () => {
+  it("여러 테마를 고른 뒤 여행지와 동행을 바꿔도 선택한 테마를 유지한다", async () => {
     const { onApply } = renderModal();
+    const region = screen.getByRole("combobox", { name: "여행 지역" });
 
-    fireEvent.click(screen.getByRole("button", { name: /강릉 바다와 카페/ }));
-    fireEvent.change(screen.getByRole("combobox", { name: "여행 지역" }), { target: { value: "속초" } });
+    fireEvent.change(region, { target: { value: "강릉" } });
+    fireEvent.click(screen.getByRole("button", { name: "힐링·자연" }));
+    fireEvent.click(screen.getByRole("button", { name: "카페 투어" }));
+    expect(region).toHaveValue("강릉");
+    fireEvent.change(region, { target: { value: "속초" } });
     fireEvent.click(screen.getByRole("button", { name: /취향 더 알려주기/ }));
     fireEvent.click(screen.getByRole("button", { name: "친구" }));
-    fireEvent.click(screen.getByRole("button", { name: "카페 투어" }));
-    fireEvent.click(screen.getByRole("button", { name: "맛집 탐방" }));
+    expect(screen.getByRole("button", { name: "힐링·자연" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "카페 투어" })).toHaveAttribute("aria-pressed", "true");
     fireEvent.click(screen.getByRole("button", { name: "AI로 코스 만들기" }));
 
-    await waitFor(() => expect(onApply).toHaveBeenCalledWith(draft));
+    await waitFor(() => expect(onApply).toHaveBeenCalledWith(draft, ["HEALING", "CAFE"]));
     expect(vi.mocked(fetchAiCourseDraft).mock.calls[0][0]).toEqual(expect.objectContaining({
       sigungu: sigunguCodeByRegion.속초,
       companion: "FRIENDS",
-      themes: ["HEALING", "FOOD"],
+      themes: ["HEALING", "CAFE"],
     }));
+  });
+
+  it("선택한 테마 이름과 개수를 표시하고 칩에서 해제하면 카드와 요청에도 반영한다", async () => {
+    const { onApply } = renderModal();
+    const healing = screen.getByRole("button", { name: "힐링·자연" });
+    const food = screen.getByRole("button", { name: "맛집 탐방" });
+    const selection = screen.getByRole("group", { name: "선택한 테마" });
+
+    expect(selection).toHaveTextContent("아직 선택한 테마가 없어요.");
+    fireEvent.click(healing);
+    fireEvent.click(food);
+    expect(selection).toHaveTextContent("2개");
+    expect(selection).toHaveTextContent("힐링·자연");
+    expect(selection).toHaveTextContent("맛집 탐방");
+    const removeHealing = screen.getByRole("button", { name: "힐링·자연 선택 해제" });
+    removeHealing.focus();
+    fireEvent.click(removeHealing);
+    expect(healing).toHaveAttribute("aria-pressed", "false");
+    expect(healing).toHaveFocus();
+    expect(food).toHaveAttribute("aria-pressed", "true");
+    expect(selection).toHaveTextContent("1개");
+    expect(selection).not.toHaveTextContent("힐링·자연");
+    fireEvent.click(screen.getByRole("button", { name: "맛집 탐방 선택 해제" }));
+    expect(food).toHaveAttribute("aria-pressed", "false");
+    expect(selection).toHaveTextContent("0개");
+    expect(selection).toHaveTextContent("아직 선택한 테마가 없어요.");
+    expect(screen.getByRole("combobox", { name: "여행 지역" })).toHaveValue("");
+    const submit = screen.getByRole("button", { name: "AI로 코스 만들기" });
+    expect(submit).toBeEnabled();
+    fireEvent.click(submit);
+
+    await waitFor(() => expect(onApply).toHaveBeenCalledWith(draft, []));
+    expect(vi.mocked(fetchAiCourseDraft).mock.calls[0][0].themes).toEqual([]);
   });
 
   it("선택 사항에서 검색한 장소를 필수 방문 장소로 전달한다", async () => {
@@ -131,7 +176,7 @@ describe("AiCourseModal", () => {
     fireEvent.click(screen.getByRole("button", { name: "AI로 코스 만들기" }));
     await act(async () => { await Promise.resolve(); });
 
-    expect(onApply).toHaveBeenCalledWith(draft);
+    expect(onApply).toHaveBeenCalledWith(draft, []);
     expect(vi.mocked(fetchAiCourseDraft).mock.calls[0][0].anchorSpotIds).toEqual([101]);
   });
 
@@ -163,21 +208,25 @@ describe("AiCourseModal", () => {
     const nextDraft = { ...draft, title: "새 여행 코스" };
     await act(async () => { second.resolve(nextDraft); });
     expect(onApply).toHaveBeenCalledTimes(1);
-    expect(onApply).toHaveBeenCalledWith(nextDraft);
+    expect(onApply).toHaveBeenCalledWith(nextDraft, []);
   });
 
-  it("로그인 오류를 알리고 선택한 추천을 유지한 채 다시 시도한다", async () => {
+  it("로그인 오류를 알리고 선택한 지역과 테마를 유지한 채 다시 시도한다", async () => {
     vi.mocked(fetchAiCourseDraft).mockRejectedValueOnce(new UnauthorizedError());
     const { onApply } = renderModal();
 
-    fireEvent.click(screen.getByRole("button", { name: /속초 맛집과 산책/ }));
+    fireEvent.change(screen.getByRole("combobox", { name: "여행 지역" }), { target: { value: "속초" } });
+    fireEvent.click(screen.getByRole("button", { name: "힐링·자연" }));
+    fireEvent.click(screen.getByRole("button", { name: "맛집 탐방" }));
     fireEvent.click(screen.getByRole("button", { name: "AI로 코스 만들기" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("로그인이 필요한 기능이에요.");
     expect(onApply).not.toHaveBeenCalled();
     expect(screen.getByRole("combobox", { name: "여행 지역" })).toHaveValue("속초");
+    expect(screen.getByRole("button", { name: "힐링·자연" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "맛집 탐방" })).toHaveAttribute("aria-pressed", "true");
     fireEvent.click(screen.getByRole("button", { name: "AI로 코스 만들기" }));
 
-    await waitFor(() => expect(onApply).toHaveBeenCalledWith(draft));
+    await waitFor(() => expect(onApply).toHaveBeenCalledWith(draft, ["HEALING", "FOOD"]));
     expect(vi.mocked(fetchAiCourseDraft).mock.calls[1][0]).toEqual(vi.mocked(fetchAiCourseDraft).mock.calls[0][0]);
   });
 

@@ -7,6 +7,9 @@ import taedonghee.plan_fix.domain.course.CourseStatus;
 import taedonghee.plan_fix.domain.course.CourseVisibility;
 import taedonghee.plan_fix.domain.spot.SpotModel;
 
+import taedonghee.plan_fix.domain.course.CourseGenerationSource;
+import taedonghee.plan_fix.domain.course.CourseTravelTheme;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -31,8 +34,18 @@ public record CourseResult(
         LocalDate endDate,
         List<Day> days,
         OffsetDateTime createdAt,
-        OffsetDateTime updatedAt
+        OffsetDateTime updatedAt,
+        CourseGenerationSource generatedBy,
+        List<CourseTravelTheme> themes
 ) {
+    public CourseResult(Long courseId, Long userId, String title, String description, String thumbnail,
+                        CourseVisibility visibility, CourseStatus status, long viewCount, long likeCount,
+                        LocalDate startDate, LocalDate endDate, List<Day> days,
+                        OffsetDateTime createdAt, OffsetDateTime updatedAt) {
+        this(courseId, userId, title, description, thumbnail, visibility, status, viewCount, likeCount,
+                startDate, endDate, days, createdAt, updatedAt, null, List.of());
+    }
+
     /**
      * CourseModel과 SpotModel 맵을 응답용 결과 객체로 변환
      */
@@ -81,7 +94,9 @@ public record CourseResult(
                 course.endDate(),
                 dayResults,
                 course.createdAt(),
-                course.updatedAt()
+                course.updatedAt(),
+                course.generatedBy(),
+                course.themes()
         );
     }
 
