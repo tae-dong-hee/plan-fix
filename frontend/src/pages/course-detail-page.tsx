@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import AppNav from "@/components/ui/app-nav";
 import CourseRouteMap from "@/components/ui/course-route-map";
+import CourseMetadata from "@/components/ui/course-metadata";
 import { CourseInviteDialog, CourseInviteShareDialog } from "@/components/ui/course-invite-dialog";
 import { CourseResponse, createCourseInvite, deleteCourse, fetchCourse, fetchCourseMembers, fetchPendingCourseInvites, cancelCourseInvite, removeCourseMember, updateCourseMemberRole, type CourseInviteRole, type CourseMember, type PendingCourseInvite } from "@/services/course";
 import { UnauthorizedError } from "@/services/spots";
@@ -275,6 +276,7 @@ export default function CourseDetailPage() {
               <h1 className="mt-3 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
                 {course.title}
               </h1>
+              <CourseMetadata generatedBy={course.generatedBy} themes={course.themes} className="mt-3" />
 
               {course.description && (
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground sm:text-base">

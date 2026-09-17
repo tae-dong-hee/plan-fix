@@ -144,6 +144,19 @@ describe("CourseDetailPage", () => {
     });
   });
 
+  it("코스 상세 제목 근처에 저장된 생성 출처와 여행 테마를 표시한다", async () => {
+    vi.mocked(courseService.fetchCourse).mockResolvedValue({
+      ...mockCourse, generatedBy: "LLM", themes: ["ACTIVITY", "CULTURE"],
+    });
+
+    renderComponent();
+
+    await screen.findByRole("heading", { name: "강릉 바다 여행", level: 1 });
+    expect(screen.getByText("AI로 만든 코스")).toBeInTheDocument();
+    expect(screen.getByText("액티비티")).toBeInTheDocument();
+    expect(screen.getByText("문화·역사")).toBeInTheDocument();
+  });
+
   it("존재하지 않는 코스(null)일 경우 안내 문구를 표시한다", async () => {
     (courseService.fetchCourse as Mock).mockResolvedValue(null);
 

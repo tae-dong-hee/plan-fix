@@ -1,14 +1,13 @@
 import { useState } from "react";
-import { ArrowUpRight, Calendar, Eye, Globe, Heart, Lock, MapPin, Mountain, Pencil, Route, Sun, Trash2 } from "lucide-react";
+import { ArrowUpRight, Calendar, Eye, Globe, Heart, Lock, MapPin, Mountain, Sun } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { getCourseCoverCredit, getCourseCoverImageSrc } from "@/lib/course-cover-images";
 import type { CourseResponse } from "@/services/course";
+import CourseMetadata, { CourseSummaryBadges } from "@/components/ui/course-metadata";
 
 type MyCourseCardProps = {
   course: CourseResponse;
-  onEdit: (courseId: number) => void;
-  onDelete: (courseId: number) => void;
 };
 
 function CourseCoverArtwork({ variant }: { variant: number }) {
@@ -36,7 +35,7 @@ function CourseCoverArtwork({ variant }: { variant: number }) {
   );
 }
 
-export default function MyCourseCard({ course, onEdit, onDelete }: MyCourseCardProps) {
+export default function MyCourseCard({ course }: MyCourseCardProps) {
   const [failedThumbnails, setFailedThumbnails] = useState<string[]>([]);
   const spots = course.days.flatMap((day) => day.spots);
   const thumbnail = [course.thumbnail, ...spots.map((spot) => spot.thumbnail)]
@@ -52,13 +51,9 @@ export default function MyCourseCard({ course, onEdit, onDelete }: MyCourseCardP
           {thumbnail ? (
             <img src={getCourseCoverImageSrc(thumbnail)} alt="" loading="lazy" onError={() => setFailedThumbnails((previous) => [...previous, thumbnail])} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 motion-reduce:transform-none motion-reduce:transition-none" />
           ) : <CourseCoverArtwork variant={course.courseId} />}
-          <span className="absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-background/95 px-3 py-1.5 text-xs font-semibold text-primary shadow-sm">
-            <Route className="h-3.5 w-3.5" aria-hidden="true" />
-            {course.days.length}일 일정
-          </span>
         </div>
 
-        <div className="flex flex-1 flex-col px-5 pb-4 pt-5 sm:px-6">
+        <div className="flex flex-1 flex-col px-5 pb-5 pt-5 sm:px-6 sm:pb-6">
           <div className="flex items-center justify-between gap-3 text-[11px]">
             <span className={`inline-flex items-center gap-1 ${course.visibility === "PUBLIC" ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"}`}>
               {course.visibility === "PUBLIC" ? <Globe className="h-3 w-3" aria-hidden="true" /> : <Lock className="h-3 w-3" aria-hidden="true" />}
@@ -67,17 +62,21 @@ export default function MyCourseCard({ course, onEdit, onDelete }: MyCourseCardP
             <span className="text-muted-foreground">{course.createdAt.substring(0, 10).replace(/-/g, ".")} 저장</span>
           </div>
           <h3 className="mt-3 line-clamp-2 break-words text-lg font-bold leading-snug tracking-tight text-foreground transition-colors group-hover:text-primary">{course.title}</h3>
+          <CourseSummaryBadges generatedBy={course.generatedBy} dayCount={course.days.length} className="mt-2.5" />
+          <CourseMetadata themes={course.themes} className="mt-2.5" />
           <p className="mt-2 line-clamp-2 min-h-10 break-words text-[13px] leading-5 text-muted-foreground">{description}</p>
 
-          <div className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl bg-muted/55 px-3 py-2.5 text-xs text-muted-foreground">
-            <span className="inline-flex items-center gap-1.5">
-              <Calendar className="h-3.5 w-3.5 shrink-0 text-primary/70" aria-hidden="true" />
-              {course.startDate && course.endDate ? `${course.startDate.substring(5).replace("-", ".")} – ${course.endDate.substring(5).replace("-", ".")}` : "날짜 미정"}
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <MapPin className="h-3.5 w-3.5 shrink-0 text-primary/70" aria-hidden="true" />
-              {spots.length}개 장소
-            </span>
+          <div className="mt-auto pt-5">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl bg-muted/55 px-3 py-2.5 text-xs text-muted-foreground">
+              <span className="inline-flex items-center gap-1.5">
+                <Calendar className="h-3.5 w-3.5 shrink-0 text-primary/70" aria-hidden="true" />
+                {course.startDate && course.endDate ? `${course.startDate.substring(5).replace("-", ".")} – ${course.endDate.substring(5).replace("-", ".")}` : "날짜 미정"}
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <MapPin className="h-3.5 w-3.5 shrink-0 text-primary/70" aria-hidden="true" />
+                {spots.length}개 장소
+              </span>
+            </div>
           </div>
           <div className="mt-4 flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
@@ -91,14 +90,6 @@ export default function MyCourseCard({ course, onEdit, onDelete }: MyCourseCardP
 
       {credit && <Link to={`/image-credits#${credit.id}`} aria-label={`${course.title} 사진 출처`} className="absolute right-3 top-4 rounded-full bg-black/45 px-2 py-1.5 text-[10px] text-white hover:bg-black/65 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">사진 출처</Link>}
 
-      <div className="mx-5 flex items-center justify-between border-t border-border/60 py-2 sm:mx-6">
-        <button type="button" aria-label="코스 수정" onClick={() => onEdit(course.courseId)} className="inline-flex min-h-11 items-center gap-1.5 rounded-lg px-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-primary/5 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
-          <Pencil className="h-3.5 w-3.5" aria-hidden="true" />코스 수정
-        </button>
-        <button type="button" aria-label="코스 삭제" title="코스 삭제" onClick={() => onDelete(course.courseId)} className="flex h-11 w-11 items-center justify-center rounded-lg text-muted-foreground/70 transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
-          <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-        </button>
-      </div>
     </article>
   );
 }

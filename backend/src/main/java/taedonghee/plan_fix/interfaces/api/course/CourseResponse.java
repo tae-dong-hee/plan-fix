@@ -4,6 +4,9 @@ import taedonghee.plan_fix.application.course.CourseResult;
 import taedonghee.plan_fix.domain.course.CourseStatus;
 import taedonghee.plan_fix.domain.course.CourseVisibility;
 
+import taedonghee.plan_fix.domain.course.CourseGenerationSource;
+import taedonghee.plan_fix.domain.course.CourseTravelTheme;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -27,14 +30,24 @@ public record CourseResponse(
         List<Day> days,
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt,
-        boolean isOwner
+        boolean isOwner,
+        CourseGenerationSource generatedBy,
+        List<CourseTravelTheme> themes
 ) {
     public CourseResponse(
             Long courseId, Long userId, String title, String description, String thumbnail,
             CourseVisibility visibility, CourseStatus status, long viewCount, long likeCount,
             LocalDate startDate, LocalDate endDate, List<Day> days, OffsetDateTime createdAt, OffsetDateTime updatedAt
     ) {
-        this(courseId, userId, title, description, thumbnail, visibility, status, viewCount, likeCount, startDate, endDate, days, createdAt, updatedAt, false);
+        this(courseId, userId, title, description, thumbnail, visibility, status, viewCount, likeCount, startDate, endDate, days, createdAt, updatedAt, false, null, List.of());
+    }
+
+    public CourseResponse(Long courseId, Long userId, String title, String description, String thumbnail,
+                          CourseVisibility visibility, CourseStatus status, long viewCount, long likeCount,
+                          LocalDate startDate, LocalDate endDate, List<Day> days,
+                          OffsetDateTime createdAt, OffsetDateTime updatedAt, boolean isOwner) {
+        this(courseId, userId, title, description, thumbnail, visibility, status, viewCount, likeCount,
+                startDate, endDate, days, createdAt, updatedAt, isOwner, null, List.of());
     }
 
     /**
@@ -64,7 +77,9 @@ public record CourseResponse(
                 result.days().stream().map(Day::from).toList(),
                 result.createdAt(),
                 result.updatedAt(),
-                isOwner
+                isOwner,
+                result.generatedBy(),
+                result.themes()
         );
     }
 

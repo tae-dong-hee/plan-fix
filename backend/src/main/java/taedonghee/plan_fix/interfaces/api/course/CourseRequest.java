@@ -4,6 +4,8 @@ import taedonghee.plan_fix.application.course.CourseCommand;
 import taedonghee.plan_fix.domain.course.CourseDayModel;
 import taedonghee.plan_fix.domain.course.CourseSpotModel;
 import taedonghee.plan_fix.domain.course.CourseVisibility;
+import taedonghee.plan_fix.domain.course.CourseGenerationSource;
+import taedonghee.plan_fix.domain.course.CourseTravelTheme;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -26,13 +28,21 @@ public final class CourseRequest {
             CourseVisibility visibility,
             LocalDate startDate,
             LocalDate endDate,
-            List<Day> days
+            List<Day> days,
+            CourseGenerationSource generatedBy,
+            List<CourseTravelTheme> themes
     ) {
+        public Create(String title, String description, String thumbnail, CourseVisibility visibility,
+                      LocalDate startDate, LocalDate endDate, List<Day> days) {
+            this(title, description, thumbnail, visibility, startDate, endDate, days, null, null);
+        }
+
         /**
          * HTTP 요청 DTO를 Application Command로 변환
          */
         public CourseCommand.Create toCommand() {
-            return new CourseCommand.Create(title, description, thumbnail, visibility, startDate, endDate, toDayModels(days));
+            return new CourseCommand.Create(title, description, thumbnail, visibility, startDate, endDate,
+                    toDayModels(days), generatedBy, themes);
         }
     }
 
@@ -46,13 +56,21 @@ public final class CourseRequest {
             CourseVisibility visibility,
             LocalDate startDate,
             LocalDate endDate,
-            List<Day> days
+            List<Day> days,
+            CourseGenerationSource generatedBy,
+            List<CourseTravelTheme> themes
     ) {
+        public Update(String title, String description, String thumbnail, CourseVisibility visibility,
+                      LocalDate startDate, LocalDate endDate, List<Day> days) {
+            this(title, description, thumbnail, visibility, startDate, endDate, days, null, null);
+        }
+
         /**
          * HTTP 요청 DTO를 Application Command로 변환
          */
         public CourseCommand.Update toCommand() {
-            return new CourseCommand.Update(title, description, thumbnail, visibility, startDate, endDate, toDayModels(days));
+            return new CourseCommand.Update(title, description, thumbnail, visibility, startDate, endDate,
+                    toDayModels(days), generatedBy, themes);
         }
     }
 

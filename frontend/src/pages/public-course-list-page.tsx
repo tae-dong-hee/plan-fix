@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { ArrowLeft, CalendarDays, Eye, Heart, Loader2, MapPin } from "lucide-react";
 import AppNav from "@/components/ui/app-nav";
+import CourseMetadata, { CourseSummaryBadges } from "@/components/ui/course-metadata";
 import { fetchPublicCourses, type PublicCourseItem } from "@/services/course";
 import { getCourseCoverCredit, getCourseCoverImageSrc } from "@/lib/course-cover-images";
 
@@ -81,10 +82,11 @@ export default function PublicCourseListPage() {
                     <Link to={`/courses/${course.courseId}`} className="group block rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-4">
                       <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-muted">
                         <img src={getCourseCoverImageSrc(course.thumbnail || FALLBACK_IMAGE)} alt="" loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 motion-reduce:transform-none motion-reduce:transition-none" />
-                        <span className="absolute left-3 top-3 rounded-full bg-white/95 px-2.5 py-1.5 text-[11px] font-semibold text-zinc-800 shadow-sm">{course.dayCount}일 일정</span>
                       </div>
                       <div className="px-0.5 pb-1 pt-3">
                         <h2 className="line-clamp-2 break-keep text-[15px] font-semibold leading-snug tracking-tight [overflow-wrap:anywhere]">{course.title}</h2>
+                        <CourseSummaryBadges generatedBy={course.generatedBy} dayCount={course.dayCount} className="mt-2.5" />
+                        <CourseMetadata themes={course.themes} className="mt-2" />
                         {course.description && <p className="mt-1.5 line-clamp-2 text-[13px] leading-5 text-muted-foreground">{course.description}</p>}
                         <div className="mt-3 flex flex-wrap gap-x-3 gap-y-2 text-xs text-muted-foreground">
                           <span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{course.spotCount}곳</span>
@@ -96,7 +98,7 @@ export default function PublicCourseListPage() {
                     </Link>
                     {credit && (
                       <div className="pointer-events-none absolute inset-x-0 top-0 aspect-[4/3]">
-                        <Link to={`/image-credits#${credit.id}`} aria-label={`${course.title} 사진 출처`} className="pointer-events-auto absolute bottom-2.5 right-3 rounded bg-black/40 px-1.5 py-1 text-[10px] text-white hover:bg-black/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">사진 출처</Link>
+                        <Link to={`/image-credits#${credit.id}`} aria-label={`${course.title} 사진 출처`} className="pointer-events-auto absolute left-3 top-3 rounded bg-black/40 px-1.5 py-1 text-[10px] text-white hover:bg-black/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">사진 출처</Link>
                       </div>
                     )}
                   </article>

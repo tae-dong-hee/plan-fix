@@ -10,7 +10,7 @@ import {
 import AppNav from "@/components/ui/app-nav";
 import InviteTripArtwork from "@/components/ui/invite-trip-artwork";
 import MyCourseCard from "@/components/ui/my-course-card";
-import { CourseResponse, deleteCourse, fetchMyCourses } from "@/services/course";
+import { CourseResponse, fetchMyCourses } from "@/services/course";
 import { UnauthorizedError } from "@/services/spots";
 
 export default function CourseListPage() {
@@ -18,28 +18,6 @@ export default function CourseListPage() {
   const [courses, setCourses] = useState<CourseResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const handleDeleteCourse = async (courseId: number) => {
-    if (!window.confirm("정말 이 코스를 삭제하시겠습니까?")) {
-      return;
-    }
-
-    try {
-      await deleteCourse(courseId);
-      setCourses((prev) => prev.filter((c) => c.courseId !== courseId));
-    } catch (err) {
-      if (err instanceof UnauthorizedError) {
-        alert("로그인이 필요합니다. 로그인 페이지로 이동합니다.");
-        navigate("/login");
-        return;
-      }
-      alert(err instanceof Error ? err.message : "코스 삭제에 실패했습니다.");
-    }
-  };
-
-  const handleEditCourse = (courseId: number) => {
-    navigate(`/courses/${courseId}/edit`);
-  };
 
   useEffect(() => {
     let ignore = false;
@@ -133,7 +111,7 @@ export default function CourseListPage() {
             </div>
           ) : (
             <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-              {courses.map((course) => <MyCourseCard key={course.courseId} course={course} onEdit={handleEditCourse} onDelete={handleDeleteCourse} />)}
+              {courses.map((course) => <MyCourseCard key={course.courseId} course={course} />)}
             </div>
           )}
         </section>
