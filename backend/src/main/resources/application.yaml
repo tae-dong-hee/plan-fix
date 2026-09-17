@@ -50,7 +50,7 @@ gemini:
 # JavaScript 지도 키는 길찾기 인증에 사용할 수 없다.
 routing:
   kakao:
-    api-key: ${KAKAO_MOBILITY_REST_API_KEY:}
+    api-key: ${KAKAO_MOBILITY_REST_API_KEY:${KAKAO_REST_API_KEY:}}
 
 aws:
   s3:

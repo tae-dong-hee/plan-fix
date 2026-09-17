@@ -10,7 +10,9 @@ import taedonghee.plan_fix.domain.board.BoardStatus;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
@@ -22,6 +24,7 @@ public class BoardRepositoryImpl implements BoardRepository {
 
     private final BoardJpaRepository boardJpaRepository;
     private final BoardImageJpaRepository boardImageJpaRepository;
+    private final CommentJpaRepository commentJpaRepository;
 
     /**
      * 게시글 저장 처리
@@ -49,7 +52,8 @@ public class BoardRepositoryImpl implements BoardRepository {
      */
     @Override
     public Optional<BoardModel> findById(Long boardId) {
-        return boardJpaRepository.findById(boardId).map(this::toDomain);
+        return boardJpaRepository.findById(boardId)
+                .map(entity -> toDomainsWithActualCommentCounts(List.of(entity)).getFirst());
     }
 
     /**
@@ -57,10 +61,9 @@ public class BoardRepositoryImpl implements BoardRepository {
      */
     @Override
     public List<BoardModel> findActiveByUserId(Long userId) {
-        return boardJpaRepository.findByUserIdAndStatusOrderByBoardIdDesc(userId, BoardStatus.ACTIVE)
-                .stream()
-                .map(this::toDomain)
-                .toList();
+        List<BoardJpaEntity> entities = boardJpaRepository
+                .findByUserIdAndStatusOrderByBoardIdDesc(userId, BoardStatus.ACTIVE);
+        return toDomainsWithActualCommentCounts(entities);
     }
 
     /**
@@ -72,7 +75,7 @@ public class BoardRepositoryImpl implements BoardRepository {
             case LATEST -> boardJpaRepository.searchActiveByLatest(limit, offset);
             case POPULAR -> boardJpaRepository.searchActiveByPopular(limit, offset);
         };
-        return entities.stream().map(this::toDomain).toList();
+        return toDomainsWithActualCommentCounts(entities);
     }
 
     /**
@@ -100,9 +103,7 @@ public class BoardRepositoryImpl implements BoardRepository {
 
     @Override
     public List<BoardModel> findLikedByUserId(Long userId) {
-        return boardJpaRepository.findLikedBoardsByUserId(userId).stream()
-                .map(this::toDomain)
-                .toList();
+        return toDomainsWithActualCommentCounts(boardJpaRepository.findLikedBoardsByUserId(userId));
     }
 
     @Override
@@ -137,13 +138,33 @@ public class BoardRepositoryImpl implements BoardRepository {
      * JPA 엔티티와 board_images 목록을 도메인 모델로 변환
      */
     private BoardModel toDomain(BoardJpaEntity entity) {
+        return toDomain(entity, entity.getCommentCount());
+    }
+
+    /** 목록 응답은 누적 컬럼이 아니라 현재 활성 댓글 행을 기준으로 실제 댓글 수를 사용한다. */
+    private List<BoardModel> toDomainsWithActualCommentCounts(List<BoardJpaEntity> entities) {
+        if (entities.isEmpty()) {
+            return List.of();
+        }
+        List<Long> boardIds = entities.stream().map(BoardJpaEntity::getBoardId).toList();
+        Map<Long, Long> commentCounts = commentJpaRepository.countActiveByBoardIds(boardIds).stream()
+                .collect(Collectors.toMap(
+                        CommentJpaRepository.BoardCommentCount::getBoardId,
+                        CommentJpaRepository.BoardCommentCount::getCommentCount
+                ));
+        return entities.stream()
+                .map(entity -> toDomain(entity, commentCounts.getOrDefault(entity.getBoardId(), 0L)))
+                .toList();
+    }
+
+    private BoardModel toDomain(BoardJpaEntity entity, long commentCount) {
         List<BoardImageModel> images = boardImageJpaRepository.findByBoardIdOrderBySequenceAsc(entity.getBoardId())
                 .stream()
                 .map(image -> new BoardImageModel(image.getImageUrl(), image.getAltText()))
                 .toList();
         return BoardModel.reconstruct(entity.getBoardId(), entity.getCourseId(), entity.getUserId(),
                 entity.getTitle(), entity.getContent(), entity.getThumbnail(), entity.getStatus(),
-                entity.getViewCount(), entity.getLikeCount(), entity.getCommentCount(), images,
+                entity.getViewCount(), entity.getLikeCount(), commentCount, images,
                 entity.getCreatedAt(), entity.getUpdatedAt());
     }
 }

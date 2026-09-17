@@ -26,6 +26,8 @@ describe("CourseCreatePage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     sessionStorage.clear();
+    (courseService.fetchDayAccommodations as Mock).mockResolvedValue([]);
+    (courseService.saveDayAccommodations as Mock).mockResolvedValue(undefined);
     (spotService.searchSpots as Mock).mockResolvedValue({
       items: [
         {

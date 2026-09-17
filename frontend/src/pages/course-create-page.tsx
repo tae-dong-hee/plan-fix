@@ -21,8 +21,21 @@ import DateRangeModal from "@/components/ui/date-range-modal";
 import KakaoMap from "@/components/ui/kakao-map";
 import CourseMetadata from "@/components/ui/course-metadata";
 import SpotSearchModal from "@/components/ui/spot-search-modal";
+<<<<<<< HEAD
+import AccommodationSearchModal from "@/components/ui/accommodation-search-modal";
+import {
+  createCourse,
+  fetchCourse,
+  fetchDayAccommodations,
+  saveDayAccommodations,
+  updateCourse,
+  type DayAccommodation,
+} from "@/services/course";
+import { type AiCourseDraft } from "@/services/ai-course";
+=======
 import { createCourse, fetchCourse, updateCourse, type CourseGenerationSource } from "@/services/course";
 import { type AiCourseDraft, type AiCourseTheme } from "@/services/ai-course";
+>>>>>>> origin/main
 import { PopularSpot, UnauthorizedError } from "@/services/spots";
 import { aiCourseNotice } from "@/lib/ai-course-notice";
 
@@ -48,8 +61,12 @@ export type CourseDraft = {
   startDate: string;
   endDate: string;
   days: DraftSpot[][];
+<<<<<<< HEAD
+  dayAccommodations?: Record<number, DayAccommodation>;
+=======
   generatedBy?: CourseGenerationSource | null;
   themes?: AiCourseTheme[];
+>>>>>>> origin/main
 };
 
 function formatDate(date: Date): string {
@@ -98,6 +115,8 @@ export default function CourseCreatePage() {
     const initialDaysCount = calculateDayCount(todayStr, defaultEndStr);
     return Array.from({ length: initialDaysCount }, () => []);
   });
+  const [dayAccommodations, setDayAccommodations] = useState<Record<number, DayAccommodation>>({});
+  const [accommodationDayNumber, setAccommodationDayNumber] = useState<number | null>(null);
 
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -185,6 +204,9 @@ export default function CourseCreatePage() {
           setLoadingCourse(false);
         }
       });
+    void fetchDayAccommodations(courseId).then((values) => {
+      if (!ignore) setDayAccommodations(Object.fromEntries(values.map((value) => [value.dayNumber, value])));
+    });
 
     return () => {
       ignore = true;
@@ -208,6 +230,7 @@ export default function CourseCreatePage() {
         if (Array.isArray(parsed.days) && parsed.days.length > 0) {
           setDays(parsed.days);
         }
+        if (parsed.dayAccommodations) setDayAccommodations(parsed.dayAccommodations);
       }
     } catch {
       // sessionStorage 파싱 오류 무시
@@ -225,14 +248,22 @@ export default function CourseCreatePage() {
         startDate,
         endDate,
         days,
+<<<<<<< HEAD
+        dayAccommodations,
+=======
         generatedBy,
         themes,
+>>>>>>> origin/main
       };
       sessionStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
     } catch {
       // sessionStorage 저장 오류 무시
     }
+<<<<<<< HEAD
+  }, [isEditMode, title, description, visibility, startDate, endDate, days, dayAccommodations]);
+=======
   }, [isEditMode, title, description, visibility, startDate, endDate, days, generatedBy, themes]);
+>>>>>>> origin/main
 
   // 여행 기간(시작일~종료일) 한 번에 변경 - 캘린더 모달에서 적용 버튼을 누르면 호출됨
   const handleApplyDateRange = (newStart: string, newEnd: string) => {
@@ -426,9 +457,11 @@ export default function CourseCreatePage() {
 
       if (isEditMode && courseId) {
         const result = await updateCourse(courseId, payload);
+        await saveDayAccommodations(result.courseId, Object.values(dayAccommodations).filter((value) => value.name.trim()));
         navigate(`/courses/${result.courseId}`, { replace: true });
       } else {
         const result = await createCourse(payload);
+        await saveDayAccommodations(result.courseId, Object.values(dayAccommodations).filter((value) => value.name.trim()));
         sessionStorage.removeItem(DRAFT_STORAGE_KEY);
         navigate(`/courses/${result.courseId}`, { replace: true });
       }
@@ -713,6 +746,16 @@ export default function CourseCreatePage() {
 
           {days.map((daySpots, dayIndex) => {
             const dayNumber = dayIndex + 1;
+            const endAccommodation = dayAccommodations[dayNumber];
+            const startAccommodation = dayIndex === 0 ? endAccommodation : dayAccommodations[dayNumber - 1];
+            const hasStartAccommodationLocation = startAccommodation?.latitude != null
+              && startAccommodation.longitude != null;
+            const hasEndAccommodationLocation = endAccommodation?.latitude != null
+              && endAccommodation.longitude != null;
+            const sameAccommodation = hasStartAccommodationLocation
+              && hasEndAccommodationLocation
+              && startAccommodation.latitude === endAccommodation.latitude
+              && startAccommodation.longitude === endAccommodation.longitude;
             return (
               <div
                 key={`day-${dayNumber}`}
@@ -731,15 +774,52 @@ export default function CourseCreatePage() {
                       </h3>
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => handleOpenSearchModal(dayIndex)}
-                    className="flex items-center gap-1.5 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/20"
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                    장소 추가
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setAccommodationDayNumber(dayNumber)}
+                      className="flex items-center gap-1.5 rounded-lg border border-primary/20 bg-background px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/5"
+                    >
+                      <span>🏠</span>
+                      {endAccommodation ? "숙소 변경" : "숙소 추가"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenSearchModal(dayIndex)}
+                      className="flex items-center gap-1.5 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/20"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                      장소 추가
+                    </button>
+                  </div>
                 </div>
+
+                {endAccommodation && (
+                  <div className="flex items-center justify-between border-b border-primary/10 bg-primary/[0.035] px-5 py-3 sm:px-6">
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-primary">🏠 Day {dayNumber} 도착 숙소</p>
+                      <p className="truncate text-sm font-semibold">{endAccommodation.name}</p>
+                      <p className="truncate text-xs text-muted-foreground">{endAccommodation.address}</p>
+                      {dayIndex > 0 && startAccommodation && (
+                        <p className="mt-1 text-[11px] text-muted-foreground">
+                          {startAccommodation.name}에서 출발
+                        </p>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      aria-label={`Day ${dayNumber} 숙소 삭제`}
+                      onClick={() => setDayAccommodations((previous) => {
+                        const next = { ...previous };
+                        delete next[dayNumber];
+                        return next;
+                      })}
+                      className="rounded-lg p-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
 
                 {/* Day 장소 목록 */}
                 <div className="p-4 sm:p-6">
@@ -868,12 +948,30 @@ export default function CourseCreatePage() {
                   {daySpots.length > 0 && (
                     <KakaoMap
                       className="mt-4"
-                      spots={daySpots.map((spot) => ({
-                        spotId: spot.spotId,
-                        title: spot.title,
-                        latitude: spot.latitude,
-                        longitude: spot.longitude,
-                      }))}
+                      spots={[
+                        ...(hasStartAccommodationLocation ? [{
+                          spotId: -dayNumber * 2,
+                          title: `출발 숙소 · ${startAccommodation.name}`,
+                          latitude: startAccommodation.latitude,
+                          longitude: startAccommodation.longitude,
+                          markerNumber: 1,
+                        }] : []),
+                        ...daySpots.map((spot, spotIndex) => ({
+                          spotId: spot.spotId,
+                          title: spot.title,
+                          latitude: spot.latitude,
+                          longitude: spot.longitude,
+                          markerNumber: spotIndex + (hasStartAccommodationLocation ? 2 : 1),
+                        })),
+                        ...(!sameAccommodation && hasEndAccommodationLocation ? [{
+                          spotId: -dayNumber * 2 - 1,
+                          title: `도착 숙소 · ${endAccommodation.name}`,
+                          latitude: endAccommodation.latitude,
+                          longitude: endAccommodation.longitude,
+                          markerNumber: daySpots.length + (hasStartAccommodationLocation ? 2 : 1),
+                        }] : []),
+                      ]}
+                      returnToStart={sameAccommodation}
                     />
                   )}
                 </div>
@@ -895,6 +993,18 @@ export default function CourseCreatePage() {
           onSelect={handleSelectSpot}
           excludedSpotIds={days[activeDayIndex]?.map((s) => s.spotId) || []}
           dayNumber={activeDayIndex + 1}
+        />
+      )}
+      {accommodationDayNumber !== null && (
+        <AccommodationSearchModal
+          open
+          dayNumber={accommodationDayNumber}
+          saved={Object.values(dayAccommodations)}
+          onClose={() => setAccommodationDayNumber(null)}
+          onSelect={(value) => setDayAccommodations((previous) => ({
+            ...previous,
+            [value.dayNumber]: value,
+          }))}
         />
       )}
     </div>
