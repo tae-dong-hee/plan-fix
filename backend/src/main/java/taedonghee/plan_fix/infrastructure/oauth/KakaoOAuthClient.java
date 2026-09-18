@@ -61,6 +61,7 @@ public class KakaoOAuthClient {
                 .queryParam("client_id", properties.clientId())
                 .queryParam("redirect_uri", properties.redirectUri())
                 .queryParam("response_type", "code")
+                .queryParam("prompt", "login")
                 .queryParam("state", state)
                 .queryParam("scope", properties.scope())
                 .queryParam("code_challenge", codeChallenge)
