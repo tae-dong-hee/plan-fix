@@ -1,0 +1,112 @@
+name: Deploy backend to Cloud Run
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/deploy-backend.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/deploy-backend.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backend-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  GCP_PROJECT_ID: planfix-01
+  GCP_REGION: asia-northeast3
+  CLOUD_RUN_SERVICE: planfix-backend
+  IMAGE_REPOSITORY: asia-northeast3-docker.pkg.dev/planfix-01/cloud-run-source-deploy/planfix-backend
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: planfix_ci
+          POSTGRES_USER: planfix
+          POSTGRES_PASSWORD: planfix_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U planfix -d planfix_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+      - name: Test with disposable PostgreSQL
+        working-directory: backend
+        env:
+          SPRING_PROFILES_ACTIVE: ci
+        run: ./gradlew --no-daemon test
+
+  deploy:
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Build container
+        run: docker build --tag "${IMAGE_REPOSITORY}:${GITHUB_SHA}" backend
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: projects/148201851366/locations/global/workloadIdentityPools/planfix-github/providers/planfix-repo
+          service_account: planfix-github-deploy@planfix-01.iam.gserviceaccount.com
+      - uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3
+      - name: Push container
+        run: |
+          gcloud auth configure-docker "${GCP_REGION}-docker.pkg.dev" --quiet
+          docker push "${IMAGE_REPOSITORY}:${GITHUB_SHA}"
+      - name: Update existing Cloud Run service
+        run: |
+          gcloud run services update "$CLOUD_RUN_SERVICE" \
+            --project "$GCP_PROJECT_ID" \
+            --region "$GCP_REGION" \
+            --image "${IMAGE_REPOSITORY}:${GITHUB_SHA}" \
+            --update-labels "managed-by=github-actions,commit-sha=${GITHUB_SHA}" \
+            --quiet
+          gcloud run services update-traffic "$CLOUD_RUN_SERVICE" \
+            --project "$GCP_PROJECT_ID" \
+            --region "$GCP_REGION" \
+            --to-latest --quiet
+      - name: Verify public API
+        run: |
+          service_url="$(gcloud run services describe "$CLOUD_RUN_SERVICE" \
+            --project "$GCP_PROJECT_ID" --region "$GCP_REGION" \
+            --format='value(status.url)')"
+          curl --fail --silent --show-error --retry 5 --retry-all-errors \
+            --retry-delay 10 --connect-timeout 10 --max-time 60 \
+            "${service_url}/api/v1/spots?size=1" --output /dev/null
+          {
+            echo "### Backend deployed"
+            echo "- Commit: ${GITHUB_SHA}"
+            echo "- Service: ${service_url}"
+            echo "- Image: ${IMAGE_REPOSITORY}:${GITHUB_SHA}"
+          } >> "$GITHUB_STEP_SUMMARY"

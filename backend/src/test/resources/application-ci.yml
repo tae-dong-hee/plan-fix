@@ -1,0 +1,23 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_DATABASE:planfix_ci}
+    username: ${DB_USERNAME:planfix}
+    password: ${DB_PASSWORD:planfix_ci}
+  jpa:
+    hibernate:
+      # Multiple Spring test contexts share the disposable CI database.
+      ddl-auto: update
+
+tour-api:
+  base-url: https://apis.data.go.kr/B551011/KorService2
+  service-key: ""
+  mobile-os: ETC
+  mobile-app: planfix
+  page-size: 100
+  call-interval-ms: 200
+  connect-timeout-ms: 15000
+  read-timeout-ms: 60000
+
+logging:
+  level:
+    org.hibernate.SQL: warn

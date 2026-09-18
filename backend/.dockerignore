@@ -1,0 +1,13 @@
+# Local credentials must never enter the build context or executable JAR.
+**/application-secret.*
+**/.env
+**/.env.*
+**/gha-creds-*.json
+
+# Build only from source, independent of local artifacts and caches.
+**/build
+**/.gradle
+**/.git
+**/.idea
+**/.DS_Store
+**/*.log
