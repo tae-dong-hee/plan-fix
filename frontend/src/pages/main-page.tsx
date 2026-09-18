@@ -2,11 +2,16 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   ArrowRight,
+  BookOpen,
   ChevronLeft,
   ChevronRight,
   Loader2,
   MessageSquare,
+  MapPin,
+  Route,
 } from "lucide-react";
+
+import "./main-page.css";
 
 import AppNav from "@/components/ui/app-nav";
 import MainCourseCard from "@/components/ui/main-course-card";
@@ -55,7 +60,7 @@ function PlaceCarouselControls({
   onPrevious: () => void;
   onNext: () => void;
 }) {
-  const buttonClass = "flex h-11 w-11 items-center justify-center rounded-full border border-border bg-background text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-default disabled:opacity-25";
+  const buttonClass = "travel-carousel-button flex h-11 w-11 items-center justify-center rounded-full border border-border bg-background text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-default disabled:opacity-25";
 
   return (
     <div role="group" aria-label={`${label} 넘기기`} className="flex shrink-0 gap-2">
@@ -478,7 +483,7 @@ export default function MainPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-28 text-foreground md:pb-0 md:pt-16">
+    <div className="travel-home min-h-screen bg-background pb-28 text-foreground md:pb-0 md:pt-16">
       <main>
         <MainTravelHeader
           selectedRegion={selectedRegion}
@@ -490,19 +495,25 @@ export default function MainPage() {
           weatherError={weatherError}
         />
 
-        <section className="mx-auto max-w-7xl px-5 py-8 sm:px-8 sm:py-10 lg:px-10" aria-labelledby="discover-title">
+        <section className="travel-section travel-section-courses mx-auto max-w-7xl px-5 py-8 sm:px-8 sm:py-10 lg:px-10" aria-labelledby="discover-title">
           <div className="flex items-center justify-between gap-4">
-            <h2 id="discover-title" className="text-xl font-bold tracking-tight sm:text-2xl">강원도에서 뭐 하지?</h2>
+            <div className="travel-section-title">
+              <span className="travel-section-icon"><Route aria-hidden="true" /></span>
+              <div>
+                <p className="travel-eyebrow">FIND YOUR NEXT TRIP</p>
+                <h2 id="discover-title" className="text-xl font-bold tracking-tight sm:text-2xl">강원도에서 뭐 하지?</h2>
+              </div>
+            </div>
             <Link
               to="/courses/public"
-              className="inline-flex min-h-11 shrink-0 items-center gap-1 rounded-full px-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:text-sm"
+              className="travel-section-link inline-flex min-h-11 shrink-0 items-center gap-1 rounded-full px-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:text-sm"
               aria-label="강원도에서 뭐 하지? 전체보기"
             >
               전체보기
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </Link>
           </div>
-          <div className="mt-2 flex items-center justify-between gap-4">
+          <div className="travel-section-description mt-3 flex items-center justify-between gap-4">
             <p className="break-keep text-[13px] leading-relaxed text-muted-foreground sm:text-sm">
               다른 여행자들이 공유한 코스로 여행을 계획해 보세요.
             </p>
@@ -541,7 +552,7 @@ export default function MainPage() {
               <div
                 ref={guideCarouselRef}
                 onScroll={updateGuideScrollButtons}
-                className="-mx-1 flex snap-x snap-mandatory scroll-px-1 gap-4 overflow-x-auto p-1 scrollbar-hide sm:gap-5"
+                className="travel-card-track -mx-1 flex snap-x snap-mandatory scroll-px-1 gap-4 overflow-x-auto p-1 scrollbar-hide sm:gap-5"
                 aria-label="여행 코스"
               >
                 {(guideCourses ?? []).map((course) => (
@@ -559,9 +570,15 @@ export default function MainPage() {
           )}
         </section>
 
-        <section className="mx-auto max-w-7xl px-5 pb-12 sm:px-8 lg:px-10" aria-labelledby="popular-spots-title">
+        <section className="travel-section travel-section-spots mx-auto max-w-7xl px-5 pb-12 sm:px-8 lg:px-10" aria-labelledby="popular-spots-title">
           <div className="flex items-center justify-between gap-4">
-            <h2 id="popular-spots-title" className="text-xl font-bold tracking-tight sm:text-2xl">{locationName}의 인기 장소</h2>
+            <div className="travel-section-title">
+              <span className="travel-section-icon travel-section-icon-mint"><MapPin aria-hidden="true" /></span>
+              <div>
+                <p className="travel-eyebrow">PLACES TO FALL IN LOVE WITH</p>
+                <h2 id="popular-spots-title" className="text-xl font-bold tracking-tight sm:text-2xl">{locationName}의 인기 장소</h2>
+              </div>
+            </div>
             <button
               type="button"
               onClick={() => {
@@ -571,14 +588,14 @@ export default function MainPage() {
                   navigate("/spots/popular");
                 }
               }}
-              className="inline-flex min-h-11 shrink-0 items-center gap-1 rounded-full px-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:text-sm"
+              className="travel-section-link inline-flex min-h-11 shrink-0 items-center gap-1 rounded-full px-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:text-sm"
               aria-label="인기 장소 더보기"
             >
               전체보기
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </button>
           </div>
-          <div className="mt-2 flex items-center justify-between gap-4">
+          <div className="travel-section-description mt-3 flex items-center justify-between gap-4">
             <p className="break-keep text-[13px] leading-relaxed text-muted-foreground sm:text-sm">여행자들이 많이 찾는 장소를 둘러보세요.</p>
             {!!popularSpots?.length && !popularSpotsError && (
               <PlaceCarouselControls
@@ -615,7 +632,7 @@ export default function MainPage() {
               <div
                 ref={carouselRef}
                 onScroll={updateScrollButtons}
-                className="-mx-1 flex snap-x snap-mandatory scroll-px-1 gap-4 overflow-x-auto p-1 scrollbar-hide sm:gap-5"
+                className="travel-card-track -mx-1 flex snap-x snap-mandatory scroll-px-1 gap-4 overflow-x-auto p-1 scrollbar-hide sm:gap-5"
                 aria-label={`${locationName} 인기 장소`}
               >
                 {(popularSpots ?? []).map((spot) => {
@@ -641,18 +658,23 @@ export default function MainPage() {
           )}
         </section>
 
-        <section className="mx-auto max-w-7xl px-5 pb-12 sm:px-8 lg:px-10" aria-labelledby="travel-stories-title">
+        <section className="travel-section travel-section-stories mx-auto max-w-7xl px-5 pb-12 sm:px-8 lg:px-10" aria-labelledby="travel-stories-title">
           <div className="flex items-center justify-between gap-4">
-            <h2 id="travel-stories-title" className="text-xl font-bold tracking-tight sm:text-2xl">여행 이야기</h2>
+            <div className="travel-section-title">
+              <span className="travel-section-icon travel-section-icon-peach"><BookOpen aria-hidden="true" /></span>
+              <div>
+                <p className="travel-eyebrow">MOMENTS WORTH SHARING</p>
+                <h2 id="travel-stories-title" className="text-xl font-bold tracking-tight sm:text-2xl">여행 이야기</h2>
+              </div>
+            </div>
             <Link
               to="/boards/create"
-              className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-4 py-2 text-xs font-semibold text-primary transition-all hover:bg-primary hover:text-primary-foreground active:scale-95 sm:text-sm"
+              className="travel-story-write inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:text-sm"
             >
               <span>이야기 올리기</span>
-              <ArrowRight className="h-4 w-4" />
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </Link>
           </div>
-
           <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground sm:text-sm">마음에 드는 이야기에 좋아요를 누르면 위시리스트의 여행 이야기에서 다시 볼 수 있어요.</p>
           {boardLikeError && <p role="alert" className="mt-4 text-sm text-destructive">{boardLikeError}</p>}
           {boardLikesError && !popularBoardsError && !!popularBoards?.length && (
@@ -661,7 +683,12 @@ export default function MainPage() {
               <button type="button" onClick={() => setBoardLikesReload((value) => value + 1)} className="rounded-lg border border-border px-3 py-2 font-medium text-primary hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">좋아요 상태 다시 확인</button>
             </div>
           )}
-          {popularBoardsError || popularBoards?.length === 0 ? (
+          {popularBoards === null && !popularBoardsError ? (
+            <div role="status" className="mt-6 flex h-44 items-center justify-center gap-2 text-sm text-muted-foreground sm:h-72">
+              <Loader2 className="h-5 w-5 animate-spin text-primary motion-reduce:animate-none" aria-hidden="true" />
+              <span>여행 이야기를 불러오는 중...</span>
+            </div>
+          ) : popularBoardsError || popularBoards?.length === 0 ? (
             <p className="mt-6 text-base text-muted-foreground">표시할 게시글이 없어요.</p>
           ) : (
             <div className="relative mt-6">
@@ -679,29 +706,32 @@ export default function MainPage() {
               <div
                 ref={boardCarouselRef}
                 onScroll={updateBoardScrollButtons}
-                className="-mx-1 flex gap-4 overflow-x-auto p-1 snap-x snap-mandatory scrollbar-hide sm:gap-5"
+                className="travel-card-track -mx-1 flex gap-4 overflow-x-auto p-1 snap-x snap-mandatory scrollbar-hide sm:gap-5"
               >
                 {(popularBoards ?? []).map((board) => (
                   <article
                     key={board.boardId}
-                    className="w-[76%] shrink-0 snap-start sm:w-[46%] lg:w-[calc((100%_-_3.75rem)/4)]"
+                    className="travel-story-card group block w-[82%] shrink-0 snap-start rounded-3xl sm:w-[46%] lg:w-[calc((100%_-_2.5rem)/3)]"
                   >
                     <Link
                       to={`/boards/${board.boardId}`}
-                      className="group block rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                      className="block rounded-3xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                     >
-                      <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-muted">
+                      <div className="relative aspect-[16/10] overflow-hidden rounded-t-3xl bg-muted">
                         <img
-                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 motion-reduce:transform-none motion-reduce:transition-none"
                           src={board.thumbnail ?? FALLBACK_SPOT_IMAGE}
                           alt={board.title}
+                          loading="lazy"
                         />
+                        <span className="travel-story-image-label"><BookOpen className="h-3.5 w-3.5" aria-hidden="true" /> 여행 기록</span>
                       </div>
-                      <div className="px-0.5 pt-3">
-                        <h3 className="line-clamp-2 text-[15px] font-semibold leading-snug">{board.title}</h3>
+                      <div className="flex items-start gap-3 px-5 pb-4 pt-5">
+                        <h3 className="line-clamp-2 flex-1 text-base font-bold leading-relaxed tracking-tight transition-colors group-hover:text-primary">{board.title}</h3>
+                        <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
                       </div>
                     </Link>
-                    <div className="mt-3 flex items-center justify-between gap-2 px-0.5 pb-1">
+                    <div className="mx-5 flex flex-wrap items-center justify-between gap-2 border-t border-border/70 pb-4 pt-3">
                       <StoryLikeButton
                         title={board.title}
                         isLiked={!!likedBoards[board.boardId]}
@@ -734,7 +764,13 @@ export default function MainPage() {
         </section>
       </main>
 
-      <AppNav />
+      <footer className="travel-footer mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
+        <Link to="/main" className="text-lg font-bold tracking-tight">Plan<span className="text-primary">Fix</span></Link>
+        <p>설레는 발견부터, 나다운 여행까지.</p>
+        <span className="travel-footer-note">YOUR TRIP, YOUR WAY.</span>
+      </footer>
+
+      <AppNav className="travel-nav" />
 
       <GangwonRegionMap
         open={isRegionMapOpen}

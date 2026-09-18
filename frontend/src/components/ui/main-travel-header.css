@@ -1,0 +1,323 @@
+.main-travel-header {
+  --hero-background: #f0ebfa;
+  --hero-ink: #352750;
+  --hero-secondary-ink: #736781;
+}
+
+.travel-hero {
+  position: relative;
+  display: flex;
+  min-height: 262px;
+  align-items: center;
+  overflow: hidden;
+  border: 1px solid hsl(var(--primary) / 0.06);
+  border-radius: 28px;
+  background: var(--hero-background);
+}
+
+.travel-hero-copy {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-width: 0;
+  padding: 30px 0 31px 38px;
+}
+
+.travel-hero-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #7955b7;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.19em;
+}
+
+.travel-hero-eyebrow > span {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.travel-hero-pretitle {
+  margin-top: 15px;
+  color: var(--hero-secondary-ink);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -0.025em;
+}
+
+.travel-hero-title {
+  margin-top: 4px;
+  color: var(--hero-ink);
+  font-size: clamp(28px, 3vw, 39px);
+  font-weight: 700;
+  letter-spacing: -0.055em;
+  line-height: 1.35;
+}
+
+.travel-hero-description {
+  margin-top: 9px;
+  color: var(--hero-secondary-ink);
+  font-size: 12px;
+  line-height: 1.75;
+  word-break: keep-all;
+}
+
+.travel-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 21px;
+}
+
+.travel-hero-primary,
+.travel-hero-secondary {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 10px;
+  padding: 9px 13px;
+  font-size: 11px;
+  font-weight: 600;
+  transition: background 150ms ease, box-shadow 150ms ease;
+}
+
+.travel-hero-primary {
+  color: #fff;
+  background: #7951cb;
+  box-shadow: 0 4px 10px #6a3fb21a;
+}
+
+.travel-hero-primary:hover {
+  background: #6740b7;
+  box-shadow: 0 5px 16px #6a3fb233;
+}
+
+.travel-hero-secondary {
+  color: var(--hero-ink);
+  background: #ffffff70;
+}
+
+.travel-hero-secondary:hover {
+  background: #ffffffb5;
+}
+
+.travel-hero-actions a:focus-visible {
+  outline: 2px solid hsl(var(--primary));
+  outline-offset: 4px;
+}
+
+.travel-hero-art {
+  position: relative;
+  align-self: stretch;
+  flex: 0 0 43%;
+  max-width: 465px;
+  min-height: 262px;
+  margin-right: 29px;
+  color: #a086c3;
+}
+
+.travel-hero-orbit {
+  position: absolute;
+  width: 275px;
+  height: 275px;
+  top: -7px;
+  left: 71px;
+  border: 1px solid #dbceef;
+  border-radius: 50%;
+  background: #f8f4ed85;
+}
+
+.travel-hero-route {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.travel-hero-postcard {
+  position: absolute;
+  top: 24px;
+  left: 83px;
+  width: 247px;
+  padding: 9px 9px 11px;
+  transform: rotate(-7deg);
+  border: 1px solid #fff;
+  border-radius: 7px;
+  background: #fffdfa;
+  box-shadow: 0 15px 25px #51357e16, 0 3px 8px #51357e0d;
+}
+
+.travel-hero-landscape {
+  width: 100%;
+  border-radius: 2px;
+}
+
+.travel-hero-postcard-caption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 9px 4px 0;
+  color: #49485a;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+}
+
+.travel-hero-postcard-note {
+  display: block;
+  margin: 2px 4px 0;
+  color: #9a9096;
+  font-size: 8px;
+  letter-spacing: 0.04em;
+}
+
+.travel-hero-stamp {
+  position: absolute;
+  top: 18px;
+  left: 301px;
+  display: flex;
+  width: 71px;
+  height: 82px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  transform: rotate(11deg);
+  border: 1px dashed #b39acb;
+  outline: 5px solid #e2d7f1;
+  background: #e2d7f1;
+  color: #715093;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: 0.08em;
+}
+
+.travel-hero-art-tag {
+  position: absolute;
+  bottom: 22px;
+  left: 242px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+  transform: rotate(4deg);
+  border: 1px solid #fff;
+  border-radius: 8px;
+  padding: 11px 13px;
+  background: #fffdf7;
+  color: #77705e;
+  box-shadow: 0 5px 12px #51357e0b;
+  font-size: 10px;
+}
+
+.travel-hero-art-tag > span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #9aab72;
+}
+
+.travel-region-bar {
+  display: flex;
+  align-items: center;
+  gap: 21px;
+  margin: 17px 0;
+}
+
+.travel-region-select {
+  background: hsl(var(--background));
+  box-shadow: inset 0 0 0 1px hsl(var(--border) / 0.8);
+}
+
+.travel-region-tabs {
+  padding-left: 20px;
+  border-left: 1px solid hsl(var(--border));
+}
+
+.travel-weather-strip {
+  border: 1px solid hsl(var(--border) / 0.7);
+  background: hsl(var(--background) / 0.85);
+  box-shadow: 0 3px 12px hsl(var(--foreground) / 0.015);
+}
+
+.travel-weather-icon {
+  display: flex;
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: hsl(var(--primary) / 0.065);
+  color: hsl(var(--primary));
+}
+
+.dark .main-travel-header {
+  --hero-background: #29203d;
+  --hero-ink: #f0e8fc;
+  --hero-secondary-ink: #c4b4d7;
+}
+
+.dark .travel-hero-eyebrow { color: #bb9eea; }
+.dark .travel-hero-secondary { background: #ffffff0d; }
+.dark .travel-hero-secondary:hover { background: #ffffff18; }
+.dark .travel-hero-orbit { border-color: #63468566; background: #392c493d; }
+.dark .travel-hero-art { opacity: 0.88; }
+
+@media (max-width: 1023px) {
+  .travel-hero-art { flex-basis: 39%; margin-right: 8px; }
+  .travel-hero-postcard { left: 10px; width: 223px; top: 37px; }
+  .travel-hero-orbit { left: 0; width: 250px; height: 250px; top: 9px; }
+  .travel-hero-stamp { left: 202px; top: 27px; width: 60px; height: 74px; }
+  .travel-hero-art-tag { left: 147px; bottom: 25px; }
+  .travel-hero-copy { padding-left: 28px; }
+  .travel-region-bar { gap: 14px; }
+  .travel-region-tabs { padding-left: 12px; }
+}
+
+@media (max-width: 767px) {
+  .travel-hero { border-radius: 22px; }
+  .travel-hero-copy { padding: 25px 24px; }
+  .travel-hero-art { flex-basis: 29%; margin-right: 0; opacity: 0.5; }
+  .travel-hero-postcard { left: 0; top: 48px; width: 210px; transform: rotate(9deg); }
+  .travel-hero-orbit { left: -34px; }
+  .travel-hero-stamp, .travel-hero-art-tag { display: none; }
+  .travel-hero-title { font-size: 31px; }
+  .travel-hero-description { max-width: 290px; }
+  .travel-region-bar { align-items: flex-start; flex-direction: column; gap: 10px; margin: 15px 0; }
+  .travel-region-tabs { width: calc(100% + 8px); padding-left: 4px; border-left: 0; }
+}
+
+@media (max-width: 559px) {
+  .travel-hero { min-height: 260px; }
+  .travel-hero-copy { padding: 24px 20px; }
+  .travel-hero-title { font-size: clamp(26px, 6.7vw, 33px); }
+  .travel-hero-art { display: none; }
+  .travel-hero::after {
+    position: absolute;
+    top: -72px;
+    right: -69px;
+    width: 170px;
+    height: 170px;
+    border: 1px solid hsl(var(--primary) / 0.13);
+    border-radius: 50%;
+    box-shadow: 0 0 0 26px hsl(var(--primary) / 0.025), 0 0 0 55px hsl(var(--primary) / 0.025);
+    content: "";
+    pointer-events: none;
+  }
+  .travel-hero-actions { gap: 6px; }
+  .travel-hero-primary, .travel-hero-secondary { padding: 9px 10px; font-size: 10px; gap: 5px; }
+  .travel-weather-icon { width: 29px; height: 29px; border-radius: 9px; }
+  .travel-weather-icon > svg { width: 18px; height: 18px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .travel-hero-primary, .travel-hero-secondary { transition: none; }
+}
