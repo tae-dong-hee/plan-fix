@@ -1,0 +1,132 @@
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { MemoryRouter, useLocation, useNavigate } from "react-router-dom";
+import WishlistPage from "./wishlist-page";
+import { unlikeBoard, type BoardDetail, type BoardLikeState } from "@/services/board";
+import { unlikeCourse, type CourseResponse } from "@/services/course";
+import { unlikeSpot } from "@/services/spots";
+import { fetchLikedBoards, fetchLikedCourses, fetchLikedSpots, type WishlistSpot } from "@/services/wishlist";
+
+vi.mock("@/components/ui/app-nav", () => ({ default: () => null }));
+vi.mock("@/services/wishlist");
+vi.mock("@/services/board");
+vi.mock("@/services/course");
+vi.mock("@/services/spots");
+
+const spot: WishlistSpot = {
+  spotId: 1, title: "경포해변", category: "관광지", region: "강원", sigungu: "강릉",
+  address: "강릉시", thumbnail: null, likeCount: 3, isLiked: true,
+};
+const course: CourseResponse = {
+  courseId: 1, userId: 10, title: "강릉 하루 코스", description: null,
+  thumbnail: null, visibility: "PUBLIC", status: "ACTIVE", viewCount: 4, likeCount: 2,
+  startDate: null, endDate: null, days: [{ dayNumber: 1, spots: [] }],
+  createdAt: "2026-09-01T10:00:00Z", updatedAt: "2026-09-01T10:00:00Z",
+};
+const board: BoardDetail = {
+  boardId: 1, userId: 10, courseId: 1, title: "강릉에서 보낸 주말",
+  content: "<p>친구와 바다를 보고 왔어요.</p>", thumbnail: null, status: "PUBLISHED",
+  viewCount: 6, likeCount: 2, commentCount: 1, images: [], isLiked: true,
+  createdAt: "2026-09-01T10:00:00Z", updatedAt: "2026-09-01T10:00:00Z",
+};
+
+function HistoryControls() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  return <>
+    <output aria-label="현재 주소">{location.pathname}{location.search}</output>
+    <button type="button" onClick={() => navigate(-1)}>이전 분류</button>
+  </>;
+}
+
+function renderPage(path = "/wishlist") {
+  return render(
+    <MemoryRouter initialEntries={[path]} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <WishlistPage />
+      <HistoryControls />
+    </MemoryRouter>,
+  );
+}
+
+describe("WishlistPage", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(fetchLikedSpots).mockResolvedValue([spot]);
+    vi.mocked(fetchLikedCourses).mockResolvedValue([course]);
+    vi.mocked(fetchLikedBoards).mockResolvedValue([board]);
+    vi.mocked(unlikeBoard).mockResolvedValue({ likeCount: 1, liked: false });
+  });
+
+  test("같은 ID의 여행지, 코스, 이야기도 각각의 분류와 개수로 보여준다", async () => {
+    renderPage();
+
+    await screen.findByTestId("wishlist-spot-1");
+    const categories = within(screen.getByRole("group", { name: "좋아요 종류" }));
+    expect(categories.getByRole("button", { name: "여행지 1개" })).toHaveAttribute("aria-pressed", "true");
+    expect(categories.getByRole("button", { name: "여행 코스 1개" })).toHaveAttribute("aria-pressed", "false");
+    expect(categories.getByRole("button", { name: "여행 이야기 1개" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.queryByTestId("wishlist-course-1")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("wishlist-board-1")).not.toBeInTheDocument();
+
+    fireEvent.click(categories.getByRole("button", { name: "여행 코스 1개" }));
+    expect(screen.getByTestId("wishlist-course-1")).toHaveTextContent("여행 코스 · 1일 일정");
+    expect(screen.queryByTestId("wishlist-spot-1")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("현재 주소")).toHaveTextContent("/wishlist?tab=courses");
+
+    fireEvent.click(categories.getByRole("button", { name: "여행 이야기 1개" }));
+    expect(screen.getByTestId("wishlist-board-1")).toHaveTextContent("여행 이야기");
+    expect(screen.getByRole("link", { name: `${board.title} 여행 이야기 읽기` })).toHaveAttribute("href", "/boards/1");
+    expect(screen.queryByTestId("wishlist-course-1")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("현재 주소")).toHaveTextContent("/wishlist?tab=boards");
+
+    fireEvent.click(screen.getByRole("button", { name: "이전 분류" }));
+    await screen.findByTestId("wishlist-course-1");
+    expect(categories.getByRole("button", { name: "여행 코스 1개" })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  test("이야기 좋아요를 취소하면 이야기 개수만 줄고 다른 좋아요는 유지된다", async () => {
+    let finishUnlike!: (state: BoardLikeState) => void;
+    vi.mocked(unlikeBoard).mockReturnValue(new Promise<BoardLikeState>((resolve) => { finishUnlike = resolve; }));
+    renderPage("/wishlist?tab=boards");
+
+    const unlike = await screen.findByRole("button", { name: `${board.title} 여행 이야기 좋아요 취소` });
+    expect(unlike.closest("a")).toBeNull();
+    fireEvent.click(unlike);
+    expect(unlike).toBeDisabled();
+    fireEvent.click(unlike);
+    expect(unlikeBoard).toHaveBeenCalledTimes(1);
+    expect(unlikeBoard).toHaveBeenCalledWith(1);
+    expect(screen.getByTestId("wishlist-board-1")).toBeInTheDocument();
+
+    await act(async () => finishUnlike({ likeCount: 1, liked: false }));
+    expect(screen.queryByTestId("wishlist-board-1")).not.toBeInTheDocument();
+    expect(screen.getByText("좋아요한 여행 이야기가 없습니다.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "여행 이야기 0개" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "여행지 1개" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "여행 코스 1개" })).toBeInTheDocument();
+    expect(unlikeSpot).not.toHaveBeenCalled();
+    expect(unlikeCourse).not.toHaveBeenCalled();
+    expect(screen.getByLabelText("현재 주소")).toHaveTextContent("/wishlist?tab=boards");
+  });
+
+  test("좋아요 취소가 실패하면 이야기와 개수를 유지하고 다시 시도할 수 있다", async () => {
+    vi.mocked(unlikeBoard).mockRejectedValueOnce(new Error("Network error"));
+    renderPage("/wishlist?tab=boards");
+
+    const unlike = await screen.findByRole("button", { name: `${board.title} 여행 이야기 좋아요 취소` });
+    fireEvent.click(unlike);
+    expect(await screen.findByRole("alert")).toHaveTextContent("여행 이야기 좋아요를 취소하지 못했습니다.");
+    expect(screen.getByTestId("wishlist-board-1")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "여행 이야기 1개" })).toBeInTheDocument();
+    expect(unlike).toBeEnabled();
+
+    fireEvent.click(unlike);
+    await waitFor(() => expect(screen.queryByTestId("wishlist-board-1")).not.toBeInTheDocument());
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  test("알 수 없는 분류 주소는 여행지 목록을 보여준다", async () => {
+    renderPage("/wishlist?tab=unknown");
+    await screen.findByTestId("wishlist-spot-1");
+    expect(screen.getByRole("button", { name: "여행지 1개" })).toHaveAttribute("aria-pressed", "true");
+  });
+});

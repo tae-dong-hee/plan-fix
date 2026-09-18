@@ -3,6 +3,7 @@ package taedonghee.plan_fix.infrastructure.spot;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 import taedonghee.plan_fix.domain.spot.SpotModel;
 import taedonghee.plan_fix.domain.spot.SpotRepository;
@@ -19,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * 상세 조회가 TourAPI 부가 데이터(정보/이미지)를 찾아가는 첫 단계라 실제 저장소를 쓴다.
  */
 @SpringBootTest
+@ActiveProfiles("test")
 @Transactional
 class TourDataSpotRepositoryImplTest {
 

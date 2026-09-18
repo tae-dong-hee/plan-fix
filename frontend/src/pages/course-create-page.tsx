@@ -28,8 +28,8 @@ import {
   fetchDayAccommodations,
   saveDayAccommodations,
   updateCourse,
-  type DayAccommodation,
   type CourseGenerationSource,
+  type DayAccommodation,
 } from "@/services/course";
 import { type AiCourseDraft, type AiCourseTheme } from "@/services/ai-course";
 import { PopularSpot, UnauthorizedError } from "@/services/spots";

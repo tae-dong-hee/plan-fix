@@ -4,6 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 import taedonghee.plan_fix.domain.board.BoardImageModel;
 import taedonghee.plan_fix.domain.board.BoardModel;
@@ -20,9 +21,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * 공개 게시글 목록 조회가 실제 DB에서 필터·정렬·offset/limit대로 동작하는지 검증한다.
- * @Transactional로 각 테스트 종료 시 자동 롤백되어 로컬 DB에 더미 데이터를 남기지 않는다.
+ * 임시 PostgreSQL을 사용하며 @Transactional로 테스트 사이의 데이터도 롤백한다.
  */
 @SpringBootTest
+@ActiveProfiles("test")
 @Transactional
 class BoardRepositoryImplTest {
 

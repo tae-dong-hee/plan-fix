@@ -5,7 +5,6 @@ import {
   BookOpen,
   ChevronLeft,
   ChevronRight,
-  Heart,
   Loader2,
   MessageSquare,
   MapPin,
@@ -18,12 +17,15 @@ import AppNav from "@/components/ui/app-nav";
 import MainCourseCard from "@/components/ui/main-course-card";
 import MainSpotCard from "@/components/ui/main-spot-card";
 import MainTravelHeader from "@/components/ui/main-travel-header";
+import StoryLikeButton from "@/components/ui/story-like-button";
 import GangwonRegionMap, {
   sigunguCodeByRegion,
   type GangwonRegion,
 } from "@/components/ui/gangwon-region-map";
 import {
   fetchPopularBoards,
+  likeBoard,
+  unlikeBoard,
   type BoardItem,
 } from "@/services/board";
 import {
@@ -38,7 +40,7 @@ import {
   type WeatherDayItem,
 } from "@/services/weather";
 import { fetchPublicCourses, likeCourse, unlikeCourse, type PublicCourseItem } from "@/services/course";
-import { fetchLikedCourses, fetchLikedSpots } from "@/services/wishlist";
+import { fetchLikedBoards, fetchLikedCourses, fetchLikedSpots } from "@/services/wishlist";
 
 // 강원도 전체가 시도코드 "51"(강원특별자치도) 하나뿐이라 상수로 둔다.
 const GANGWON_REGION_CODE = "51";
@@ -113,6 +115,13 @@ export default function MainPage() {
   const boardCarouselRef = useRef<HTMLDivElement>(null);
   const [popularBoards, setPopularBoards] = useState<BoardItem[] | null>(null);
   const [popularBoardsError, setPopularBoardsError] = useState(false);
+  const [likedBoards, setLikedBoards] = useState<Record<number, boolean>>({});
+  const [loadingBoards, setLoadingBoards] = useState<Record<number, boolean>>({});
+  const [boardLikesLoading, setBoardLikesLoading] = useState(true);
+  const [boardLikesError, setBoardLikesError] = useState(false);
+  const [boardLikeError, setBoardLikeError] = useState<string | null>(null);
+  const [boardLikesReload, setBoardLikesReload] = useState(0);
+  const pendingBoardLikes = useRef(new Set<number>());
   const [canBoardScrollLeft, setCanBoardScrollLeft] = useState(false);
   const [canBoardScrollRight, setCanBoardScrollRight] = useState(false);
 
@@ -287,6 +296,33 @@ export default function MainPage() {
   }, []);
 
   useEffect(() => {
+    let ignore = false;
+    setBoardLikesLoading(true);
+    setBoardLikesError(false);
+
+    // 공개 이야기 목록에는 isLiked가 없으므로 계정의 이야기 위시리스트로 확인한다.
+    fetchLikedBoards()
+      .then((boards) => {
+        if (!ignore) {
+          setLikedBoards(Object.fromEntries(boards.map((board) => [board.boardId, true])));
+        }
+      })
+      .catch((error) => {
+        if (ignore) return;
+        if (error instanceof UnauthorizedError) {
+          setLikedBoards({});
+        } else {
+          setBoardLikesError(true);
+        }
+      })
+      .finally(() => {
+        if (!ignore) setBoardLikesLoading(false);
+      });
+
+    return () => { ignore = true; };
+  }, [boardLikesReload]);
+
+  useEffect(() => {
     updateGuideScrollButtons();
     const handleResize = () => updateGuideScrollButtons();
     window.addEventListener("resize", handleResize);
@@ -417,6 +453,32 @@ export default function MainPage() {
     } finally {
       pendingCourseLikes.current.delete(courseId);
       setLoadingCourses((prev) => ({ ...prev, [courseId]: false }));
+    }
+  };
+
+  const handleToggleBoardLike = async (boardId: number) => {
+    if (boardLikesLoading || boardLikesError || pendingBoardLikes.current.has(boardId)) return;
+
+    const wasLiked = !!likedBoards[boardId];
+    pendingBoardLikes.current.add(boardId);
+    setBoardLikeError(null);
+    setLoadingBoards((prev) => ({ ...prev, [boardId]: true }));
+
+    try {
+      const result = wasLiked ? await unlikeBoard(boardId) : await likeBoard(boardId);
+      setLikedBoards((prev) => ({ ...prev, [boardId]: result.liked }));
+      setPopularBoards((prev) => prev?.map((board) => (
+        board.boardId === boardId ? { ...board, likeCount: result.likeCount } : board
+      )) ?? prev);
+    } catch (error) {
+      if (error instanceof UnauthorizedError || (error instanceof Error && error.message === "로그인이 필요합니다.")) {
+        navigate("/login");
+      } else {
+        setBoardLikeError("이야기 좋아요를 변경하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+      }
+    } finally {
+      pendingBoardLikes.current.delete(boardId);
+      setLoadingBoards((prev) => ({ ...prev, [boardId]: false }));
     }
   };
 
@@ -613,8 +675,14 @@ export default function MainPage() {
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </Link>
           </div>
-          <p className="mt-3 break-keep text-[13px] leading-relaxed text-muted-foreground sm:text-sm">여행의 끝에서, 또 다른 여행의 시작을 만나보세요.</p>
-
+          <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground sm:text-sm">마음에 드는 이야기에 좋아요를 누르면 위시리스트의 여행 이야기에서 다시 볼 수 있어요.</p>
+          {boardLikeError && <p role="alert" className="mt-4 text-sm text-destructive">{boardLikeError}</p>}
+          {boardLikesError && !popularBoardsError && !!popularBoards?.length && (
+            <div role="alert" className="mt-4 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+              <p>이야기 좋아요 상태를 불러오지 못했습니다.</p>
+              <button type="button" onClick={() => setBoardLikesReload((value) => value + 1)} className="rounded-lg border border-border px-3 py-2 font-medium text-primary hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">좋아요 상태 다시 확인</button>
+            </div>
+          )}
           {popularBoards === null && !popularBoardsError ? (
             <div role="status" className="mt-6 flex h-44 items-center justify-center gap-2 text-sm text-muted-foreground sm:h-72">
               <Loader2 className="h-5 w-5 animate-spin text-primary motion-reduce:animate-none" aria-hidden="true" />
@@ -641,35 +709,43 @@ export default function MainPage() {
                 className="travel-card-track -mx-1 flex gap-4 overflow-x-auto p-1 snap-x snap-mandatory scrollbar-hide sm:gap-5"
               >
                 {(popularBoards ?? []).map((board) => (
-                  <Link
+                  <article
                     key={board.boardId}
-                    to={`/boards/${board.boardId}`}
-                    className="travel-story-card group block w-[82%] shrink-0 snap-start rounded-3xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:w-[46%] lg:w-[calc((100%_-_2.5rem)/3)]"
+                    className="travel-story-card group block w-[82%] shrink-0 snap-start rounded-3xl sm:w-[46%] lg:w-[calc((100%_-_2.5rem)/3)]"
                   >
-                    <div className="relative aspect-[16/10] overflow-hidden rounded-t-3xl bg-muted">
-                      <img
-                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 motion-reduce:transform-none motion-reduce:transition-none"
-                        src={board.thumbnail ?? FALLBACK_SPOT_IMAGE}
-                        alt={board.title}
-                        loading="lazy"
-                      />
-                      <span className="travel-story-image-label"><BookOpen className="h-3.5 w-3.5" aria-hidden="true" /> 여행 기록</span>
-                    </div>
-                    <div className="p-5">
-                      <h3 className="line-clamp-2 text-base font-bold leading-relaxed tracking-tight transition-colors group-hover:text-primary">{board.title}</h3>
-                      <div className="mt-4 flex items-center gap-3 border-t border-border/70 pt-3 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Heart className="h-3.5 w-3.5" aria-hidden="true" />
-                          {board.likeCount}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <MessageSquare className="h-3.5 w-3.5" aria-hidden="true" />
-                          {board.commentCount}
-                        </span>
-                        <ArrowRight className="ml-auto h-4 w-4 text-primary" aria-hidden="true" />
+                    <Link
+                      to={`/boards/${board.boardId}`}
+                      className="block rounded-3xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                    >
+                      <div className="relative aspect-[16/10] overflow-hidden rounded-t-3xl bg-muted">
+                        <img
+                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 motion-reduce:transform-none motion-reduce:transition-none"
+                          src={board.thumbnail ?? FALLBACK_SPOT_IMAGE}
+                          alt={board.title}
+                          loading="lazy"
+                        />
+                        <span className="travel-story-image-label"><BookOpen className="h-3.5 w-3.5" aria-hidden="true" /> 여행 기록</span>
                       </div>
+                      <div className="flex items-start gap-3 px-5 pb-4 pt-5">
+                        <h3 className="line-clamp-2 flex-1 text-base font-bold leading-relaxed tracking-tight transition-colors group-hover:text-primary">{board.title}</h3>
+                        <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                      </div>
+                    </Link>
+                    <div className="mx-5 flex flex-wrap items-center justify-between gap-2 border-t border-border/70 pb-4 pt-3">
+                      <StoryLikeButton
+                        title={board.title}
+                        isLiked={!!likedBoards[board.boardId]}
+                        likeCount={board.likeCount}
+                        isLoading={boardLikesLoading || !!loadingBoards[board.boardId]}
+                        disabled={boardLikesError}
+                        onClick={() => handleToggleBoardLike(board.boardId)}
+                      />
+                      <span className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground" aria-label={`댓글 ${board.commentCount}개`}>
+                        <MessageSquare className="h-3.5 w-3.5" aria-hidden="true" />
+                        {board.commentCount}
+                      </span>
                     </div>
-                  </Link>
+                  </article>
                 ))}
               </div>
 

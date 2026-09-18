@@ -1,11 +1,11 @@
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { MockedFunction } from "vitest";
 import { Sun } from "lucide-react";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, useLocation } from "react-router-dom";
 
 import MainPage from "@/pages/main-page";
 import { signOut } from "@/services/auth";
-import { fetchPopularBoards } from "@/services/board";
+import { fetchPopularBoards, likeBoard, unlikeBoard, type BoardDetail, type BoardItem, type BoardLikeState } from "@/services/board";
 import { fetchPublicCourses, likeCourse, unlikeCourse, type CourseResponse, type PublicCourseItem } from "@/services/course";
 import {
   fetchPopularSpots,
@@ -14,7 +14,7 @@ import {
   UnauthorizedError,
 } from "@/services/spots";
 import { fetch5DayWeather } from "@/services/weather";
-import { fetchLikedCourses, fetchLikedSpots } from "@/services/wishlist";
+import { fetchLikedBoards, fetchLikedCourses, fetchLikedSpots } from "@/services/wishlist";
 
 const mockedNavigate = vi.fn();
 vi.mock("react-router-dom", async () => {
@@ -38,6 +38,9 @@ const mockedFetchLikedCourses = vi.mocked(fetchLikedCourses);
 const mockedLikeCourse = vi.mocked(likeCourse);
 const mockedUnlikeCourse = vi.mocked(unlikeCourse);
 const mockedFetchPopularBoards = fetchPopularBoards as MockedFunction<typeof fetchPopularBoards>;
+const mockedFetchLikedBoards = vi.mocked(fetchLikedBoards);
+const mockedLikeBoard = vi.mocked(likeBoard);
+const mockedUnlikeBoard = vi.mocked(unlikeBoard);
 const mockedLikeSpot = likeSpot as MockedFunction<typeof likeSpot>;
 const mockedUnlikeSpot = unlikeSpot as MockedFunction<typeof unlikeSpot>;
 const mockedSignOut = signOut as MockedFunction<typeof signOut>;
@@ -49,6 +52,10 @@ function renderMainPage() {
       <MainPage />
     </MemoryRouter>,
   );
+}
+
+function LocationProbe() {
+  return <output data-testid="current-location">{useLocation().pathname}</output>;
 }
 
 const mockWeatherItems = [
@@ -89,6 +96,26 @@ const likedCourse: CourseResponse = {
   days: [],
   updatedAt: publicCourse.createdAt,
 };
+const publicBoard: BoardItem = {
+  boardId: 101,
+  title: "강릉 카페 투어 추천",
+  thumbnail: null,
+  userId: 1,
+  likeCount: 12,
+  viewCount: 150,
+  commentCount: 5,
+  createdAt: "2026-09-01T10:00:00Z",
+};
+const likedBoard: BoardDetail = {
+  ...publicBoard,
+  courseId: null,
+  content: "강릉에서 보낸 하루",
+  status: "ACTIVE",
+  images: [],
+  isLiked: true,
+  updatedAt: publicBoard.createdAt,
+};
+const publicBoardResult = { items: [publicBoard], offset: 0, size: 6, totalCount: 1 };
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
@@ -99,9 +126,12 @@ function deferred<T>() {
 beforeEach(() => {
   mockedFetchPublicCourses.mockReset().mockResolvedValue({ items: [], offset: 0, size: 20, totalCount: 0 });
   mockedFetchLikedCourses.mockReset().mockResolvedValue([]);
+  mockedFetchLikedBoards.mockReset().mockResolvedValue([]);
   vi.mocked(fetchLikedSpots).mockReset().mockResolvedValue([]);
   mockedLikeCourse.mockReset().mockResolvedValue({ liked: true, likeCount: 4 });
   mockedUnlikeCourse.mockReset().mockResolvedValue({ liked: false, likeCount: 2 });
+  mockedLikeBoard.mockReset().mockResolvedValue({ liked: true, likeCount: 13 });
+  mockedUnlikeBoard.mockReset().mockResolvedValue({ liked: false, likeCount: 11 });
 });
 
 describe("MainPage public course carousel", () => {
@@ -601,6 +631,131 @@ describe("MainPage popular spots carousel", () => {
     expect(alertSpy).toHaveBeenCalledWith("로그인이 필요합니다. 로그인 페이지로 이동합니다.");
     expect(mockedNavigate).toHaveBeenCalledWith("/login");
     alertSpy.mockRestore();
+  });
+});
+
+describe("MainPage travel story likes", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockedFetchPopularSpots.mockResolvedValue(emptySpotResult);
+    mockedFetchPopularBoards.mockResolvedValue(publicBoardResult);
+    mockedFetch5DayWeather.mockResolvedValue(mockWeatherItems);
+  });
+
+  test("이야기에 좋아요와 취소 버튼을 표시하고 상세 이동 없이 서버의 개수로 갱신한다", async () => {
+    render(
+      <MemoryRouter initialEntries={["/"]} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <MainPage />
+        <LocationProbe />
+      </MemoryRouter>,
+    );
+    const button = await screen.findByRole("button", { name: `${publicBoard.title} 좋아요` });
+    await waitFor(() => expect(button).toBeEnabled());
+    expect(within(button).getByText("좋아요")).toBeInTheDocument();
+    expect(within(button).getByText("12")).toBeInTheDocument();
+    expect(button.closest("a")).toBeNull();
+    expect(screen.getByRole("heading", { name: publicBoard.title }).closest("a")).toHaveAttribute("href", "/boards/101");
+
+    mockedLikeBoard.mockResolvedValue({ liked: true, likeCount: 20 });
+    fireEvent.click(button);
+    const unlikeButton = await screen.findByRole("button", { name: `${publicBoard.title} 좋아요 취소` });
+    await waitFor(() => expect(unlikeButton).toBeEnabled());
+    expect(unlikeButton).toHaveAttribute("aria-pressed", "true");
+    expect(within(unlikeButton).getByText("20")).toBeInTheDocument();
+    expect(mockedLikeBoard).toHaveBeenCalledExactlyOnceWith(101);
+    expect(screen.getByTestId("current-location")).toHaveTextContent(/^\/$/);
+
+    fireEvent.click(unlikeButton);
+    await waitFor(() => expect(button).toHaveAttribute("aria-pressed", "false"));
+    expect(within(button).getByText("11")).toBeInTheDocument();
+    expect(mockedUnlikeBoard).toHaveBeenCalledExactlyOnceWith(101);
+    expect(screen.getByTestId("current-location")).toHaveTextContent(/^\/$/);
+    expect(mockedLikeCourse).not.toHaveBeenCalled();
+    expect(mockedLikeSpot).not.toHaveBeenCalled();
+  });
+
+  test("이미 좋아요한 이야기는 초기 선택 상태를 불러오고 첫 클릭으로 취소한다", async () => {
+    const request = deferred<BoardDetail[]>();
+    mockedFetchLikedBoards.mockReturnValue(request.promise);
+    renderMainPage();
+    const button = await screen.findByRole("button", { name: `${publicBoard.title} 좋아요` });
+    expect(button).toBeDisabled();
+    fireEvent.click(button);
+    expect(mockedLikeBoard).not.toHaveBeenCalled();
+
+    await act(async () => request.resolve([likedBoard]));
+    const unlikeButton = screen.getByRole("button", { name: `${publicBoard.title} 좋아요 취소` });
+    expect(unlikeButton).toBeEnabled();
+    expect(unlikeButton).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(unlikeButton);
+    await waitFor(() => expect(button).toHaveAttribute("aria-pressed", "false"));
+    expect(mockedUnlikeBoard).toHaveBeenCalledExactlyOnceWith(101);
+    expect(mockedLikeBoard).not.toHaveBeenCalled();
+  });
+
+  test("이야기 좋아요 상태 조회 실패 시 재확인 전까지 버튼을 잠근다", async () => {
+    mockedFetchLikedBoards.mockRejectedValueOnce(new Error("Network failed")).mockResolvedValueOnce([likedBoard]);
+    renderMainPage();
+    expect(await screen.findByText("이야기 좋아요 상태를 불러오지 못했습니다.")).toBeInTheDocument();
+    const button = screen.getByRole("button", { name: `${publicBoard.title} 좋아요` });
+    expect(button).toBeDisabled();
+    fireEvent.click(button);
+    expect(mockedLikeBoard).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", { name: "좋아요 상태 다시 확인" }));
+    const unlikeButton = await screen.findByRole("button", { name: `${publicBoard.title} 좋아요 취소` });
+    await waitFor(() => expect(unlikeButton).toBeEnabled());
+    expect(mockedFetchLikedBoards).toHaveBeenCalledTimes(2);
+    expect(mockedFetchPopularBoards).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText("이야기 좋아요 상태를 불러오지 못했습니다.")).not.toBeInTheDocument();
+    fireEvent.click(unlikeButton);
+    await waitFor(() => expect(button).toHaveAttribute("aria-pressed", "false"));
+    expect(mockedUnlikeBoard).toHaveBeenCalledExactlyOnceWith(101);
+  });
+
+  test("이야기 좋아요 요청 중 중복 클릭을 막는다", async () => {
+    const request = deferred<BoardLikeState>();
+    mockedLikeBoard.mockReturnValue(request.promise);
+    renderMainPage();
+    const button = await screen.findByRole("button", { name: `${publicBoard.title} 좋아요` });
+    await waitFor(() => expect(button).toBeEnabled());
+    fireEvent.click(button);
+    fireEvent.click(button);
+    expect(button).toBeDisabled();
+    expect(mockedLikeBoard).toHaveBeenCalledExactlyOnceWith(101);
+    await act(async () => request.resolve({ liked: true, likeCount: 13 }));
+    expect(button).toBeEnabled();
+    expect(button).toHaveAttribute("aria-pressed", "true");
+  });
+
+  test("이야기 좋아요 요청 실패는 상태와 개수를 유지하고 재시도할 수 있다", async () => {
+    mockedLikeBoard.mockRejectedValueOnce(new Error("Network failed"));
+    renderMainPage();
+    const button = await screen.findByRole("button", { name: `${publicBoard.title} 좋아요` });
+    await waitFor(() => expect(button).toBeEnabled());
+    fireEvent.click(button);
+    expect(await screen.findByRole("alert")).toHaveTextContent("이야기 좋아요를 변경하지 못했습니다.");
+    expect(button).toBeEnabled();
+    expect(button).toHaveAttribute("aria-pressed", "false");
+    expect(within(button).getByText("12")).toBeInTheDocument();
+
+    fireEvent.click(button);
+    await waitFor(() => expect(button).toHaveAttribute("aria-pressed", "true"));
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(mockedLikeBoard).toHaveBeenCalledTimes(2);
+  });
+
+  test("비로그인 사용자는 이야기를 볼 수 있고 좋아요 클릭 시 로그인으로 이동한다", async () => {
+    mockedFetchLikedBoards.mockRejectedValue(new UnauthorizedError());
+    mockedLikeBoard.mockRejectedValue(new Error("로그인이 필요합니다."));
+    renderMainPage();
+    const button = await screen.findByRole("button", { name: `${publicBoard.title} 좋아요` });
+    await waitFor(() => expect(button).toBeEnabled());
+    expect(screen.queryByText("이야기 좋아요 상태를 불러오지 못했습니다.")).not.toBeInTheDocument();
+    expect(mockedNavigate).not.toHaveBeenCalled();
+    fireEvent.click(button);
+    await waitFor(() => expect(mockedNavigate).toHaveBeenCalledWith("/login"));
+    expect(button).toHaveAttribute("aria-pressed", "false");
   });
 });
 

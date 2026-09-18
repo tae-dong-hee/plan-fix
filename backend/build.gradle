@@ -44,6 +44,8 @@ dependencyManagement {
 	imports {
 		mavenBom "dev.langchain4j:langchain4j-bom:${langchain4jVersion}"
 		mavenBom "org.bsc.langgraph4j:langgraph4j-bom:${langgraph4jVersion}"
+		// Keep the JDBC module and core aligned; langchain4j imports an older 1.x BOM.
+		mavenBom 'org.testcontainers:testcontainers-bom:2.0.5'
 	}
 }
 
@@ -71,6 +73,7 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
 	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+	testRuntimeOnly 'org.testcontainers:testcontainers-postgresql'
 	testCompileOnly 'org.projectlombok:lombok'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 	testAnnotationProcessor 'org.projectlombok:lombok'
@@ -78,4 +81,6 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
+	// Never inherit local/prod (and their shared database credentials) when running tests.
+	systemProperty 'spring.profiles.active', 'test'
 }
