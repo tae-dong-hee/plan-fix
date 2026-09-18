@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -99,6 +100,100 @@ public class CourseCoverImageSelector {
             return course.thumbnail();
         }
 
+        CandidatePool pool = candidates(course, spotsById);
+        List<Image> candidates = pool.images();
+        MatchScore bestScore = pool.scores().values().stream().max(MATCH_ORDER).orElseThrow();
+        if (bestScore.hasMatch()) {
+            candidates = candidates.stream().filter(image -> pool.scores().get(image).equals(bestScore)).toList();
+        } else if (!pool.regional().isEmpty()) {
+            candidates = pool.regional();
+        }
+
+        long seed = Objects.requireNonNull(course.courseId(), "A saved course id is required to select its cover.");
+        return candidates.get(new SplittableRandom(seed).nextInt(candidates.size())).url();
+    }
+
+    /**
+     * 같은 목록 안에서 관련 후보로 만들 수 있는 고유 이미지 수를 최대화한다.
+     * 같은 코스 집합은 입력/카탈로그 순서나 재조회와 무관하게 동일하게 배분한다.
+     * 페이지 크기/구성이 달라지면 배분은 달라질 수 있으며 DB thumbnail은 변경하지 않는다.
+     */
+    public Map<Long, String> selectForCourses(List<CourseModel> courses, Map<Long, SpotModel> spotsById) {
+        Map<Long, String> selected = new HashMap<>();
+        Map<String, Integer> usage = new HashMap<>();
+        Map<Long, List<Image>> choices = new HashMap<>();
+        for (CourseModel course : courses) {
+            if (course.thumbnail() != null && !course.thumbnail().isBlank()) {
+                selected.put(course.courseId(), course.thumbnail());
+                usage.merge(course.thumbnail(), 1, Integer::sum);
+            } else {
+                choices.put(course.courseId(), rankedCandidates(course, spotsById));
+            }
+        }
+        Set<String> reserved = Set.copyOf(usage.keySet());
+        List<Long> order = choices.keySet().stream()
+                .sorted(Comparator.<Long>comparingInt(id -> choices.get(id).size()).thenComparingLong(id -> id))
+                .toList();
+        Map<String, Long> owners = new HashMap<>();
+        for (Long courseId : order) {
+            assignUnique(courseId, choices, owners, reserved, new HashSet<>());
+        }
+        owners.forEach((url, courseId) -> {
+            selected.put(courseId, url);
+            usage.merge(url, 1, Integer::sum);
+        });
+        // 후보가 부족할 때만 재사용하며, 사용 횟수가 같으면 관련도와 고정 시드 순서를 따른다.
+        for (Long courseId : order) {
+            if (selected.containsKey(courseId)) continue;
+            Image image = choices.get(courseId).stream()
+                    .min(Comparator.comparingInt(candidate -> usage.getOrDefault(candidate.url(), 0)))
+                    .orElseThrow();
+            selected.put(courseId, image.url());
+            usage.merge(image.url(), 1, Integer::sum);
+        }
+        return Map.copyOf(selected);
+    }
+
+    private List<Image> rankedCandidates(CourseModel course, Map<Long, SpotModel> spotsById) {
+        CandidatePool pool = candidates(course, spotsById);
+        List<Image> eligible = pool.images().stream()
+                .filter(image -> pool.regional().contains(image) || pool.scores().get(image).hasMatch())
+                .toList();
+        if (eligible.isEmpty()) eligible = pool.images();
+        // 최고 점수 한 장으로 좁히지 않고, 같은 지역/관련 테마의 차선 후보도 남긴다.
+        SplittableRandom random = new SplittableRandom(course.courseId());
+        Map<String, Long> tieBreaks = new HashMap<>();
+        for (Image image : eligible) tieBreaks.put(image.id(), random.nextLong());
+        return eligible.stream().sorted(Comparator
+                .<Image, MatchScore>comparing(image -> pool.scores().get(image), MATCH_ORDER).reversed()
+                .thenComparingLong(image -> tieBreaks.get(image.id()))
+                .thenComparing(Image::id)).toList();
+    }
+
+    /** 증가 경로를 찾아 이미 배정된 코스를 다른 후보로 옮기므로 단순 선착순 중복을 피한다. */
+    private static boolean assignUnique(Long courseId, Map<Long, List<Image>> choices,
+                                        Map<String, Long> owners, Set<String> reserved, Set<String> visited) {
+        // 기존 배정을 움직이기 전에 아직 사용되지 않은 관련 후보부터 찾는다.
+        for (Image image : choices.get(courseId)) {
+            String url = image.url();
+            if (!reserved.contains(url) && !visited.contains(url) && !owners.containsKey(url)) {
+                owners.put(url, courseId);
+                return true;
+            }
+        }
+        for (Image image : choices.get(courseId)) {
+            String url = image.url();
+            if (reserved.contains(url) || !visited.add(url)) continue;
+            Long previous = owners.get(url);
+            if (previous != null && assignUnique(previous, choices, owners, reserved, visited)) {
+                owners.put(url, courseId);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private CandidatePool candidates(CourseModel course, Map<Long, SpotModel> spotsById) {
         List<SpotModel> spots = course.days().stream()
                 .flatMap(day -> day.spots().stream())
                 .map(CourseSpotModel::spotId)
@@ -127,17 +222,10 @@ public class CourseCoverImageSelector {
         String normalizedText = text.toString().toLowerCase(Locale.ROOT);
         Map<Image, MatchScore> scores = candidates.stream()
                 .collect(Collectors.toMap(image -> image, image -> scoreText(image, normalizedText)));
-        MatchScore bestScore = scores.values().stream().max(MATCH_ORDER).orElseThrow();
-        if (bestScore.specific() > 0 || bestScore.general() > 0 || bestScore.theme() > 0) {
-            candidates = candidates.stream().filter(image -> scores.get(image).equals(bestScore)).toList();
-        } else if (!regional.isEmpty()) {
-            candidates = regional;
-        }
-
-        // 같은 courseId와 후보 집합이면 재조회·서버 재시작 후에도 같은 사진을 반환한다.
-        long seed = Objects.requireNonNull(course.courseId(), "A saved course id is required to select its cover.");
-        return candidates.get(new SplittableRandom(seed).nextInt(candidates.size())).url();
+        return new CandidatePool(candidates, regional, scores);
     }
+
+    private record CandidatePool(List<Image> images, List<Image> regional, Map<Image, MatchScore> scores) { }
 
     private static MatchScore scoreText(Image image, String text) {
         List<String> matched = image.keywords().stream()
@@ -157,7 +245,9 @@ public class CourseCoverImageSelector {
     }
 
     /** 구체 키워드 > 사진에 직접 붙은 일반 키워드 > 넓은 테마 순으로 비교한다. */
-    private record MatchScore(int specific, int general, int theme) { }
+    private record MatchScore(int specific, int general, int theme) {
+        boolean hasMatch() { return specific > 0 || general > 0 || theme > 0; }
+    }
 
     private static void appendText(StringBuilder target, String... values) {
         for (String value : values) {

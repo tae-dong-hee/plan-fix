@@ -86,6 +86,33 @@ class CoursePublicCoverApplicationServiceTest {
         verify(courses, never()).save(any());
     }
 
+    @Test
+    void public_list_allocates_distinct_related_covers_without_changing_response_order() {
+        CourseRepository courses = mock(CourseRepository.class);
+        SpotRepository spots = mock(SpotRepository.class);
+        CourseModel first = course(1, "해변 여행", null, null, 11L);
+        CourseModel second = course(2, "해변 여행", null, null, 11L);
+        when(courses.searchPublic(CourseSortType.LATEST, 0, 20)).thenReturn(List.of(second, first));
+        when(courses.countPublic()).thenReturn(2L);
+        when(spots.findAllByIdIn(Set.of(11L))).thenReturn(List.of(spot(11, "51", "150", "해변", "관광지", null)));
+        CourseCoverImageSelector selector = new CourseCoverImageSelector(List.of(
+                new CourseCoverImageSelector.Image("beach", "https://images.example.com/beach.jpg", List.of("150"), List.of("coast"), List.of("해변")),
+                new CourseCoverImageSelector.Image("forest", "https://images.example.com/forest.jpg", List.of("150"), List.of("forest"), List.of("소나무"))));
+        CourseApplicationService service = new CourseApplicationService(courses, spots, null, null, selector,
+                new SpotThumbnailResolver(mock(TourDataImageRepository.class)));
+
+        CourseListResult result = service.listPublic(new CourseListQuery("latest", 0, 20));
+
+        assertThat(result.items()).extracting(CourseListResult.Item::courseId).containsExactly(2L, 1L);
+        assertThat(result.items()).extracting(CourseListResult.Item::thumbnail).doesNotHaveDuplicates();
+        assertThat(result.totalCount()).isEqualTo(2);
+        assertThat(result.offset()).isZero();
+        assertThat(result.size()).isEqualTo(20);
+        verify(spots).findAllByIdIn(Set.of(11L));
+        verifyNoMoreInteractions(spots);
+        verify(courses, never()).save(any());
+    }
+
     private static CourseApplicationService service(CourseRepository courses, SpotRepository spots) {
         CourseCoverImageSelector selector = new CourseCoverImageSelector(List.of(
                 new CourseCoverImageSelector.Image("coast", "https://images.example.com/coast.jpg", List.of("150"), List.of("coast"), List.of("바다")),

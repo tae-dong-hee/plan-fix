@@ -155,8 +155,9 @@ public class CourseApplicationService {
         Map<Long, SpotModel> spotsById = spotIds.isEmpty() ? Map.of()
                 : spotRepository.findAllByIdIn(spotIds).stream()
                 .collect(Collectors.toMap(SpotModel::spotId, Function.identity()));
+        Map<Long, String> covers = courseCoverImageSelector.selectForCourses(courses, spotsById);
         return new CourseListResult(courses.stream()
-                .map(course -> CourseListResult.Item.from(course, courseCoverImageSelector.select(course, spotsById)))
+                .map(course -> CourseListResult.Item.from(course, covers.get(course.courseId())))
                 .toList(),
                 query.offset(), query.size(), courseRepository.countPublic());
     }
