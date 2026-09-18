@@ -4,7 +4,7 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 
 import BoardDetailPage from "@/pages/board-detail-page";
-import { createBoardComment, deleteBoardComment, fetchBoardComments, fetchBoardDetail, updateBoardComment, type BoardComment, type BoardDetail } from "@/services/board";
+import { createBoardComment, deleteBoardComment, fetchBoardComments, fetchBoardDetail, likeBoard, unlikeBoard, updateBoardComment, type BoardComment, type BoardDetail, type BoardLikeState } from "@/services/board";
 import { fetchCourse } from "@/services/course";
 import { fetchMyProfile } from "@/services/user";
 
@@ -237,12 +237,78 @@ describe("BoardDetailPage", () => {
     expect(screen.getByText("여행 이야기")).toBeInTheDocument();
     expect(screen.getByText("2026.09.01")).toBeInTheDocument();
     expect(screen.getByText("조회 152")).toBeInTheDocument();
-    expect(screen.getByText("좋아요 23")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "강릉 1박 2일 힐링 코스 좋아요" })).toHaveTextContent("좋아요23");
     expect(screen.getByText("댓글 7")).toBeInTheDocument();
     expect(screen.getByText("강릉에서 보낸 특별한 주말 이야기입니다.")).toBeInTheDocument();
 
     const heroImg = screen.getByAltText("강릉 1박 2일 힐링 코스");
     expect(heroImg).toHaveAttribute("src", "https://example.com/thumb.jpg");
+  });
+
+  test("눈에 보이는 좋아요 버튼으로 저장하고 취소하며 서버의 좋아요 수를 표시한다", async () => {
+    mockedFetchBoardDetail.mockResolvedValue(boardFixture({ isLiked: false }));
+    vi.mocked(likeBoard).mockResolvedValue({ liked: true, likeCount: 25 });
+    vi.mocked(unlikeBoard).mockResolvedValue({ liked: false, likeCount: 24 });
+
+    renderAt("1");
+
+    const likeButton = await screen.findByRole("button", { name: "강릉 1박 2일 힐링 코스 좋아요" });
+    expect(likeButton).toHaveAttribute("aria-pressed", "false");
+    fireEvent.click(likeButton);
+
+    await waitFor(() => expect(likeButton).toBeEnabled());
+    expect(likeBoard).toHaveBeenCalledWith(1);
+    expect(likeButton).toHaveAttribute("aria-pressed", "true");
+    expect(likeButton).toHaveTextContent("좋아요 취소25");
+    expect(screen.getByRole("link", { name: "위시리스트 · 여행 이야기" })).toHaveAttribute("href", "/wishlist?tab=boards");
+
+    fireEvent.click(likeButton);
+
+    await waitFor(() => expect(likeButton).toHaveAttribute("aria-pressed", "false"));
+    expect(unlikeBoard).toHaveBeenCalledWith(1);
+    expect(likeButton).toHaveTextContent("좋아요24");
+  });
+
+  test("이미 좋아요한 이야기는 취소 상태로 표시하고 처리 중 중복 요청을 막는다", async () => {
+    mockedFetchBoardDetail.mockResolvedValue(boardFixture({ isLiked: true }));
+    let finish!: (value: BoardLikeState) => void;
+    vi.mocked(unlikeBoard).mockReturnValue(new Promise((resolve) => { finish = resolve; }));
+
+    renderAt("1");
+
+    const likeButton = await screen.findByRole("button", { name: "강릉 1박 2일 힐링 코스 좋아요 취소" });
+    expect(likeButton).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(likeButton);
+    fireEvent.click(likeButton);
+    expect(likeButton).toBeDisabled();
+    expect(unlikeBoard).toHaveBeenCalledTimes(1);
+
+    finish({ liked: false, likeCount: 22 });
+    await waitFor(() => expect(likeButton).toBeEnabled());
+    expect(likeButton).toHaveTextContent("좋아요22");
+  });
+
+  test("좋아요 실패 시 좋아요만 되돌리고 요청 중 등록한 댓글과 댓글 수를 유지한다", async () => {
+    mockedFetchBoardDetail.mockResolvedValue(boardFixture({ isLiked: false, commentCount: 0 }));
+    let fail!: (reason: Error) => void;
+    vi.mocked(likeBoard).mockReturnValue(new Promise((_, reject) => { fail = reject; }));
+    vi.mocked(createBoardComment).mockResolvedValue(commentFixture({ content: "새 댓글" }));
+
+    renderAt("1");
+
+    const likeButton = await screen.findByRole("button", { name: "강릉 1박 2일 힐링 코스 좋아요" });
+    fireEvent.click(likeButton);
+    fireEvent.change(screen.getByPlaceholderText("댓글을 남겨보세요"), { target: { value: "새 댓글" } });
+    fireEvent.click(screen.getByRole("button", { name: "등록" }));
+    await screen.findByText("새 댓글");
+    fail(new Error("좋아요 처리에 실패했습니다."));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("좋아요 처리에 실패했습니다.");
+    expect(likeButton).toHaveAttribute("aria-pressed", "false");
+    expect(likeButton).toHaveTextContent("좋아요23");
+    expect(likeButton).toBeEnabled();
+    expect(screen.getByText("댓글 1")).toBeInTheDocument();
+    expect(screen.getByText("새 댓글")).toBeInTheDocument();
   });
 
   test("renders plain text content preserving line breaks with <br />", async () => {

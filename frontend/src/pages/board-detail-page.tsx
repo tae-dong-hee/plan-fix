@@ -5,7 +5,6 @@ import {
   Calendar,
   ChevronLeft,
   Eye,
-  Heart,
   MessageSquare,
   Pencil,
   Reply,
@@ -15,6 +14,7 @@ import {
 } from "lucide-react";
 
 import AppNav from "@/components/ui/app-nav";
+import StoryLikeButton from "@/components/ui/story-like-button";
 import { LoaderFour } from "@/components/ui/unique-loader-components";
 import { createBoardComment, deleteBoardComment, fetchBoardComments, fetchBoardDetail, likeBoard, unlikeBoard, updateBoardComment, type BoardComment, type BoardDetail } from "@/services/board";
 import { fetchCourse, type CourseResponse } from "@/services/course";
@@ -59,6 +59,8 @@ export default function BoardDetailPage() {
   const [board, setBoard] = useState<BoardDetail | null | undefined>(undefined);
   const [linkedCourse, setLinkedCourse] = useState<CourseResponse | null>(null);
   const [isTogglingLike, setIsTogglingLike] = useState(false);
+  const [likeNotice, setLikeNotice] = useState<string | null>(null);
+  const pendingLikeRequest = useRef<symbol | null>(null);
   const [comments, setComments] = useState<BoardComment[]>([]);
   const [commentText, setCommentText] = useState("");
   const [isCommentSubmitting, setIsCommentSubmitting] = useState(false);
@@ -105,6 +107,9 @@ export default function BoardDetailPage() {
     const currentBoardId = boardId ?? "";
     let cancelled = false;
     setBoard(undefined);
+    setLikeNotice(null);
+    setIsTogglingLike(false);
+    pendingLikeRequest.current = null;
 
     let request = inFlightRequest.current;
     if (!request || request.boardId !== currentBoardId) {
@@ -214,11 +219,13 @@ export default function BoardDetailPage() {
   };
 
   const toggleLike = async () => {
-    if (!board || isTogglingLike) {
+    if (!board || pendingLikeRequest.current) {
       return;
     }
 
     const previousBoard = board;
+    const request = Symbol();
+    pendingLikeRequest.current = request;
     const nextLiked = !board.isLiked;
     const nextLikeCount = nextLiked
       ? board.likeCount + 1
@@ -227,22 +234,33 @@ export default function BoardDetailPage() {
     // 즉시 UI 반영 (Optimistic Update)
     setBoard({ ...board, isLiked: nextLiked, likeCount: nextLikeCount });
     setIsTogglingLike(true);
+    setLikeNotice(null);
 
     try {
       const result = previousBoard.isLiked
         ? await unlikeBoard(previousBoard.boardId)
         : await likeBoard(previousBoard.boardId);
-      setBoard({ ...previousBoard, isLiked: result.liked, likeCount: result.likeCount });
+      if (pendingLikeRequest.current !== request) return;
+      setBoard((current) => current?.boardId === previousBoard.boardId
+        ? { ...current, isLiked: result.liked, likeCount: result.likeCount }
+        : current);
     } catch (error: unknown) {
-      setBoard(previousBoard);
+      if (pendingLikeRequest.current !== request) return;
+      setBoard((current) => current?.boardId === previousBoard.boardId
+        ? { ...current, isLiked: previousBoard.isLiked, likeCount: previousBoard.likeCount }
+        : current);
       const msg = error instanceof Error ? error.message : "";
+      setLikeNotice(msg || "좋아요 처리에 실패했습니다. 다시 시도해 주세요.");
       if (msg.includes("로그인") || msg.includes("인증")) {
         if (confirm("로그인이 필요한 기능입니다. 로그인 페이지로 이동하시겠습니까?")) {
           navigate("/login");
         }
       }
     } finally {
-      setIsTogglingLike(false);
+      if (pendingLikeRequest.current === request) {
+        pendingLikeRequest.current = null;
+        setIsTogglingLike(false);
+      }
     }
   };
 
@@ -291,22 +309,6 @@ export default function BoardDetailPage() {
                 alt={board.title}
                 className="h-full w-full object-cover"
               />
-              <button
-                type="button"
-                onClick={toggleLike}
-                disabled={isTogglingLike}
-                className="absolute right-4 top-4 flex h-11 w-11 items-center justify-center rounded-full bg-black/40 backdrop-blur-md transition-all hover:scale-105 hover:bg-black/60 active:scale-95 disabled:opacity-60"
-                aria-pressed={board.isLiked}
-                aria-label={board.isLiked ? `${board.title} 좋아요 취소` : `${board.title} 좋아요`}
-              >
-                <Heart
-                  className={`h-6 w-6 transition-colors ${
-                    board.isLiked ? "fill-rose-500 text-rose-500" : "text-white/90"
-                  }`}
-                  strokeWidth={2}
-                  aria-hidden="true"
-                />
-              </button>
             </div>
 
             {/* 헤더 메타데이터 영역 */}
@@ -333,23 +335,6 @@ export default function BoardDetailPage() {
                     <span>조회 {board.viewCount.toLocaleString()}</span>
                   </span>
 
-                  <button
-                    type="button"
-                    onClick={toggleLike}
-                    disabled={isTogglingLike}
-                    className={`flex items-center gap-1 font-medium transition-colors hover:opacity-80 active:scale-95 disabled:opacity-60 ${
-                      board.isLiked ? "text-red-500" : "text-muted-foreground hover:text-red-500"
-                    }`}
-                    title={board.isLiked ? "좋아요 취소" : "좋아요"}
-                  >
-                    <Heart
-                      className="h-4 w-4"
-                      fill={board.isLiked ? "currentColor" : "none"}
-                      aria-hidden="true"
-                    />
-                    <span>좋아요 {board.likeCount.toLocaleString()}</span>
-                  </button>
-
                   <span className="flex items-center gap-1" title="댓글 수">
                     <MessageSquare className="h-4 w-4 text-primary/80" aria-hidden="true" />
                     <span>댓글 {board.commentCount.toLocaleString()}</span>
@@ -357,6 +342,28 @@ export default function BoardDetailPage() {
                 </div>
               </div>
             </div>
+
+            <div className="mt-6 flex flex-col gap-4 rounded-2xl border border-rose-200/70 bg-rose-50/60 p-4 dark:border-rose-900 dark:bg-rose-950/30 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+              <div>
+                <p className="text-sm font-semibold">마음에 드는 여행 이야기인가요?</p>
+                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                  좋아요한 이야기는{" "}
+                  <Link to="/wishlist?tab=boards" className="font-medium underline underline-offset-4 hover:text-foreground">
+                    위시리스트 · 여행 이야기
+                  </Link>
+                  에서 다시 볼 수 있어요.
+                </p>
+              </div>
+              <StoryLikeButton
+                title={board.title}
+                isLiked={Boolean(board.isLiked)}
+                likeCount={board.likeCount}
+                isLoading={isTogglingLike}
+                onClick={toggleLike}
+                className="w-full sm:w-auto"
+              />
+            </div>
+            {likeNotice && <p className="mt-2 text-sm text-destructive" role="alert">{likeNotice}</p>}
 
             {/* 연계된 여행 코스 카드 */}
             {linkedCourse && (
