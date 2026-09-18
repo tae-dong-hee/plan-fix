@@ -1,6 +1,10 @@
 package taedonghee.plan_fix.infrastructure.user;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import jakarta.persistence.LockModeType;
 
 import java.util.Optional;
 
@@ -8,6 +12,10 @@ import java.util.Optional;
  * users 테이블 Spring Data JPA Repository
  */
 public interface UserJpaRepository extends JpaRepository<UserJpaEntity, Long> {
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select u from UserJpaEntity u where u.id = :userId")
+    Optional<UserJpaEntity> findByIdForUpdate(@Param("userId") Long userId);
 
     /**
      * username 존재 여부 조회

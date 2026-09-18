@@ -55,3 +55,22 @@ psql "$DATABASE_URL" -v ON_ERROR_STOP=1 \
 docker exec -i docker-postgres-1 psql -U planfix -d planfix -v ON_ERROR_STOP=1 \
   < docs/migrations/2026-09-10-ensure-comments-table.sql
 ```
+
+## 프로필 사진 (2026-09-19)
+
+`2026-09-19-add-user-profile-image.sql`을 새 백엔드 배포 전에 적용한다. `users.profile_image_key`는
+비공개 S3 객체 키이며, `default_avatar_color`는 `violet`, `blue`, `green`, `amber`, `rose` 중 하나다.
+기존 회원에게 한 번만 무작위 색상을 배정하고 재실행 시 유지한다. 신규 회원도 한 번 배정받은 색상을
+계속 사용하며 사진 변경·삭제로 색상이 바뀌지 않는다. DB 기본값도 무작위 색상을 생성하므로 배포 중
+기존 백엔드에서 가입한 회원과 외부 삽입도 `NOT NULL` 제약을 만족한다.
+
+기존 S3 연결 설정을 사용한다. 애플리케이션 IAM에 버킷의 `users/*/profile/*` 객체에 대한
+`s3:PutObject`, `s3:GetObject`, `s3:DeleteObject` 권한이 필요하다. 객체 공개 권한은 필요 없다.
+인증된 `GET /api/v1/users/me/profile-image`가 자기 사진만 제공하고 캐시는 저장하지 않는다.
+`POST`는 multipart 필드 `file`을 받아 즉시 저장하며 `DELETE`는 기존 기본 아바타로 복원한다.
+두 응답 모두 `profileImageUrl`, `defaultAvatarColor`를 포함한 사용자 정보다.
+
+프로필 사진은 5MB 이하의 JPEG, PNG, 정지 WebP를 지원한다. 파일명 대신 실제 파일 헤더와 크기를
+검증하고 세 형식 모두 디코딩까지 확인한다. WebP 디코딩에는 TwelveMonkeys ImageIO를 사용한다.
+최대 가로·세로 8,192px, 2,000만 화소까지 허용한다. 기존 게시글 업로드를 유지하기 위해 전역
+multipart 제한은 파일 15MB, 요청 16MB이며 프로필 서비스에서 별도 5MB 제한을 적용한다.

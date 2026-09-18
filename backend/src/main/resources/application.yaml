@@ -2,6 +2,11 @@ spring:
   application:
     name: plan-fix
 
+  servlet:
+    multipart:
+      max-file-size: 15MB
+      max-request-size: 16MB
+
   mvc:
     async:
       # 수집 API는 외부 API를 수천 번 호출하므로 관대하게 잡는다 (컨트롤러의 WebAsyncTask 타임아웃과 맞춤)

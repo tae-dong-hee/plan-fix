@@ -16,6 +16,8 @@ public record UserResult(
         String name,
         String email,
         LocalDate birthDate,
+        String profileImageUrl,
+        String defaultAvatarColor,
         UserRole role,
         UserStatus status,
         OffsetDateTime createdAt,
@@ -32,6 +34,9 @@ public record UserResult(
                 user.getName(),
                 user.getEmail(),
                 user.getBirthDate(),
+                user.getProfileImageKey() == null ? null : "/api/v1/users/me/profile-image?v="
+                        + user.getProfileImageKey().substring(user.getProfileImageKey().lastIndexOf('/') + 1),
+                user.getDefaultAvatarColor(),
                 user.getRole(),
                 user.getStatus(),
                 user.getCreatedAt(),

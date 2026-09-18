@@ -18,6 +18,11 @@ public interface UserRepository {
      */
     Optional<UserModel> findByUserId(Long userId);
 
+    /** Serialize profile mutations so photo and text edits cannot overwrite each other. */
+    default Optional<UserModel> findByUserIdForUpdate(Long userId) {
+        return findByUserId(userId);
+    }
+
     /**
      * email 기반 사용자 단건 조회
      */

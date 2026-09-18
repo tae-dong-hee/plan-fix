@@ -51,6 +51,12 @@ public class UserJpaEntity {
     @Column(name = "birth_date")
     private LocalDate birthDate;
 
+    @Column(name = "profile_image_key", length = 255)
+    private String profileImageKey;
+
+    @Column(name = "default_avatar_color", nullable = false, length = 10)
+    private String defaultAvatarColor;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private UserRole role;
@@ -75,6 +81,8 @@ public class UserJpaEntity {
             String name,
             String email,
             LocalDate birthDate,
+            String profileImageKey,
+            String defaultAvatarColor,
             UserRole role,
             UserStatus status,
             OffsetDateTime createdAt,
@@ -85,6 +93,8 @@ public class UserJpaEntity {
         this.name = name;
         this.email = email;
         this.birthDate = birthDate;
+        this.profileImageKey = profileImageKey;
+        this.defaultAvatarColor = defaultAvatarColor;
         this.role = role;
         this.status = status;
         this.createdAt = createdAt;

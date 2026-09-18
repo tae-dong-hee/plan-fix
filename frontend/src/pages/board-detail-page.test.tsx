@@ -91,6 +91,8 @@ describe("BoardDetailPage", () => {
       username: "작성자",
       name: null,
       email: null,
+      profileImageUrl: null,
+      defaultAvatarColor: "violet",
       role: "USER",
       status: "ACTIVE",
       createdAt: "2026-09-01T10:00:00Z",

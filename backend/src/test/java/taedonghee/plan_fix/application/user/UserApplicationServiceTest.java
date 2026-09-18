@@ -12,8 +12,28 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.any;
 
 class UserApplicationServiceTest {
+
+    @Test
+    void profileEditLocksCurrentUserAndPreservesTheirPhoto() {
+        UserRepository users = mock(UserRepository.class);
+        var now = java.time.OffsetDateTime.now();
+        UserModel user = UserModel.reconstruct(7L, "traveler", null, null, null,
+                "users/7/profile/photo.png", "green", taedonghee.plan_fix.domain.user.UserRole.USER,
+                taedonghee.plan_fix.domain.user.UserStatus.ACTIVE, now, now);
+        when(users.findByUserIdForUpdate(7L)).thenReturn(Optional.of(user));
+        when(users.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        var service = new UserApplicationService(users, new StubCredentialRepository(), new PlainPasswordEncryptor());
+        var result = service.update(7L, new UserCommand.Update("traveler2", null, null, null));
+        assertThat(result.defaultAvatarColor()).isEqualTo("green");
+        assertThat(result.profileImageUrl()).endsWith("photo.png");
+        verify(users).findByUserIdForUpdate(7L);
+        verify(users, never()).findByUserId(any());
+    }
+
 
     @Test
     void 자체_가입은_username을_loginId로_초기화하고_name을_저장한다() {
