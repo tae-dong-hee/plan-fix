@@ -30,7 +30,7 @@ export default function MainSpotCard({
 
   return (
     <article
-      className={`relative shrink-0 snap-start rounded-[24px] border border-primary/10 bg-background shadow-[0_4px_20px_-10px_hsl(var(--primary)/0.12)] transition-[transform,box-shadow,border-color] duration-300 hover:-translate-y-1 hover:border-primary/20 hover:shadow-[0_16px_32px_-16px_hsl(var(--primary)/0.25)] motion-reduce:transform-none motion-reduce:transition-none ${
+      className={`relative shrink-0 snap-start rounded-[24px] border border-zinc-200/80 bg-white shadow-[0_4px_16px_-10px_rgb(0_0_0/0.12)] transition-[transform,box-shadow,border-color] duration-300 hover:-translate-y-1 hover:border-zinc-300 hover:shadow-[0_14px_28px_-14px_rgb(0_0_0/0.18)] motion-reduce:transform-none motion-reduce:transition-none dark:border-zinc-700 dark:bg-background dark:hover:border-zinc-600 ${
         isGuide
           ? "w-[76%] sm:w-[46%] lg:w-[calc((100%_-_3.75rem)/4)]"
           : "w-[46%] min-w-[150px] sm:w-56 lg:w-[calc((100%_-_5rem)/5)]"
