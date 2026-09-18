@@ -343,12 +343,12 @@ export default function BoardDetailPage() {
               </div>
             </div>
 
-            <div className="mt-6 flex flex-col gap-4 rounded-2xl border border-rose-200/70 bg-rose-50/60 p-4 dark:border-rose-900 dark:bg-rose-950/30 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+            <div className="mt-6 flex flex-col gap-4 rounded-2xl border border-primary/15 bg-primary/5 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
               <div>
                 <p className="text-sm font-semibold">마음에 드는 여행 이야기인가요?</p>
                 <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
                   좋아요한 이야기는{" "}
-                  <Link to="/wishlist?tab=boards" className="font-medium underline underline-offset-4 hover:text-foreground">
+                  <Link to="/wishlist?tab=boards" className="font-medium text-primary underline underline-offset-4 hover:text-primary/80">
                     위시리스트 · 여행 이야기
                   </Link>
                   에서 다시 볼 수 있어요.
