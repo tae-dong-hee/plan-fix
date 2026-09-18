@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ArrowRight, CalendarDays, Check, ChevronDown, Coffee, Heart, Landmark,
   Loader2, MapPin, Mountain, Plus, Route, Search, SlidersHorizontal,
-  Sparkles, Trees, UserRound, UsersRound, Utensils, X,
+  Sparkles, Trees, UserRound, UsersRound, Utensils, Waves, X,
 } from "lucide-react";
 
 import { sigunguCodeByRegion, type GangwonRegion } from "@/components/ui/gangwon-region-map";
@@ -26,15 +26,27 @@ const COMPANION_OPTIONS = [
 const THEME_OPTIONS: {
   value: AiCourseTheme;
   label: string;
+  icon: typeof Trees;
+}[] = [
+  { value: "HEALING", label: "힐링·자연", icon: Trees },
+  { value: "FOOD", label: "맛집 탐방", icon: Utensils },
+  { value: "CAFE", label: "카페 투어", icon: Coffee },
+  { value: "ACTIVITY", label: "액티비티", icon: Mountain },
+  { value: "CULTURE", label: "문화·역사", icon: Landmark },
+];
+const TRIP_IDEAS: {
+  title: string;
   description: string;
+  themes: AiCourseTheme[];
   icon: typeof Trees;
   scene: string;
 }[] = [
-  { value: "HEALING", label: "힐링·자연", description: "가볍게 쉬어가기", icon: Trees, scene: "forest" },
-  { value: "FOOD", label: "맛집 탐방", description: "맛있는 한 끼", icon: Utensils, scene: "sunset" },
-  { value: "CAFE", label: "카페 투어", description: "커피와 여유", icon: Coffee, scene: "cafe" },
-  { value: "ACTIVITY", label: "액티비티", description: "활기찬 하루", icon: Mountain, scene: "coast" },
-  { value: "CULTURE", label: "문화·역사", description: "이야기가 있는 곳", icon: Landmark, scene: "culture" },
+  { title: "바다와 카페", description: "물가의 여유, 커피 한 잔", themes: ["HEALING", "CAFE"], icon: Waves, scene: "coast" },
+  { title: "맛집과 산책", description: "맛있게 먹고 가볍게 걷기", themes: ["HEALING", "FOOD"], icon: Utensils, scene: "sunset" },
+  { title: "자연 속 쉼", description: "초록빛 풍경에 쉬어가기", themes: ["HEALING"], icon: Trees, scene: "forest" },
+  { title: "신나는 액티비티", description: "몸을 움직이며 기분 전환", themes: ["ACTIVITY"], icon: Mountain, scene: "activity" },
+  { title: "문화와 골목 여행", description: "이야기와 로컬 맛집 찾기", themes: ["CULTURE", "FOOD"], icon: Landmark, scene: "culture" },
+  { title: "여유로운 카페 투어", description: "취향에 맞는 공간 머물기", themes: ["CAFE"], icon: Coffee, scene: "cafe" },
 ];
 
 type AiCourseModalProps = {
@@ -173,6 +185,7 @@ export default function AiCourseModal({ open, startDate, endDate, onClose, onApp
   const companionSummary = COMPANION_OPTIONS.find((option) => option.value === companion)?.summary;
   const selectedThemeOptions = THEME_OPTIONS.filter((option) => themes.includes(option.value));
   const selectedThemeLabels = selectedThemeOptions.map((option) => option.label);
+  const selectedIdea = TRIP_IDEAS.find((idea) => idea.themes.length === themes.length && idea.themes.every((theme) => themes.includes(theme)));
   const duration = describeDuration(startDate, endDate);
   const preferenceSummary = selectedThemeLabels.length ? selectedThemeLabels.join(" · ") : "취향은 AI 추천으로";
 
@@ -243,7 +256,7 @@ export default function AiCourseModal({ open, startDate, endDate, onClose, onApp
           </button>
         </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-5 sm:px-8 sm:pb-6">
+        <div className="ai-course-content min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain px-5 pb-5 sm:px-8 sm:pb-6">
           {submitting ? (
             <div className="ai-course-enter flex min-h-[450px] flex-col items-center justify-center py-8 text-center" role="status" aria-live="polite">
               <div className="ai-course-orbit" aria-hidden="true">
@@ -309,45 +322,65 @@ export default function AiCourseModal({ open, startDate, endDate, onClose, onApp
                 </div>
                 <div className="mt-4 flex items-start gap-2 border-t border-primary/10 pt-3 text-xs leading-5 text-muted-foreground" aria-live="polite">
                   <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" aria-hidden="true" />
-                  <p>{selectedThemeLabels.length ? `${preferenceSummary} 중심으로 코스를 구성할게요.` : "취향을 고르지 않아도 괜찮아요. 어울리는 장소를 추천해 드릴게요."}{anchors.length > 0 && ` 꼭 갈 장소 ${anchors.length}곳도 함께 담을게요.`}</p>
+                  <p>{selectedThemeLabels.length ? `${selectedIdea ? `‘${selectedIdea.title}’ 분위기로, ` : ""}${preferenceSummary} 취향을 담을게요. 장소와 이동 순서는 AI가 구성해 드려요.` : `${region ?? "강원"}에서 ${duration} 동안 즐길 장소와 동선을 AI가 골라드릴게요.`}{anchors.length > 0 && ` 꼭 갈 장소 ${anchors.length}곳도 함께 담을게요.`}</p>
                 </div>
               </section>
 
               <section className="mt-6" aria-labelledby="ai-course-themes-title" aria-describedby="ai-course-themes-description">
                 <div className="mb-3">
-                  <h3 id="ai-course-themes-title" className="text-sm font-semibold">어떤 여행을 하고 싶으세요?</h3>
-                  <p id="ai-course-themes-description" className="mt-1 text-xs leading-5 text-muted-foreground">좋아하는 테마를 골라주세요. 여러 개 선택할 수 있어요.</p>
-                </div>
-                <div role="group" aria-labelledby="ai-course-selected-themes" className="mb-3 rounded-xl border border-primary/15 bg-primary/[0.045] p-3">
-                  <div className="flex items-center gap-2 text-xs font-semibold">
-                    <span id="ai-course-selected-themes">선택한 테마</span>
-                    <span className="text-primary">{selectedThemeOptions.length}개</span>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 id="ai-course-themes-title" className="text-sm font-semibold">이번 여행, 이렇게 시작해볼까요?</h3>
+                    <span className="rounded-full bg-primary/[0.07] px-2 py-1 text-[10px] font-semibold text-primary">AI 여행 제안</span>
                   </div>
-                  <div className="mt-2 flex min-h-8 flex-wrap items-center gap-2">
-                    {selectedThemeOptions.length ? selectedThemeOptions.map(({ value, label }) => (
-                      <button key={value} type="button" aria-label={`${label} 선택 해제`} onClick={() => removeTheme(value)} className="ai-course-control inline-flex min-h-8 items-center gap-1.5 rounded-full border border-primary/20 bg-background px-3 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/10">
-                        {label}<X className="h-3 w-3 shrink-0" aria-hidden="true" />
-                      </button>
-                    )) : <p className="text-xs text-muted-foreground">아직 선택한 테마가 없어요.</p>}
-                  </div>
+                  <p id="ai-course-themes-description" className="mt-1.5 text-xs leading-5 text-muted-foreground">마음에 드는 분위기만 골라주세요. 나머지는 AI가 채울게요.</p>
                 </div>
-                <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-5">
-                  {THEME_OPTIONS.map(({ value, label, description, icon: Icon, scene }) => {
-                    const selected = themes.includes(value);
+
+                <button type="button" aria-label="AI에게 테마 맡기기" aria-pressed={themes.length === 0} onClick={() => setThemes([])} className={`ai-course-control ai-course-auto flex w-full items-center gap-3 rounded-2xl border p-3.5 text-left transition-colors ${themes.length === 0 ? "border-primary/40 bg-primary/[0.06]" : "border-border/80 bg-background hover:border-primary/30"}`}>
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary"><Sparkles className="h-5 w-5" aria-hidden="true" /></span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-semibold">테마도 AI에게 맡길게요</span>
+                    <span className="mt-1 block text-[11px] leading-5 text-muted-foreground">지역과 일정에 맞춰 어울리는 장소를 골라드려요.</span>
+                  </span>
+                  <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${themes.length === 0 ? "border-primary bg-primary text-white" : "border-border"}`} aria-hidden="true">{themes.length === 0 && <Check className="h-3 w-3" />}</span>
+                </button>
+
+                <div className="ai-course-ideas-grid mt-3" role="group" aria-label="여행 분위기 제안">
+                  {TRIP_IDEAS.map((idea) => {
+                    const selected = selectedIdea === idea;
+                    const Icon = idea.icon;
                     return (
-                      <button key={value} ref={(element) => { themeButtonRefs.current[value] = element; }} type="button" aria-label={label} aria-pressed={selected} onClick={() => setThemes((prev) => prev.includes(value) ? prev.filter((theme) => theme !== value) : [...prev, value])} className={`ai-course-control group min-w-0 overflow-hidden rounded-2xl border text-center transition duration-200 motion-reduce:transition-none ${selected ? "border-primary bg-primary/[0.035] shadow-[0_0_0_1px_hsl(var(--primary))]" : "border-border/80 bg-background hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md motion-reduce:hover:translate-y-0"}`}>
-                        <div className={`ai-course-scene ai-course-scene-${scene}`} aria-hidden="true">
-                          <span className="ai-course-scene-sun" /><span className="ai-course-scene-land" />
-                          <Icon className="relative z-10 h-7 w-7" strokeWidth={1.5} />
-                          {selected && <span className="absolute right-2 top-2 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-white"><Check className="h-3 w-3" /></span>}
-                        </div>
-                        <div className="px-2 py-3">
-                          <p className="text-xs font-bold">{label}</p>
-                          <p className="mt-1 hidden text-[10px] leading-4 text-muted-foreground min-[400px]:block">{description}</p>
-                        </div>
+                      <button key={idea.title} type="button" aria-label={idea.title} aria-pressed={selected} onClick={() => setThemes(selected ? [] : [...idea.themes])} className={`ai-course-control ai-course-idea group relative min-w-0 rounded-2xl border p-3.5 text-left transition-colors ${selected ? "border-primary bg-primary/[0.035] shadow-[0_0_0_1px_hsl(var(--primary))]" : "border-border/80 bg-background hover:border-primary/40 hover:bg-primary/[0.02]"}`}>
+                        <span className={`ai-course-idea-icon ai-course-scene-${idea.scene}`} aria-hidden="true"><Icon className="h-5 w-5" strokeWidth={1.6} /></span>
+                        {selected && <span className="absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-white" aria-hidden="true"><Check className="h-3 w-3" /></span>}
+                        <span className="mt-2.5 block text-[13px] font-bold leading-5">{idea.title}</span>
+                        <span className="mt-1 block text-[11px] leading-[1.6] text-muted-foreground">{idea.description}</span>
                       </button>
                     );
                   })}
+                </div>
+
+                <div role="group" aria-labelledby="ai-course-selected-themes" className="mt-4 rounded-xl bg-muted/40 p-3.5">
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-[11px]">
+                    <span className="font-semibold"><span id="ai-course-selected-themes">선택한 테마</span> <span className="ml-1 text-primary">{selectedThemeOptions.length}개</span></span>
+                    <span className="text-muted-foreground">취향을 더하거나 빼도 좋아요</span>
+                  </div>
+                  <div className="mt-2 flex min-h-7 flex-wrap items-center gap-1.5" aria-live="polite">
+                    {selectedThemeOptions.length ? selectedThemeOptions.map(({ value, label }) => (
+                      <button key={value} type="button" aria-label={`${label} 선택 해제`} onClick={() => removeTheme(value)} className="ai-course-control inline-flex min-h-8 items-center gap-1.5 rounded-full border border-primary/20 bg-background px-2.5 py-1 text-[11px] font-semibold text-primary transition-colors hover:bg-primary/10">
+                        {label}<X className="h-3 w-3 shrink-0" aria-hidden="true" />
+                      </button>
+                    )) : <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground"><Sparkles className="h-3 w-3 text-primary" aria-hidden="true" />테마도 AI에게 맡겼어요.</p>}
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-1.5 border-t border-border/60 pt-3">
+                    {THEME_OPTIONS.map(({ value, label, icon: Icon }) => {
+                      const selected = themes.includes(value);
+                      return (
+                        <button key={value} ref={(element) => { themeButtonRefs.current[value] = element; }} type="button" aria-label={label} aria-pressed={selected} onClick={() => setThemes((prev) => prev.includes(value) ? prev.filter((theme) => theme !== value) : [...prev, value])} className={`ai-course-control inline-flex min-h-9 items-center gap-1.5 rounded-xl border px-2.5 py-2 text-[11px] transition-colors ${selected ? "border-primary/30 bg-primary/[0.06] font-semibold text-primary" : "border-border bg-background text-muted-foreground hover:border-primary/30"}`}>
+                          <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />{label}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               </section>
 
