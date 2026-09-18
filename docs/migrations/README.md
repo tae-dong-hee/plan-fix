@@ -25,6 +25,14 @@ API의 `generatedBy`는 `LLM`, `RULE_BASED`, `MANUAL` 중 하나이며 이전 �
 `themes`는 선택 순서대로 `HEALING`, `FOOD`, `CAFE`, `ACTIVITY`, `CULTURE` 코드를 받는다.
 수정 요청에서 생성 방식·테마를 생략하거나 `null`로 보내면 기존 값을 유지하고, `themes: []`는 선택을 지운다.
 
+`2026-09-19-hide-leaked-gangneung-test-spots.sql`은 서비스 DB에 남은 강릉 테스트 장소 6건을
+숨기는 데이터 보정이다. 감사에서 확인한 ID·원본 contentid·제목·좌표·이미지 등 모든 조건이
+일치할 때만 적용하며, 실제 경포해수욕장(`spot_id=429`, TourAPI `contentid=128758`)은 유지한다.
+가짜 경포해수욕장에 저장된 코스는 정상 장소로 연결하고 좋아요는 사용자별로 정상 장소에 보존한다.
+원본 테스트 행과 기존 좋아요는 삭제하지 않는다. 재실행 시 추가 변경은 없다.
+적용 전 관련 `spots`, `tour_data_spots`, `course_spots`, `spot_likes` 행을 백업해야 한다.
+확인한 fixture와 다르거나 ‘원래 제목’에 사용자 연결이 생겼다면 자동 적용을 중단한다.
+
 ## 적용 원칙
 
 - 운영·공유 DB에는 `ddl-auto: validate`를 사용한다. Hibernate가 스키마를 변경하지 않게 한다.

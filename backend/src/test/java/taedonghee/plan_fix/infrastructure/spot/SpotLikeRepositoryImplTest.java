@@ -3,6 +3,7 @@ package taedonghee.plan_fix.infrastructure.spot;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Transactional;
 import taedonghee.plan_fix.domain.spot.SpotLikeModel;
@@ -18,9 +19,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * spot_likes에 실제로 저장/조회/삭제되는지, 유니크 제약(user_id, spot_id)이 실제로 걸려 있는지 본다.
- * @Transactional로 각 테스트가 끝나면 롤백해서 로컬 DB에 가짜 데이터를 남기지 않는다.
+ * 임시 PostgreSQL을 사용하며 @Transactional로 테스트 사이의 데이터도 롤백한다.
  */
 @SpringBootTest
+@ActiveProfiles("test")
 @Transactional
 class SpotLikeRepositoryImplTest {
 

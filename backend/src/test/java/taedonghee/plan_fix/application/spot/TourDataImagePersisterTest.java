@@ -3,6 +3,7 @@ package taedonghee.plan_fix.application.spot;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 import taedonghee.plan_fix.domain.spot.SpotModel;
 import taedonghee.plan_fix.domain.spot.SpotRepository;
 import taedonghee.plan_fix.domain.spot.SpotSourceType;
@@ -21,6 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * (붙이면 테스트가 트랜잭션을 대신 열어줘서 정작 검증하려는 문제가 가려진다.)
  */
 @SpringBootTest
+@ActiveProfiles("test")
 class TourDataImagePersisterTest {
 
 	@Autowired
