@@ -51,7 +51,7 @@ public class CourseController {
         return ResponseEntity.ok(responses);
     }
 
-    /** 공개 코스 전체/인기순 목록 조회 API. 예: GET /api/v1/courses/public?sort=popular */
+    /** 공개 코스 최신순/인기순/무작위 목록 조회 API. 예: GET /api/v1/courses/public?sort=random */
     @GetMapping("/public")
     public ResponseEntity<CourseListResponse> listPublic(
             @org.springframework.web.bind.annotation.RequestParam(required = false) String sort,

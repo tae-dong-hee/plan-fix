@@ -21,6 +21,33 @@ import static taedonghee.plan_fix.application.course.CourseCoverImageSelectorTes
 class CoursePublicCoverApplicationServiceTest {
 
     @Test
+    void random_public_list_fetches_a_new_selection_and_preserves_its_order_and_covers() {
+        CourseRepository courses = mock(CourseRepository.class);
+        SpotRepository spots = mock(SpotRepository.class);
+        CourseModel older = course(1, "오래된 공개 코스", null, "https://user.example.com/older.jpg", 11L);
+        CourseModel newer = course(30, "최근 공개 코스", null, "https://user.example.com/newer.jpg", 12L);
+        when(courses.searchPublic(CourseSortType.RANDOM, 0, 20))
+                .thenReturn(List.of(older, newer))
+                .thenReturn(List.of(newer, older));
+        when(courses.countPublic()).thenReturn(30L);
+        CourseApplicationService service = service(courses, spots);
+
+        CourseListResult first = service.listPublic(new CourseListQuery("random", 0, 20));
+        CourseListResult next = service.listPublic(new CourseListQuery("random", 0, 20));
+
+        assertThat(first.items()).extracting(CourseListResult.Item::courseId).containsExactly(1L, 30L);
+        assertThat(next.items()).extracting(CourseListResult.Item::courseId).containsExactly(30L, 1L);
+        assertThat(first.items()).extracting(CourseListResult.Item::thumbnail)
+                .containsExactly(older.thumbnail(), newer.thumbnail());
+        assertThat(first.totalCount()).isEqualTo(30);
+        assertThat(first.offset()).isZero();
+        assertThat(first.size()).isEqualTo(20);
+        verify(courses, times(2)).searchPublic(CourseSortType.RANDOM, 0, 20);
+        verifyNoInteractions(spots);
+        verify(courses, never()).save(any());
+    }
+
+    @Test
     void public_list_batches_only_missing_thumbnails_spots_and_preserves_explicit_covers() {
         CourseRepository courses = mock(CourseRepository.class);
         SpotRepository spots = mock(SpotRepository.class);

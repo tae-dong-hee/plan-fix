@@ -37,6 +37,18 @@ public interface CourseJpaRepository extends JpaRepository<CourseJpaEntity, Long
     );
 
     @org.springframework.data.jpa.repository.Query("""
+            SELECT c FROM CourseJpaEntity c
+            WHERE c.status = taedonghee.plan_fix.domain.course.CourseStatus.ACTIVE
+              AND c.visibility = taedonghee.plan_fix.domain.course.CourseVisibility.PUBLIC
+            ORDER BY function('random')
+            LIMIT :limit OFFSET :offset
+            """)
+    List<CourseJpaEntity> searchPublicByRandom(
+            @org.springframework.data.repository.query.Param("limit") int limit,
+            @org.springframework.data.repository.query.Param("offset") int offset
+    );
+
+    @org.springframework.data.jpa.repository.Query("""
             SELECT COUNT(c) FROM CourseJpaEntity c
             WHERE c.status = taedonghee.plan_fix.domain.course.CourseStatus.ACTIVE
               AND c.visibility = taedonghee.plan_fix.domain.course.CourseVisibility.PUBLIC

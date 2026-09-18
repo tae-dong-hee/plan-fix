@@ -207,9 +207,9 @@ export async function fetchMyCourses(): Promise<CourseResponse[]> {
   return (await response.json()) as CourseResponse[];
 }
 
-/** 공개 코스 목록 조회(전체 또는 인기순) */
+/** 공개 코스 목록 조회(최신순, 인기순 또는 무작위) */
 export async function fetchPublicCourses(params: {
-  sort?: "latest" | "popular";
+  sort?: "latest" | "popular" | "random";
   offset?: number;
   size?: number;
 } = {}): Promise<PublicCourseList> {
@@ -225,6 +225,7 @@ export async function fetchPublicCourses(params: {
   });
   const response = await fetch(`${apiBaseUrl}/courses/public?${query.toString()}`, {
     credentials: "include",
+    ...(params.sort === "random" ? { cache: "no-store" as const } : {}),
   });
   if (!response.ok) {
     throw new Error("공개 코스 목록을 불러오지 못했습니다.");
