@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { MockedFunction } from "vitest";
 import { Sun } from "lucide-react";
-import { MemoryRouter, useLocation } from "react-router-dom";
+import { Link, MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 
 import MainPage from "@/pages/main-page";
 import { signOut } from "@/services/auth";
@@ -164,17 +164,17 @@ describe("MainPage public course carousel", () => {
         size: 20,
       });
     });
-    expect(mockedFetchPublicCourses).toHaveBeenCalledExactlyOnceWith({ sort: "latest", size: 20 });
+    expect(mockedFetchPublicCourses).toHaveBeenCalledExactlyOnceWith({ sort: "random", size: 20 });
     expect(mockedFetchLikedCourses).toHaveBeenCalledTimes(1);
     expect(screen.getByRole("heading", { name: "강원도에서 뭐 하지?" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "강원도에서 뭐 하지? 전체보기" })).toHaveAttribute("href", "/courses/public");
   });
 
-  test("최신 공개 코스와 찜 상태를 조회하고 코스 상세 및 전체 목록으로 연결한다", async () => {
+  test("무작위 공개 코스와 찜 상태를 조회하고 코스 상세 및 전체 목록으로 연결한다", async () => {
     mockedFetchPublicCourses.mockResolvedValue(publicCourseResult);
     renderMainPage();
 
-    expect(mockedFetchPublicCourses).toHaveBeenCalledWith({ sort: "latest", size: 20 });
+    expect(mockedFetchPublicCourses).toHaveBeenCalledWith({ sort: "random", size: 20 });
     expect(mockedFetchLikedCourses).toHaveBeenCalledTimes(1);
     expect((await screen.findByText(publicCourse.title)).closest("a")).toHaveAttribute(
       "href",
@@ -185,6 +185,53 @@ describe("MainPage public course carousel", () => {
       "href",
       "/courses/public",
     );
+  });
+
+  test("다른 페이지에서 돌아오거나 메인으로 다시 이동하면 코스를 새로 조회한다", async () => {
+    const nextCourse = { ...publicCourse, courseId: 32, title: "춘천 호수 여행 코스" };
+    const lastCourse = { ...publicCourse, courseId: 33, title: "속초 산책 코스" };
+    mockedFetchPublicCourses
+      .mockResolvedValueOnce(publicCourseResult)
+      .mockResolvedValueOnce({ ...publicCourseResult, items: [nextCourse] })
+      .mockResolvedValueOnce({ ...publicCourseResult, items: [lastCourse] });
+    render(
+      <MemoryRouter initialEntries={["/main"]} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <Link to="/other">다른 페이지</Link>
+        <Link to="/main">메인으로 이동</Link>
+        <Routes>
+          <Route path="/main" element={<MainPage />} />
+          <Route path="/other" element={<p>다른 화면</p>} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    await screen.findByText(publicCourse.title);
+
+    fireEvent.click(screen.getByRole("link", { name: "다른 페이지" }));
+    expect(screen.queryByText(publicCourse.title)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("link", { name: "메인으로 이동" }));
+    expect(await screen.findByText(nextCourse.title)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("link", { name: "메인으로 이동" }));
+    expect(await screen.findByText(lastCourse.title)).toBeInTheDocument();
+    expect(screen.queryByText(nextCourse.title)).not.toBeInTheDocument();
+    expect(mockedFetchPublicCourses).toHaveBeenCalledTimes(3);
+    expect(mockedFetchPublicCourses).toHaveBeenLastCalledWith({ sort: "random", size: 20 });
+  });
+
+  test("새로고침처럼 페이지를 다시 마운트하면 코스를 새로 조회한다", async () => {
+    mockedFetchPublicCourses.mockResolvedValueOnce(publicCourseResult);
+    const firstPage = renderMainPage();
+    await screen.findByText(publicCourse.title);
+    firstPage.unmount();
+
+    const nextCourse = { ...publicCourse, courseId: 32, title: "춘천 호수 여행 코스" };
+    mockedFetchPublicCourses.mockResolvedValueOnce({ ...publicCourseResult, items: [nextCourse] });
+    renderMainPage();
+
+    expect(await screen.findByText(nextCourse.title)).toBeInTheDocument();
+    expect(screen.queryByText(publicCourse.title)).not.toBeInTheDocument();
+    expect(mockedFetchPublicCourses).toHaveBeenCalledTimes(2);
+    expect(mockedFetchPublicCourses).toHaveBeenLastCalledWith({ sort: "random", size: 20 });
   });
 
   test("여행 코스 카드를 좌우로 넘길 수 있다", async () => {
@@ -222,6 +269,7 @@ describe("MainPage public course carousel", () => {
     expect(mockedUnlikeCourse).toHaveBeenCalledWith(31);
     expect(mockedLikeSpot).not.toHaveBeenCalled();
     expect(mockedUnlikeSpot).not.toHaveBeenCalled();
+    expect(mockedFetchPublicCourses).toHaveBeenCalledTimes(1);
   });
 
   test("기존에 찜한 코스는 하트가 선택되어 있고 첫 클릭으로 취소한다", async () => {
@@ -1066,7 +1114,7 @@ describe("MainPage travel header", () => {
     expect(screen.getByRole("heading", { name: `${region} 주간 날씨` })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: `${region}의 인기 장소` })).toBeInTheDocument();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    expect(mockedFetchPublicCourses).toHaveBeenCalledExactlyOnceWith({ sort: "latest", size: 20 });
+    expect(mockedFetchPublicCourses).toHaveBeenCalledExactlyOnceWith({ sort: "random", size: 20 });
     expect(mockedFetchLikedCourses).toHaveBeenCalledTimes(1);
   });
 
@@ -1088,7 +1136,7 @@ describe("MainPage travel header", () => {
     expect(screen.getByRole("button", { name: "강릉 바로 선택" })).toHaveAttribute("aria-pressed", "false");
     expect(screen.getByRole("button", { name: "여행 지역 선택: 강원도 / 지역 선택" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "강원도 주간 날씨" })).toBeInTheDocument();
-    expect(mockedFetchPublicCourses).toHaveBeenCalledExactlyOnceWith({ sort: "latest", size: 20 });
+    expect(mockedFetchPublicCourses).toHaveBeenCalledExactlyOnceWith({ sort: "random", size: 20 });
     expect(mockedFetchLikedCourses).toHaveBeenCalledTimes(1);
 
     fireEvent.click(screen.getByRole("button", { name: "인기 장소 더보기" }));

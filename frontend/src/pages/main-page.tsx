@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   ArrowRight,
   BookOpen,
@@ -76,6 +76,7 @@ function PlaceCarouselControls({
 
 export default function MainPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [selectedRegion, setSelectedRegion] = useState<GangwonRegion | null>(null);
   const [isRegionMapOpen, setIsRegionMapOpen] = useState(false);
   const locationName = selectedRegion ?? "강원도";
@@ -158,8 +159,8 @@ export default function MainPage() {
     setCourseLikesError(false);
     setCourseLikeError(null);
 
-    // 공개 코스 API는 시·군 필터를 지원하지 않으므로 전체 공개 코스를 조회한다.
-    fetchPublicCourses({ sort: "latest", size: 20 })
+    // 메인 페이지를 방문할 때마다 전체 공개 코스 중 무작위로 조회한다.
+    fetchPublicCourses({ sort: "random", size: 20 })
       .then((res) => {
         if (!ignore) {
           setGuideCourses(res.items);
@@ -193,7 +194,7 @@ export default function MainPage() {
     return () => {
       ignore = true;
     };
-  }, [courseReload]);
+  }, [courseReload, location.key]);
 
   useEffect(() => {
     let ignore = false;

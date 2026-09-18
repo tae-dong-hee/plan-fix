@@ -95,9 +95,11 @@ public class CourseRepositoryImpl implements CourseRepository {
 
     @Override
     public List<CourseModel> searchPublic(CourseSortType sort, int offset, int limit) {
-        List<CourseJpaEntity> entities = sort == CourseSortType.POPULAR
-                ? courseJpaRepository.searchPublicByPopular(limit, offset)
-                : courseJpaRepository.searchPublicByLatest(limit, offset);
+        List<CourseJpaEntity> entities = switch (sort) {
+            case LATEST -> courseJpaRepository.searchPublicByLatest(limit, offset);
+            case POPULAR -> courseJpaRepository.searchPublicByPopular(limit, offset);
+            case RANDOM -> courseJpaRepository.searchPublicByRandom(limit, offset);
+        };
         return entities.stream().map(this::toDomain).toList();
     }
 

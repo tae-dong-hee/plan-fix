@@ -141,7 +141,7 @@ public class CourseApplicationService {
                 .toList();
     }
 
-    /** 공개 코스 전체/인기순 목록 조회 */
+    /** 공개 코스 최신순/인기순/무작위 목록 조회 */
     public CourseListResult listPublic(CourseListQuery query) {
         validateListQuery(query);
         CourseSortType sort = parseSort(query.sort());
@@ -178,7 +178,10 @@ public class CourseApplicationService {
         if ("popular".equals(sort)) {
             return CourseSortType.POPULAR;
         }
-        throw new CoreException(ErrorType.BAD_REQUEST, "sort는 latest 또는 popular만 가능합니다. sort=" + sort);
+        if ("random".equals(sort)) {
+            return CourseSortType.RANDOM;
+        }
+        throw new CoreException(ErrorType.BAD_REQUEST, "sort는 latest, popular 또는 random만 가능합니다. sort=" + sort);
     }
 
     /**

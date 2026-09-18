@@ -1,4 +1,4 @@
-import { createCourse, deleteCourse, fetchCourse, fetchMyCourses, updateCourse } from "./course";
+import { createCourse, deleteCourse, fetchCourse, fetchMyCourses, fetchPublicCourses, updateCourse } from "./course";
 import { UnauthorizedError } from "./spots";
 import { setApiBaseUrl } from "@/test-utils/env";
 
@@ -79,6 +79,35 @@ describe("course service", () => {
       });
 
       await expect(fetchMyCourses()).rejects.toThrow(UnauthorizedError);
+    });
+  });
+
+  describe("fetchPublicCourses", () => {
+    it("무작위 목록은 캐시를 사용하지 않고 매번 서버에서 가져온다", async () => {
+      const firstList = { items: [{ courseId: 1 }], offset: 0, size: 20, totalCount: 2 };
+      const nextList = { ...firstList, items: [{ courseId: 2 }] };
+      global.fetch = vi.fn()
+        .mockResolvedValueOnce({ ok: true, json: async () => firstList })
+        .mockResolvedValueOnce({ ok: true, json: async () => nextList });
+
+      expect(await fetchPublicCourses({ sort: "random", size: 20 })).toEqual(firstList);
+      expect(await fetchPublicCourses({ sort: "random", size: 20 })).toEqual(nextList);
+      expect(global.fetch).toHaveBeenCalledTimes(2);
+      expect(global.fetch).toHaveBeenLastCalledWith(
+        "http://localhost:8080/api/v1/courses/public?sort=random&offset=0&size=20",
+        { credentials: "include", cache: "no-store" },
+      );
+    });
+
+    it.each(["latest", "popular"] as const)("%s 목록의 정렬과 페이지 요청을 유지한다", async (sort) => {
+      const list = { items: [], offset: 20, size: 10, totalCount: 0 };
+      global.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => list });
+
+      expect(await fetchPublicCourses({ sort, offset: 20, size: 10 })).toEqual(list);
+      expect(global.fetch).toHaveBeenCalledWith(
+        `http://localhost:8080/api/v1/courses/public?sort=${sort}&offset=20&size=10`,
+        { credentials: "include" },
+      );
     });
   });
 
