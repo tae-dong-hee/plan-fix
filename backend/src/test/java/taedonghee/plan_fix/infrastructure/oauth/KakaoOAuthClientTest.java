@@ -41,6 +41,7 @@ class KakaoOAuthClientTest {
         assertThat(url).startsWith("https://kauth.example/oauth/authorize?");
         assertThat(url).contains("client_id=test-client-id");
         assertThat(url).contains("response_type=code");
+        assertThat(url).contains("prompt=login");
         assertThat(url).contains("state=state-value");
         assertThat(url).contains("code_challenge=challenge-value");
         assertThat(url).contains("code_challenge_method=S256");
