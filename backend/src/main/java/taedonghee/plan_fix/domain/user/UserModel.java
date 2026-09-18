@@ -6,6 +6,8 @@ import taedonghee.plan_fix.support.error.ErrorType;
 import java.time.OffsetDateTime;
 import java.time.LocalDate;
 import java.util.regex.Pattern;
+import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * 사용자 Model
@@ -32,6 +34,9 @@ public class UserModel {
     private final String name;
     private final String email;
     private final LocalDate birthDate;
+    private final String profileImageKey;
+    private final String defaultAvatarColor;
+    private static final List<String> AVATAR_COLORS = List.of("violet", "blue", "green", "amber", "rose");
     private final UserRole role;
     private final UserStatus status;
     private final OffsetDateTime createdAt;
@@ -43,6 +48,8 @@ public class UserModel {
             String name,
             String email,
             LocalDate birthDate,
+            String profileImageKey,
+            String defaultAvatarColor,
             UserRole role,
             UserStatus status,
             OffsetDateTime createdAt,
@@ -57,6 +64,10 @@ public class UserModel {
         this.name = name;
         this.email = email;
         this.birthDate = birthDate;
+        this.profileImageKey = profileImageKey;
+        // Migration backfills existing users; this stable fallback also covers legacy rows.
+        this.defaultAvatarColor = defaultAvatarColor != null && AVATAR_COLORS.contains(defaultAvatarColor) ? defaultAvatarColor
+                : AVATAR_COLORS.get(userId == null ? 0 : Math.floorMod(userId, AVATAR_COLORS.size()));
         this.role = role == null ? UserRole.USER : role;
         this.status = status == null ? UserStatus.ACTIVE : status;
         this.createdAt = createdAt;
@@ -68,7 +79,9 @@ public class UserModel {
      */
     public static UserModel create(String username, String name, String email, LocalDate birthDate) {
         OffsetDateTime now = OffsetDateTime.now();
-        return new UserModel(null, username, name, email, birthDate, UserRole.USER, UserStatus.ACTIVE, now, now);
+        return new UserModel(null, username, name, email, birthDate, null,
+                AVATAR_COLORS.get(ThreadLocalRandom.current().nextInt(AVATAR_COLORS.size())),
+                UserRole.USER, UserStatus.ACTIVE, now, now);
     }
 
     /** 기존 호출부 호환용 생년월일 없는 생성 */
@@ -91,7 +104,15 @@ public class UserModel {
             OffsetDateTime createdAt,
             OffsetDateTime updatedAt
     ) {
-        return new UserModel(userId, username, name, email, birthDate, role, status, createdAt, updatedAt);
+        return reconstruct(userId, username, name, email, birthDate, null, null, role, status, createdAt, updatedAt);
+    }
+
+    public static UserModel reconstruct(Long userId, String username, String name, String email,
+                                        LocalDate birthDate, String profileImageKey, String defaultAvatarColor,
+                                        UserRole role, UserStatus status,
+                                        OffsetDateTime createdAt, OffsetDateTime updatedAt) {
+        return new UserModel(userId, username, name, email, birthDate, profileImageKey, defaultAvatarColor,
+                role, status, createdAt, updatedAt);
     }
 
     /** 기존 호출부 호환용 생년월일 없는 복원 */
@@ -108,12 +129,28 @@ public class UserModel {
         if (status == UserStatus.WITHDRAWN) {
             throw new CoreException(ErrorType.CONFLICT, "탈퇴한 사용자는 수정할 수 없습니다. userId=" + userId);
         }
-        return new UserModel(userId, username, name, email, birthDate, role, status, createdAt, OffsetDateTime.now());
+        return new UserModel(userId, username, name, email, birthDate, profileImageKey, defaultAvatarColor, role, status, createdAt, OffsetDateTime.now());
     }
 
     /** 기존 호출부 호환용 생년월일 유지 */
     public UserModel updateProfile(String username, String name, String email) {
         return updateProfile(username, name, email, birthDate);
+    }
+
+    public UserModel updateProfileImage(String imageKey) {
+        if (status == UserStatus.WITHDRAWN) {
+            throw new CoreException(ErrorType.CONFLICT, "탈퇴한 사용자는 수정할 수 없습니다. userId=" + userId);
+        }
+        return new UserModel(userId, username, name, email, birthDate, imageKey, defaultAvatarColor,
+                role, status, createdAt, OffsetDateTime.now());
+    }
+
+    public String getProfileImageKey() {
+        return profileImageKey;
+    }
+
+    public String getDefaultAvatarColor() {
+        return defaultAvatarColor;
     }
 
     /**
@@ -123,7 +160,7 @@ public class UserModel {
         if (status == UserStatus.WITHDRAWN) {
             throw new CoreException(ErrorType.CONFLICT, "이미 탈퇴한 사용자입니다. userId=" + userId);
         }
-        return new UserModel(userId, username, name, email, birthDate, role, UserStatus.WITHDRAWN, createdAt, OffsetDateTime.now());
+        return new UserModel(userId, username, name, email, birthDate, profileImageKey, defaultAvatarColor, role, UserStatus.WITHDRAWN, createdAt, OffsetDateTime.now());
     }
 
     /**

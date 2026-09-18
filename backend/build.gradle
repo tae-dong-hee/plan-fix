@@ -66,6 +66,8 @@ dependencies {
 
 	// AWS S3
 	implementation 'software.amazon.awssdk:s3:2.29.35'
+	// Add a WebP ImageIO reader so profile uploads can be decoded before storing.
+	implementation 'com.twelvemonkeys.imageio:imageio-webp:3.15.2'
 
 	compileOnly 'org.projectlombok:lombok'
 	runtimeOnly 'org.postgresql:postgresql'

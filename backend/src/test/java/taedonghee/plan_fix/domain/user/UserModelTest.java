@@ -9,6 +9,34 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class UserModelTest {
 
     @Test
+    void defaultAvatarUsesOneOfFiveColorsAndSurvivesProfileAndPhotoChanges() {
+        UserModel user = UserModel.create("traveler", null, null);
+        assertThat(user.getDefaultAvatarColor()).isIn("violet", "blue", "green", "amber", "rose");
+        UserModel updated = user.updateProfile("traveler2", null, null)
+                .updateProfileImage("users/1/profile/test.png").updateProfileImage(null);
+        assertThat(updated.getDefaultAvatarColor()).isEqualTo(user.getDefaultAvatarColor());
+    }
+
+    @Test
+    void legacyUserColorIsStableAcrossReconstruction() {
+        var now = java.time.OffsetDateTime.now();
+        UserModel first = UserModel.reconstruct(7L, "traveler", null, null, UserRole.USER, UserStatus.ACTIVE, now, now);
+        UserModel second = UserModel.reconstruct(7L, "traveler", null, null, UserRole.USER, UserStatus.ACTIVE, now, now);
+        assertThat(first.getDefaultAvatarColor()).isEqualTo(second.getDefaultAvatarColor());
+    }
+
+    @Test
+    void reconstructedAvatarAndPhotoArePreservedByNormalProfileSave() {
+        var now = java.time.OffsetDateTime.now();
+        UserModel user = UserModel.reconstruct(7L, "traveler", null, null, null, "users/7/profile/test.png",
+                "amber", UserRole.USER, UserStatus.ACTIVE, now, now);
+        UserModel saved = user.updateProfile("traveler2", null, null);
+        assertThat(saved.getDefaultAvatarColor()).isEqualTo("amber");
+        assertThat(saved.getProfileImageKey()).isEqualTo("users/7/profile/test.png");
+    }
+
+
+    @Test
     void 소셜_가입은_name_없이_생성된다() {
         UserModel user = UserModel.create("hong gildong", null, null);
 

@@ -6,6 +6,9 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 
 /**
  * [support] 전역 예외 처리.
@@ -47,6 +50,18 @@ public class GlobalExceptionHandler {
 		return ResponseEntity.status(errorType.getStatus())
 			.body(ErrorResponse.of(errorType, "요청 값의 형식 또는 선택 항목이 올바르지 않습니다."));
 	}
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ErrorResponse> handleOversizedUpload(MaxUploadSizeExceededException exception) {
+        return ResponseEntity.status(413)
+                .body(new ErrorResponse("Payload Too Large", "파일 업로드 용량 제한을 초과했습니다. 더 작은 파일을 선택해 주세요."));
+    }
+
+    @ExceptionHandler({MissingServletRequestPartException.class, MissingServletRequestParameterException.class})
+    public ResponseEntity<ErrorResponse> handleMissingUploadPart(Exception exception) {
+        return ResponseEntity.badRequest()
+                .body(ErrorResponse.of(ErrorType.BAD_REQUEST, "필수 요청 항목을 확인해 주세요."));
+    }
 
 	/**
 	 * 예상하지 못한 예외. 내부 사정이 드러나지 않도록 응답에는 고정 메시지만 담고,

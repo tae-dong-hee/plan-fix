@@ -17,7 +17,12 @@ export type SignUpResponse = {
   createdAt: string;
   updatedAt: string;
 };
-export type UserProfile = SignUpResponse;
+export type DefaultAvatarColor = "violet" | "blue" | "green" | "amber" | "rose";
+
+export type UserProfile = SignUpResponse & {
+  profileImageUrl: string | null;
+  defaultAvatarColor: DefaultAvatarColor;
+};
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "");
 
@@ -56,7 +61,7 @@ export async function signUp(payload: SignUpRequest): Promise<SignUpResponse> {
 
 async function profileRequest(path: string, init?: RequestInit): Promise<UserProfile> {
   if (!apiBaseUrl) throw new Error("VITE_API_BASE_URL이 설정되지 않았습니다.");
-  const response = await fetch(`${apiBaseUrl}${path}`, { ...init, credentials: "include", headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) } });
+  const response = await fetch(`${apiBaseUrl}${path}`, { ...init, credentials: "include" });
   if (!response.ok) {
     const body = (await response.json().catch(() => null)) as { message?: string } | null;
     if (response.status === 401) throw new Error("로그인이 필요합니다.");
@@ -68,5 +73,23 @@ async function profileRequest(path: string, init?: RequestInit): Promise<UserPro
 export function fetchMyProfile() { return profileRequest("/users/me"); }
 
 export function updateMyProfile(payload: Pick<UserProfile, "username" | "name" | "email">) {
-  return profileRequest("/users/me", { method: "PATCH", body: JSON.stringify(payload) });
+  return profileRequest("/users/me", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+}
+
+export function uploadMyProfileImage(file: File) {
+  const body = new FormData();
+  body.append("file", file);
+  return profileRequest("/users/me/profile-image", { method: "POST", body });
+}
+
+export function removeMyProfileImage() {
+  return profileRequest("/users/me/profile-image", { method: "DELETE" });
+}
+
+/** 프로필 API의 상대 경로를 프런트엔드가 아닌 API 서버로 연결한다. */
+export function getProfileImageSrc(url: string): string {
+  if (url.startsWith("/api/v1/")) {
+    return `${apiBaseUrl || "/api/v1"}${url.slice("/api/v1".length)}`;
+  }
+  return url;
 }

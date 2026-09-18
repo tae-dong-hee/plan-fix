@@ -54,7 +54,7 @@ public class UserApplicationService {
      */
     @Transactional
     public UserResult update(Long userId, UserCommand.Update command) {
-        UserModel user = getOrThrow(userId);
+        UserModel user = getForUpdateOrThrow(userId);
         if (!user.getUsername().equals(command.username())) {
             validateUniqueUsername(command.username());
         }
@@ -69,7 +69,7 @@ public class UserApplicationService {
      */
     @Transactional
     public UserResult withdraw(Long userId) {
-        return UserResult.from(userRepository.save(getOrThrow(userId).withdraw()));
+        return UserResult.from(userRepository.save(getForUpdateOrThrow(userId).withdraw()));
     }
 
     /**
@@ -100,6 +100,11 @@ public class UserApplicationService {
     /**
      * 사용자 조회 실패 예외 처리
      */
+    private UserModel getForUpdateOrThrow(Long userId) {
+        return userRepository.findByUserIdForUpdate(userId)
+                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "User not found. userId=" + userId));
+    }
+
     private UserModel getOrThrow(Long userId) {
         return userRepository.findByUserId(userId)
                 .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "User not found. userId=" + userId));

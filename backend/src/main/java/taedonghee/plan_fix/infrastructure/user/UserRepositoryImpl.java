@@ -33,6 +33,11 @@ public class UserRepositoryImpl implements UserRepository {
         return userJpaRepository.findById(userId).map(this::toDomain);
     }
 
+    @Override
+    public Optional<UserModel> findByUserIdForUpdate(Long userId) {
+        return userJpaRepository.findByIdForUpdate(userId).map(this::toDomain);
+    }
+
     /**
      * email 기반 사용자 단건 조회 처리
      */
@@ -77,6 +82,8 @@ public class UserRepositoryImpl implements UserRepository {
                 .name(user.getName())
                 .email(user.getEmail())
                 .birthDate(user.getBirthDate())
+                .profileImageKey(user.getProfileImageKey())
+                .defaultAvatarColor(user.getDefaultAvatarColor())
                 .role(user.getRole())
                 .status(user.getStatus())
                 .createdAt(user.getCreatedAt())
@@ -94,6 +101,8 @@ public class UserRepositoryImpl implements UserRepository {
                 entity.getName(),
                 entity.getEmail(),
                 entity.getBirthDate(),
+                entity.getProfileImageKey(),
+                entity.getDefaultAvatarColor(),
                 entity.getRole(),
                 entity.getStatus(),
                 entity.getCreatedAt(),
