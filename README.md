@@ -1,4 +1,21 @@
 # plan-fix
 플랜픽스
 
+## 백엔드 테스트
+
+Java 21과 실행 중인 Docker가 필요합니다.
+
+```sh
+cd backend
+./gradlew test
+```
+
+Spring 통합 테스트는 Testcontainers가 생성한 PostgreSQL 17 임시 컨테이너를 사용합니다.
+테스트용 설정이 `DB_*`, `SPRING_DATASOURCE_*`, 로컬 비밀 설정의 DB 연결보다 우선하며,
+IDE에서 개별 테스트를 실행해도 같은 격리가 적용됩니다. Docker를 사용할 수 없으면 테스트는
+실패하며 다른 DB로 연결하지 않습니다. 컨테이너와 테스트 데이터는 테스트 JVM 종료 후 삭제됩니다.
+
+`src/test/resources/META-INF/spring.factories`가 모든 Spring 테스트에 DB 격리를 등록합니다.
+새 `@SpringBootTest`에는 외부 서비스의 로컬 설정을 읽지 않도록 `@ActiveProfiles("test")`도 붙입니다.
+
 GitHub `main`에 백엔드 코드를 반영하면 Cloud Run으로 자동 배포되며, 실행 조건과 운영 절차는 [배포 가이드](docs/cloud-run-deployment.md)를 참고하세요.

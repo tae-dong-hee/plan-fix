@@ -4,6 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import taedonghee.plan_fix.domain.spot.SpotModel;
 import taedonghee.plan_fix.domain.spot.SpotRepository;
@@ -24,9 +25,10 @@ import static org.mockito.Mockito.when;
 
 /**
  * 수집이 canonical 스팟(spots)에 제대로 반영되는지 본다.
- * 외부 API만 대체하고 저장소는 실제 DB를 쓴다 — 좌표 변환과 값 보존은 실제로 저장돼야 확인되기 때문이다.
+ * 외부 API만 대체하고 임시 PostgreSQL에 저장해 좌표 변환과 값 보존을 확인한다.
  */
 @SpringBootTest
+@ActiveProfiles("test")
 class TourDataSpotCollectApplicationServiceTest {
 
 	private static final String REGN = "51";

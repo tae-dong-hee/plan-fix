@@ -3,6 +3,7 @@ package taedonghee.plan_fix.infrastructure.spot;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 import taedonghee.plan_fix.domain.spot.SpotModel;
 import taedonghee.plan_fix.domain.spot.SpotRepository;
@@ -19,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * 공개 목록 조회가 실제 DB에서 필터·정렬·offset/limit대로 동작하는지 본다.
  */
 @SpringBootTest
+@ActiveProfiles("test")
 @Transactional
 class SpotRepositoryImplTest {
 
