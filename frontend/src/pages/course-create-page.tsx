@@ -21,7 +21,6 @@ import DateRangeModal from "@/components/ui/date-range-modal";
 import KakaoMap from "@/components/ui/kakao-map";
 import CourseMetadata from "@/components/ui/course-metadata";
 import SpotSearchModal from "@/components/ui/spot-search-modal";
-<<<<<<< HEAD
 import AccommodationSearchModal from "@/components/ui/accommodation-search-modal";
 import {
   createCourse,
@@ -29,13 +28,10 @@ import {
   fetchDayAccommodations,
   saveDayAccommodations,
   updateCourse,
+  type CourseGenerationSource,
   type DayAccommodation,
 } from "@/services/course";
-import { type AiCourseDraft } from "@/services/ai-course";
-=======
-import { createCourse, fetchCourse, updateCourse, type CourseGenerationSource } from "@/services/course";
 import { type AiCourseDraft, type AiCourseTheme } from "@/services/ai-course";
->>>>>>> origin/main
 import { PopularSpot, UnauthorizedError } from "@/services/spots";
 import { aiCourseNotice } from "@/lib/ai-course-notice";
 
@@ -61,12 +57,9 @@ export type CourseDraft = {
   startDate: string;
   endDate: string;
   days: DraftSpot[][];
-<<<<<<< HEAD
   dayAccommodations?: Record<number, DayAccommodation>;
-=======
   generatedBy?: CourseGenerationSource | null;
   themes?: AiCourseTheme[];
->>>>>>> origin/main
 };
 
 function formatDate(date: Date): string {
@@ -248,22 +241,15 @@ export default function CourseCreatePage() {
         startDate,
         endDate,
         days,
-<<<<<<< HEAD
         dayAccommodations,
-=======
         generatedBy,
         themes,
->>>>>>> origin/main
       };
       sessionStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
     } catch {
       // sessionStorage 저장 오류 무시
     }
-<<<<<<< HEAD
-  }, [isEditMode, title, description, visibility, startDate, endDate, days, dayAccommodations]);
-=======
-  }, [isEditMode, title, description, visibility, startDate, endDate, days, generatedBy, themes]);
->>>>>>> origin/main
+  }, [isEditMode, title, description, visibility, startDate, endDate, days, dayAccommodations, generatedBy, themes]);
 
   // 여행 기간(시작일~종료일) 한 번에 변경 - 캘린더 모달에서 적용 버튼을 누르면 호출됨
   const handleApplyDateRange = (newStart: string, newEnd: string) => {

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   BookOpen,
   Calendar,
@@ -29,11 +29,24 @@ type TabType = "spots" | "courses" | "boards";
 
 export default function WishlistPage() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<TabType>("spots");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedTab = searchParams.get("tab");
+  const activeTab: TabType = requestedTab === "courses" || requestedTab === "boards"
+    ? requestedTab
+    : "spots";
+  const setActiveTab = (tab: TabType) => {
+    setSearchParams((previous) => {
+      const next = new URLSearchParams(previous);
+      next.set("tab", tab);
+      return next;
+    });
+  };
 
   const [spots, setSpots] = useState<WishlistSpot[]>([]);
   const [courses, setCourses] = useState<CourseResponse[]>([]);
   const [boards, setBoards] = useState<BoardDetail[]>([]);
+  const [unlikingBoardIds, setUnlikingBoardIds] = useState<number[]>([]);
+  const [storyLikeError, setStoryLikeError] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -106,11 +119,16 @@ export default function WishlistPage() {
   const handleUnlikeBoard = async (e: React.MouseEvent, boardId: number) => {
     e.preventDefault();
     e.stopPropagation();
+    if (unlikingBoardIds.includes(boardId)) return;
+    setUnlikingBoardIds((prev) => [...prev, boardId]);
+    setStoryLikeError(null);
     try {
       await unlikeBoard(boardId);
       setBoards((prev) => prev.filter((b) => b.boardId !== boardId));
     } catch {
-      alert("좋아요 취소에 실패했습니다.");
+      setStoryLikeError("여행 이야기 좋아요를 취소하지 못했습니다. 다시 시도해 주세요.");
+    } finally {
+      setUnlikingBoardIds((prev) => prev.filter((id) => id !== boardId));
     }
   };
 
@@ -139,23 +157,25 @@ export default function WishlistPage() {
             </h1>
           </div>
           <p className="mt-2 text-[13px] leading-6 text-muted-foreground sm:text-sm">
-            내가 좋아요를 누른 여행지, 코스, 여행기 모음입니다.
+            좋아요한 여행지, 여행 코스, 여행 이야기를 종류별로 모아보세요.
           </p>
         </div>
 
         {/* 탭 네비게이션 */}
-        <div className="mt-6 flex gap-5 overflow-x-auto border-b border-border/70 scrollbar-hide sm:gap-7">
+        <div role="group" aria-label="좋아요 종류" className="mt-6 grid grid-cols-3 gap-2 border-b border-border/70 sm:flex sm:gap-7">
           <button
             type="button"
             onClick={() => setActiveTab("spots")}
-            className={`flex min-h-12 shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 pb-3 pt-2 text-[13px] font-medium transition-colors ${
+            aria-label={`여행지 ${loading ? "불러오는 중" : `${spots.length}개`}`}
+            aria-pressed={activeTab === "spots"}
+            className={`flex min-h-12 min-w-0 flex-col items-center justify-center gap-1 whitespace-nowrap border-b-2 pb-3 pt-2 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:flex-row sm:gap-1.5 ${
               activeTab === "spots"
                 ? "border-foreground text-foreground"
                 : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >
-            <Compass className="h-4 w-4" />
-            <span>여행지 / 명소</span>
+            <Compass aria-hidden="true" className="hidden h-4 w-4 sm:block" />
+            <span>여행지</span>
             <span
               className={`rounded-full px-1.5 py-0.5 text-[11px] ${
                 activeTab === "spots"
@@ -163,20 +183,22 @@ export default function WishlistPage() {
                   : "bg-muted text-muted-foreground"
               }`}
             >
-              {spots.length}
+              {loading ? "…" : spots.length}
             </span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab("courses")}
-            className={`flex min-h-12 shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 pb-3 pt-2 text-[13px] font-medium transition-colors ${
+            aria-label={`여행 코스 ${loading ? "불러오는 중" : `${courses.length}개`}`}
+            aria-pressed={activeTab === "courses"}
+            className={`flex min-h-12 min-w-0 flex-col items-center justify-center gap-1 whitespace-nowrap border-b-2 pb-3 pt-2 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:flex-row sm:gap-1.5 ${
               activeTab === "courses"
                 ? "border-foreground text-foreground"
                 : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >
-            <Route className="h-4 w-4" />
+            <Route aria-hidden="true" className="hidden h-4 w-4 sm:block" />
             <span>여행 코스</span>
             <span
               className={`rounded-full px-1.5 py-0.5 text-[11px] ${
@@ -185,21 +207,23 @@ export default function WishlistPage() {
                   : "bg-muted text-muted-foreground"
               }`}
             >
-              {courses.length}
+              {loading ? "…" : courses.length}
             </span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab("boards")}
-            className={`flex min-h-12 shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 pb-3 pt-2 text-[13px] font-medium transition-colors ${
+            aria-label={`여행 이야기 ${loading ? "불러오는 중" : `${boards.length}개`}`}
+            aria-pressed={activeTab === "boards"}
+            className={`flex min-h-12 min-w-0 flex-col items-center justify-center gap-1 whitespace-nowrap border-b-2 pb-3 pt-2 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:flex-row sm:gap-1.5 ${
               activeTab === "boards"
                 ? "border-foreground text-foreground"
                 : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >
-            <BookOpen className="h-4 w-4" />
-            <span>여행기</span>
+            <BookOpen aria-hidden="true" className="hidden h-4 w-4 sm:block" />
+            <span>여행 이야기</span>
             <span
               className={`rounded-full px-1.5 py-0.5 text-[11px] ${
                 activeTab === "boards"
@@ -207,7 +231,7 @@ export default function WishlistPage() {
                   : "bg-muted text-muted-foreground"
               }`}
             >
-              {boards.length}
+              {loading ? "…" : boards.length}
             </span>
           </button>
         </div>
@@ -274,14 +298,15 @@ export default function WishlistPage() {
                           <button
                             type="button"
                             onClick={(e) => handleUnlikeSpot(e, spot.spotId)}
-                            title="위시리스트에서 삭제"
+                            aria-label={`${spot.title} 여행지 좋아요 취소`}
+                            title="여행지 좋아요 취소"
                             className="absolute right-2 top-2 flex h-11 w-11 items-center justify-center rounded-full bg-white/95 text-primary shadow-sm transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                           >
                             <Heart className="h-[18px] w-[18px] fill-current" />
                           </button>
                           <div className="absolute left-3 top-3 max-w-[calc(100%_-_4.5rem)]">
                             <span className="block truncate rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-medium text-zinc-800">
-                              {spot.category}
+                              여행지 · {spot.category}
                             </span>
                           </div>
                         </div>
@@ -353,12 +378,13 @@ export default function WishlistPage() {
                           <div>
                             <div className="flex items-center justify-between gap-2">
                               <span className="rounded-full bg-muted px-2.5 py-1 text-[11px] font-medium text-foreground">
-                                {course.days.length}일 일정
+                                여행 코스 · {course.days.length}일 일정
                               </span>
                               <button
                                 type="button"
                                 onClick={(e) => handleUnlikeCourse(e, course.courseId)}
-                                title="위시리스트에서 삭제"
+                                aria-label={`${course.title} 여행 코스 좋아요 취소`}
+                                title="여행 코스 좋아요 취소"
                                 className="flex h-11 w-11 items-center justify-center rounded-full text-primary transition-colors hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                               >
                                 <Heart className="h-[18px] w-[18px] fill-current" />
@@ -410,91 +436,112 @@ export default function WishlistPage() {
               </div>
             )}
 
-            {/* 3. 여행기/게시글 탭 */}
+            {/* 3. 여행 이야기 탭 */}
             {activeTab === "boards" && (
               <div>
+                {storyLikeError && (
+                  <p role="alert" className="mb-4 text-sm text-destructive">
+                    {storyLikeError}
+                  </p>
+                )}
                 {boards.length === 0 ? (
                   <div className="mt-6 rounded-2xl bg-muted/50 px-6 py-16 text-center">
                     <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-background text-muted-foreground">
                       <BookOpen className="h-7 w-7" />
                     </div>
                     <h2 className="mt-4 text-base font-semibold text-foreground">
-                      좋아요한 여행기가 없습니다.
+                      좋아요한 여행 이야기가 없습니다.
                     </h2>
                     <p className="mt-2 text-[13px] leading-6 text-muted-foreground">
-                      다른 여행자들의 생생한 여행기를 읽고 유용한 정보가 담긴 글을 저장해보세요!
+                      여행 이야기의 좋아요 버튼을 누르면 이곳에 따로 모아볼 수 있어요.
                     </p>
                     <div className="mt-6 flex justify-center">
                       <Link
                         to="/main"
                         className="inline-flex min-h-11 items-center rounded-full bg-primary px-5 py-2.5 text-[13px] font-semibold text-primary-foreground transition-opacity hover:opacity-90"
                       >
-                        메인으로 가기
+                        여행 이야기 둘러보기
                       </Link>
                     </div>
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:gap-x-5 lg:grid-cols-4">
                     {boards.map((board) => (
-                      <Link
+                      <article
                         key={board.boardId}
-                        to={`/boards/${board.boardId}`}
                         data-testid={`wishlist-board-${board.boardId}`}
-                        className="group relative flex min-w-0 flex-col rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-4"
+                        className="group relative flex min-w-0 flex-col"
                       >
-                        <div className="relative aspect-square w-full overflow-hidden rounded-2xl bg-muted">
-                          {board.thumbnail ? (
-                            <img
-                              src={board.thumbnail}
-                              alt={board.title}
-                              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 motion-reduce:transform-none motion-reduce:transition-none"
-                            />
+                        <Link
+                          to={`/boards/${board.boardId}`}
+                          aria-label={`${board.title} 여행 이야기 읽기`}
+                          className="flex min-w-0 flex-1 flex-col rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-4"
+                        >
+                          <div className="relative aspect-square w-full overflow-hidden rounded-2xl bg-muted">
+                            {board.thumbnail ? (
+                              <img
+                                src={board.thumbnail}
+                                alt={board.title}
+                                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 motion-reduce:transform-none motion-reduce:transition-none"
+                              />
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center bg-muted/80 text-muted-foreground">
+                                <BookOpen className="h-8 w-8 stroke-[1.5]" />
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="flex flex-1 flex-col justify-between px-0.5 pb-1 pt-3">
+                            <div>
+                              <span className="mb-2 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary">
+                                <BookOpen aria-hidden="true" className="h-3 w-3" />
+                                여행 이야기
+                              </span>
+                              <h3 className="line-clamp-2 text-[15px] font-semibold leading-snug tracking-tight text-foreground">
+                                {board.title}
+                              </h3>
+                              <p className="mt-1.5 line-clamp-2 text-[13px] leading-relaxed text-muted-foreground">
+                                {board.content.replace(/<[^>]*>?/gm, "").slice(0, 100)}
+                              </p>
+                            </div>
+
+                            <div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 text-xs text-muted-foreground">
+                              <span className="text-xs">
+                                {board.createdAt.substring(0, 10)}
+                              </span>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="flex items-center gap-1">
+                                  <Eye className="h-3.5 w-3.5" />
+                                  {board.viewCount}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <Heart className="h-3.5 w-3.5" />
+                                  {board.likeCount}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <MessageSquare className="h-3.5 w-3.5" />
+                                  {board.commentCount}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={(e) => handleUnlikeBoard(e, board.boardId)}
+                          aria-label={`${board.title} 여행 이야기 좋아요 취소`}
+                          aria-pressed="true"
+                          disabled={unlikingBoardIds.includes(board.boardId)}
+                          title="여행 이야기 좋아요 취소"
+                          className="absolute right-2 top-2 flex h-11 w-11 items-center justify-center rounded-full bg-white/95 text-primary shadow-sm transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:cursor-wait disabled:opacity-70"
+                        >
+                          {unlikingBoardIds.includes(board.boardId) ? (
+                            <Loader2 aria-hidden="true" className="h-[18px] w-[18px] animate-spin" />
                           ) : (
-                            <div className="flex h-full w-full items-center justify-center bg-muted/80 text-muted-foreground">
-                              <BookOpen className="h-8 w-8 stroke-[1.5]" />
-                            </div>
+                            <Heart aria-hidden="true" className="h-[18px] w-[18px] fill-current" />
                           )}
-                          <button
-                            type="button"
-                            onClick={(e) => handleUnlikeBoard(e, board.boardId)}
-                            title="위시리스트에서 삭제"
-                            className="absolute right-2 top-2 flex h-11 w-11 items-center justify-center rounded-full bg-white/95 text-primary shadow-sm transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                          >
-                            <Heart className="h-[18px] w-[18px] fill-current" />
-                          </button>
-                        </div>
-
-                        <div className="flex flex-1 flex-col justify-between px-0.5 pb-1 pt-3">
-                          <div>
-                            <h3 className="line-clamp-2 text-[15px] font-semibold leading-snug tracking-tight text-foreground">
-                              {board.title}
-                            </h3>
-                            <p className="mt-1.5 line-clamp-2 text-[13px] leading-relaxed text-muted-foreground">
-                              {board.content.replace(/<[^>]*>?/gm, "").slice(0, 100)}
-                            </p>
-                          </div>
-
-                          <div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 text-xs text-muted-foreground">
-                            <span className="text-xs">
-                              {board.createdAt.substring(0, 10)}
-                            </span>
-                            <div className="flex flex-wrap items-center gap-2">
-                              <span className="flex items-center gap-1">
-                                <Eye className="h-3.5 w-3.5" />
-                                {board.viewCount}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <Heart className="h-3.5 w-3.5" />
-                                {board.likeCount}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <MessageSquare className="h-3.5 w-3.5" />
-                                {board.commentCount}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </Link>
+                        </button>
+                      </article>
                     ))}
                   </div>
                 )}
