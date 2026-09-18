@@ -75,4 +75,4 @@ gcloud run services update-traffic planfix-backend \
 
 ## 프런트엔드 범위
 
-현재 프런트엔드는 VM `34.64.203.44`에 있습니다. 이 워크플로의 자동 배포 대상은 Cloud Run 백엔드이며, `frontend/**` 변경을 VM에 배포하는 작업은 포함하지 않습니다. 프런트엔드 코드도 같은 저장소에 push할 수 있지만 VM 반영에는 별도의 프런트엔드 배포 과정이 필요합니다.
+프런트엔드는 별도의 [`Deploy frontend to VM`](../.github/workflows/deploy-frontend.yml) 워크플로로 기존 VM `34.64.203.44`에 자동 배포됩니다. `main`의 `frontend/**` 변경이 배포를 시작하며, 백엔드와 프런트엔드를 함께 변경하면 두 워크플로가 각각 실행됩니다. 실행 조건과 VM 운영 절차는 [프런트엔드 배포 가이드](frontend-deployment.md)를 참고하세요.

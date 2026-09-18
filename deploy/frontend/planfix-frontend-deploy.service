@@ -1,0 +1,19 @@
+[Unit]
+Description=Deploy verified PlanFix frontend images
+Wants=network-online.target
+After=network-online.target docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+UMask=0077
+StateDirectory=planfix-frontend
+StateDirectoryMode=0700
+RuntimeDirectory=planfix-frontend
+RuntimeDirectoryMode=0700
+RuntimeDirectoryPreserve=yes
+ExecStart=/opt/planfix-frontend/deploy.sh
+TimeoutStartSec=300
+TimeoutStopSec=60
