@@ -1,0 +1,111 @@
+name: Deploy frontend to VM
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'frontend/**'
+      - 'deploy/frontend/**'
+      - '.github/workflows/deploy-frontend.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'frontend/**'
+      - 'deploy/frontend/**'
+      - '.github/workflows/deploy-frontend.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: frontend-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  IMAGE_REPOSITORY: asia-northeast3-docker.pkg.dev/planfix-01/planfix-frontend/frontend
+  FRONTEND_URL: http://34.64.203.44
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+      - name: Check types and tests
+        working-directory: frontend
+        run: |
+          npm run typecheck
+          npm test
+      - name: Test VM deployment and rollback
+        run: python3 -m unittest discover -s deploy/frontend/tests -v
+
+  deploy:
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Build frontend container
+        env:
+          VITE_KAKAO_JS_KEY: ${{ vars.VITE_KAKAO_JS_KEY }}
+        run: |
+          test -n "$VITE_KAKAO_JS_KEY" || { echo 'Set the VITE_KAKAO_JS_KEY repository variable.'; exit 1; }
+          docker build --build-arg VITE_API_BASE_URL=/api/v1 \
+            --build-arg VITE_KAKAO_JS_KEY \
+            --build-arg "DEPLOY_SHA=${GITHUB_SHA}" \
+            --tag "${IMAGE_REPOSITORY}:${GITHUB_SHA}" frontend
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
+        with:
+          project_id: planfix-01
+          workload_identity_provider: projects/148201851366/locations/global/workloadIdentityPools/planfix-frontend-github/providers/planfix-repo
+          service_account: planfix-frontend-deploy@planfix-01.iam.gserviceaccount.com
+      - uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3
+      - name: Publish release
+        run: |
+          gcloud auth configure-docker asia-northeast3-docker.pkg.dev --quiet
+          docker push "${IMAGE_REPOSITORY}:${GITHUB_SHA}"
+          docker tag "${IMAGE_REPOSITORY}:${GITHUB_SHA}" "${IMAGE_REPOSITORY}:production"
+          docker push "${IMAGE_REPOSITORY}:production"
+      - name: Wait for VM deployment and verify API
+        run: |
+          deployed=false
+          for attempt in $(seq 1 60); do
+            revision="$(curl --fail --silent --show-error --connect-timeout 5 --max-time 10 \
+              "${FRONTEND_URL}/deploy-version.json?run=${GITHUB_RUN_ID}-${attempt}" \
+              | python3 -c 'import json,sys; print(json.load(sys.stdin).get("commit", ""))' 2>/dev/null || true)"
+            if [[ "$revision" == "$GITHUB_SHA" ]]; then
+              deployed=true
+              break
+            fi
+            sleep 5
+          done
+          if [[ "$deployed" != true ]]; then
+            echo 'VM did not serve this commit. Inspect planfix-frontend-deploy.service on planfix-fe.'
+            exit 1
+          fi
+          curl --fail --silent --show-error --retry 3 --connect-timeout 5 --max-time 30 \
+            "${FRONTEND_URL}/api/v1/spots?size=1" --output /dev/null
+          {
+            echo '### Frontend deployed'
+            echo "- Commit: ${GITHUB_SHA}"
+            echo "- URL: ${FRONTEND_URL}"
+            echo "- Image: ${IMAGE_REPOSITORY}:${GITHUB_SHA}"
+          } >> "$GITHUB_STEP_SUMMARY"

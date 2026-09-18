@@ -1,0 +1,6 @@
+services:
+  frontend:
+    image: ${PLANFIX_FRONTEND_IMAGE:?Set the verified frontend image ID}
+    restart: unless-stopped
+    ports:
+      - "80:80"

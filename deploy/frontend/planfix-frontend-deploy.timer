@@ -1,0 +1,11 @@
+[Unit]
+Description=Check for a new PlanFix frontend image every 30 seconds
+
+[Timer]
+OnBootSec=30s
+OnUnitActiveSec=30s
+AccuracySec=1s
+Unit=planfix-frontend-deploy.service
+
+[Install]
+WantedBy=timers.target
