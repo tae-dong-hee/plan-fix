@@ -1,3 +1,4 @@
+import { CourseAccessError } from "@/lib/course-errors";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { MockedFunction } from "vitest";
 import { Sun } from "lucide-react";
@@ -382,6 +383,17 @@ describe("MainPage public course carousel", () => {
     expect(mockedLikeSpot).toHaveBeenCalledWith(31);
     expect(mockedLikeCourse).toHaveBeenCalledTimes(1);
     expect(screen.getByRole("button", { name: `${publicCourse.title} 좋아요 취소` })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  test("비공개로 바뀐 코스의 좋아요가 거절되면 코스를 숨기고 접근 변경을 안내한다", async () => {
+    mockedFetchPublicCourses.mockResolvedValue(publicCourseResult);
+    mockedLikeCourse.mockRejectedValueOnce(new CourseAccessError());
+    renderMainPage();
+    const button = await screen.findByRole("button", { name: `${publicCourse.title} 좋아요` });
+    await waitFor(() => expect(button).toBeEnabled());
+    fireEvent.click(button);
+    expect(await screen.findByRole("alert")).toHaveTextContent("코스가 비공개로 변경되었거나 접근 권한이 없습니다.");
+    expect(screen.queryByText(publicCourse.title)).not.toBeInTheDocument();
   });
 
   test("좋아요 실패 시 원래 상태로 되돌리고 오류를 알려준다", async () => {

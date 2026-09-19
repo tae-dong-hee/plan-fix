@@ -1,3 +1,4 @@
+import { CourseAccessError, CourseConflictError } from "@/lib/course-errors";
 import { createCourse, deleteCourse, fetchCourse, fetchMyCourses, fetchPublicCourses, updateCourse } from "./course";
 import { UnauthorizedError } from "./spots";
 import { setApiBaseUrl } from "@/test-utils/env";
@@ -45,7 +46,7 @@ describe("course service", () => {
       expect(result).toEqual(mockCourse);
     });
 
-    it("401/403 응답 시 UnauthorizedError를 던진다", async () => {
+    it("인증 또는 접근 권한 오류를 구분한다", async () => {
       global.fetch = vi.fn().mockResolvedValue({
         status: 401,
         ok: false,
@@ -72,13 +73,13 @@ describe("course service", () => {
       expect(result).toEqual(mockList);
     });
 
-    it("401/403 응답 시 UnauthorizedError를 던진다", async () => {
+    it("인증 또는 접근 권한 오류를 구분한다", async () => {
       global.fetch = vi.fn().mockResolvedValue({
         status: 403,
         ok: false,
       });
 
-      await expect(fetchMyCourses()).rejects.toThrow(UnauthorizedError);
+      await expect(fetchMyCourses()).rejects.toThrow(CourseAccessError);
     });
   });
 
@@ -135,6 +136,10 @@ describe("course service", () => {
   });
 
   describe("updateCourse", () => {
+    it.each([[403, CourseAccessError], [409, CourseConflictError]])("%s 오류를 로그인 만료와 구분한다", async (status, errorType) => {
+      global.fetch = vi.fn().mockResolvedValue({ status, ok: false });
+      await expect(updateCourse(1, { title: "Title", days: [], expectedUpdatedAt: "2026-09-01T00:00:00.123456Z" })).rejects.toThrow(errorType);
+    });
     it("PATCH 메서드로 수정 요청을 보내고 업데이트된 코스를 반환한다", async () => {
       const updatedCourse = { courseId: 1, title: "수정된 제목" };
       global.fetch = vi.fn().mockResolvedValue({
@@ -157,7 +162,7 @@ describe("course service", () => {
       expect(result).toEqual(updatedCourse);
     });
 
-    it("401/403 응답 시 UnauthorizedError를 던진다", async () => {
+    it("인증 또는 접근 권한 오류를 구분한다", async () => {
       global.fetch = vi.fn().mockResolvedValue({
         status: 401,
         ok: false,
@@ -185,13 +190,13 @@ describe("course service", () => {
       expect(result).toEqual(deletedCourse);
     });
 
-    it("401/403 응답 시 UnauthorizedError를 던진다", async () => {
+    it("인증 또는 접근 권한 오류를 구분한다", async () => {
       global.fetch = vi.fn().mockResolvedValue({
         status: 403,
         ok: false,
       });
 
-      await expect(deleteCourse(1)).rejects.toThrow(UnauthorizedError);
+      await expect(deleteCourse(1)).rejects.toThrow(CourseAccessError);
     });
   });
 });

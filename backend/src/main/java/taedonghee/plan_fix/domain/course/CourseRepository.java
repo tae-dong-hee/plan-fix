@@ -18,6 +18,9 @@ public interface CourseRepository {
      */
     Optional<CourseModel> findById(Long courseId);
 
+    /** 공개 범위 변경과 초대·좋아요·게시글 연결을 같은 코스 잠금으로 직렬화한다. */
+    Optional<CourseModel> findByIdForUpdate(Long courseId);
+
     /**
      * user_id 기반 활성 코스 목록 조회 처리
      */

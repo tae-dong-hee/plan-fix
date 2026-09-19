@@ -1,3 +1,4 @@
+import { CourseAccessError } from "@/lib/course-errors";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter, useLocation, useNavigate } from "react-router-dom";
 import WishlistPage from "./wishlist-page";
@@ -54,6 +55,25 @@ describe("WishlistPage", () => {
     vi.mocked(fetchLikedCourses).mockResolvedValue([course]);
     vi.mocked(fetchLikedBoards).mockResolvedValue([board]);
     vi.mocked(unlikeBoard).mockResolvedValue({ likeCount: 1, liked: false });
+  });
+
+  test("비공개 전환으로 좋아요 취소가 거절되면 오래된 코스를 목록에서 제거한다", async () => {
+    const alert = vi.spyOn(window, "alert").mockImplementation(() => {});
+    vi.mocked(unlikeCourse).mockRejectedValueOnce(new CourseAccessError());
+    renderPage("/wishlist?tab=courses");
+    fireEvent.click(await screen.findByRole("button", { name: `${course.title} 여행 코스 좋아요 취소` }));
+    await waitFor(() => expect(screen.queryByTestId("wishlist-course-1")).not.toBeInTheDocument());
+    expect(alert).toHaveBeenCalledWith("코스가 비공개로 변경되었거나 접근 권한이 없습니다.");
+    expect(screen.getByLabelText("현재 주소")).toHaveTextContent("/wishlist?tab=courses");
+    alert.mockRestore();
+  });
+
+  test("탭 복귀 시 비공개로 전환된 코스를 위시리스트에서 갱신한다", async () => {
+    renderPage("/wishlist?tab=courses");
+    await screen.findByTestId("wishlist-course-1");
+    vi.mocked(fetchLikedCourses).mockResolvedValueOnce([]);
+    fireEvent.focus(window);
+    await waitFor(() => expect(screen.queryByTestId("wishlist-course-1")).not.toBeInTheDocument());
   });
 
   test("같은 ID의 여행지, 코스, 후기도 각각의 분류와 개수로 보여준다", async () => {

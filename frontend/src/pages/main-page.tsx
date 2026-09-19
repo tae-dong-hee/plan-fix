@@ -1,3 +1,4 @@
+import { CourseAccessError } from "@/lib/course-errors";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
@@ -459,6 +460,10 @@ export default function MainPage() {
       setLikedCourses((prev) => ({ ...prev, [courseId]: wasLiked }));
       if (error instanceof UnauthorizedError) {
         navigate("/login");
+      } else if (error instanceof CourseAccessError) {
+        setGuideCourses((items) => items?.filter((item) => item.courseId !== courseId) ?? null);
+        setLikedCourses((prev) => ({ ...prev, [courseId]: false }));
+        setCourseLikeError(error.message);
       } else {
         setCourseLikeError("코스 찜을 변경하지 못했습니다. 잠시 후 다시 시도해 주세요.");
       }

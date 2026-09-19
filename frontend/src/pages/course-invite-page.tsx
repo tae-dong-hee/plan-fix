@@ -20,6 +20,9 @@ const inviteDateFormatter = new Intl.DateTimeFormat("ko-KR", {
 });
 
 function inviteFailure(error: unknown) {
+  if (error instanceof CourseInviteError && error.status === 403) {
+    return { title: "새 초대가 필요해요", description: "이 초대로 다시 참여할 수 없습니다. 코스 작성자에게 새 초대 링크를 요청해 주세요.", retryable: false };
+  }
   if (error instanceof CourseInviteError && error.status === 400) {
     return { title: "초대 기간이 지났어요", description: "초대한 친구에게 새 초대 링크를 요청해 주세요.", retryable: false };
   }
@@ -81,7 +84,7 @@ function CourseInvitation({ token }: { token: string }) {
       if (!active.current) return;
       if (error instanceof CourseInviteError && error.status === 401) {
         navigate(`/login?${authQuery}`);
-      } else if (error instanceof CourseInviteError && (error.status === 400 || error.status === 404)) {
+      } else if (error instanceof CourseInviteError && ([400, 403, 404].includes(error.status))) {
         setFailure(inviteFailure(error));
       } else {
         setNotice(error instanceof CourseInviteError && error.status === 403

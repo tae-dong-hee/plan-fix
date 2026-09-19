@@ -9,6 +9,7 @@ import taedonghee.plan_fix.domain.course.CourseTravelTheme;
 import taedonghee.plan_fix.domain.course.CourseTripIdea;
 
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 /**
@@ -38,7 +39,7 @@ public final class CourseRequest {
             this(title, description, thumbnail, visibility, startDate, endDate, days, null, null);
         }
 
-        /**
+            /**
          * HTTP 요청 DTO를 Application Command로 변환
          */
         public CourseCommand.Create toCommand() {
@@ -59,11 +60,18 @@ public final class CourseRequest {
             LocalDate endDate,
             List<Day> days,
             CourseGenerationSource generatedBy,
-            List<CourseTravelTheme> themes
+            List<CourseTravelTheme> themes,
+            OffsetDateTime expectedUpdatedAt
     ) {
         public Update(String title, String description, String thumbnail, CourseVisibility visibility,
                       LocalDate startDate, LocalDate endDate, List<Day> days) {
-            this(title, description, thumbnail, visibility, startDate, endDate, days, null, null);
+            this(title, description, thumbnail, visibility, startDate, endDate, days, null, null, null);
+        }
+
+        public Update(String title, String description, String thumbnail, CourseVisibility visibility,
+                      LocalDate startDate, LocalDate endDate, List<Day> days,
+                      CourseGenerationSource generatedBy, List<CourseTravelTheme> themes) {
+            this(title, description, thumbnail, visibility, startDate, endDate, days, generatedBy, themes, null);
         }
 
         /**

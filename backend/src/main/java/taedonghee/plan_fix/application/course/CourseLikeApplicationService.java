@@ -9,6 +9,7 @@ import taedonghee.plan_fix.domain.course.CourseLikeRepository;
 import taedonghee.plan_fix.domain.course.CourseModel;
 import taedonghee.plan_fix.domain.course.CourseRepository;
 import taedonghee.plan_fix.domain.course.CourseStatus;
+import taedonghee.plan_fix.domain.course.CourseVisibility;
 import taedonghee.plan_fix.support.error.CoreException;
 import taedonghee.plan_fix.support.error.ErrorType;
 
@@ -21,7 +22,7 @@ public class CourseLikeApplicationService {
 
     @Transactional
     public CourseLikeResult like(Long userId, Long courseId) {
-        CourseModel course = getActiveCourseOrThrow(courseId);
+        CourseModel course = getAccessibleCourseForUpdateOrThrow(userId, courseId);
 
         if (courseLikeRepository.existsByUserIdAndCourseId(userId, courseId)) {
             return new CourseLikeResult(true, course.likeCount());
@@ -39,7 +40,7 @@ public class CourseLikeApplicationService {
 
     @Transactional
     public CourseLikeResult unlike(Long userId, Long courseId) {
-        CourseModel course = getActiveCourseOrThrow(courseId);
+        CourseModel course = getAccessibleCourseForUpdateOrThrow(userId, courseId);
 
         boolean deleted = courseLikeRepository.deleteByUserIdAndCourseId(userId, courseId);
         if (!deleted) {
@@ -50,9 +51,13 @@ public class CourseLikeApplicationService {
         return new CourseLikeResult(false, Math.max(course.likeCount() - 1, 0));
     }
 
-    private CourseModel getActiveCourseOrThrow(Long courseId) {
-        return courseRepository.findById(courseId)
+    private CourseModel getAccessibleCourseForUpdateOrThrow(Long userId, Long courseId) {
+        CourseModel course = courseRepository.findByIdForUpdate(courseId)
                 .filter(c -> c.status() == CourseStatus.ACTIVE)
                 .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "course not found. courseId=" + courseId));
+        if (course.visibility() != CourseVisibility.PUBLIC && !course.userId().equals(userId)) {
+            throw new CoreException(ErrorType.FORBIDDEN, "나만 보기 코스는 작성자만 확인할 수 있습니다.");
+        }
+        return course;
     }
 }

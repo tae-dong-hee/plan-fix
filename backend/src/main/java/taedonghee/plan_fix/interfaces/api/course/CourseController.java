@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import taedonghee.plan_fix.application.course.CourseApplicationService;
 import taedonghee.plan_fix.application.course.CourseListQuery;
+import taedonghee.plan_fix.application.course.CourseResult;
 import taedonghee.plan_fix.infrastructure.security.AuthenticatedUser;
 
 import java.util.List;
@@ -37,7 +38,7 @@ public class CourseController {
             @RequestBody CourseRequest.Create request
     ) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(CourseResponse.from(courseApplicationService.create(principal.id(), request.toCommand())));
+                .body(CourseResponse.from(courseApplicationService.create(principal.id(), request.toCommand()), principal.id(), true));
     }
 
     /**
@@ -63,7 +64,7 @@ public class CourseController {
     }
 
     /**
-     * 코스 단건 조회 API (공개 코스 또는 소유자·수락된 멤버만 조회 가능)
+     * 코스 단건 조회 API (공개 코스 또는 작성자만 조회 가능)
      */
     @GetMapping("/{courseId}")
     public ResponseEntity<CourseResponse> get(
@@ -71,10 +72,8 @@ public class CourseController {
             @PathVariable Long courseId
     ) {
         Long requesterId = principal != null ? principal.id() : null;
-        return ResponseEntity.ok(CourseResponse.from(
-                courseApplicationService.getCourse(requesterId, courseId),
-                requesterId
-        ));
+        CourseResult course = courseApplicationService.getCourse(requesterId, courseId);
+        return ResponseEntity.ok(CourseResponse.from(course, requesterId, courseApplicationService.canEdit(requesterId, course)));
     }
 
     /**
@@ -87,7 +86,7 @@ public class CourseController {
             @RequestBody CourseRequest.Update request
     ) {
         return ResponseEntity.ok(CourseResponse.from(
-                courseApplicationService.update(principal.id(), courseId, request.toCommand())));
+                courseApplicationService.update(principal.id(), courseId, request.toCommand(), request.expectedUpdatedAt()), principal.id(), true));
     }
 
     /**

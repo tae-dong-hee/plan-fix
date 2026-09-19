@@ -33,6 +33,7 @@ import {
 } from "@/services/course";
 import { type AiCourseDraft, type AiCourseTheme, type AiCourseTripIdea } from "@/services/ai-course";
 import { PopularSpot, UnauthorizedError } from "@/services/spots";
+import { CourseAccessError, CourseConflictError } from "@/lib/course-errors";
 import { aiCourseNotice } from "@/lib/ai-course-notice";
 import { describeDayThemes } from "@/lib/ai-trip-themes";
 import { inferCourseSearchRegions } from "@/lib/course-search-regions";
@@ -58,7 +59,10 @@ type DraftDayThemes = {
   tripIdeas?: AiCourseTripIdea[];
 };
 
+type SavedCourse = { courseId: number; updatedAt: string; visibility: "PUBLIC" | "PRIVATE" };
+
 export type CourseDraft = {
+  savedCourse?: SavedCourse;
   title: string;
   description: string;
   visibility?: "PUBLIC" | "PRIVATE";
@@ -132,6 +136,8 @@ export default function CourseCreatePage() {
   const [generatedBy, setGeneratedBy] = useState<CourseGenerationSource | null>("MANUAL");
   const [themes, setThemes] = useState<AiCourseTheme[]>([]);
   const [visibility, setVisibility] = useState<"PUBLIC" | "PRIVATE">("PUBLIC");
+  const [originalVisibility, setOriginalVisibility] = useState<"PUBLIC" | "PRIVATE" | null>(null);
+  const [canChangeVisibility, setCanChangeVisibility] = useState(true);
   const [startDate, setStartDate] = useState(todayStr);
   const [endDate, setEndDate] = useState(defaultEndStr);
   const [days, setDays] = useState<DraftSpot[][]>(() => {
@@ -183,6 +189,13 @@ export default function CourseCreatePage() {
   const { courseId } = useParams<{ courseId?: string }>();
   const isEditMode = Boolean(courseId);
   const [loadingCourse, setLoadingCourse] = useState(isEditMode);
+  const [canEdit, setCanEdit] = useState(!isEditMode);
+  const [expectedUpdatedAt, setExpectedUpdatedAt] = useState<string>();
+  const [needsReload, setNeedsReload] = useState(false);
+  const [loadAttempt, setLoadAttempt] = useState(0);
+  // 숙소 저장만 실패해도 재시도에서 이미 생성한 코스를 다시 사용한다.
+  const [savedCourse, setSavedCourse] = useState<SavedCourse>();
+  const savedCourseRef = useRef<SavedCourse | undefined>(undefined);
 
   // 임시저장 날짜가 복원된 뒤 진입 옵션으로 모달을 연다. 취소하면 원래 일정은 유지한다.
   useEffect(() => {
@@ -211,16 +224,26 @@ export default function CourseCreatePage() {
     setLoadingCourse(true);
     setAccommodationsLoaded(false);
     setErrorMessage(null);
+    setNeedsReload(false);
+    setCanEdit(false);
 
     fetchCourse(courseId)
-      .then((data) => {
-        if (ignore || !data) return;
+      .then(async (data) => {
+        if (ignore) return;
+        if (!data) throw new CourseAccessError("코스를 찾을 수 없습니다.");
+        if (!(data.canEdit ?? data.isOwner !== false)) throw new CourseAccessError("이 코스를 수정할 권한이 없습니다.");
+        setCanEdit(true);
+        setExpectedUpdatedAt(data.updatedAt);
         setTitle(data.title);
         setDescription(data.description || "");
         setThumbnail(data.thumbnail ?? null);
         setGeneratedBy(data.generatedBy ?? null);
         setThemes(data.themes ?? []);
-        if (data.visibility) setVisibility(data.visibility);
+        if (data.visibility) {
+          setVisibility(data.visibility);
+          setOriginalVisibility(data.visibility);
+        }
+        setCanChangeVisibility(data.isOwner !== false);
         if (data.startDate) setStartDate(data.startDate);
         if (data.endDate) setEndDate(data.endDate);
 
@@ -241,15 +264,32 @@ export default function CourseCreatePage() {
           setDays(loadedDays);
           setDayThemes(collectDayThemes(data.days));
         }
+        setLoadingCourse(false);
+        if (data.isOwner !== false) {
+          const values = await fetchDayAccommodations(courseId);
+          if (ignore) return;
+          setDayAccommodations(Object.fromEntries(values.map((value) => [value.dayNumber, value])));
+        } else {
+          setDayAccommodations({});
+        }
+        setAccommodationsLoaded(true);
       })
       .catch((err) => {
+        if (ignore) return;
         if (err instanceof UnauthorizedError) {
           alert("로그인이 필요합니다. 로그인 페이지로 이동합니다.");
           navigate("/login");
           return;
         }
         if (!ignore) {
-          setErrorMessage("코스 정보를 불러오지 못했습니다.");
+          setCanEdit(false);
+          setNeedsReload(true);
+          if (err instanceof CourseAccessError) {
+            setTitle(""); setDescription(""); setDays([[]]); setDayAccommodations({});
+            setThumbnail(null); setThemes([]); setDayThemes({});
+            setStartDate(todayStr); setEndDate(defaultEndStr);
+          }
+          setErrorMessage(err instanceof Error ? err.message : "코스 정보를 불러오지 못했습니다.");
         }
       })
       .finally(() => {
@@ -257,20 +297,11 @@ export default function CourseCreatePage() {
           setLoadingCourse(false);
         }
       });
-    void fetchDayAccommodations(courseId)
-      .then((values) => {
-        if (ignore) return;
-        setDayAccommodations(Object.fromEntries(values.map((value) => [value.dayNumber, value])));
-        setAccommodationsLoaded(true);
-      })
-      .catch(() => {
-        // 네트워크 오류로 숙소 조회가 중단되면 안내를 보류한다.
-      });
 
     return () => {
       ignore = true;
     };
-  }, [isEditMode, courseId, navigate]);
+  }, [isEditMode, courseId, navigate, loadAttempt]);
 
   // 초기에 sessionStorage에서 복원 (신규 작성 시에만)
   useEffect(() => {
@@ -279,6 +310,12 @@ export default function CourseCreatePage() {
       const saved = sessionStorage.getItem(DRAFT_STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved) as CourseDraft;
+        if (parsed.savedCourse) {
+          savedCourseRef.current = parsed.savedCourse;
+          setSavedCourse(parsed.savedCourse);
+          setExpectedUpdatedAt(parsed.savedCourse.updatedAt);
+          setOriginalVisibility(parsed.savedCourse.visibility);
+        }
         if (parsed.title !== undefined) setTitle(parsed.title);
         if (parsed.description !== undefined) setDescription(parsed.description);
         setGeneratedBy(parsed.generatedBy ?? null);
@@ -306,6 +343,7 @@ export default function CourseCreatePage() {
     if (isEditMode || !draftRestored) return;
     try {
       const draft: CourseDraft = {
+        savedCourse: savedCourseRef.current ?? savedCourse,
         title,
         description,
         visibility,
@@ -321,7 +359,7 @@ export default function CourseCreatePage() {
     } catch {
       // sessionStorage 저장 오류 무시
     }
-  }, [isEditMode, draftRestored, title, description, visibility, startDate, endDate, days, dayAccommodations, generatedBy, themes, dayThemes]);
+  }, [isEditMode, draftRestored, title, description, visibility, startDate, endDate, days, dayAccommodations, generatedBy, themes, dayThemes, savedCourse]);
 
   // 여행 기간(시작일~종료일) 한 번에 변경 - 캘린더 모달에서 적용 버튼을 누르면 호출됨
   const handleApplyDateRange = (newStart: string, newEnd: string) => {
@@ -531,17 +569,20 @@ export default function CourseCreatePage() {
 
   // 저장 요청
   const handleSaveCourse = async () => {
-    if (!isValid || submitting) return;
+    if (!isValid || submitting || !canEdit || needsReload || (isEditMode && !accommodationsLoaded)) return;
 
     setSubmitting(true);
     setErrorMessage(null);
 
+    let courseSaved = false;
     try {
+      const existingId = courseId ?? savedCourseRef.current?.courseId;
       const payload = {
         title: title.trim(),
         description: description.trim() || null,
         thumbnail: isEditMode ? thumbnail : null,
-        visibility,
+        visibility: existingId && visibility === originalVisibility ? undefined : visibility,
+        expectedUpdatedAt,
         generatedBy,
         // 이전 서버가 메타데이터를 돌려주지 않은 수정 화면에서는 기존 테마를 지우지 않는다.
         themes: isEditMode && generatedBy === null && themes.length === 0 ? undefined : themes,
@@ -557,24 +598,44 @@ export default function CourseCreatePage() {
         })),
       };
 
-      if (isEditMode && courseId) {
-        const result = await updateCourse(courseId, payload);
-        await saveDayAccommodations(result.courseId, Object.values(dayAccommodations).filter((value) => value.name.trim()));
-        navigate(`/courses/${result.courseId}`, { replace: true });
-      } else {
-        const result = await createCourse(payload);
-        await saveDayAccommodations(result.courseId, Object.values(dayAccommodations).filter((value) => value.name.trim()));
-        sessionStorage.removeItem(DRAFT_STORAGE_KEY);
-        navigate(`/courses/${result.courseId}`, { replace: true });
+      const result = existingId ? await updateCourse(existingId, payload) : await createCourse(payload);
+      courseSaved = true;
+      const saved = { courseId: result.courseId, updatedAt: result.updatedAt, visibility: result.visibility };
+      savedCourseRef.current = saved;
+      if (!isEditMode) {
+        try {
+          const draft = JSON.parse(sessionStorage.getItem(DRAFT_STORAGE_KEY) ?? "{}");
+          sessionStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify({ ...draft, savedCourse: saved }));
+        } catch {
+          // 저장소가 제한돼도 현재 화면에서 같은 코스로 재시도할 수 있다.
+        }
       }
+      setExpectedUpdatedAt(result.updatedAt);
+      setOriginalVisibility(result.visibility);
+      if (canChangeVisibility) {
+        await saveDayAccommodations(result.courseId, Object.values(dayAccommodations).filter((value) => value.name.trim()));
+      }
+      if (!isEditMode) sessionStorage.removeItem(DRAFT_STORAGE_KEY);
+      navigate(`/courses/${result.courseId}`, { replace: true });
     } catch (err) {
+      if (courseSaved) setSavedCourse(savedCourseRef.current);
       if (err instanceof UnauthorizedError) {
         alert("로그인이 필요합니다. 로그인 페이지로 이동합니다.");
         navigate("/login");
         return;
       }
+      if (err instanceof CourseConflictError || err instanceof CourseAccessError) {
+        setNeedsReload(true);
+        setCanEdit(false);
+        if (err instanceof CourseAccessError) {
+          setTitle(""); setDescription(""); setDays([[]]); setDayAccommodations({});
+          setThumbnail(null); setThemes([]); setDayThemes({});
+          setStartDate(todayStr); setEndDate(defaultEndStr);
+        }
+      }
       setErrorMessage(
-        err instanceof Error
+        courseSaved ? "코스는 저장됐지만 숙소를 저장하지 못했습니다. 다시 저장하면 같은 코스에 반영됩니다."
+        : err instanceof Error
           ? err.message
           : isEditMode
             ? "코스 수정에 실패했습니다."
@@ -635,7 +696,7 @@ export default function CourseCreatePage() {
             <div className="flex items-center gap-3">
               <button
                 type="button"
-                disabled={!isValid || submitting}
+                disabled={!isValid || submitting || !canEdit || needsReload || (isEditMode && !accommodationsLoaded)}
                 onClick={handleSaveCourse}
                 className="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow transition-transform active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
               >
@@ -677,7 +738,11 @@ export default function CourseCreatePage() {
         {/* 에러 메시지 */}
         {errorMessage && (
           <div className="mt-4 rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm font-medium text-destructive">
-            {errorMessage}
+            <p>{errorMessage}</p>
+            {needsReload && <button type="button" className="mt-2 underline" onClick={() => {
+              if (courseId) setLoadAttempt((value) => value + 1);
+              else if (savedCourseRef.current) navigate(`/courses/${savedCourseRef.current.courseId}/edit`, { replace: true });
+            }}>최신 코스 불러오기</button>}
           </div>
         )}
 
@@ -755,6 +820,7 @@ export default function CourseCreatePage() {
                 <button
                   type="button"
                   data-testid="visibility-public-button"
+                  disabled={!canChangeVisibility}
                   onClick={() => setVisibility("PUBLIC")}
                   className={`flex items-start gap-3 rounded-xl border p-3.5 text-left transition-all ${
                     visibility === "PUBLIC"
@@ -789,6 +855,7 @@ export default function CourseCreatePage() {
                 <button
                   type="button"
                   data-testid="visibility-private-button"
+                  disabled={!canChangeVisibility}
                   onClick={() => setVisibility("PRIVATE")}
                   className={`flex items-start gap-3 rounded-xl border p-3.5 text-left transition-all ${
                     visibility === "PRIVATE"
@@ -815,11 +882,19 @@ export default function CourseCreatePage() {
                       )}
                     </div>
                     <p className="mt-0.5 text-xs text-muted-foreground">
-                      오직 나만 확인할 수 있는 비밀 일정으로 보관해요.
+                      작성자만 볼 수 있어요. 친구 초대와 여행 이야기 연결은 사용할 수 없어요.
                     </p>
                   </div>
                 </button>
               </div>
+              {!canChangeVisibility && (
+                <p className="mt-3 text-xs leading-5 text-muted-foreground">공개 범위는 코스 작성자만 변경할 수 있어요.</p>
+              )}
+              {isEditMode && originalVisibility === "PUBLIC" && visibility === "PRIVATE" && (
+                <p className="mt-3 rounded-xl bg-muted/50 p-3 text-xs leading-5 text-muted-foreground" role="status">
+                  나만 보기로 저장하면 기존 멤버의 접근 권한과 초대 링크가 해제되고, 다른 사람의 위시리스트에서 이 코스가 제거돼요. 연결된 여행 이야기의 코스 연결도 해제돼요.
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -856,7 +931,7 @@ export default function CourseCreatePage() {
             const dayNumber = dayIndex + 1;
             const assignedThemes = dayThemes[dayNumber];
             const endAccommodation = dayAccommodations[dayNumber];
-            const showAccommodationControls = startDate !== endDate || Boolean(endAccommodation);
+            const showAccommodationControls = canChangeVisibility && (!isEditMode || accommodationsLoaded) && (startDate !== endDate || Boolean(endAccommodation));
             const showAccommodationHint = showAccommodationControls && isEditMode && accommodationsLoaded
               && accommodationHintVisible && dayIndex === accommodationHintDayIndex;
             const startAccommodation = dayIndex === 0 ? endAccommodation : dayAccommodations[dayNumber - 1];

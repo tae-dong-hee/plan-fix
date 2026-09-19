@@ -1,3 +1,4 @@
+import { CourseAccessError } from "@/lib/course-errors";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
@@ -64,7 +65,10 @@ export default function WishlistPage() {
     setLoading(true);
     setError(null);
 
+    let latestRequest = 0;
     const loadAllWishlist = async () => {
+      const request = ++latestRequest;
+      const isCurrent = () => !ignore && request === latestRequest;
       try {
         const [spotsRes, coursesRes, boardsRes] = await Promise.all([
           fetchLikedSpots(),
@@ -72,33 +76,39 @@ export default function WishlistPage() {
           fetchLikedBoards(),
         ]);
 
-        if (!ignore) {
+        if (isCurrent()) {
+          setError(null);
           setSpots(spotsRes);
           setCourses(coursesRes);
           setBoards(boardsRes);
         }
       } catch (err) {
+        if (!isCurrent()) return;
         if (err instanceof UnauthorizedError) {
           alert("로그인이 필요합니다. 로그인 페이지로 이동합니다.");
           navigate("/login");
           return;
         }
-        if (!ignore) {
+        if (isCurrent()) {
           setError(
             err instanceof Error ? err.message : "위시리스트를 불러오지 못했습니다."
           );
         }
       } finally {
-        if (!ignore) {
+        if (isCurrent()) {
           setLoading(false);
         }
       }
     };
 
-    loadAllWishlist();
-
+    void loadAllWishlist();
+    const revalidate = () => { if (document.visibilityState === "visible") void loadAllWishlist(); };
+    window.addEventListener("focus", revalidate);
+    document.addEventListener("visibilitychange", revalidate);
     return () => {
       ignore = true;
+      window.removeEventListener("focus", revalidate);
+      document.removeEventListener("visibilitychange", revalidate);
     };
   }, [navigate]);
 
@@ -119,8 +129,15 @@ export default function WishlistPage() {
     try {
       await unlikeCourse(courseId);
       setCourses((prev) => prev.filter((c) => c.courseId !== courseId));
-    } catch {
-      alert("좋아요 취소에 실패했습니다.");
+    } catch (error) {
+      if (error instanceof CourseAccessError) {
+        setCourses((prev) => prev.filter((course) => course.courseId !== courseId));
+        alert(error.message);
+      } else if (error instanceof UnauthorizedError) {
+        navigate("/login");
+      } else {
+        alert("좋아요 취소에 실패했습니다.");
+      }
     }
   };
 

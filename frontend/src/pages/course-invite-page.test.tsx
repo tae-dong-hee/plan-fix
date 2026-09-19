@@ -132,10 +132,11 @@ describe("CourseInvitePage", () => {
     renderPage();
     fireEvent.click(await screen.findByRole("button", { name: "초대 수락하고 참여하기" }));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("이 초대를 수락할 권한이 없어요.");
+    expect(await screen.findByRole("alert")).toHaveTextContent("새 초대가 필요해요");
     expect(screen.getByLabelText("현재 경로")).toHaveTextContent(`/course-invites/${token}`);
     expect(screen.queryByRole("heading", { name: "로그인 화면" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "초대 수락하고 참여하기" })).toBeEnabled();
+    expect(screen.queryByRole("button", { name: "초대 수락하고 참여하기" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "다시 시도" })).not.toBeInTheDocument();
   });
 
   it.each([

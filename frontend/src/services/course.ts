@@ -1,3 +1,4 @@
+import { CourseAccessError, CourseConflictError } from "@/lib/course-errors";
 import { UnauthorizedError } from "./spots";
 import type { AiCourseTheme, AiCourseTripIdea } from "./ai-course";
 
@@ -40,6 +41,7 @@ export type CourseResponse = {
   createdAt: string;
   updatedAt: string;
   isOwner?: boolean;
+  canEdit?: boolean;
   generatedBy?: CourseGenerationSource | null;
   themes?: AiCourseTheme[];
 };
@@ -68,7 +70,7 @@ export async function createCourseInvite(courseId: number | string, memberRole: 
     throw new Error("서버에 연결하지 못했습니다. 연결 상태를 확인하고 다시 시도해 주세요.");
   }
   if (response.status === 401) throw new UnauthorizedError();
-  if (response.status === 403) throw new Error("코스 소유자만 친구를 초대할 수 있습니다.");
+  if (response.status === 403) throw new CourseAccessError("코스 소유자만 친구를 초대할 수 있습니다.");
   if (response.status === 404) throw new Error("코스 또는 초대 기능을 찾을 수 없습니다. 페이지를 새로고침한 뒤 다시 시도해 주세요.");
   if (!response.ok) {
     if (response.status === 400) {
@@ -85,7 +87,8 @@ export async function createCourseInvite(courseId: number | string, memberRole: 
 export async function fetchCourseMembers(courseId: number | string): Promise<CourseMember[]> {
   const base = getApiBaseUrl(); if (!base) return [];
   const response = await fetch(`${base}/courses/${courseId}/members`, { credentials: "include" });
-  if (response.status === 401 || response.status === 403) throw new UnauthorizedError();
+  if (response.status === 401) throw new UnauthorizedError();
+  if (response.status === 403) throw new CourseAccessError();
   if (!response.ok) throw new Error("초대된 친구 목록을 불러오지 못했습니다.");
   return (await response.json()) as CourseMember[];
 }
@@ -93,7 +96,8 @@ export async function fetchCourseMembers(courseId: number | string): Promise<Cou
 export async function fetchPendingCourseInvites(courseId: number | string): Promise<PendingCourseInvite[]> {
   const base = getApiBaseUrl(); if (!base) return [];
   const response = await fetch(`${base}/courses/${courseId}/invites`, { credentials: "include" });
-  if (response.status === 401 || response.status === 403) throw new UnauthorizedError();
+  if (response.status === 401) throw new UnauthorizedError();
+  if (response.status === 403) throw new CourseAccessError();
   if (!response.ok) throw new Error("승인 대기 초대 목록을 불러오지 못했습니다.");
   return (await response.json()) as PendingCourseInvite[];
 }
@@ -101,18 +105,21 @@ export async function fetchPendingCourseInvites(courseId: number | string): Prom
 export async function updateCourseMemberRole(courseId: number | string, userId: number, role: CourseInviteRole) {
   const base = getApiBaseUrl(); if (!base) return;
   const response = await fetch(`${base}/courses/${courseId}/members/${userId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, credentials: "include", body: JSON.stringify({ role }) });
+  if (response.status === 403) throw new CourseAccessError();
   if (!response.ok) throw new Error("권한을 변경하지 못했습니다.");
 }
 
 export async function cancelCourseInvite(courseId: number | string, token: string) {
   const base = getApiBaseUrl(); if (!base) return;
   const response = await fetch(`${base}/courses/${courseId}/invites/${token}`, { method: "DELETE", credentials: "include" });
+  if (response.status === 403) throw new CourseAccessError();
   if (!response.ok) throw new Error("초대를 취소하지 못했습니다.");
 }
 
 export async function removeCourseMember(courseId: number | string, userId: number) {
   const base = getApiBaseUrl(); if (!base) return;
   const response = await fetch(`${base}/courses/${courseId}/members/${userId}`, { method: "DELETE", credentials: "include" });
+  if (response.status === 403) throw new CourseAccessError();
   if (!response.ok) throw new Error("멤버를 삭제하지 못했습니다.");
 }
 
@@ -179,9 +186,10 @@ export async function createCourse(payload: CreateCoursePayload): Promise<Course
     body: JSON.stringify(payload),
   });
 
-  if (response.status === 401 || response.status === 403) {
+  if (response.status === 401) {
     throw new UnauthorizedError();
   }
+  if (response.status === 403) throw new CourseAccessError();
   if (!response.ok) {
     const errorBody = await response.text().catch(() => "");
     throw new Error(errorBody || "코스 생성에 실패했습니다.");
@@ -201,9 +209,10 @@ export async function fetchMyCourses(): Promise<CourseResponse[]> {
     credentials: "include",
   });
 
-  if (response.status === 401 || response.status === 403) {
+  if (response.status === 401) {
     throw new UnauthorizedError();
   }
+  if (response.status === 403) throw new CourseAccessError();
   if (!response.ok) {
     throw new Error("코스 목록을 불러오지 못했습니다.");
   }
@@ -231,6 +240,7 @@ export async function fetchPublicCourses(params: {
     credentials: "include",
     ...(params.sort === "random" ? { cache: "no-store" as const } : {}),
   });
+  if (response.status === 403) throw new CourseAccessError();
   if (!response.ok) {
     throw new Error("공개 코스 목록을 불러오지 못했습니다.");
   }
@@ -252,7 +262,7 @@ export async function fetchCourse(courseId: number | string): Promise<CourseResp
     return null;
   }
   if (response.status === 403) {
-    throw new Error("비공개 코스이거나 접근 권한이 없습니다.");
+    throw new CourseAccessError("비공개 코스이거나 접근 권한이 없습니다.");
   }
   if (response.status === 401) {
     throw new UnauthorizedError();
@@ -264,7 +274,7 @@ export async function fetchCourse(courseId: number | string): Promise<CourseResp
   return (await response.json()) as CourseResponse;
 }
 
-export type UpdateCoursePayload = CreateCoursePayload;
+export type UpdateCoursePayload = CreateCoursePayload & { expectedUpdatedAt?: string };
 
 export type CourseAccommodation = {
   name: string;
@@ -334,7 +344,10 @@ export async function fetchDayAccommodations(courseId: number | string): Promise
   const response = await fetch(`${base}/courses/${courseId}/day-accommodations`, {
     credentials: "include",
   });
-  return response.ok ? await response.json() as DayAccommodation[] : [];
+  if (response.status === 401) throw new UnauthorizedError();
+  if (response.status === 403) throw new CourseAccessError();
+  if (!response.ok) throw new Error("숙소 정보를 불러오지 못했습니다. 최신 코스를 다시 불러와 주세요.");
+  return await response.json() as DayAccommodation[];
 }
 
 export async function saveDayAccommodations(courseId: number | string, values: DayAccommodation[]): Promise<void> {
@@ -346,6 +359,8 @@ export async function saveDayAccommodations(courseId: number | string, values: D
     credentials: "include",
     body: JSON.stringify(values),
   });
+  if (response.status === 403) throw new CourseAccessError();
+  if (response.status === 401) throw new UnauthorizedError();
   if (!response.ok) throw new Error("날짜별 숙소를 저장하지 못했습니다.");
 }
 
@@ -391,9 +406,11 @@ export async function updateCourse(
     body: JSON.stringify(payload),
   });
 
-  if (response.status === 401 || response.status === 403) {
+  if (response.status === 401) {
     throw new UnauthorizedError();
   }
+  if (response.status === 403) throw new CourseAccessError();
+  if (response.status === 409) throw new CourseConflictError();
   if (!response.ok) {
     const errorBody = await response.text().catch(() => "");
     throw new Error(errorBody || "코스 수정에 실패했습니다.");
@@ -414,9 +431,10 @@ export async function deleteCourse(courseId: number | string): Promise<CourseRes
     credentials: "include",
   });
 
-  if (response.status === 401 || response.status === 403) {
+  if (response.status === 401) {
     throw new UnauthorizedError();
   }
+  if (response.status === 403) throw new CourseAccessError();
   if (!response.ok) {
     const errorBody = await response.text().catch(() => "");
     throw new Error(errorBody || "코스 삭제에 실패했습니다.");
@@ -451,9 +469,10 @@ async function callCourseLikeApi(courseId: number | string, method: "POST" | "DE
     credentials: "include",
   });
 
-  if (response.status === 401 || response.status === 403) {
+  if (response.status === 401) {
     throw new UnauthorizedError();
   }
+  if (response.status === 403) throw new CourseAccessError();
   if (!response.ok) {
     throw new Error("좋아요 처리에 실패했습니다.");
   }
