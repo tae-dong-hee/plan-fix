@@ -5,7 +5,7 @@
 ## 운영 환경에서 확인한 내용
 
 - GitHub의 프런트엔드·백엔드 배포 성공을 확인했다.
-- Cloud Run 리비전 `planfix-backend-00018-d6p`가 해당 커밋 이미지로 트래픽 100%를 처리한다.
+- 검증 당시 Cloud Run 리비전 `planfix-backend-00018-d6p`가 해당 커밋 이미지로 트래픽 100%를 처리했다.
 - 운영 서버·Secret Manager·프로젝트 로컬 비밀 설정에 SMTP 설정은 없었다.
 - 메일 요청 API는 미설정 상태에서 `503 Service Unavailable`을 반환한다.
 - 토큰 누락, 잘못된 형식, 정상 형식의 미등록 토큰은 각각
@@ -21,7 +21,8 @@ cd backend
 ./gradlew test --tests '*PasswordReset*' --console=plain
 ```
 
-테스트는 일회용 PostgreSQL과 로컬 SMTP 서버를 사용한다.
+비밀번호 재설정 관련 테스트 23개가 모두 통과했다. 테스트는 일회용 PostgreSQL과 로컬 SMTP
+서버를 사용한다.
 
 | 범위 | 검증 내용 |
 | --- | --- |
