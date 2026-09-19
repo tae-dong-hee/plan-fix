@@ -252,21 +252,22 @@ export default function BoardCreatePage() {
           {/* 내 여행 코스 연결 */}
           <div className="rounded-xl border border-border/70 bg-card p-4 shadow-2xs">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <RouteIcon className="h-4 w-4 text-primary" />
+              <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+                <RouteIcon className="h-4 w-4 shrink-0 text-primary" />
                 <span className="text-xs font-bold text-foreground sm:text-sm">내 여행 코스 연결</span>
                 <span className="text-xs text-muted-foreground">(선택 · 직접 만든 코스)</span>
               </div>
 
               <select
                 aria-label="내 여행 코스 연결"
+                aria-describedby="story-course-guide"
                 disabled={isSubmitting || isAiWriting}
                 value={selectedCourseId ?? ""}
                 onChange={(e) => {
                   const val = e.target.value;
                   setSelectedCourseId(val ? Number(val) : null);
                 }}
-                className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs text-foreground focus:border-primary focus:outline-none"
+                className="w-full max-w-full rounded-lg border border-border bg-background px-3 py-1.5 text-xs text-foreground focus:border-primary focus:outline-none sm:w-auto sm:max-w-xs"
               >
                 <option value="">코스 선택 안 함</option>
                 {myCourses.map((c) => (
@@ -276,18 +277,21 @@ export default function BoardCreatePage() {
                 ))}
               </select>
             </div>
+            <p id="story-course-guide" className="mt-3 text-sm leading-relaxed text-muted-foreground">
+              다녀온 여행 코스를 연결하고 사진을 올려 AI로 여행 후기를 작성해 보세요.
+            </p>
 
             {selectedCourse && (
               <div className="mt-3 border-t border-border/50 pt-3">
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <span className="font-semibold text-primary">{selectedCourse.title}</span>
+                <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                  <span className="min-w-0 break-words font-semibold text-primary">{selectedCourse.title}</span>
                   <span>·</span>
                   <span>총 {selectedCourse.days.length}일 여정</span>
                   <span>·</span>
                   <span>장소 {courseSpots.length}곳</span>
                 </div>
-                <p className="mt-1 text-xs text-muted-foreground/80">
-                  아래에서 실제로 다녀온 장소를 고르면 AI 후기에 장소명을 반영할 수 있어요.
+                <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                  아래에서 실제로 다녀온 장소만 골라 주세요. 기억에 남는 일도 함께 적으면 내 경험에 더 가까운 글이 돼요.
                 </p>
               </div>
             )}
