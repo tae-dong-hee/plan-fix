@@ -130,6 +130,7 @@ test("renders the spot detail once it loads", async () => {
   expect(screen.getByText("동해안의 대표 해변")).toBeInTheDocument();
   expect(screen.getByText("좋아요 3")).toBeInTheDocument();
   expect(screen.getByText("조회수 11")).toBeInTheDocument();
+  expect(screen.queryByRole("status", { name: "현재 사진" })).not.toBeInTheDocument();
   expect(screen.queryByText("주소 정보가 등록되지 않은 장소예요.")).not.toBeInTheDocument();
   expect(screen.queryByText("위치 정보가 등록되지 않은 장소예요.")).not.toBeInTheDocument();
   expect(screen.queryByText("장소 정보가 등록되지 않은 장소예요.")).not.toBeInTheDocument();
@@ -195,6 +196,9 @@ test("renders extra photos as a gallery when images are present", async () => {
   await screen.findByRole("heading", { name: "국립대관령자연휴양림" });
   // 메인 사진 1장 + 대표 사진을 포함한 갤러리 3장
   expect(screen.getAllByRole("img")).toHaveLength(4);
+  const counter = screen.getByRole("status", { name: "현재 사진" });
+  expect(counter).toHaveTextContent("1 / 3");
+  expect(screen.getByRole("img", { name: "국립대관령자연휴양림" }).parentElement).not.toContainElement(counter);
   expect(screen.getByAltText("국립대관령자연휴양림 사진 2")).toHaveAttribute(
     "src",
     "https://example.com/1.jpg",

@@ -22,10 +22,16 @@ const images: ImageCredit[] = [...catalog.images, ...verifiedSpotImages];
 const externalLinkClassName = "inline-flex items-center gap-1 rounded text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background";
 
 export default function ImageCreditsPage() {
-  const { hash } = useLocation();
+  const { hash, key } = useLocation();
   useEffect(() => {
-    if (hash) document.getElementById(hash.slice(1))?.scrollIntoView({ block: "start" });
-  }, [hash]);
+    if (!hash) return;
+
+    // 라우트 전환 후 화면이 배치된 다음 이동한다. 같은 출처로 다시 방문해도 실행한다.
+    const frame = window.requestAnimationFrame(() => {
+      document.getElementById(hash.slice(1))?.scrollIntoView({ block: "start", behavior: "instant" });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [hash, key]);
 
   return (
     <div className="min-h-screen bg-muted/20 pb-28 text-foreground md:pb-16 md:pt-20">
