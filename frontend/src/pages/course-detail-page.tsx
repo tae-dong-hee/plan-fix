@@ -63,6 +63,9 @@ export default function CourseDetailPage() {
   const [members, setMembers] = useState<CourseMember[]>([]);
   const [membersLoading, setMembersLoading] = useState(false);
   const [pendingInvites, setPendingInvites] = useState<PendingCourseInvite[]>([]);
+  const isOwner = !loading && !error && String(course?.courseId) === courseId && course?.isOwner === true;
+  const canEdit = course?.canEdit ?? isOwner;
+  const courseListPath = isOwner ? "/courses" : "/courses/public";
 
   const handleDelete = async () => {
     if (!courseId) return;
@@ -199,23 +202,23 @@ export default function CourseDetailPage() {
   }, [courseId, navigate]);
 
   useEffect(() => {
-    if (!courseId || course?.visibility !== "PUBLIC" || course.isOwner === false) return;
+    if (!courseId || course?.visibility !== "PUBLIC" || !isOwner) return;
     fetchCourseMembers(courseId).then(setMembers).catch(() => undefined);
-  }, [courseId, course?.isOwner, course?.visibility]);
+  }, [courseId, isOwner, course?.visibility]);
 
   return (
     <div className="min-h-screen bg-muted/20 pb-28 md:pb-16">
-      <AppNav />
+      <AppNav courseIsOwner={isOwner} />
 
       <main className="mx-auto max-w-4xl px-4 pt-6 sm:px-6 sm:pt-8 md:pt-24">
         {/* 상단 브레드크럼 */}
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <Link to="/courses" className="hover:text-foreground">
-            내 여행 코스
+        <nav aria-label="현재 위치" className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <Link to={courseListPath} className="hover:text-foreground">
+            {isOwner ? "내 여행 코스" : "공개 여행 코스"}
           </Link>
           <ChevronRight className="h-3.5 w-3.5" />
-          <span className="font-medium text-foreground">코스 상세</span>
-        </div>
+          <span aria-current="page" className="font-medium text-foreground">코스 상세</span>
+        </nav>
 
         {loading ? (
           <div className="flex h-64 flex-col items-center justify-center gap-3">
@@ -244,7 +247,7 @@ export default function CourseDetailPage() {
             </p>
             <div className="mt-6 flex justify-center gap-3">
               <Link
-                to="/courses"
+                to={courseListPath}
                 className="rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted"
               >
                 코스 목록으로
@@ -287,9 +290,9 @@ export default function CourseDetailPage() {
                   </span>
                 </div>
 
-                {(course.canEdit ?? course.isOwner !== false) && (
+                {canEdit && (
                   <div className="flex flex-wrap items-center gap-2">
-                    {course.isOwner !== false && course.visibility === "PUBLIC" && (
+                    {isOwner && course.visibility === "PUBLIC" && (
                       <>
                         <button type="button" onClick={() => { setInviteToast(null); setInviteDialogOpen(true); }} className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground transition-colors hover:opacity-90">
                           <UserPlus className="h-3.5 w-3.5" /> <span>친구 초대</span>
@@ -304,7 +307,7 @@ export default function CourseDetailPage() {
                       <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
                       <span>코스 수정</span>
                     </Link>
-                    {course.isOwner !== false && <button
+                    {isOwner && <button
                       type="button"
                       onClick={handleDelete}
                       disabled={deleting}
@@ -334,7 +337,7 @@ export default function CourseDetailPage() {
                 </p>
               )}
 
-              {course.isOwner !== false && course.visibility === "PUBLIC" && <div className="mt-5 flex items-center justify-between rounded-xl border border-border bg-muted/20 px-4 py-3"><div className="flex min-w-0 items-center gap-2"><Users className="h-4 w-4 shrink-0 text-primary" /><span className="text-sm font-semibold">참여 멤버</span><div className="flex -space-x-2">{members.filter((member) => member.role !== "OWNER").slice(0, 4).map((member) => <span key={member.userId} title={member.username} className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-background bg-primary/15 text-[10px] font-bold text-primary">{(member.username || "?").slice(0, 1)}</span>)}{members.filter((member) => member.role !== "OWNER").length > 4 && <span className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-background bg-muted text-[10px] font-bold">+{members.filter((member) => member.role !== "OWNER").length - 4}</span>}</div><span className="text-xs text-muted-foreground">{members.filter((member) => member.role !== "OWNER").length}명</span></div><button type="button" onClick={() => void openMembers()} className="shrink-0 text-xs font-semibold text-primary hover:underline">전체 보기</button></div>}
+              {isOwner && course.visibility === "PUBLIC" && <div className="mt-5 flex items-center justify-between rounded-xl border border-border bg-muted/20 px-4 py-3"><div className="flex min-w-0 items-center gap-2"><Users className="h-4 w-4 shrink-0 text-primary" /><span className="text-sm font-semibold">참여 멤버</span><div className="flex -space-x-2">{members.filter((member) => member.role !== "OWNER").slice(0, 4).map((member) => <span key={member.userId} title={member.username} className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-background bg-primary/15 text-[10px] font-bold text-primary">{(member.username || "?").slice(0, 1)}</span>)}{members.filter((member) => member.role !== "OWNER").length > 4 && <span className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-background bg-muted text-[10px] font-bold">+{members.filter((member) => member.role !== "OWNER").length - 4}</span>}</div><span className="text-xs text-muted-foreground">{members.filter((member) => member.role !== "OWNER").length}명</span></div><button type="button" onClick={() => void openMembers()} className="shrink-0 text-xs font-semibold text-primary hover:underline">전체 보기</button></div>}
 
               <div className="mt-6 flex flex-wrap items-center gap-y-2 gap-x-6 border-t border-border pt-4 text-xs text-muted-foreground">
                 {course.startDate && course.endDate && (
@@ -373,7 +376,7 @@ export default function CourseDetailPage() {
             {/* 하단 액션 버튼 */}
             <div className="flex justify-end gap-3 pt-4">
               <Link
-                to="/courses"
+                to={courseListPath}
                 className="rounded-xl border border-border bg-background px-5 py-2.5 text-sm font-medium text-foreground hover:bg-muted"
               >
                 코스 목록
