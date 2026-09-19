@@ -28,8 +28,9 @@ test("renders the login screen", () => {
 
   expect(screen.getByRole("heading", { name: "로그인" })).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "카카오 로그인" })).toBeInTheDocument();
-  expect(screen.queryByRole("link", { name: "회원가입" })).not.toBeInTheDocument();
-  expect(screen.queryByText(/아직 계정이 없으신가요/)).not.toBeInTheDocument();
+  expect(screen.getByRole("link", { name: "회원가입" })).toHaveAttribute("href", "/signup");
+  expect(screen.getByText(/아직 계정이 없으신가요/)).toBeInTheDocument();
+  expect(screen.queryByRole("navigation", { name: "카카오 계정 도움말" })).not.toBeInTheDocument();
 });
 
 test("shows PlanFix validation messages when the login form is empty", () => {
@@ -57,11 +58,27 @@ test("tells the user to configure the API when Kakao login is unavailable", () =
   );
 
   fireEvent.click(screen.getByRole("button", { name: "카카오 로그인" }));
+  const dialog = screen.getByRole("dialog", { name: "카카오 로그인" });
+  expect(screen.queryByText("카카오 로그인은 백엔드 연결이 필요합니다.", { exact: false })).not.toBeInTheDocument();
+  fireEvent.click(within(dialog).getByRole("button", { name: "카카오로 계속하기" }));
 
   // 테스트 환경에는 VITE_API_BASE_URL이 없으므로 안내만 뜨고 이동하지 않는다.
   expect(
     screen.getByText("카카오 로그인은 백엔드 연결이 필요합니다.", { exact: false }),
   ).toBeInTheDocument();
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+});
+
+test("opens the signup screen from the login screen", () => {
+  render(
+    <MemoryRouter initialEntries={["/login"]} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <App />
+    </MemoryRouter>,
+  );
+
+  fireEvent.click(screen.getByRole("link", { name: "회원가입" }));
+  expect(screen.getByRole("heading", { name: "회원가입" })).toBeInTheDocument();
+  expect(screen.getByRole("form", { name: "회원가입 정보" })).toBeInTheDocument();
 });
 
 test("shows the reason when the Kakao callback redirects back with an error", () => {

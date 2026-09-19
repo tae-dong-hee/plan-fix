@@ -38,6 +38,7 @@ export default function LoginPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [callbackReturnTo] = useState(() => searchParams.has("error") ? readPendingAuthReturnTo() : null);
   const returnTo = getInviteReturnTo(searchParams.get("returnTo")) ?? callbackReturnTo;
+  const signupPath = authPathWithReturnTo("/signup", returnTo);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [message, setMessage] = useState<LoginFormMessage | null>(() => {
@@ -126,7 +127,7 @@ export default function LoginPage() {
   if (isTransitioning) return <TravelGlobeTransition />;
 
   return (
-    <main className="grid h-dvh overflow-hidden bg-background focus-within:overflow-y-auto md:grid-cols-2">
+    <main className="grid min-h-dvh overflow-x-hidden bg-background md:grid-cols-2">
       <section className="relative hidden h-full min-h-0 overflow-hidden md:flex md:items-end" aria-label="PlanFix 소개">
         <img
           className="absolute inset-0 h-full w-full object-cover"
@@ -148,18 +149,20 @@ export default function LoginPage() {
         </div>
       </section>
 
-      <section className="flex h-full min-h-0 flex-col px-6 py-4 sm:px-10 sm:py-8 md:px-8 lg:px-16">
+      <section className="flex min-h-dvh flex-col px-6 py-4 sm:px-10 sm:py-8 md:px-8 lg:px-16">
         <div className="flex items-center gap-2 text-lg font-semibold tracking-tight text-primary md:invisible">
           <img src="/logo.png" alt="PlanFix 로고" className="h-6 w-6 rounded-md object-cover bg-black shadow-sm" />
           <span>PlanFix</span>
         </div>
-        <div className="flex min-h-0 flex-1 items-center justify-center py-2 sm:py-6 md:py-10">
+        <div className="flex flex-1 items-center justify-center py-2 sm:py-6 md:py-10">
           <LoginForm
             isSubmitting={isSubmitting}
             message={message}
             onSubmit={handleSubmit}
             onKakaoLogin={handleKakaoLogin}
             forgotPasswordHref={authPathWithReturnTo("/forgot-password", returnTo)}
+            signUpHref={signupPath}
+            onSignUp={() => navigate(signupPath)}
           />
         </div>
       </section>
