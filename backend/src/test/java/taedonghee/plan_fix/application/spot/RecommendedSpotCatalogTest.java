@@ -17,15 +17,15 @@ class RecommendedSpotCatalogTest {
     private final ObjectMapper mapper = new ObjectMapper();
 
     @Test
-    void 배포_카탈로그는_강원_18개_시군별_대표_장소_2개씩_포함한다() throws Exception {
+    void 배포_카탈로그는_강원_18개_시군별_대표_장소_3개씩_포함한다() throws Exception {
         try (var input = new ClassPathResource("recommended-gangwon-spots.json").getInputStream()) {
             var data = mapper.readValue(input, RecommendedSpotCatalog.Catalog.class);
             var catalog = new RecommendedSpotCatalog(mapper);
-            assertThat(catalog.titles(null)).hasSize(36).doesNotHaveDuplicates();
+            assertThat(catalog.titles(null)).hasSize(54).doesNotHaveDuplicates();
             assertThat(data.places().stream().collect(Collectors.groupingBy(
                     RecommendedSpotCatalog.Place::sigungu, Collectors.counting())))
-                    .hasSize(18).allSatisfy((sigungu, count) -> assertThat(count).isEqualTo(2));
-            assertThat(catalog.titles("150")).containsExactly("경포해수욕장", "강릉 오죽헌·시립박물관");
+                    .hasSize(18).allSatisfy((sigungu, count) -> assertThat(count).isEqualTo(3));
+            assertThat(catalog.titles("150")).containsExactly("경포해수욕장", "강릉 오죽헌·시립박물관", "정동진해변");
         }
     }
 
