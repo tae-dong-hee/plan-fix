@@ -58,9 +58,10 @@ public class PasswordResetMailSender {
                     + frontendBaseUrl + "/reset-password#token=" + event.token()
                     + "\n\n본인이 요청하지 않았다면 이 메일을 무시해 주세요. 비밀번호는 변경되지 않습니다.");
             mailSender.getObject().send(message);
+            event.markAccepted();
         } catch (RuntimeException e) {
             // Do not leak recipients, tokens, SMTP credentials or links through logs
-            // or account-dependent HTTP errors. The caller can request a new link.
+            // The controller reads the unaccepted receipt and returns a generic 503.
             log.warn("Password reset mail delivery failed ({})", e.getClass().getSimpleName());
         }
     }

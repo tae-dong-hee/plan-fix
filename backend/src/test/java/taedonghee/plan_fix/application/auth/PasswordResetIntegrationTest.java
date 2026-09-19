@@ -154,17 +154,17 @@ class PasswordResetIntegrationTest {
 
     @Test
     void unknownMismatchInactiveAndSocialOnlyRequestsDoNotSendOrCreateTokens() {
-        service.request("unknownid", email);
-        service.request(loginId, "someoneelse@example.com");
-        service.request(null, null);
+        assertMismatch(() -> service.request("unknownid", email));
+        assertMismatch(() -> service.request(loginId, "someoneelse@example.com"));
+        assertMismatch(() -> service.request(null, null));
         users.save(user.withdraw());
-        service.request(loginId, email);
+        assertMismatch(() -> service.request(loginId, email));
         assertThat(events.stream(PasswordResetMail.class)).isEmpty();
         assertThat(resets.findById(user.getUserId())).isEmpty();
 
         // A social account has a user row but no local credential row.
         credentialEntities.deleteById(credentials.findByLoginId(loginId).orElseThrow().getUserCredentialId());
-        service.request(loginId, email);
+        assertMismatch(() -> service.request(loginId, email));
         assertThat(events.stream(PasswordResetMail.class)).isEmpty();
         verifyNoInteractions(mail);
     }
@@ -172,7 +172,7 @@ class PasswordResetIntegrationTest {
     @Test
     void resendIsLimitedAndReplacesPreviousLinkAfterCooldown() {
         String first = requestToken();
-        service.request(loginId, email);
+        assertCooldown();
         assertThat(events.stream(PasswordResetMail.class)).hasSize(1);
         allowResend();
         String second = requestToken();
@@ -236,7 +236,10 @@ class PasswordResetIntegrationTest {
         String previousJwt = auth.login(new AuthCommand.Login(loginId, "Oldpass123")).accessToken();
         doThrow(new MailSendException("simulated delivery failure")).when(mail).send(any(SimpleMailMessage.class));
 
-        String token = requestToken();
+        var delivery = service.request(loginId, email);
+        assertThatThrownBy(delivery::requireAccepted).isInstanceOfSatisfying(CoreException.class,
+                e -> assertThat(e.getErrorType()).isEqualTo(ErrorType.SERVICE_UNAVAILABLE));
+        String token = delivery.token();
         var issued = resets.findById(user.getUserId()).orElseThrow();
         assertThat(issued.getTokenHash()).isNotNull();
         assertThat(issued.getExpiresAt()).isAfter(Instant.now());
@@ -244,7 +247,7 @@ class PasswordResetIntegrationTest {
         assertThat(tokens.parse(previousJwt)).isPresent();
         assertThat(issued.getSessionVersion()).isZero();
 
-        service.request(loginId, email);
+        assertCooldown();
         verify(mail, times(1)).send(any(SimpleMailMessage.class));
         assertThat(events.stream(PasswordResetMail.class)).hasSize(1);
         var afterCooldownRequest = resets.findById(user.getUserId()).orElseThrow();
@@ -307,12 +310,22 @@ class PasswordResetIntegrationTest {
     }
 
     private String requestToken() {
-        service.request(loginId, email.toUpperCase(java.util.Locale.ROOT));
+        service.request(loginId, email.toUpperCase(java.util.Locale.ROOT)).requireAccepted();
         return events.stream(PasswordResetMail.class).reduce((first, last) -> last).orElseThrow().token();
     }
 
     private void allowResend() {
         jdbc.update("update password_reset_tokens set requested_at = now() - interval '61 seconds' where user_id = ?", user.getUserId());
+    }
+
+    private void assertMismatch(org.assertj.core.api.ThrowableAssert.ThrowingCallable action) {
+        assertThatThrownBy(action).isInstanceOfSatisfying(CoreException.class,
+                e -> assertThat(e.getErrorType()).isEqualTo(ErrorType.RECOVERY_ACCOUNT_MISMATCH));
+    }
+
+    private void assertCooldown() {
+        assertThatThrownBy(() -> service.request(loginId, email)).isInstanceOfSatisfying(CoreException.class,
+                e -> assertThat(e.getErrorType()).isEqualTo(ErrorType.TOO_MANY_REQUESTS));
     }
 
     private void assertInvalid(org.assertj.core.api.ThrowableAssert.ThrowingCallable action) {

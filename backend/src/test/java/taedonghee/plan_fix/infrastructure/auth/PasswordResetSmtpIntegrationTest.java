@@ -13,6 +13,8 @@ import org.springframework.beans.factory.support.StaticListableBeanFactory;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import taedonghee.plan_fix.application.auth.PasswordResetMail;
+import taedonghee.plan_fix.support.error.CoreException;
+import taedonghee.plan_fix.support.error.ErrorType;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -33,6 +35,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /** Exercises the real JavaMail SMTP transport without reaching an external mail server. */
 class PasswordResetSmtpIntegrationTest {
@@ -47,7 +50,9 @@ class PasswordResetSmtpIntegrationTest {
             var sender = sender(smtp.port());
 
             sender.requireAvailable();
-            sender.send(new PasswordResetMail(RECIPIENT, TOKEN));
+            var receipt = new PasswordResetMail(RECIPIENT, TOKEN);
+            sender.send(receipt);
+            assertThatCode(receipt::requireAccepted).doesNotThrowAnyException();
 
             var delivery = smtp.delivery();
             assertThat(delivery.commands()).contains("MAIL FROM:<" + FROM + ">", "RCPT TO:<" + RECIPIENT + ">");
@@ -75,8 +80,11 @@ class PasswordResetSmtpIntegrationTest {
             var sender = sender(smtp.port());
             sender.requireAvailable();
 
-            assertThatCode(() -> sender.send(new PasswordResetMail(RECIPIENT, TOKEN)))
+            var receipt = new PasswordResetMail(RECIPIENT, TOKEN);
+            assertThatCode(() -> sender.send(receipt))
                     .doesNotThrowAnyException();
+            assertThatThrownBy(receipt::requireAccepted).isInstanceOfSatisfying(CoreException.class,
+                    e -> assertThat(e.getErrorType()).isEqualTo(ErrorType.SERVICE_UNAVAILABLE));
 
             // DATA reached a real socket before the server rejected delivery.
             assertThat(smtp.delivery().mime()).isNotBlank();
@@ -93,8 +101,11 @@ class PasswordResetSmtpIntegrationTest {
             var sender = sender(smtp.port(), true);
             sender.requireAvailable();
 
-            assertThatCode(() -> sender.send(new PasswordResetMail(RECIPIENT, TOKEN)))
+            var receipt = new PasswordResetMail(RECIPIENT, TOKEN);
+            assertThatCode(() -> sender.send(receipt))
                     .doesNotThrowAnyException();
+            assertThatThrownBy(receipt::requireAccepted).isInstanceOfSatisfying(CoreException.class,
+                    e -> assertThat(e.getErrorType()).isEqualTo(ErrorType.SERVICE_UNAVAILABLE));
 
             assertThat(smtp.commands()).anyMatch(command -> command.startsWith("EHLO "))
                     .noneMatch(command -> command.startsWith("MAIL FROM:")

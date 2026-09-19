@@ -2,6 +2,7 @@ import { CalendarDays, LockKeyhole, Mail, UserRound } from "lucide-react";
 import { FormEvent, useRef, useState } from "react";
 
 import { cn } from "@/lib/utils";
+import PhoneVerification from "@/components/ui/phone-verification";
 
 export type SignupFormValues = {
   loginId: string;
@@ -10,6 +11,7 @@ export type SignupFormValues = {
   email: string;
   password: string;
   passwordConfirmation: string;
+  phoneVerificationToken?: string;
 };
 
 export type SignupFormMessage = {
@@ -121,6 +123,9 @@ export default function SignupForm({
   const [emailCheckMessage, setEmailCheckMessage] = useState<string | null>(null);
   const emailCheckVersion = useRef(0);
   const [birthDateError, setBirthDateError] = useState<string | null>(null);
+  const [recoveryPhone, setRecoveryPhone] = useState("");
+  const [phoneVerificationToken, setPhoneVerificationToken] = useState<string | undefined>();
+  const [phoneError, setPhoneError] = useState<string | null>(null);
 
   const updateValue = (field: keyof SignupFormValues, value: string) => {
     setValues((current) => ({ ...current, [field]: value }));
@@ -298,11 +303,16 @@ export default function SignupForm({
 
     setPasswordFormatError(null);
     setPasswordConfirmationError(null);
+    if (recoveryPhone && !phoneVerificationToken) {
+      setPhoneError("입력한 휴대폰번호의 인증을 완료하거나 번호를 지워 주세요.");
+      return;
+    }
     const submitVersion = emailCheckVersion.current;
     const result = await onSubmit?.({
       ...values,
       loginId: values.loginId.trim(),
       name: values.name.trim(),
+      ...(phoneVerificationToken ? { phoneVerificationToken } : {}),
     });
     if (result?.emailError && submitVersion === emailCheckVersion.current) {
       emailCheckVersion.current += 1;
@@ -539,6 +549,15 @@ export default function SignupForm({
           </div>
         </div>
       </div>
+
+      <section aria-labelledby="signup-phone-title" className="mt-5 space-y-3 rounded-xl border bg-muted/20 p-4">
+        <h2 id="signup-phone-title" className="text-sm font-semibold">계정 복구용 휴대폰 (선택)</h2>
+        <p className="text-xs leading-5 text-muted-foreground">아이디·비밀번호 찾기에 사용합니다. 인증한 번호만 등록되며, 가입 후 내 프로필에서도 등록할 수 있습니다.</p>
+        <PhoneVerification purpose="SIGNUP" optional disabled={isSubmitting}
+          onPhoneChange={(number) => { setRecoveryPhone(number); setPhoneError(null); }}
+          onVerified={(result) => { setPhoneVerificationToken(result?.verificationToken); setPhoneError(null); }} />
+        {phoneError && <p role="alert" className="text-xs leading-5 text-destructive">{phoneError}</p>}
+      </section>
 
       {message ? (
         <div className="mt-3 min-h-4 sm:mt-8 sm:min-h-5" aria-live="polite">

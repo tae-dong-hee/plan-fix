@@ -4,6 +4,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import PasswordRecoveryLayout, { recoveryButtonClassName, recoveryInputClassName } from "@/components/ui/password-recovery-layout";
 import { LoaderOne } from "@/components/ui/unique-loader-components";
+import { authPathWithReturnTo, getInviteReturnTo } from "@/lib/auth-return-to";
 import { confirmPasswordReset, invalidPasswordResetLinkMessage, PasswordResetError, passwordResetUnavailableMessage } from "@/services/password-reset";
 
 const passwordPattern = /^(?=.*[A-Za-z])(?=.*[A-Z])(?=.*\d)[\x21-\x7E]{8,20}$/;
@@ -12,6 +13,7 @@ const passwordRequirement = "영문·숫자를 조합하고 대문자를 1개 �
 export default function ResetPasswordPage() {
   const location = useLocation();
   const navigate = useNavigate();
+  const [returnTo] = useState(() => getInviteReturnTo(new URLSearchParams(location.search).get("returnTo")));
   // Read without mutating the URL so StrictMode's repeated initialization is safe.
   // The token lives only in this mounted page; reopening the email restores it after refresh.
   const [token, setToken] = useState(() => new URLSearchParams(location.hash.slice(1)).get("token") ?? "");
@@ -78,14 +80,14 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <PasswordRecoveryLayout title={succeeded ? "비밀번호 변경 완료" : "새 비밀번호 설정"} description={succeeded ? "이제 새 비밀번호로 로그인해 주세요." : "PlanFix에서 사용할 새로운 비밀번호를 입력해 주세요."} loginPath="/login">
+    <PasswordRecoveryLayout title={succeeded ? "비밀번호 변경 완료" : "새 비밀번호 설정"} description={succeeded ? "이제 새 비밀번호로 로그인해 주세요." : "PlanFix에서 사용할 새로운 비밀번호를 입력해 주세요."} loginPath={authPathWithReturnTo("/login", returnTo)}>
       {succeeded ? <div role="status" className="rounded-xl bg-primary/5 p-5 text-sm leading-6">
         <CircleCheck aria-hidden="true" className="mb-3 h-8 w-8 text-primary" />
         비밀번호가 변경되었습니다.
       </div> : invalidLink ? <div>
         <p role="alert" className="text-sm leading-6 text-destructive">{invalidPasswordResetLinkMessage}</p>
-        <p className="mt-3 text-sm leading-6 text-muted-foreground">화면을 새로고침했다면 메일의 링크를 다시 열어 주세요.</p>
-        <Link to="/forgot-password" className={`${recoveryButtonClassName} mt-6`}>재설정 메일 다시 요청하기</Link>
+        <p className="mt-3 text-sm leading-6 text-muted-foreground">화면을 새로고침했다면 메일의 링크를 다시 열거나 휴대폰 인증을 다시 진행해 주세요.</p>
+        <Link to={authPathWithReturnTo("/forgot-password", returnTo)} className={`${recoveryButtonClassName} mt-6`}>재설정 메일 다시 요청하기</Link>
       </div> : <form onSubmit={handleSubmit} noValidate aria-label="새 비밀번호 설정" aria-busy={isSubmitting} className="space-y-5">
         <div>
           <label htmlFor="reset-password" className="text-sm font-medium">새 비밀번호</label>

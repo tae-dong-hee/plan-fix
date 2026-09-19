@@ -63,6 +63,12 @@ test("요청 제한 오류에는 다시 시도할 수 있는 안내를 제공한
   await expect(requestPasswordReset({ loginId: "testuser1", email: "user@example.com" })).rejects.toThrow("요청이 너무 많습니다.");
 });
 
+test("아이디와 이메일 불일치는 지정된 문구로 안내한다", async () => {
+  global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 400, json: async () => ({ code: "RECOVERY_ACCOUNT_MISMATCH" }) });
+  const { requestPasswordReset } = await import("./password-reset");
+  await expect(requestPasswordReset({ loginId: "testuser1", email: "wrong@example.com" })).rejects.toThrow("아이디 또는 이메일이 일치하지 않습니다.");
+});
+
 test("서버 또는 네트워크 장애에도 이해할 수 있는 오류를 반환한다", async () => {
   global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 503, json: async () => { throw new Error("not JSON"); } });
   const { requestPasswordReset, passwordResetUnavailableMessage } = await import("./password-reset");

@@ -25,6 +25,8 @@ type LoginFormProps = {
   onKakaoLogin?: () => void;
   onSignUp?: () => void;
   forgotPasswordHref?: string;
+  findIdHref?: string;
+  initialLoginId?: string;
   signUpHref?: string;
 };
 
@@ -44,10 +46,12 @@ export default function LoginForm({
   onKakaoLogin,
   onSignUp,
   forgotPasswordHref = "/forgot-password",
+  findIdHref = "/find-id",
+  initialLoginId = "",
   signUpHref = "/signup",
 }: LoginFormProps) {
   const [values, setValues] = useState<LoginFormValues>({
-    loginId: "",
+    loginId: loginIdPattern.test(initialLoginId.trim()) ? initialLoginId.trim() : "",
     password: "",
     rememberMe: false,
   });
@@ -73,7 +77,7 @@ export default function LoginForm({
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
 
-    await onSubmit?.(values);
+    await onSubmit?.({ ...values, loginId: values.loginId.trim() });
   };
 
   return (
@@ -188,7 +192,7 @@ export default function LoginForm({
         ) : null}
       </div>
 
-      <div className="mt-6 flex w-full items-center justify-between text-muted-foreground">
+      <div className="mt-6 w-full text-muted-foreground">
         <label className="flex cursor-pointer items-center gap-2 text-sm">
           <input
             type="checkbox"
@@ -201,9 +205,12 @@ export default function LoginForm({
           />
           로그인 상태 유지
         </label>
-        <a className="text-sm underline-offset-4 hover:text-primary hover:underline" href={forgotPasswordHref}>
-          비밀번호를 잊으셨나요?
-        </a>
+        <div className="mt-3 flex flex-wrap items-center justify-end gap-x-4 gap-y-2 text-sm">
+          <a className="inline-flex min-h-8 items-center underline-offset-4 hover:text-primary hover:underline" href={findIdHref}>아이디 찾기</a>
+          <a className="inline-flex min-h-8 items-center underline-offset-4 hover:text-primary hover:underline" href={forgotPasswordHref}>
+            비밀번호를 잊으셨나요?
+          </a>
+        </div>
       </div>
 
       <div className="mt-4 min-h-5 w-full" aria-live="polite">

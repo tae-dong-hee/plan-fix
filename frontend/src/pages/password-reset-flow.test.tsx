@@ -73,13 +73,13 @@ test("잘못된 아이디와 이메일은 요청 전에 검사한다", () => {
   expect(requestPasswordReset).not.toHaveBeenCalled();
 });
 
-test("메일 요청 후 계정 존재 여부를 드러내지 않고 60초 뒤 재전송할 수 있다", async () => {
+test("메일 발송이 성공하면 명확히 안내하고 60초 뒤 재전송할 수 있다", async () => {
   vi.useFakeTimers();
   renderFlow("/forgot-password");
   fillRequest();
   await act(async () => fireEvent.submit(screen.getByRole("form")));
   expect(requestPasswordReset).toHaveBeenCalledWith({ loginId: "testuser1", email: "user@example.com" });
-  expect(screen.getByRole("status")).toHaveTextContent("입력한 정보와 일치하는 계정이 있으면");
+  expect(screen.getByRole("status")).toHaveTextContent("비밀번호 재설정 메일을 발송했습니다.");
   expect(screen.getByRole("button", { name: "다시 보내기 (60초 후)" })).toBeDisabled();
   await act(async () => fireEvent.submit(screen.getByRole("form")));
   expect(requestPasswordReset).toHaveBeenCalledTimes(1);
@@ -131,7 +131,7 @@ test("새로고침으로 토큰을 잃으면 메일 링크를 다시 여는 방�
   const refreshedPath = screen.getByTestId("current-path").textContent!;
   first.unmount();
   renderFlow(refreshedPath);
-  expect(screen.getByText("화면을 새로고침했다면 메일의 링크를 다시 열어 주세요.")).toBeInTheDocument();
+  expect(screen.getByText("화면을 새로고침했다면 메일의 링크를 다시 열거나 휴대폰 인증을 다시 진행해 주세요.")).toBeInTheDocument();
   expect(screen.queryByRole("form")).not.toBeInTheDocument();
 });
 

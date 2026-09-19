@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Camera, ChevronRight, Loader2, UserRound } from "lucide-react";
 import AppNav from "@/components/ui/app-nav";
 import ProfileAvatar from "@/components/ui/profile-avatar";
+import RecoveryPhoneSettings from "@/components/ui/recovery-phone-settings";
 import { fetchMyProfile, removeMyProfileImage, updateMyProfile, uploadMyProfileImage, type UserProfile } from "@/services/user";
 
 const MAX_PHOTO_SIZE = 5 * 1024 * 1024;
@@ -150,6 +151,7 @@ export default function ProfilePage() {
             <button disabled={busy} className="rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">{saving ? "저장 중..." : "저장"}</button>
           </div>
         </form>
+        <RecoveryPhoneSettings />
       </main>
     </div>
   );

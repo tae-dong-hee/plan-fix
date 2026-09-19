@@ -27,6 +27,7 @@ export default function SignupPage() {
 
     try {
       if (!isUserApiConfigured()) {
+        if (values.phoneVerificationToken) throw new Error("현재 회원가입 서비스를 이용할 수 없습니다. 잠시 후 다시 시도해 주세요.");
         await wait(demoDelay);
         setMessage({
           tone: "success",
@@ -43,6 +44,7 @@ export default function SignupPage() {
         name: values.name || null,
         email: values.email || null,
         birthDate: values.birthDate || null,
+        ...(values.phoneVerificationToken ? { phoneVerificationToken: values.phoneVerificationToken } : {}),
       });
 
       setMessage({

@@ -1,9 +1,11 @@
 package taedonghee.plan_fix.application.user;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import taedonghee.plan_fix.domain.user.PasswordEncryptor;
+import taedonghee.plan_fix.application.auth.PhoneRecoveryApplicationService;
 import taedonghee.plan_fix.domain.user.UserCredentialModel;
 import taedonghee.plan_fix.domain.user.UserCredentialRepository;
 import taedonghee.plan_fix.domain.user.UserModel;
@@ -18,13 +20,19 @@ import java.time.LocalDate;
  * 사용자 Application Service
  */
 @Service
-@RequiredArgsConstructor
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 @Transactional(readOnly = true)
 public class UserApplicationService {
 
     private final UserRepository userRepository;
     private final UserCredentialRepository userCredentialRepository;
     private final PasswordEncryptor passwordEncryptor;
+    private final PhoneRecoveryApplicationService phoneRecovery;
+
+    // Retains the small, repository-only constructor used by existing unit tests.
+    UserApplicationService(UserRepository users, UserCredentialRepository credentials, PasswordEncryptor passwords) {
+        this(users, credentials, passwords, null);
+    }
 
     /**
      * 사용자 생성 처리
@@ -45,6 +53,9 @@ public class UserApplicationService {
         UserModel savedUser = userRepository.save(newUser);
         String encryptedPassword = passwordEncryptor.encrypt(command.password()); // 비밀번호 암호화
         userCredentialRepository.save(UserCredentialModel.create(savedUser.getUserId(), command.loginId(), encryptedPassword)); // 사용자 인증정보 저장
+        if (command.phoneVerificationToken() != null) {
+            phoneRecovery.bindSignupProof(savedUser.getUserId(), command.phoneVerificationToken());
+        }
 
         return UserResult.from(savedUser);
     }
