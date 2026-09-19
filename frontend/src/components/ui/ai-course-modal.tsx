@@ -15,6 +15,7 @@ import {
 } from "@/services/ai-course";
 import { searchSpots, UnauthorizedError, type PopularSpot } from "@/services/spots";
 import { TRIP_IDEA_DETAILS, dayThemeFromChoices, describeDayThemes, distributeDayThemeChoices, themeChoices } from "@/lib/ai-trip-themes";
+import { formatCourseDuration } from "@/lib/course-duration";
 import "./ai-course-modal.css";
 
 const GANGWON_REGION_CODE = "51";
@@ -63,7 +64,7 @@ type AiCourseModalProps = {
 
 function describeDuration(startDate: string, endDate: string) {
   const nights = Math.round((Date.parse(endDate) - Date.parse(startDate)) / 86400000);
-  return nights > 0 ? `${nights}박 ${nights + 1}일` : "당일치기";
+  return formatCourseDuration(nights + 1);
 }
 
 function isValidDate(value: string) {

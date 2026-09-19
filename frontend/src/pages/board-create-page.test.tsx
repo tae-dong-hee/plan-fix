@@ -74,7 +74,7 @@ describe("BoardCreatePage (블로그형 여행 후기 에디터)", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText("제주 동쪽 감성 코스 (1일 코스)")).toBeInTheDocument();
+      expect(screen.getByText("제주 동쪽 감성 코스 (당일치기 여행)")).toBeInTheDocument();
     });
 
     const select = screen.getByRole("combobox");
@@ -91,7 +91,7 @@ describe("BoardCreatePage (블로그형 여행 후기 에디터)", () => {
     ]);
     render(<MemoryRouter><BoardCreatePage /></MemoryRouter>);
 
-    await screen.findByRole("option", { name: "제주 동쪽 감성 코스 (1일 코스)" });
+    await screen.findByRole("option", { name: "제주 동쪽 감성 코스 (당일치기 여행)" });
 
     expect(screen.queryByRole("option", { name: /친구가 공유한 여행/ })).not.toBeInTheDocument();
     expect(screen.queryByRole("option", { name: /소유권을 확인하지 못한 여행/ })).not.toBeInTheDocument();
@@ -123,7 +123,7 @@ describe("BoardCreatePage (블로그형 여행 후기 에디터)", () => {
     vi.mocked(imageService.uploadImageFile).mockResolvedValue({ imageUrl: "https://example.com/trip.jpg" });
     vi.mocked(boardService.createBoard).mockRejectedValue(new Error(message));
     render(<MemoryRouter><BoardCreatePage /></MemoryRouter>);
-    await screen.findByRole("option", { name: "제주 동쪽 감성 코스 (1일 코스)" });
+    await screen.findByRole("option", { name: "제주 동쪽 감성 코스 (당일치기 여행)" });
     fireEvent.change(screen.getByRole("combobox", { name: "내 여행 코스 연결" }), { target: { value: "101" } });
     fireEvent.change(screen.getByLabelText("여행 후기 제목"), { target: { value: "제주 여행" } });
     fireEvent.change(screen.getByLabelText("AI 여행 사진 선택"), { target: { files: [new File(["trip"], "trip.jpg", { type: "image/jpeg" })] } });
@@ -140,7 +140,7 @@ describe("BoardCreatePage (블로그형 여행 후기 에디터)", () => {
     vi.mocked(courseService.fetchMyCourses).mockResolvedValue([mockCourse]);
     vi.mocked(draftService.generateBoardDraft).mockResolvedValue({ content: "제주에서 찍은 여행 사진이에요." });
     render(<MemoryRouter><BoardCreatePage /></MemoryRouter>);
-    await screen.findByRole("option", { name: "제주 동쪽 감성 코스 (1일 코스)" });
+    await screen.findByRole("option", { name: "제주 동쪽 감성 코스 (당일치기 여행)" });
     fireEvent.change(screen.getByRole("combobox", { name: "내 여행 코스 연결" }), { target: { value: "101" } });
     const places = within(screen.getByRole("group", { name: "다녀온 장소 선택" }));
     places.getAllByRole("button").forEach((button) => expect(button).toHaveAttribute("aria-pressed", "false"));
@@ -163,7 +163,7 @@ describe("BoardCreatePage (블로그형 여행 후기 에디터)", () => {
     let resolveDraft!: (value: { content: string }) => void;
     vi.mocked(draftService.generateBoardDraft).mockReturnValueOnce(new Promise((resolve) => { resolveDraft = resolve; }));
     render(<MemoryRouter><BoardCreatePage /></MemoryRouter>);
-    await screen.findByRole("option", { name: "제주 동쪽 감성 코스 (1일 코스)" });
+    await screen.findByRole("option", { name: "제주 동쪽 감성 코스 (당일치기 여행)" });
     const courseSelect = screen.getByRole("combobox", { name: "내 여행 코스 연결" });
     fireEvent.change(courseSelect, { target: { value: "101" } });
     const place = within(screen.getByRole("group", { name: "다녀온 장소 선택" })).getByRole("button", { name: "성산일출봉" });

@@ -69,7 +69,7 @@ describe("CourseListPage", () => {
     await waitFor(() => {
       expect(screen.getByText("속초 1박 2일 맛집 코스")).toBeInTheDocument();
       expect(screen.getByText("속초 중앙시장과 아바이마을")).toBeInTheDocument();
-      expect(screen.getByText("2일 일정")).toBeInTheDocument();
+      expect(screen.getByText("1박 2일")).toBeInTheDocument();
     });
   });
 

@@ -7,6 +7,7 @@ import SpotImage from "@/components/ui/spot-image";
 import { hasMapCoordinates } from "@/lib/map-coordinates";
 import { MISSING_SPOT_ADDRESS } from "@/lib/spot-display";
 import { describeDayThemes } from "@/lib/ai-trip-themes";
+import { formatCourseDuration } from "@/lib/course-duration";
 import type { CourseDay, CourseSpotSummary, DayAccommodation } from "@/services/course";
 
 type CourseRouteMapProps = {
@@ -136,7 +137,7 @@ export default function CourseRouteMap({ days, startDate, accommodations = [] }:
               <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground sm:text-sm">하루의 여행을 지도에서 한눈에 살펴보세요.</p>
             </div>
           </div>
-          <span className="mt-1 hidden shrink-0 rounded-full border border-primary/10 bg-background/80 px-3 py-1.5 text-xs font-semibold text-primary sm:inline-flex">{orderedDays.length}일의 여행</span>
+          <span className="mt-1 hidden shrink-0 rounded-full border border-primary/10 bg-background/80 px-3 py-1.5 text-xs font-semibold text-primary sm:inline-flex">{formatCourseDuration(orderedDays.length)}</span>
         </div>
         <div role="tablist" aria-label="여행 일차" className="scrollbar-hide -mx-1 mt-5 flex gap-2 overflow-x-auto p-1">
           {orderedDays.map((item, index) => {

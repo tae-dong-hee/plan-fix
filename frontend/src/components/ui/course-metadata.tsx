@@ -1,5 +1,6 @@
 import { CalendarDays, Coffee, Compass, Landmark, Leaf, Mountain, Route, Sparkles, UtensilsCrossed } from "lucide-react";
 
+import { formatCourseDuration } from "@/lib/course-duration";
 import type { AiCourseTheme } from "@/services/ai-course";
 import type { CourseGenerationSource } from "@/services/course";
 
@@ -48,7 +49,7 @@ export function CourseCardSummary({ generatedBy, dayCount, className = "" }: {
       )}
       <span className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-600 dark:text-zinc-300">
         <CalendarDays className="h-3.5 w-3.5 shrink-0 text-zinc-400" aria-hidden="true" />
-        <span><strong className="font-semibold text-zinc-800 dark:text-zinc-100">{dayCount}일</strong> 일정</span>
+        <strong className="font-semibold text-zinc-800 dark:text-zinc-100">{formatCourseDuration(dayCount)}</strong>
       </span>
     </div>
   );
@@ -106,7 +107,7 @@ export function CourseSummaryBadges({ generatedBy, dayCount, className = "" }: {
       <CourseGenerationBadge generatedBy={generatedBy} variant="compact" />
       <span className="inline-flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-primary/15 bg-primary/5 px-3 text-xs font-semibold leading-4 text-primary">
         <Route className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-        {dayCount}일 일정
+        {formatCourseDuration(dayCount)}
       </span>
     </div>
   );

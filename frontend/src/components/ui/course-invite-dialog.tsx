@@ -1,8 +1,9 @@
-import { useEffect, useRef, type ReactNode } from "react";
-import { AlertCircle, ArrowRight, Check, CheckCheck, Clock3, Copy, ExternalLink, Eye, Link2, Loader2, MessageCircle, Pencil, X } from "lucide-react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { AlertCircle, ArrowRight, Check, CheckCheck, Clock3, Copy, ExternalLink, Eye, Link2, Loader2, MessageCircle, Pencil, Share2, X } from "lucide-react";
 
 import InviteTripArtwork from "./invite-trip-artwork";
 import type { CourseInviteRole } from "@/services/course";
+import { prepareKakaoShare, shareCourseInvite } from "@/lib/kakao-share";
 
 function InviteModal({ children, labelledBy, onClose }: { children: ReactNode; labelledBy: string; onClose: () => void }) {
   const panel = useRef<HTMLElement>(null);
@@ -94,9 +95,56 @@ export function CourseInviteDialog({ title, role, onRoleChange, creating, error,
   );
 }
 
-export function CourseInviteShareDialog({ inviteUrl, message, copied, copying, onCopy, onClose }: {
-  inviteUrl: string; message: string; copied: boolean; copying: boolean; onCopy: () => void; onClose: () => void;
+export function CourseInviteShareDialog({ inviteUrl, courseTitle, memberRole, message, copied, copying, onCopy, onClose }: {
+  inviteUrl: string; courseTitle: string; memberRole: CourseInviteRole; message: string; copied: boolean; copying: boolean; onCopy: () => void; onClose: () => void;
 }) {
+  const [kakaoReady, setKakaoReady] = useState(false);
+  const [kakaoError, setKakaoError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
+  const [shareMessage, setShareMessage] = useState<string | null>(null);
+  const [sharing, setSharing] = useState(false);
+  const sharingInFlight = useRef(false);
+
+  useEffect(() => {
+    let active = true;
+    setKakaoReady(false);
+    setKakaoError(null);
+    prepareKakaoShare().then(() => {
+      if (active) setKakaoReady(true);
+    }).catch((error: unknown) => {
+      if (active) setKakaoError(error instanceof Error ? error.message : "카카오톡 공유를 준비하지 못했습니다. 링크를 복사해 친구에게 보내 주세요.");
+    });
+    return () => { active = false; };
+  }, [attempt]);
+
+  const shareToKakao = () => {
+    setShareMessage(null);
+    try {
+      // SDK 준비는 미리 끝내고, 사용자 클릭 안에서 바로 호출해야 팝업이 차단되지 않는다.
+      shareCourseInvite({ inviteUrl, courseTitle, memberRole });
+      setShareMessage("카카오톡에서 친구나 채팅방을 선택해 초대를 보내 주세요.");
+    } catch (error) {
+      setKakaoError(error instanceof Error ? error.message : "카카오톡 공유를 열지 못했습니다. 링크를 복사해 친구에게 보내 주세요.");
+    }
+  };
+
+  const shareLink = async () => {
+    if (sharingInFlight.current || !navigator.share) return;
+    sharingInFlight.current = true;
+    setSharing(true);
+    setShareMessage(null);
+    try {
+      await navigator.share({ title: `${courseTitle} · PlanFix 친구 초대`, text: `${memberRole === "EDITOR" ? "편집" : "읽기"} 권한으로 여행에 함께해요.`, url: inviteUrl });
+    } catch (error) {
+      if (!(error && typeof error === "object" && "name" in error && error.name === "AbortError")) {
+        setShareMessage("링크 공유를 열지 못했습니다. 링크를 복사해 친구에게 보내 주세요.");
+      }
+    } finally {
+      sharingInFlight.current = false;
+      setSharing(false);
+    }
+  };
+
   return (
     <InviteModal labelledBy="invite-share-title" onClose={onClose}>
       <button type="button" onClick={onClose} aria-label="알림 닫기" className={closeButtonClass}><X className="h-4 w-4" aria-hidden="true" /></button>
@@ -104,6 +152,7 @@ export function CourseInviteShareDialog({ inviteUrl, message, copied, copying, o
         <div className="mx-auto flex h-[76px] w-[76px] items-center justify-center rounded-[24px] border border-primary/10 bg-primary/10 ring-8 ring-primary/[0.035]"><CheckCheck className="h-8 w-8 text-primary" strokeWidth={1.7} aria-hidden="true" /></div>
         <h2 id="invite-share-title" className="mt-7 text-[23px] font-bold tracking-tight">초대 링크 준비 완료</h2>
         <p role="status" aria-live="polite" className="mt-2 break-keep text-sm leading-6 text-muted-foreground">{message}</p>
+        <p className="mt-2 text-xs font-semibold text-primary">{memberRole === "EDITOR" ? "편집 권한 · 일정과 메모를 함께 수정해요" : "읽기 권한 · 여행 일정을 함께 봐요"}</p>
       </div>
       <div className="px-6 pb-6 sm:px-8 sm:pb-8">
         <label htmlFor="created-invite-link" className="text-xs font-semibold text-muted-foreground">초대 링크</label>
@@ -114,8 +163,11 @@ export function CourseInviteShareDialog({ inviteUrl, message, copied, copying, o
         </div>
         <a href={inviteUrl} target="_blank" rel="noopener noreferrer" className={`mx-auto mt-3 flex w-fit items-center gap-1 text-xs font-medium text-primary/80 hover:text-primary hover:underline ${focusClass}`}>초대 링크 열기<ExternalLink className="h-3 w-3" aria-hidden="true" /></a>
         <div className="my-6 flex items-center gap-3"><div className="h-px flex-1 bg-border/60" /><span className="text-[11px] text-muted-foreground">친구에게 공유하기</span><div className="h-px flex-1 bg-border/60" /></div>
-        <button type="button" onClick={() => { window.location.href = "kakaotalk://"; }} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#FEE500] px-4 py-3.5 text-sm font-semibold text-[#191919] transition hover:bg-[#f5dc00] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b6a400] focus-visible:ring-offset-2"><MessageCircle className="h-[18px] w-[18px] fill-current" strokeWidth={1.5} aria-hidden="true" />카카오톡으로 이동<ArrowRight className="h-3.5 w-3.5" aria-hidden="true" /></button>
-        <p className="mt-3 break-keep text-center text-[11px] leading-5 text-muted-foreground">{copied ? "카카오톡을 열고 복사한 링크를 친구에게 보내 주세요." : "링크를 복사한 뒤 카카오톡에서 친구에게 보내 주세요."}</p>
+        <button type="button" disabled={!kakaoReady} onClick={shareToKakao} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#FEE500] px-4 py-3.5 text-sm font-semibold text-[#191919] transition hover:bg-[#f5dc00] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b6a400] focus-visible:ring-offset-2">{!kakaoReady && !kakaoError ? <Loader2 className="h-[18px] w-[18px] animate-spin" aria-hidden="true" /> : <MessageCircle className="h-[18px] w-[18px] fill-current" strokeWidth={1.5} aria-hidden="true" />}카카오톡으로 초대<ArrowRight className="h-3.5 w-3.5" aria-hidden="true" /></button>
+        {kakaoError && <div className="mt-3 rounded-xl bg-muted p-3"><p role="alert" className="break-keep text-xs leading-5 text-muted-foreground">{kakaoError}</p><button type="button" onClick={() => setAttempt((value) => value + 1)} className={`mt-2 text-xs font-semibold text-primary ${focusClass}`}>카카오톡 공유 다시 준비</button></div>}
+        {typeof navigator.share === "function" && <button type="button" onClick={() => void shareLink()} disabled={sharing} className={`mt-2.5 flex w-full items-center justify-center gap-2 rounded-xl border border-border px-4 py-3 text-sm font-semibold transition hover:bg-muted disabled:opacity-50 ${focusClass}`}><Share2 className="h-4 w-4" aria-hidden="true" />{sharing ? "공유 중..." : "다른 앱으로 링크 공유"}</button>}
+        {shareMessage && <p role="status" aria-live="polite" className="mt-3 break-keep text-center text-xs leading-5 text-muted-foreground">{shareMessage}</p>}
+        <p className="mt-3 break-keep text-center text-[11px] leading-5 text-muted-foreground">{copied ? "복사한 링크로도 친구를 초대할 수 있어요." : "링크를 복사하거나 카카오톡에서 친구를 선택해 초대해 주세요."}</p>
       </div>
     </InviteModal>
   );

@@ -5,8 +5,10 @@ import { MemoryRouter, Route, Routes } from "react-router-dom";
 import CourseDetailPage from "./course-detail-page";
 import * as courseService from "@/services/course";
 import { UnauthorizedError } from "@/services/spots";
+import { prepareKakaoShare, shareCourseInvite } from "@/lib/kakao-share";
 
 vi.mock("@/services/course");
+vi.mock("@/lib/kakao-share", () => ({ prepareKakaoShare: vi.fn(), shareCourseInvite: vi.fn() }));
 
 const mockNavigate = vi.fn();
 const writeClipboard = vi.fn();
@@ -70,6 +72,7 @@ const mockInvite: courseService.CourseInvite = {
 describe("CourseDetailPage", () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    vi.mocked(prepareKakaoShare).mockResolvedValue();
     vi.mocked(courseService.fetchCourse).mockResolvedValue(mockCourse);
     vi.mocked(courseService.fetchCourseMembers).mockResolvedValue([]);
     vi.mocked(courseService.fetchDayAccommodations).mockResolvedValue([]);
@@ -290,7 +293,7 @@ describe("CourseDetailPage", () => {
     expect(screen.getByRole("link", { name: "초대 링크 열기" })).toHaveAttribute("href", mockInvite.inviteUrl);
     expect(screen.getByRole("link", { name: "초대 링크 열기" })).toHaveAttribute("target", "_blank");
     expect(screen.getByRole("button", { name: "링크 복사" })).toBeEnabled();
-    expect(screen.getByRole("button", { name: "카카오톡으로 이동" })).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole("button", { name: "카카오톡으로 초대" })).toBeEnabled());
     expect(screen.queryByRole("dialog", { name: "친구 초대" })).not.toBeInTheDocument();
     expect(courseService.createCourseInvite).toHaveBeenCalledExactlyOnceWith("10", "EDITOR");
     expect(writeClipboard).toHaveBeenCalledExactlyOnceWith(mockInvite.inviteUrl);
@@ -312,6 +315,7 @@ describe("CourseDetailPage", () => {
   });
 
   it("읽기 권한을 선택하면 VIEWER 권한으로 링크를 생성한다", async () => {
+    vi.mocked(courseService.createCourseInvite).mockResolvedValue({ ...mockInvite, memberRole: "VIEWER" });
     renderComponent();
     const createButton = await openInviteDialog();
     fireEvent.click(screen.getByRole("button", { name: /읽기 권한/ }));
@@ -319,6 +323,9 @@ describe("CourseDetailPage", () => {
 
     await screen.findByLabelText("초대 링크");
     expect(courseService.createCourseInvite).toHaveBeenCalledExactlyOnceWith("10", "VIEWER");
+    await waitFor(() => expect(screen.getByRole("button", { name: "카카오톡으로 초대" })).toBeEnabled());
+    fireEvent.click(screen.getByRole("button", { name: "카카오톡으로 초대" }));
+    expect(shareCourseInvite).toHaveBeenCalledExactlyOnceWith({ inviteUrl: mockInvite.inviteUrl, courseTitle: mockCourse.title, memberRole: "VIEWER" });
   });
 
   it.each([
@@ -335,7 +342,7 @@ describe("CourseDetailPage", () => {
     expect(screen.getByRole("alert")).toHaveTextContent(message);
     expect(screen.queryByText("초대 링크 준비 완료")).not.toBeInTheDocument();
     expect(screen.queryByText("카카오톡을 열고 복사한 링크를 친구에게 보내 주세요.")).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "카카오톡으로 이동" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "카카오톡으로 초대" })).not.toBeInTheDocument();
     expect(screen.queryByLabelText("초대 링크")).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "초대 링크 열기" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "초대 링크 만들기" })).toBeEnabled();
@@ -398,5 +405,40 @@ describe("CourseDetailPage", () => {
     expect(courseService.createCourseInvite).toHaveBeenCalledTimes(1);
     await act(async () => finish(mockInvite));
     expect(screen.getByLabelText("초대 링크")).toHaveValue(mockInvite.inviteUrl);
+  });
+
+  it("멤버 관리에서 읽기·편집 권한 변경과 기존 초대 취소가 동작한다", async () => {
+    vi.mocked(courseService.fetchCourseMembers).mockResolvedValue([{ userId: 2, name: "친구", username: "friend", role: "VIEWER", joinedAt: "2026-09-19" }]);
+    vi.mocked(courseService.fetchPendingCourseInvites).mockResolvedValue([{ token: mockInvite.token, role: "EDITOR", createdAt: "2026-09-19", expiresAt: mockInvite.expiresAt }]);
+    renderComponent();
+    fireEvent.click(await screen.findByRole("button", { name: "멤버 관리" }));
+    const selector = await screen.findByRole("combobox", { name: "friend 참여 권한" });
+    fireEvent.change(selector, { target: { value: "EDITOR" } });
+    expect(courseService.updateCourseMemberRole).toHaveBeenCalledWith("10", 2, "EDITOR");
+    await waitFor(() => expect(selector).toHaveValue("EDITOR"));
+    fireEvent.change(selector, { target: { value: "VIEWER" } });
+    await waitFor(() => expect(selector).toHaveValue("VIEWER"));
+    expect(courseService.updateCourseMemberRole).toHaveBeenLastCalledWith("10", 2, "VIEWER");
+    fireEvent.click(screen.getByRole("button", { name: "초대 취소" }));
+    await screen.findByText("사용 가능한 초대 링크가 없습니다.");
+    expect(courseService.cancelCourseInvite).toHaveBeenCalledExactlyOnceWith("10", mockInvite.token);
+    fireEvent.click(screen.getByRole("button", { name: "friend 멤버 삭제" }));
+    await screen.findByText("참여 중인 멤버가 없습니다.");
+    expect(courseService.removeCourseMember).toHaveBeenCalledExactlyOnceWith("10", 2);
+  });
+
+  it("권한 변경이 실패하면 기존 권한을 유지하고 다시 시도할 수 있다", async () => {
+    vi.mocked(courseService.fetchCourseMembers).mockResolvedValue([{ userId: 2, username: "friend", role: "VIEWER", joinedAt: "2026-09-19" }]);
+    vi.mocked(courseService.updateCourseMemberRole).mockRejectedValueOnce(new Error("권한 변경에 실패했습니다."));
+    renderComponent();
+    fireEvent.click(await screen.findByRole("button", { name: "멤버 관리" }));
+    const selector = await screen.findByRole("combobox", { name: "friend 참여 권한" });
+    fireEvent.change(selector, { target: { value: "EDITOR" } });
+    expect(await screen.findByRole("alert")).toHaveTextContent("권한 변경에 실패했습니다.");
+    expect(selector).toHaveValue("VIEWER");
+    expect(selector).toBeEnabled();
+    fireEvent.change(selector, { target: { value: "EDITOR" } });
+    await waitFor(() => expect(selector).toHaveValue("EDITOR"));
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 });

@@ -47,7 +47,9 @@ public class CourseController {
     @GetMapping
     public ResponseEntity<List<CourseResponse>> listMine(@AuthenticationPrincipal AuthenticatedUser principal) {
         List<CourseResponse> responses = courseApplicationService.listMine(principal.id()).stream()
-                .map(course -> CourseResponse.from(course, principal.id()))
+                .map(course -> CourseResponse.from(course, principal.id(),
+                        courseApplicationService.canEdit(principal.id(), course),
+                        courseApplicationService.canViewAccommodations(principal.id(), course)))
                 .toList();
         return ResponseEntity.ok(responses);
     }
@@ -73,7 +75,9 @@ public class CourseController {
     ) {
         Long requesterId = principal != null ? principal.id() : null;
         CourseResult course = courseApplicationService.getCourse(requesterId, courseId);
-        return ResponseEntity.ok(CourseResponse.from(course, requesterId, courseApplicationService.canEdit(requesterId, course)));
+        return ResponseEntity.ok(CourseResponse.from(course, requesterId,
+                courseApplicationService.canEdit(requesterId, course),
+                courseApplicationService.canViewAccommodations(requesterId, course)));
     }
 
     /**
