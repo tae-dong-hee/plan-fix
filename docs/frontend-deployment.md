@@ -1,6 +1,10 @@
 # GitHub에서 VM 프런트엔드 자동 배포
 
-[`Deploy frontend to VM`](../.github/workflows/deploy-frontend.yml)은 `main`의 프런트엔드 변경을 테스트하고 컨테이너 이미지로 배포합니다. 코드 수정 후 GitHub에 push하거나 PR을 `main`에 병합하면 됩니다. 서비스 주소는 기존 **http://34.64.203.44**를 유지합니다. 실행 결과는 [GitHub Actions](https://github.com/tae-dong-hee/plan-fix/actions/workflows/deploy-frontend.yml)에서 확인합니다.
+[`Deploy frontend to VM`](../.github/workflows/deploy-frontend.yml)은 `main`의 프런트엔드 변경을 테스트하고 컨테이너 이미지로 배포합니다. 코드 수정 후 GitHub에 push하거나 PR을 `main`에 병합하면 됩니다. 서비스 주소는 **https://planfix.cloud**입니다. 실행 결과는 [GitHub Actions](https://github.com/tae-dong-hee/plan-fix/actions/workflows/deploy-frontend.yml)에서 확인합니다.
+
+기존 `http://34.64.203.44`의 화면 주소는 경로와 쿼리를 유지한 채 HTTPS 도메인으로 이동합니다. HTTPS 전환 후에도 IP에서 화면을 제공하면 조회는 되지만 댓글 등 쓰기 요청은 백엔드의 CORS 검사에서 거절됩니다. 이미 열려 있던 IP 탭은 새로고침하고 HTTPS 도메인에서 다시 로그인해야 합니다. 배포 점검에 쓰는 IP의 `/api/`, `/deploy-version.json`과 `127.0.0.1`은 그대로 유지합니다.
+
+운영 VM은 `/opt/planfix-frontend/domain.conf`를 추가로 마운트해 HTTPS와 인증서를 제공합니다. 기존 Compose의 443 포트·인증서·도메인 설정 마운트를 유지해야 하며, 저장소의 HTTP 전용 Compose로 덮어쓰면 안 됩니다.
 
 ## 실행 조건
 
@@ -31,7 +35,7 @@
 | VM / 영역 | `planfix-fe` / `asia-northeast3-c` |
 | 이미지 | `asia-northeast3-docker.pkg.dev/planfix-01/planfix-frontend/frontend:<COMMIT_SHA>` |
 | VM이 확인하는 태그 | `production` |
-| 공개 주소 | `http://34.64.203.44` |
+| 공개 주소 | `https://planfix.cloud` |
 
 ## 인증과 빌드 설정
 
@@ -98,14 +102,13 @@ sudo systemctl enable --now planfix-frontend-deploy.timer
 
 `deploy/frontend/**` 변경도 테스트와 이미지 배포를 실행하지만, VM에 설치된 배포 스크립트와 systemd 설정은 이미지에 포함되지 않습니다. 이 파일을 변경하면 VM에서 설치 절차를 다시 수행해야 합니다. 일반적인 `frontend/**` 애플리케이션 변경에는 VM 접속이 필요 없습니다.
 
-최신 저장소 파일을 VM에 준비하고 저장소 루트에서 실행합니다. VM에는 Docker Compose, Bash, Python 3, curl, flock, timeout이 필요합니다.
+최신 저장소 파일을 VM에 준비하고 저장소 루트에서 실행합니다. VM에는 Docker Compose, Bash, Python 3, curl, flock, timeout이 필요합니다. 운영 Compose에는 HTTPS 포트와 인증서·도메인 설정 마운트가 있으므로 기존 `/opt/planfix-frontend/compose.yaml`은 보존합니다.
 
 ```sh
 sudo systemctl stop planfix-frontend-deploy.timer
 sudo systemctl stop planfix-frontend-deploy.service
 sudo install -d -m 0755 /opt/planfix-frontend
 sudo install -m 0755 deploy/frontend/deploy.sh /opt/planfix-frontend/deploy.sh
-sudo install -m 0644 deploy/frontend/compose.yaml /opt/planfix-frontend/compose.yaml
 sudo install -m 0644 deploy/frontend/planfix-frontend-deploy.service /etc/systemd/system/
 sudo install -m 0644 deploy/frontend/planfix-frontend-deploy.timer /etc/systemd/system/
 sudo systemctl daemon-reload

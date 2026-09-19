@@ -21,4 +21,4 @@ IDE에서 개별 테스트를 실행해도 같은 격리가 적용됩니다. Doc
 GitHub `main`에 코드를 push하거나 PR을 병합하면 변경한 서비스가 자동 배포됩니다.
 
 - 백엔드 → 기존 Cloud Run 서비스: [백엔드 배포 가이드](docs/cloud-run-deployment.md)
-- 프런트엔드 → 기존 VM `http://34.64.203.44`: [프런트엔드 배포 가이드](docs/frontend-deployment.md)
+- 프런트엔드 → 기존 VM의 `https://planfix.cloud`: [프런트엔드 배포 가이드](docs/frontend-deployment.md)

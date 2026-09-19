@@ -70,22 +70,40 @@ export async function fetchBoardComments(boardId: number | string): Promise<Boar
 
 /** 댓글·대댓글 등록. 인증 쿠키를 보내며, 대댓글일 때만 부모 댓글 ID를 지정한다. */
 export async function createBoardComment(boardId: number | string, content: string, parentCommentId?: number | null): Promise<BoardComment> {
+  if (!apiBaseUrl) throw new Error("API URL이 설정되지 않았습니다.");
   const response = await fetch(`${apiBaseUrl}/boards/${boardId}/comments`, { method: "POST", headers: { "Content-Type": "application/json" }, credentials: "include", body: JSON.stringify({ content, parentCommentId: parentCommentId ?? null }) });
-  if (!response.ok) throw new Error("댓글을 등록하지 못했습니다.");
+  await checkCommentResponse(response, "등록");
   return (await response.json()) as BoardComment;
 }
 
 /** 댓글 본문 수정. 작성자 권한은 백엔드에서 검사한다. */
 export async function updateBoardComment(boardId: number | string, commentId: number, content: string): Promise<BoardComment> {
+  if (!apiBaseUrl) throw new Error("API URL이 설정되지 않았습니다.");
   const response = await fetch(`${apiBaseUrl}/boards/${boardId}/comments/${commentId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, credentials: "include", body: JSON.stringify({ content }) });
-  if (!response.ok) throw new Error("댓글을 수정하지 못했습니다.");
+  await checkCommentResponse(response, "수정");
   return (await response.json()) as BoardComment;
 }
 
 /** 댓글 삭제 요청. 성공 응답은 본문이 없는 204이므로 JSON 파싱을 하지 않는다. */
 export async function deleteBoardComment(boardId: number | string, commentId: number): Promise<void> {
+  if (!apiBaseUrl) throw new Error("API URL이 설정되지 않았습니다.");
   const response = await fetch(`${apiBaseUrl}/boards/${boardId}/comments/${commentId}`, { method: "DELETE", credentials: "include" });
-  if (!response.ok) throw new Error("댓글을 삭제하지 못했습니다.");
+  await checkCommentResponse(response, "삭제");
+}
+
+async function checkCommentResponse(response: Response, action: "등록" | "수정" | "삭제"): Promise<void> {
+  if (response.ok) return;
+  if (response.status === 401) {
+    throw new Error("로그인이 필요합니다. 다시 로그인해주세요.");
+  }
+  if (response.status === 403) {
+    const errorBody = await response.text().catch(() => "");
+    if (errorBody.trim() === "Invalid CORS request") {
+      throw new Error("접속 주소가 변경되었습니다. 페이지를 새로고침한 뒤 다시 로그인해주세요.");
+    }
+    throw new Error(`댓글을 ${action}할 권한이 없습니다.`);
+  }
+  throw new Error(`댓글을 ${action}하지 못했습니다.`);
 }
 
 export type PopularBoardsParams = {
