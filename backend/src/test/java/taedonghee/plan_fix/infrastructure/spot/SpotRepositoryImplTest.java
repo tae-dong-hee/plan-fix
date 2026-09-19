@@ -6,6 +6,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 import taedonghee.plan_fix.domain.spot.SpotModel;
+import taedonghee.plan_fix.domain.spot.RecommendedSpotRepository;
 import taedonghee.plan_fix.domain.spot.SpotRepository;
 import taedonghee.plan_fix.domain.spot.SpotSearchCondition;
 import taedonghee.plan_fix.domain.spot.SpotSortType;
@@ -26,6 +27,27 @@ class SpotRepositoryImplTest {
 
     @Autowired
     private SpotRepository spotRepository;
+
+    @Autowired
+    private RecommendedSpotRepository recommendedSpotRepository;
+
+    @Test
+    void 추천_후보는_선정_이름과_지역에_맞는_공개_TourAPI_장소만_조회한다() {
+        String name = tag();
+        SpotModel match = save("관광지", name, "51", "150", SpotStatus.ACTIVE, 0, 0);
+        SpotModel anotherDistrict = save("문화시설", name, "51", "110", SpotStatus.ACTIVE, 0, 0);
+        save("관광지", name, "51", "150", SpotStatus.HIDDEN, 0, 0);
+        save("관광지", name, "11", "150", SpotStatus.ACTIVE, 0, 0);
+        save("관광지", name + "-unapproved", "51", "150", SpotStatus.ACTIVE, 0, 0);
+        spotRepository.save(SpotModel.builder().sourceType(SpotSourceType.NATIVE)
+                .title(name).category("관광지").region("51").sigungu("150").build());
+
+        assertThat(recommendedSpotRepository.findActiveCandidates(List.of(name), "51", "150"))
+                .extracting(SpotModel::spotId).containsExactly(match.spotId());
+        assertThat(recommendedSpotRepository.findActiveCandidates(List.of(name), "51", null))
+                .extracting(SpotModel::spotId).containsExactlyInAnyOrder(match.spotId(), anotherDistrict.spotId());
+        assertThat(recommendedSpotRepository.findActiveCandidates(List.of(), "51", null)).isEmpty();
+    }
 
     @Test
     void status가_ACTIVE인_스팟만_반환한다() {

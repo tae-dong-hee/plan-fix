@@ -3,6 +3,8 @@ package taedonghee.plan_fix.interfaces.api.spot;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.ResponseEntity;
 import taedonghee.plan_fix.application.spot.SpotDetailApplicationService;
+import taedonghee.plan_fix.application.spot.RecommendedSpotApplicationService;
+import taedonghee.plan_fix.application.spot.RecommendedSpotQuery;
 import taedonghee.plan_fix.application.spot.SpotDetailResult;
 import taedonghee.plan_fix.application.spot.SpotListApplicationService;
 import taedonghee.plan_fix.application.spot.SpotListQuery;
@@ -27,8 +29,40 @@ class SpotControllerTest {
 
     private final SpotListApplicationService spotListApplicationService = mock(SpotListApplicationService.class);
     private final SpotDetailApplicationService spotDetailApplicationService = mock(SpotDetailApplicationService.class);
+    private final RecommendedSpotApplicationService recommendedSpotApplicationService = mock(RecommendedSpotApplicationService.class);
     private final SpotController controller =
-            new SpotController(spotListApplicationService, spotDetailApplicationService);
+            new SpotController(spotListApplicationService, spotDetailApplicationService, recommendedSpotApplicationService);
+
+    @Test
+    void 추천_결과는_캐시하지_않고_로그인_사용자의_좋아요를_반영한다() {
+        AuthenticatedUser principal = new AuthenticatedUser(10L, "길동", UserRole.USER);
+        when(recommendedSpotApplicationService.list(new RecommendedSpotQuery("51", "150", 5), 10L))
+                .thenReturn(new SpotListResult(List.of(new SpotListResult.Item(
+                        1L, "경포해수욕장", "관광지", "51", "150", "thumb.jpg", null, null, true)), 0, 5, 2));
+
+        ResponseEntity<SpotResponse> response = controller.recommended("51", "150", 5, principal);
+
+        assertThat(response.getHeaders().getCacheControl()).isEqualTo("no-store");
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().offset()).isZero();
+        assertThat(response.getBody().size()).isEqualTo(5);
+        assertThat(response.getBody().totalCount()).isEqualTo(2);
+        assertThat(response.getBody().items()).singleElement().satisfies(item -> {
+            assertThat(item.title()).isEqualTo("경포해수욕장");
+            assertThat(item.isLiked()).isTrue();
+        });
+    }
+
+    @Test
+    void 비로그인_추천_요청을_별도_서비스에_위임한다() {
+        when(recommendedSpotApplicationService.list(new RecommendedSpotQuery("51", null, 20), null))
+                .thenReturn(new SpotListResult(List.of(), 0, 20, 0));
+
+        controller.recommended("51", null, 20, null);
+
+        verify(recommendedSpotApplicationService).list(new RecommendedSpotQuery("51", null, 20), null);
+        org.mockito.Mockito.verifyNoInteractions(spotListApplicationService, spotDetailApplicationService);
+    }
 
     @Test
     void 조회_결과를_응답_DTO로_변환한다() {

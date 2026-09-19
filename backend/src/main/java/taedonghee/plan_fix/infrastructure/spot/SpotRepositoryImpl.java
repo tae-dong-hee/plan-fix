@@ -2,6 +2,7 @@ package taedonghee.plan_fix.infrastructure.spot;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
+import taedonghee.plan_fix.domain.spot.RecommendedSpotRepository;
 import taedonghee.plan_fix.domain.spot.SpotModel;
 import taedonghee.plan_fix.domain.spot.SpotRepository;
 import taedonghee.plan_fix.domain.spot.SpotSearchCondition;
@@ -17,9 +18,16 @@ import java.util.Optional;
  */
 @Repository
 @RequiredArgsConstructor
-public class SpotRepositoryImpl implements SpotRepository {
+public class SpotRepositoryImpl implements SpotRepository, RecommendedSpotRepository {
 
 	private final SpotJpaRepository spotJpaRepository;
+
+	@Override
+	public List<SpotModel> findActiveCandidates(Collection<String> titles, String region, String sigungu) {
+		if (titles == null || titles.isEmpty()) return List.of();
+		return spotJpaRepository.findActiveRecommendedCandidates(titles, region, sigungu)
+				.stream().map(this::toDomain).toList();
+	}
 
 	@Override
 	public SpotModel save(SpotModel spot) {

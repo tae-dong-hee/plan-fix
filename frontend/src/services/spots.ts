@@ -27,6 +27,8 @@ export type PopularSpotsParams = {
   offset?: number;
 };
 
+export type RecommendedSpotsParams = Omit<PopularSpotsParams, "offset">;
+
 export type SearchSpotsParams = {
   keyword?: string;
   category?: string;
@@ -81,6 +83,26 @@ export class UnauthorizedError extends Error {
 }
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "");
+
+/** 선정된 강원도 대표 명소 중 매 요청마다 무작위로 조회한다. */
+export async function fetchRecommendedSpots(params: RecommendedSpotsParams = {}): Promise<PopularSpotsResult> {
+  if (!apiBaseUrl) {
+    return { items: [], offset: 0, size: params.size ?? 20, totalCount: 0 };
+  }
+
+  const query = new URLSearchParams({ region: params.region ?? "51", size: String(params.size ?? 20) });
+  if (params.sigungu) {
+    query.set("sigungu", params.sigungu);
+  }
+  const response = await fetch(`${apiBaseUrl}/spots/recommended?${query.toString()}`, {
+    credentials: "include",
+    cache: "no-store",
+  });
+  if (!response.ok) {
+    throw new Error("인기 장소를 불러오지 못했습니다.");
+  }
+  return (await response.json()) as PopularSpotsResult;
+}
 
 /** 공개 API라 인증 쿠키가 필요 없다. 백엔드 미설정 환경(예: 테스트)에서는 빈 목록으로 조용히 넘어간다. */
 export async function fetchPopularSpots(params: PopularSpotsParams = {}): Promise<PopularSpotsResult> {

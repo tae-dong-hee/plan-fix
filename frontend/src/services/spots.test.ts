@@ -1,5 +1,70 @@
 import { setApiBaseUrl } from "@/test-utils/env";
 
+describe("fetchRecommendedSpots", () => {
+  const originalApiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+  const originalFetch = global.fetch;
+
+  afterEach(() => {
+    setApiBaseUrl(originalApiBaseUrl);
+    global.fetch = originalFetch;
+    vi.resetModules();
+  });
+
+  test("대표 명소는 지역 조건과 쿠키를 보내고 매번 캐시 없이 조회한다", async () => {
+    setApiBaseUrl("http://localhost:8080/api/v1");
+    const first = { items: [{ spotId: 429, title: "경포해수욕장" }], offset: 0, size: 20, totalCount: 2 };
+    const next = { ...first, items: [{ spotId: 579, title: "강릉 오죽헌·시립박물관" }] };
+    const fetchSpy = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => first })
+      .mockResolvedValueOnce({ ok: true, json: async () => next });
+    global.fetch = fetchSpy;
+    vi.resetModules();
+    const { fetchRecommendedSpots } = await import("./spots");
+
+    expect(await fetchRecommendedSpots({ region: "51", sigungu: "150", size: 20 })).toEqual(first);
+    expect(await fetchRecommendedSpots({ region: "51", sigungu: "150", size: 20 })).toEqual(next);
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
+    expect(fetchSpy).toHaveBeenLastCalledWith(
+      "http://localhost:8080/api/v1/spots/recommended?region=51&size=20&sigungu=150",
+      { credentials: "include", cache: "no-store" },
+    );
+  });
+
+  test("기본 요청은 강원도 전체에서 20개를 조회한다", async () => {
+    setApiBaseUrl("http://localhost:8080/api/v1");
+    const fetchSpy = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ items: [] }) });
+    global.fetch = fetchSpy;
+    vi.resetModules();
+    const { fetchRecommendedSpots } = await import("./spots");
+
+    await fetchRecommendedSpots();
+    expect(fetchSpy).toHaveBeenCalledWith(
+      "http://localhost:8080/api/v1/spots/recommended?region=51&size=20",
+      { credentials: "include", cache: "no-store" },
+    );
+  });
+
+  test("API가 설정되지 않으면 네트워크 요청 없이 빈 목록을 반환한다", async () => {
+    setApiBaseUrl(undefined);
+    const fetchSpy = vi.fn();
+    global.fetch = fetchSpy;
+    vi.resetModules();
+    const { fetchRecommendedSpots } = await import("./spots");
+
+    expect(await fetchRecommendedSpots()).toEqual({ items: [], offset: 0, size: 20, totalCount: 0 });
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  test("조회 실패를 오류로 전달한다", async () => {
+    setApiBaseUrl("http://localhost:8080/api/v1");
+    global.fetch = vi.fn().mockResolvedValue({ ok: false });
+    vi.resetModules();
+    const { fetchRecommendedSpots } = await import("./spots");
+
+    await expect(fetchRecommendedSpots()).rejects.toThrow("인기 장소를 불러오지 못했습니다.");
+  });
+});
+
 // VITE_API_BASE_URL을 모듈 로드 시점에 한 번만 읽으므로(services/auth.ts와 같은 방식),
 // 값을 바꿔 가며 테스트하려면 매번 process.env를 세팅한 뒤 모듈을 다시 불러와야 한다.
 describe("fetchPopularSpots", () => {

@@ -8,7 +8,7 @@ import { signOut } from "@/services/auth";
 import { fetchPopularBoards, likeBoard, unlikeBoard, type BoardDetail, type BoardItem, type BoardLikeState } from "@/services/board";
 import { fetchPublicCourses, likeCourse, unlikeCourse, type CourseResponse, type PublicCourseItem } from "@/services/course";
 import {
-  fetchPopularSpots,
+  fetchRecommendedSpots,
   likeSpot,
   unlikeSpot,
   UnauthorizedError,
@@ -32,7 +32,7 @@ vi.mock("@/services/weather");
 vi.mock("@/services/course");
 vi.mock("@/services/wishlist");
 
-const mockedFetchPopularSpots = fetchPopularSpots as MockedFunction<typeof fetchPopularSpots>;
+const mockedFetchRecommendedSpots = fetchRecommendedSpots as MockedFunction<typeof fetchRecommendedSpots>;
 const mockedFetchPublicCourses = vi.mocked(fetchPublicCourses);
 const mockedFetchLikedCourses = vi.mocked(fetchLikedCourses);
 const mockedLikeCourse = vi.mocked(likeCourse);
@@ -73,6 +73,11 @@ const mockWeatherItems = [
 ];
 
 const emptySpotResult = { items: [], offset: 0, size: 20, totalCount: 0 };
+const recommendedSpot = {
+  spotId: 429, title: "경포해수욕장", category: "관광지", region: "51", sigungu: "150",
+  thumbnail: "https://example.com/beach.jpg",
+};
+const recommendedSpotResult = { ...emptySpotResult, items: [recommendedSpot], totalCount: 1 };
 
 const publicCourse: PublicCourseItem = {
   courseId: 31,
@@ -137,7 +142,7 @@ beforeEach(() => {
 describe("MainPage public course carousel", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockedFetchPopularSpots.mockResolvedValue(emptySpotResult);
+    mockedFetchRecommendedSpots.mockResolvedValue(emptySpotResult);
     mockedFetchPopularBoards.mockResolvedValue({ items: [], offset: 0, size: 6, totalCount: 0 });
     mockedFetch5DayWeather.mockResolvedValue(mockWeatherItems);
   });
@@ -158,7 +163,7 @@ describe("MainPage public course carousel", () => {
     fireEvent.click(screen.getByRole("button", { name: `${region} 선택하기` }));
 
     await waitFor(() => {
-      expect(mockedFetchPopularSpots).toHaveBeenLastCalledWith({
+      expect(mockedFetchRecommendedSpots).toHaveBeenLastCalledWith({
         region: "51",
         sigungu,
         size: 20,
@@ -187,9 +192,15 @@ describe("MainPage public course carousel", () => {
     );
   });
 
-  test("다른 페이지에서 돌아오거나 메인으로 다시 이동하면 코스를 새로 조회한다", async () => {
+  test("다른 페이지에서 돌아오거나 메인으로 다시 이동하면 코스와 추천 장소를 새로 조회한다", async () => {
     const nextCourse = { ...publicCourse, courseId: 32, title: "춘천 호수 여행 코스" };
     const lastCourse = { ...publicCourse, courseId: 33, title: "속초 산책 코스" };
+    const nextSpot = { ...recommendedSpot, spotId: 4, title: "남이섬", sigungu: "110" };
+    const lastSpot = { ...recommendedSpot, spotId: 4705, title: "낙산사", sigungu: "830" };
+    mockedFetchRecommendedSpots
+      .mockResolvedValueOnce(recommendedSpotResult)
+      .mockResolvedValueOnce({ ...recommendedSpotResult, items: [nextSpot] })
+      .mockResolvedValueOnce({ ...recommendedSpotResult, items: [lastSpot] });
     mockedFetchPublicCourses
       .mockResolvedValueOnce(publicCourseResult)
       .mockResolvedValueOnce({ ...publicCourseResult, items: [nextCourse] })
@@ -205,33 +216,46 @@ describe("MainPage public course carousel", () => {
       </MemoryRouter>,
     );
     await screen.findByText(publicCourse.title);
+    await screen.findByText(recommendedSpot.title);
 
     fireEvent.click(screen.getByRole("link", { name: "다른 페이지" }));
     expect(screen.queryByText(publicCourse.title)).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("link", { name: "메인으로 이동" }));
     expect(await screen.findByText(nextCourse.title)).toBeInTheDocument();
+    expect(await screen.findByText(nextSpot.title)).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("link", { name: "메인으로 이동" }));
     expect(await screen.findByText(lastCourse.title)).toBeInTheDocument();
+    expect(await screen.findByText(lastSpot.title)).toBeInTheDocument();
     expect(screen.queryByText(nextCourse.title)).not.toBeInTheDocument();
+    expect(screen.queryByText(nextSpot.title)).not.toBeInTheDocument();
     expect(mockedFetchPublicCourses).toHaveBeenCalledTimes(3);
     expect(mockedFetchPublicCourses).toHaveBeenLastCalledWith({ sort: "random", size: 20 });
+    expect(mockedFetchRecommendedSpots).toHaveBeenCalledTimes(3);
+    expect(mockedFetchRecommendedSpots).toHaveBeenLastCalledWith({ region: "51", sigungu: undefined, size: 20 });
   });
 
-  test("새로고침처럼 페이지를 다시 마운트하면 코스를 새로 조회한다", async () => {
+  test("새로고침처럼 페이지를 다시 마운트하면 코스와 추천 장소를 새로 조회한다", async () => {
     mockedFetchPublicCourses.mockResolvedValueOnce(publicCourseResult);
+    mockedFetchRecommendedSpots.mockResolvedValueOnce(recommendedSpotResult);
     const firstPage = renderMainPage();
     await screen.findByText(publicCourse.title);
+    await screen.findByText(recommendedSpot.title);
     firstPage.unmount();
 
     const nextCourse = { ...publicCourse, courseId: 32, title: "춘천 호수 여행 코스" };
     mockedFetchPublicCourses.mockResolvedValueOnce({ ...publicCourseResult, items: [nextCourse] });
+    const nextSpot = { ...recommendedSpot, spotId: 4, title: "남이섬", sigungu: "110" };
+    mockedFetchRecommendedSpots.mockResolvedValueOnce({ ...recommendedSpotResult, items: [nextSpot] });
     renderMainPage();
 
     expect(await screen.findByText(nextCourse.title)).toBeInTheDocument();
+    expect(await screen.findByText(nextSpot.title)).toBeInTheDocument();
     expect(screen.queryByText(publicCourse.title)).not.toBeInTheDocument();
+    expect(screen.queryByText(recommendedSpot.title)).not.toBeInTheDocument();
     expect(mockedFetchPublicCourses).toHaveBeenCalledTimes(2);
     expect(mockedFetchPublicCourses).toHaveBeenLastCalledWith({ sort: "random", size: 20 });
+    expect(mockedFetchRecommendedSpots).toHaveBeenCalledTimes(2);
   });
 
   test("여행 코스 카드를 좌우로 넘길 수 있다", async () => {
@@ -341,7 +365,7 @@ describe("MainPage public course carousel", () => {
 
   test("코스와 장소 ID가 같아도 각각의 찜 상태를 따로 관리한다", async () => {
     mockedFetchPublicCourses.mockResolvedValue(publicCourseResult);
-    mockedFetchPopularSpots.mockResolvedValue({
+    mockedFetchRecommendedSpots.mockResolvedValue({
       items: [{ spotId: 31, title: "경포해변", category: "관광지", region: "51", sigungu: "150", thumbnail: null, isLiked: false }],
       offset: 0, size: 20, totalCount: 1,
     });
@@ -418,8 +442,8 @@ describe("MainPage popular spots carousel", () => {
     mockedFetch5DayWeather.mockResolvedValue(mockWeatherItems);
   });
 
-  test("fetches popular Gangwon spots with size 20 on initial load", async () => {
-    mockedFetchPopularSpots.mockResolvedValue({
+  test("fetches curated Gangwon recommendations with size 20 on initial load", async () => {
+    mockedFetchRecommendedSpots.mockResolvedValue({
       items: [
         {
           spotId: 1,
@@ -445,7 +469,7 @@ describe("MainPage popular spots carousel", () => {
 
     renderMainPage();
 
-    expect(mockedFetchPopularSpots).toHaveBeenCalledWith({
+    expect(mockedFetchRecommendedSpots).toHaveBeenCalledWith({
       region: "51",
       sigungu: undefined,
       size: 20,
@@ -456,7 +480,7 @@ describe("MainPage popular spots carousel", () => {
   });
 
   test("shows empty message when fetch returns empty list", async () => {
-    mockedFetchPopularSpots.mockResolvedValue({ items: [], offset: 0, size: 6, totalCount: 0 });
+    mockedFetchRecommendedSpots.mockResolvedValue({ items: [], offset: 0, size: 6, totalCount: 0 });
 
     renderMainPage();
 
@@ -464,8 +488,8 @@ describe("MainPage popular spots carousel", () => {
   });
 
   test("인기 장소를 조회하는 동안 로딩 상태를 표시한다", async () => {
-    const request = deferred<Awaited<ReturnType<typeof fetchPopularSpots>>>();
-    mockedFetchPopularSpots.mockReturnValueOnce(request.promise);
+    const request = deferred<Awaited<ReturnType<typeof fetchRecommendedSpots>>>();
+    mockedFetchRecommendedSpots.mockReturnValueOnce(request.promise);
     renderMainPage();
 
     expect(screen.getByText("강원도 인기 장소를 불러오는 중...")).toBeInTheDocument();
@@ -477,8 +501,8 @@ describe("MainPage popular spots carousel", () => {
   });
 
   test("지역 변경 후 조회에 실패하면 선택한 지역을 유지하며 다시 시도한다", async () => {
-    const retry = deferred<Awaited<ReturnType<typeof fetchPopularSpots>>>();
-    mockedFetchPopularSpots
+    const retry = deferred<Awaited<ReturnType<typeof fetchRecommendedSpots>>>();
+    mockedFetchRecommendedSpots
       .mockResolvedValueOnce(emptySpotResult)
       .mockRejectedValueOnce(new Error("Network failed"))
       .mockReturnValueOnce(retry.promise);
@@ -495,8 +519,8 @@ describe("MainPage popular spots carousel", () => {
 
     expect(screen.getByText("속초 인기 장소를 불러오는 중...")).toBeInTheDocument();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
-    expect(mockedFetchPopularSpots).toHaveBeenCalledTimes(3);
-    expect(mockedFetchPopularSpots).toHaveBeenLastCalledWith({ region: "51", sigungu: "210", size: 20 });
+    expect(mockedFetchRecommendedSpots).toHaveBeenCalledTimes(3);
+    expect(mockedFetchRecommendedSpots).toHaveBeenLastCalledWith({ region: "51", sigungu: "210", size: 20 });
 
     await act(async () => retry.resolve({
       items: [{ spotId: 10, title: "속초해수욕장", category: "관광지", region: "51", sigungu: "210", thumbnail: null }],
@@ -510,8 +534,8 @@ describe("MainPage popular spots carousel", () => {
   });
 
   test("지역을 바꾼 뒤 도착한 이전 지역 응답이 현재 인기 장소를 덮어쓰지 않는다", async () => {
-    const previousRequest = deferred<Awaited<ReturnType<typeof fetchPopularSpots>>>();
-    mockedFetchPopularSpots.mockReturnValueOnce(previousRequest.promise).mockResolvedValueOnce({
+    const previousRequest = deferred<Awaited<ReturnType<typeof fetchRecommendedSpots>>>();
+    mockedFetchRecommendedSpots.mockReturnValueOnce(previousRequest.promise).mockResolvedValueOnce({
       items: [{ spotId: 10, title: "속초해수욕장", category: "관광지", region: "51", sigungu: "210", thumbnail: null }],
       offset: 0,
       size: 20,
@@ -529,7 +553,7 @@ describe("MainPage popular spots carousel", () => {
   });
 
   test("clicking '인기 장소 더보기' navigates to /spots/popular", async () => {
-    mockedFetchPopularSpots.mockResolvedValue({ items: [], offset: 0, size: 6, totalCount: 0 });
+    mockedFetchRecommendedSpots.mockResolvedValue({ items: [], offset: 0, size: 6, totalCount: 0 });
 
     renderMainPage();
 
@@ -540,7 +564,7 @@ describe("MainPage popular spots carousel", () => {
   });
 
   test("clicking '인기 장소 더보기' with selected region navigates to /spots/popular with region query", async () => {
-    mockedFetchPopularSpots.mockResolvedValue({ items: [], offset: 0, size: 6, totalCount: 0 });
+    mockedFetchRecommendedSpots.mockResolvedValue({ items: [], offset: 0, size: 6, totalCount: 0 });
 
     renderMainPage();
 
@@ -555,7 +579,7 @@ describe("MainPage popular spots carousel", () => {
   });
 
   test("carousel arrow buttons scroll the carousel left and right based on scroll position", async () => {
-    mockedFetchPopularSpots.mockResolvedValue({
+    mockedFetchRecommendedSpots.mockResolvedValue({
       items: [
         {
           spotId: 1,
@@ -607,7 +631,7 @@ describe("MainPage popular spots carousel", () => {
   });
 
   test("toggles like on a spot card and handles like/unlike correctly", async () => {
-    mockedFetchPopularSpots.mockResolvedValue({
+    mockedFetchRecommendedSpots.mockResolvedValue({
       items: [
         {
           spotId: 10,
@@ -644,11 +668,12 @@ describe("MainPage popular spots carousel", () => {
 
     const unlikedButton = await screen.findByRole("button", { name: "속초해수욕장 좋아요" });
     expect(unlikedButton).toHaveAttribute("aria-pressed", "false");
+    expect(mockedFetchRecommendedSpots).toHaveBeenCalledTimes(1);
   });
 
   test("restores the spot like state and requests login when authentication is required", async () => {
     const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => undefined);
-    mockedFetchPopularSpots.mockResolvedValue({
+    mockedFetchRecommendedSpots.mockResolvedValue({
       items: [
         {
           spotId: 20,
@@ -685,7 +710,7 @@ describe("MainPage popular spots carousel", () => {
 describe("MainPage travel story likes", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockedFetchPopularSpots.mockResolvedValue(emptySpotResult);
+    mockedFetchRecommendedSpots.mockResolvedValue(emptySpotResult);
     mockedFetchPopularBoards.mockResolvedValue(publicBoardResult);
     mockedFetch5DayWeather.mockResolvedValue(mockWeatherItems);
   });
@@ -814,7 +839,7 @@ describe("MainPage travel story likes", () => {
 describe("MainPage popular boards carousel", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockedFetchPopularSpots.mockResolvedValue({ items: [], offset: 0, size: 6, totalCount: 0 });
+    mockedFetchRecommendedSpots.mockResolvedValue({ items: [], offset: 0, size: 6, totalCount: 0 });
     mockedFetch5DayWeather.mockResolvedValue(mockWeatherItems);
   });
 
@@ -930,7 +955,7 @@ describe("MainPage popular boards carousel", () => {
 describe("MainPage navigation and logout", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockedFetchPopularSpots.mockResolvedValue({ items: [], offset: 0, size: 6, totalCount: 0 });
+    mockedFetchRecommendedSpots.mockResolvedValue({ items: [], offset: 0, size: 6, totalCount: 0 });
     mockedFetchPopularBoards.mockResolvedValue({ items: [], offset: 0, size: 6, totalCount: 0 });
     mockedFetch5DayWeather.mockResolvedValue(mockWeatherItems);
   });
@@ -1038,7 +1063,7 @@ describe("MainPage navigation and logout", () => {
 describe("MainPage weather section", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockedFetchPopularSpots.mockResolvedValue({ items: [], offset: 0, size: 6, totalCount: 0 });
+    mockedFetchRecommendedSpots.mockResolvedValue({ items: [], offset: 0, size: 6, totalCount: 0 });
     mockedFetchPopularBoards.mockResolvedValue({ items: [], offset: 0, size: 6, totalCount: 0 });
   });
 
@@ -1095,7 +1120,7 @@ describe("MainPage travel header", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockedFetchPublicCourses.mockResolvedValue(publicCourseResult);
-    mockedFetchPopularSpots.mockReset().mockResolvedValue(emptySpotResult);
+    mockedFetchRecommendedSpots.mockReset().mockResolvedValue(emptySpotResult);
     mockedFetchPopularBoards.mockReset().mockResolvedValue({ items: [], offset: 0, size: 6, totalCount: 0 });
     mockedFetch5DayWeather.mockReset().mockResolvedValue(mockWeatherItems);
   });
@@ -1110,7 +1135,7 @@ describe("MainPage travel header", () => {
     fireEvent.click(screen.getByRole("button", { name: `${region} 바로 선택` }));
 
     await waitFor(() => {
-      expect(mockedFetchPopularSpots).toHaveBeenLastCalledWith({ region: "51", sigungu, size: 20 });
+      expect(mockedFetchRecommendedSpots).toHaveBeenLastCalledWith({ region: "51", sigungu, size: 20 });
       expect(mockedFetch5DayWeather).toHaveBeenLastCalledWith(region);
     });
     expect(screen.getByRole("button", { name: `${region} 바로 선택` })).toHaveAttribute("aria-pressed", "true");
@@ -1131,10 +1156,10 @@ describe("MainPage travel header", () => {
     fireEvent.click(screen.getByRole("button", { name: "강원도 전체 둘러보기" }));
 
     await waitFor(() => {
-      expect(mockedFetchPopularSpots).toHaveBeenLastCalledWith({ region: "51", sigungu: undefined, size: 20 });
+      expect(mockedFetchRecommendedSpots).toHaveBeenLastCalledWith({ region: "51", sigungu: undefined, size: 20 });
       expect(mockedFetch5DayWeather).toHaveBeenLastCalledWith(null);
     });
-    expect(mockedFetchPopularSpots).toHaveBeenCalledTimes(3);
+    expect(mockedFetchRecommendedSpots).toHaveBeenCalledTimes(3);
     expect(mockedFetch5DayWeather).toHaveBeenCalledTimes(3);
     expect(screen.getByRole("button", { name: "강원도 전체 둘러보기" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("button", { name: "강릉 바로 선택" })).toHaveAttribute("aria-pressed", "false");

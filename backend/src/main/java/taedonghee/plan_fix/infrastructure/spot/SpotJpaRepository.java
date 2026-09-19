@@ -13,6 +13,21 @@ public interface SpotJpaRepository extends JpaRepository<SpotJpaEntity, Long> {
 
 	List<SpotJpaEntity> findAllBySpotIdIn(Collection<Long> spotIds);
 
+	/** 작은 추천 카탈로그만 조회하며 일반 인기순/최신순 목록의 정렬 정책은 유지한다. */
+	@Query("""
+			SELECT s FROM SpotJpaEntity s
+			WHERE s.status = taedonghee.plan_fix.domain.spot.SpotStatus.ACTIVE
+			  AND s.sourceType = taedonghee.plan_fix.domain.spot.SpotSourceType.TOUR_API
+			  AND s.title IN :titles
+			  AND s.region = :region
+			  AND (:sigungu IS NULL OR s.sigungu = :sigungu)
+			""")
+	List<SpotJpaEntity> findActiveRecommendedCandidates(
+			@Param("titles") Collection<String> titles,
+			@Param("region") String region,
+			@Param("sigungu") String sigungu
+	);
+
 	/**
 	 * 공개 목록 조회(최신순). status는 ACTIVE로 고정하고, 나머지 조건은 null이면 걸지 않는다.
 	 * offset/limit은 JPQL의 LIMIT/OFFSET 절(Jakarta Persistence 3.1+)로 직접 처리한다 —

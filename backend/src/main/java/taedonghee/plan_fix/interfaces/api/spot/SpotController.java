@@ -1,6 +1,7 @@
 package taedonghee.plan_fix.interfaces.api.spot;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -9,6 +10,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import taedonghee.plan_fix.application.spot.SpotDetailApplicationService;
+import taedonghee.plan_fix.application.spot.RecommendedSpotApplicationService;
+import taedonghee.plan_fix.application.spot.RecommendedSpotQuery;
 import taedonghee.plan_fix.application.spot.SpotListApplicationService;
 import taedonghee.plan_fix.application.spot.SpotListQuery;
 import taedonghee.plan_fix.infrastructure.security.AuthenticatedUser;
@@ -23,6 +26,21 @@ public class SpotController {
 
     private final SpotListApplicationService spotListApplicationService;
     private final SpotDetailApplicationService spotDetailApplicationService;
+    private final RecommendedSpotApplicationService recommendedSpotApplicationService;
+
+    /** 메인 대표 장소는 매번 새로 선택하며 브라우저/공유 캐시에 저장하지 않는다. */
+    @GetMapping("/recommended")
+    public ResponseEntity<SpotResponse> recommended(
+            @RequestParam(defaultValue = "51") String region,
+            @RequestParam(required = false) String sigungu,
+            @RequestParam(defaultValue = "20") int size,
+            @AuthenticationPrincipal AuthenticatedUser principal
+    ) {
+        Long viewerUserId = principal == null ? null : principal.id();
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+                .body(SpotResponse.from(recommendedSpotApplicationService.list(
+                        new RecommendedSpotQuery(region, sigungu, size), viewerUserId)));
+    }
 
     /** 예: GET /api/v1/spots?keyword=속초&category=관광지&region=51&sigungu=150&sort=popular&offset=0&size=20 */
     @GetMapping
