@@ -91,5 +91,17 @@
   },
   "catalogSha256": "6a89581f02663d2643e57e86a438e7ee2579b88bf5b37cb104c73b8ded35df56",
   "sourcesSha256": "ad8158b87bfb3e7e66f94e8f6cc3e62d30a36ba7736d511bdd065778bc748f07",
-  "validatedBaseCommit": "ebb191469845527f9eeb9eb754a226138dbc834f"
+  "validatedBaseCommit": "ebb191469845527f9eeb9eb754a226138dbc834f",
+  "mutationChecks": [
+    {
+      "mutation": "old-100-place-limit",
+      "mutantRejected": true,
+      "restoredPassed": true
+    },
+    {
+      "mutation": "three-card-truncation",
+      "mutantRejected": true,
+      "restoredPassed": true
+    }
+  ]
 }
