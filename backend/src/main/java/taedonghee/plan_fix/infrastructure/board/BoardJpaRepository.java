@@ -12,6 +12,10 @@ import java.util.List;
  */
 public interface BoardJpaRepository extends JpaRepository<BoardJpaEntity, Long> {
 
+    @org.springframework.data.jpa.repository.Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("UPDATE BoardJpaEntity b SET b.courseId = null WHERE b.courseId = :courseId")
+    void unlinkCourse(@Param("courseId") Long courseId);
+
     /**
      * 사용자별 활성 게시글 목록 조회
      */

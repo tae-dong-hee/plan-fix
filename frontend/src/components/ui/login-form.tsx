@@ -1,8 +1,7 @@
 import { LockKeyhole, UserRound } from "lucide-react";
-import { FormEvent, useRef, useState } from "react";
+import { FormEvent, useState } from "react";
 
 import KakaoSymbol from "@/components/ui/kakao-symbol";
-import KakaoLoginDialog from "@/components/ui/kakao-login-dialog";
 import { LoaderOne } from "@/components/ui/unique-loader-components";
 import { cn } from "@/lib/utils";
 
@@ -56,8 +55,6 @@ export default function LoginForm({
     rememberMe: false,
   });
   const [errors, setErrors] = useState<LoginFormErrors>({});
-  const [isKakaoLoginOpen, setIsKakaoLoginOpen] = useState(false);
-  const kakaoLoginRef = useRef<HTMLButtonElement>(null);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -81,12 +78,10 @@ export default function LoginForm({
   };
 
   return (
-    <>
     <form
       className={cn("flex w-full max-w-sm flex-col items-center", className)}
       onSubmit={handleSubmit}
       noValidate
-      inert={isKakaoLoginOpen}
     >
       <h1 className="text-4xl font-semibold tracking-tight text-foreground">로그인</h1>
       <p className="mt-3 text-center text-sm text-muted-foreground">
@@ -94,11 +89,9 @@ export default function LoginForm({
       </p>
 
       <button
-        ref={kakaoLoginRef}
         type="button"
         className="mt-8 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#FEE500] text-sm font-medium text-[#191919]/85 transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FEE500] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
-        onClick={() => setIsKakaoLoginOpen(true)}
-        aria-haspopup="dialog"
+        onClick={onKakaoLogin}
         disabled={isSubmitting}
       >
         <KakaoSymbol className="h-5 w-5 text-black" />
@@ -251,16 +244,5 @@ export default function LoginForm({
         </a>
       </p>
     </form>
-    {isKakaoLoginOpen && (
-      <KakaoLoginDialog
-        returnFocusTo={kakaoLoginRef.current}
-        onClose={() => setIsKakaoLoginOpen(false)}
-        onContinue={() => {
-          setIsKakaoLoginOpen(false);
-          onKakaoLogin?.();
-        }}
-      />
-    )}
-    </>
   );
 }

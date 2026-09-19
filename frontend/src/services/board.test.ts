@@ -2,6 +2,44 @@ import { setApiBaseUrl } from "@/test-utils/env";
 
 type BoardService = typeof import("./board");
 
+describe("createBoard", () => {
+  const originalApiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+  const originalFetch = global.fetch;
+
+  beforeEach(() => {
+    setApiBaseUrl("http://localhost:8080/api/v1");
+    vi.resetModules();
+  });
+
+  afterEach(() => {
+    setApiBaseUrl(originalApiBaseUrl);
+    global.fetch = originalFetch;
+    vi.resetModules();
+  });
+
+  test.each([
+    { status: 400, message: "나만 보기 코스는 여행 이야기에 연결할 수 없습니다. 코스를 전체 공개로 변경한 뒤 다시 연결해 주세요." },
+    { status: 403, message: "본인의 코스만 여행 이야기에 연결할 수 있습니다." },
+  ])("$status 오류의 안내 문구를 JSON 본문이나 로그인 오류로 바꾸지 않는다", async ({ status, message }) => {
+    global.fetch = vi.fn().mockResolvedValue({ ok: false, status, text: async () => JSON.stringify({ status, message }) }) as unknown as typeof fetch;
+    const { createBoard } = await import("./board");
+
+    await expect(createBoard({ title: "여행 후기", content: "여행 기록", courseId: 1 })).rejects.toEqual(new Error(message));
+  });
+
+  test.each([
+    { status: 401, text: "", message: "로그인이 필요합니다." },
+    { status: 403, text: "", message: "게시글을 작성할 권한이 없습니다." },
+    { status: 400, text: "잘못된 코스", message: "잘못된 코스" },
+    { status: 500, text: "{}", message: "게시글 저장에 실패했습니다." },
+  ])("$status 응답에 맞는 기본 오류 안내를 반환한다", async ({ status, text, message }) => {
+    global.fetch = vi.fn().mockResolvedValue({ ok: false, status, text: async () => text }) as unknown as typeof fetch;
+    const { createBoard } = await import("./board");
+
+    await expect(createBoard({ title: "여행 후기", content: "여행 기록" })).rejects.toThrow(message);
+  });
+});
+
 describe.each([
   {
     action: "등록",

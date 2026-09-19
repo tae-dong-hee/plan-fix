@@ -57,7 +57,7 @@ export default function MyCourseCard({ course }: MyCourseCardProps) {
           <div className="flex items-center justify-between gap-3 text-[11px]">
             <span className={`inline-flex items-center gap-1 ${course.visibility === "PUBLIC" ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"}`}>
               {course.visibility === "PUBLIC" ? <Globe className="h-3 w-3" aria-hidden="true" /> : <Lock className="h-3 w-3" aria-hidden="true" />}
-              {course.visibility === "PUBLIC" ? "공개" : "비공개"}
+              {course.visibility === "PUBLIC" ? "공개" : "나만 보기"}
             </span>
             <span className="text-muted-foreground">{course.createdAt.substring(0, 10).replace(/-/g, ".")} 저장</span>
           </div>

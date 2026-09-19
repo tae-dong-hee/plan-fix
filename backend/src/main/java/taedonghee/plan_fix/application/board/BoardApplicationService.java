@@ -33,9 +33,6 @@ public class BoardApplicationService {
     @Transactional
     public BoardResult create(Long userId, BoardCommand.Create command) {
         validateLinkedCourse(userId, command.courseId()); // 게시글에 연결할 코스가 로그인 사용자의 코스인지 검증
-        if (command.courseId() != null) {
-            courseApplicationService.ensureCoursePublicForBoard(userId, command.courseId());
-        }
         BoardModel board = BoardModel.create(userId, command.courseId(), command.title(), command.content(),
                 command.thumbnail(), command.images());
         return BoardResult.from(boardRepository.save(board));
@@ -122,9 +119,6 @@ public class BoardApplicationService {
         BoardModel board = getActiveBoardOrThrow(boardId);
         board.ensureOwner(userId); // 작성자만 수정 가능
         validateLinkedCourse(userId, command.courseId()); // 새로 연결할 코스 소유권 검증
-        if (command.courseId() != null) {
-            courseApplicationService.ensureCoursePublicForBoard(userId, command.courseId());
-        }
         BoardModel updated = board.update(command.courseId(), command.title(), command.content(),
                 command.thumbnail(), command.images());
         return BoardResult.from(boardRepository.save(updated));
@@ -154,7 +148,7 @@ public class BoardApplicationService {
      */
     private void validateLinkedCourse(Long userId, Long courseId) {
         if (courseId != null) {
-            courseApplicationService.getActiveOwnedCourseOrThrow(userId, courseId);
+            courseApplicationService.validatePublicCourseForBoard(userId, courseId);
         }
     }
 }

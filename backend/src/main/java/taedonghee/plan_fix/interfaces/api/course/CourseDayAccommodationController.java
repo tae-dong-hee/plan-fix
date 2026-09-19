@@ -1,7 +1,6 @@
 package taedonghee.plan_fix.interfaces.api.course;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.transaction.annotation.Transactional;
@@ -11,7 +10,8 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
+import taedonghee.plan_fix.support.error.CoreException;
+import taedonghee.plan_fix.support.error.ErrorType;
 import taedonghee.plan_fix.infrastructure.course.CourseDayAccommodationJpaEntity;
 import taedonghee.plan_fix.infrastructure.course.CourseDayAccommodationJpaRepository;
 import taedonghee.plan_fix.infrastructure.course.CourseJpaRepository;
@@ -99,7 +99,7 @@ public class CourseDayAccommodationController {
                 .filter(course -> user.id().equals(course.getUserId()))
                 .isPresent();
         if (!isOwner) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+            throw new CoreException(ErrorType.FORBIDDEN, "숙소 정보는 코스 작성자만 확인할 수 있습니다.");
         }
     }
 

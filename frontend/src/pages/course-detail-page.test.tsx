@@ -1,3 +1,4 @@
+import { CourseAccessError } from "@/lib/course-errors";
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { Mock } from "vitest";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
@@ -189,6 +190,27 @@ describe("CourseDetailPage", () => {
     });
   });
 
+  it("편집 멤버에게는 수정만 허용하고 소유자 관리 버튼은 숨긴다", async () => {
+    vi.mocked(courseService.fetchCourse).mockResolvedValue({ ...mockCourse, isOwner: false, canEdit: true });
+    renderComponent();
+    expect(await screen.findByRole("link", { name: "코스 수정" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "친구 초대" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "코스 삭제" })).not.toBeInTheDocument();
+    expect(courseService.fetchDayAccommodations).not.toHaveBeenCalled();
+  });
+
+  it("다시 돌아온 탭에서 비공개 전환을 확인하면 이전 제목과 일정을 지운다", async () => {
+    vi.mocked(courseService.fetchCourse).mockResolvedValueOnce({ ...mockCourse, isOwner: false })
+      .mockRejectedValueOnce(new CourseAccessError());
+    renderComponent();
+    await screen.findByText(mockCourse.title);
+    fireEvent.focus(window);
+    expect(await screen.findByText("코스가 비공개로 변경되었거나 접근 권한이 없습니다.")).toBeInTheDocument();
+    expect(screen.queryByText(mockCourse.title)).not.toBeInTheDocument();
+    expect(screen.queryByText("경포해변")).not.toBeInTheDocument();
+    expect(mockNavigate).not.toHaveBeenCalled();
+  });
+
   it("코스 작성자가 아닌 경우(isOwner가 false) 수정 및 삭제 버튼을 노출하지 않는다", async () => {
     (courseService.fetchCourse as Mock).mockResolvedValue({
       ...mockCourse,
@@ -220,6 +242,21 @@ describe("CourseDetailPage", () => {
     expect(screen.queryByRole("dialog", { name: "친구 초대" })).not.toBeInTheDocument();
     expect(courseService.createCourseInvite).toHaveBeenCalledExactlyOnceWith("10", "EDITOR");
     expect(writeClipboard).toHaveBeenCalledExactlyOnceWith(mockInvite.inviteUrl);
+  });
+
+  it("나만 보기 코스는 작성자에게도 초대와 멤버 관리 대신 공개 전환 안내를 표시한다", async () => {
+    vi.mocked(courseService.fetchCourse).mockResolvedValue({ ...mockCourse, visibility: "PRIVATE", isOwner: true });
+    vi.mocked(courseService.fetchDayAccommodations).mockResolvedValue([]);
+    renderComponent();
+
+    expect(await screen.findByText("나만 보기")).toBeInTheDocument();
+    expect(screen.getByText("작성자만 볼 수 있는 코스예요. 친구를 초대하려면 코스 수정에서 전체 공개로 변경해 주세요.")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "친구 초대" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "멤버 관리" })).not.toBeInTheDocument();
+    expect(screen.queryByText("참여 멤버")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "코스 수정" })).toHaveAttribute("href", "/courses/10/edit");
+    expect(courseService.createCourseInvite).not.toHaveBeenCalled();
+    expect(courseService.fetchCourseMembers).not.toHaveBeenCalled();
   });
 
   it("읽기 권한을 선택하면 VIEWER 권한으로 링크를 생성한다", async () => {

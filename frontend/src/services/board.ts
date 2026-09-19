@@ -235,21 +235,23 @@ export async function createBoard(payload: CreateBoardPayload): Promise<BoardDet
     body: JSON.stringify(payload),
   });
 
-  if (response.status === 401 || response.status === 403) {
+  if (response.status === 401) {
     throw new Error("로그인이 필요합니다.");
   }
 
   if (!response.ok) {
     const errorBody = await response.text().catch(() => "");
+    let errorMessage = response.status === 403 ? "게시글을 작성할 권한이 없습니다." : "게시글 저장에 실패했습니다.";
     try {
       const parsed = JSON.parse(errorBody);
-      if (parsed.message) {
-        throw new Error(parsed.message);
+      if (typeof parsed?.message === "string" && parsed.message.trim()) {
+        errorMessage = parsed.message;
       }
     } catch {
-      // JSON 파싱 실패 시 일반 에러 사용
+      // JSON 형식이 아닌 API 응답도 기존 오류 안내로 전달한다.
+      if (errorBody.trim()) errorMessage = errorBody;
     }
-    throw new Error(errorBody || "게시글 저장에 실패했습니다.");
+    throw new Error(errorMessage);
   }
 
   return (await response.json()) as BoardDetail;

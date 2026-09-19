@@ -33,6 +33,7 @@ class CourseMetadataApplicationServiceTest {
             return stored.get();
         });
         when(courses.findById(1L)).thenAnswer(invocation -> Optional.ofNullable(stored.get()));
+        when(courses.findByIdForUpdate(1L)).thenAnswer(invocation -> Optional.ofNullable(stored.get()));
         when(courses.findActiveByUserId(10L)).thenAnswer(invocation -> List.of(stored.get()));
         when(spots.findAllByIdIn(any())).thenReturn(List.of(SpotModel.builder().spotId(2L)
                 .sourceType(SpotSourceType.TOUR_API).title("관광지").category("관광지").build()));
@@ -57,7 +58,9 @@ class CourseMetadataApplicationServiceTest {
         createAi();
         assertMetadata(service.update(10L, 1L, new CourseCommand.Update("변경", null, null,
                 CourseVisibility.PRIVATE, null, null, days)));
-        service.ensureCoursePublicForBoard(10L, 1L);
+        service.update(10L, 1L, new CourseCommand.Update("변경", null, null,
+                CourseVisibility.PUBLIC, null, null, days));
+        service.validatePublicCourseForBoard(10L, 1L);
         assertThat(stored.get().visibility()).isEqualTo(CourseVisibility.PUBLIC);
         assertMetadata(service.getCourse(null, 1L));
         CourseListResponse.Item publicItem = CourseListResponse.Item.from(CourseListResult.Item.from(stored.get()));

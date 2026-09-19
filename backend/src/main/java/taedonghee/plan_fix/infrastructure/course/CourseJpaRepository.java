@@ -12,6 +12,11 @@ import java.util.List;
  */
 public interface CourseJpaRepository extends JpaRepository<CourseJpaEntity, Long> {
 
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @org.springframework.data.jpa.repository.Query("SELECT c FROM CourseJpaEntity c WHERE c.courseId = :courseId")
+    java.util.Optional<CourseJpaEntity> findByIdForUpdate(
+            @org.springframework.data.repository.query.Param("courseId") Long courseId);
+
     @org.springframework.data.jpa.repository.Query("""
             SELECT c FROM CourseJpaEntity c
             WHERE c.status = taedonghee.plan_fix.domain.course.CourseStatus.ACTIVE
@@ -69,6 +74,7 @@ public interface CourseJpaRepository extends JpaRepository<CourseJpaEntity, Long
             SELECT c FROM CourseJpaEntity c
             JOIN CourseLikeJpaEntity cl ON c.courseId = cl.courseId
             WHERE cl.userId = :userId AND c.status = taedonghee.plan_fix.domain.course.CourseStatus.ACTIVE
+              AND (c.visibility = taedonghee.plan_fix.domain.course.CourseVisibility.PUBLIC OR c.userId = :userId)
             ORDER BY cl.createdAt DESC
             """)
     List<CourseJpaEntity> findLikedCoursesByUserId(@org.springframework.data.repository.query.Param("userId") Long userId);

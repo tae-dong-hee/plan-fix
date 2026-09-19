@@ -55,4 +55,7 @@ public interface BoardRepository {
      * 코스가 활성 게시글에 연결되어 있는지 확인
      */
     boolean existsActiveByCourseId(Long courseId);
+
+    /** 비공개 전환 시 게시글 본문을 유지하고 코스 연결만 해제한다. */
+    void unlinkCourse(Long courseId);
 }

@@ -15,6 +15,8 @@ import taedonghee.plan_fix.domain.course.CourseStatus;
 import taedonghee.plan_fix.domain.course.CourseVisibility;
 import taedonghee.plan_fix.domain.course.CourseSortType;
 import taedonghee.plan_fix.infrastructure.course.CourseMemberJpaRepository;
+import taedonghee.plan_fix.infrastructure.course.CourseInviteJpaRepository;
+import taedonghee.plan_fix.infrastructure.course.CourseLikeJpaRepository;
 import taedonghee.plan_fix.infrastructure.course.CourseMemberRole;
 import taedonghee.plan_fix.domain.spot.SpotModel;
 import taedonghee.plan_fix.domain.spot.SpotRepository;
@@ -22,6 +24,7 @@ import taedonghee.plan_fix.domain.spot.SpotStatus;
 import taedonghee.plan_fix.support.error.CoreException;
 import taedonghee.plan_fix.support.error.ErrorType;
 
+import java.time.OffsetDateTime;
 import java.util.Collection;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -44,6 +47,8 @@ public class CourseApplicationService {
     private final SpotRepository spotRepository;
     private final BoardRepository boardRepository;
     private final CourseMemberJpaRepository courseMemberJpaRepository;
+    private final CourseInviteJpaRepository courseInviteJpaRepository;
+    private final CourseLikeJpaRepository courseLikeJpaRepository;
     private final CourseCoverImageSelector courseCoverImageSelector;
     private final SpotThumbnailResolver spotThumbnailResolver;
 
@@ -54,14 +59,27 @@ public class CourseApplicationService {
             @Nullable BoardRepository boardRepository,
             @Nullable CourseMemberJpaRepository courseMemberJpaRepository,
             CourseCoverImageSelector courseCoverImageSelector,
-            SpotThumbnailResolver spotThumbnailResolver
+            SpotThumbnailResolver spotThumbnailResolver,
+            CourseInviteJpaRepository courseInviteJpaRepository,
+            CourseLikeJpaRepository courseLikeJpaRepository
     ) {
         this.courseRepository = courseRepository;
         this.spotRepository = spotRepository;
         this.boardRepository = boardRepository;
         this.courseMemberJpaRepository = courseMemberJpaRepository;
+        this.courseInviteJpaRepository = courseInviteJpaRepository;
+        this.courseLikeJpaRepository = courseLikeJpaRepository;
         this.courseCoverImageSelector = courseCoverImageSelector;
         this.spotThumbnailResolver = spotThumbnailResolver;
+    }
+
+    public CourseApplicationService(CourseRepository courseRepository, SpotRepository spotRepository,
+                                    @Nullable BoardRepository boardRepository,
+                                    @Nullable CourseMemberJpaRepository courseMemberJpaRepository,
+                                    CourseCoverImageSelector courseCoverImageSelector,
+                                    SpotThumbnailResolver spotThumbnailResolver) {
+        this(courseRepository, spotRepository, boardRepository, courseMemberJpaRepository,
+                courseCoverImageSelector, spotThumbnailResolver, null, null);
     }
 
     public CourseApplicationService(
@@ -104,7 +122,9 @@ public class CourseApplicationService {
                     .map(member -> member.getCourseId()).collect(Collectors.toSet());
             Set<Long> ownedCourseIds = courses.stream().map(CourseModel::courseId).collect(Collectors.toSet());
             joinedCourseIds.removeAll(ownedCourseIds);
-            courses.addAll(courseRepository.findActiveByIds(joinedCourseIds));
+            // 예전 비공개 코스의 멤버십이 남아 있어도 작성자 외에는 목록에 노출하지 않는다.
+            courses.addAll(courseRepository.findActiveByIds(joinedCourseIds).stream()
+                    .filter(course -> course.visibility() == CourseVisibility.PUBLIC).toList());
         }
         Set<Long> allSpotIds = courses.stream()
                 .flatMap(c -> c.days().stream())
@@ -125,7 +145,9 @@ public class CourseApplicationService {
      * 로그인 사용자가 좋아요 누른 코스 목록 조회 처리
      */
     public List<CourseResult> listLiked(Long userId) {
-        List<CourseModel> courses = courseRepository.findLikedByUserId(userId);
+        List<CourseModel> courses = courseRepository.findLikedByUserId(userId).stream()
+                .filter(course -> course.visibility() == CourseVisibility.PUBLIC || userId.equals(course.userId()))
+                .toList();
         Set<Long> allSpotIds = courses.stream()
                 .flatMap(c -> c.days().stream())
                 .flatMap(d -> d.spots().stream())
@@ -187,18 +209,15 @@ public class CourseApplicationService {
     /**
      * 코스 단건 조회 처리
      * - requesterId가 코스 작성자이거나,
-     * - PUBLIC 공개 코스이거나,
-     * - 초대를 수락한 활성 멤버인 경우 조회 허용
+     * - PUBLIC 공개 코스인 경우 조회 허용. PRIVATE는 기존 멤버도 접근할 수 없다.
      */
     public CourseResult getCourse(Long requesterId, Long courseId) {
         CourseModel course = getActiveCourseOrThrow(courseId);
 
         boolean isOwner = requesterId != null && requesterId.equals(course.userId());
         boolean isPublic = course.visibility() == CourseVisibility.PUBLIC;
-        boolean isMember = courseMemberJpaRepository != null && requesterId != null
-                && courseMemberJpaRepository.existsByCourseIdAndUserId(courseId, requesterId);
-        if (!isOwner && !isMember && !isPublic) {
-            throw new CoreException(ErrorType.FORBIDDEN, "Only course owner can access private course.");
+        if (!isOwner && !isPublic) {
+            throw new CoreException(ErrorType.FORBIDDEN, "나만 보기 코스는 작성자만 확인할 수 있습니다.");
         }
 
         Set<Long> spotIds = collectSpotIds(course.days());
@@ -206,6 +225,12 @@ public class CourseApplicationService {
                 .collect(Collectors.toMap(SpotModel::spotId, Function.identity()));
 
         return CourseResult.from(course, spotsById, spotThumbnailResolver.resolve(spotsById.values()));
+    }
+
+    public boolean canEdit(Long requesterId, CourseResult course) {
+        return requesterId != null && (requesterId.equals(course.userId())
+                || (course.visibility() == CourseVisibility.PUBLIC && courseMemberJpaRepository != null
+                    && courseMemberJpaRepository.existsByCourseIdAndUserIdAndRole(course.courseId(), requesterId, CourseMemberRole.EDITOR)));
     }
 
     /**
@@ -216,25 +241,19 @@ public class CourseApplicationService {
     }
 
     /**
-     * 게시글(여행 이야기)에 연결된 코스를 자동으로 공개(PUBLIC) 상태로 전환
+     * 여행 이야기에는 작성자가 직접 공개한 코스만 연결할 수 있다.
+     * 코스 잠금은 게시글 저장까지 유지되어 비공개 전환과 연결이 엇갈리지 않는다.
      */
     @Transactional
-    public void ensureCoursePublicForBoard(Long userId, Long courseId) {
+    public void validatePublicCourseForBoard(Long userId, Long courseId) {
         if (courseId == null) {
             return;
         }
-        CourseModel course = getActiveOwnedCourseOrThrow(userId, courseId);
+        CourseModel course = getActiveCourseForUpdateOrThrow(courseId);
+        course.ensureOwner(userId);
         if (course.visibility() != CourseVisibility.PUBLIC) {
-            CourseModel updated = course.update(
-                    course.title(),
-                    course.description(),
-                    course.thumbnail(),
-                    CourseVisibility.PUBLIC,
-                    course.startDate(),
-                    course.endDate(),
-                    course.days()
-            );
-            courseRepository.save(updated);
+            throw new CoreException(ErrorType.BAD_REQUEST,
+                    "나만 보기 코스는 여행 이야기에 연결할 수 없습니다. 코스를 전체 공개로 변경한 뒤 다시 연결해 주세요.");
         }
     }
 
@@ -243,20 +262,53 @@ public class CourseApplicationService {
      */
     @Transactional
     public CourseResult update(Long userId, Long courseId, CourseCommand.Update command) {
-        CourseModel course = getActiveCourseOrThrow(courseId);
-        boolean isEditor = courseMemberJpaRepository != null
+        return updateInternal(userId, courseId, command, null, false);
+    }
+
+    /** HTTP 수정은 조회 당시 시각이 일치하는 요청만 허용한다. 예전 클라이언트는 새로고침해야 한다. */
+    @Transactional
+    public CourseResult update(Long userId, Long courseId, CourseCommand.Update command, OffsetDateTime expectedUpdatedAt) {
+        return updateInternal(userId, courseId, command, expectedUpdatedAt, true);
+    }
+
+    private CourseResult updateInternal(Long userId, Long courseId, CourseCommand.Update command,
+                                        OffsetDateTime expectedUpdatedAt, boolean checkVersion) {
+        CourseModel course = getActiveCourseForUpdateOrThrow(courseId);
+        boolean isOwner = userId.equals(course.userId());
+        boolean isEditor = course.visibility() == CourseVisibility.PUBLIC && courseMemberJpaRepository != null
                 && courseMemberJpaRepository.existsByCourseIdAndUserIdAndRole(courseId, userId, CourseMemberRole.EDITOR);
-        if (!userId.equals(course.userId()) && !isEditor) {
+        if (!isOwner && !isEditor) {
             throw new CoreException(ErrorType.FORBIDDEN, "코스 소유자 또는 편집 권한이 있는 멤버만 수정할 수 있습니다.");
         }
 
+        if (checkVersion && (expectedUpdatedAt == null
+                || !expectedUpdatedAt.toInstant().equals(course.updatedAt().toInstant()))) {
+            throw new CoreException(ErrorType.CONFLICT, "다른 화면에서 코스가 변경되었습니다. 최신 코스를 불러온 뒤 다시 수정해 주세요.");
+        }
+
+        CourseVisibility visibility = command.visibility() == null ? course.visibility() : command.visibility();
+        if (!isOwner && visibility != course.visibility()) {
+            throw new CoreException(ErrorType.FORBIDDEN, "공개 범위는 코스 작성자만 변경할 수 있습니다.");
+        }
+
         CourseModel updated = course.update(command.title(), command.description(), command.thumbnail(),
-                command.visibility(), command.startDate(), command.endDate(), command.days(),
+                visibility, command.startDate(), command.endDate(), command.days(),
                 command.generatedBy(), command.themes());
         Set<Long> spotIds = collectSpotIds(updated.days());
         Map<Long, SpotModel> spotsById = validateAndGetActiveSpots(spotIds);
 
         CourseModel saved = courseRepository.save(updated);
+        // 기존 PRIVATE 데이터에 남아 있는 공유 권한도 다시 공개할 때 되살리지 않는다.
+        if (visibility == CourseVisibility.PRIVATE || course.visibility() == CourseVisibility.PRIVATE) {
+            if (courseMemberJpaRepository != null) courseMemberJpaRepository.deleteByCourseId(courseId);
+            if (courseInviteJpaRepository != null) courseInviteJpaRepository.deleteByCourseId(courseId);
+            if (boardRepository != null) boardRepository.unlinkCourse(courseId);
+            if (courseLikeJpaRepository != null) {
+                courseLikeJpaRepository.deleteOtherUsersLikes(courseId, course.userId());
+                courseLikeJpaRepository.synchronizeCourseLikeCount(courseId);
+                saved = getActiveCourseOrThrow(courseId);
+            }
+        }
         return CourseResult.from(saved, spotsById, spotThumbnailResolver.resolve(spotsById.values()));
     }
 
@@ -265,7 +317,7 @@ public class CourseApplicationService {
      */
     @Transactional
     public CourseResult delete(Long userId, Long courseId) {
-        CourseModel course = getActiveCourseOrThrow(courseId);
+        CourseModel course = getActiveCourseForUpdateOrThrow(courseId);
         course.ensureOwner(userId); // 작성자만 삭제 가능
         CourseModel deleted = courseRepository.save(course.delete());
         return CourseResult.from(deleted, Map.of(), Map.of());
@@ -285,6 +337,12 @@ public class CourseApplicationService {
      */
     private CourseModel getActiveCourseOrThrow(Long courseId) {
         return courseRepository.findById(courseId)
+                .filter(course -> course.status() == CourseStatus.ACTIVE)
+                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "course not found. courseId=" + courseId));
+    }
+
+    private CourseModel getActiveCourseForUpdateOrThrow(Long courseId) {
+        return courseRepository.findByIdForUpdate(courseId)
                 .filter(course -> course.status() == CourseStatus.ACTIVE)
                 .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "course not found. courseId=" + courseId));
     }
