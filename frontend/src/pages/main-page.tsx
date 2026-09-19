@@ -23,10 +23,11 @@ import GangwonRegionMap, {
   type GangwonRegion,
 } from "@/components/ui/gangwon-region-map";
 import {
-  fetchPopularBoards,
+  fetchBoards,
   likeBoard,
   unlikeBoard,
   type BoardItem,
+  type BoardSortType,
 } from "@/services/board";
 import {
   fetchPopularSpots,
@@ -114,8 +115,10 @@ export default function MainPage() {
   const [weatherError, setWeatherError] = useState(false);
 
   const boardCarouselRef = useRef<HTMLDivElement>(null);
-  const [popularBoards, setPopularBoards] = useState<BoardItem[] | null>(null);
-  const [popularBoardsError, setPopularBoardsError] = useState(false);
+  const [boardSort, setBoardSort] = useState<BoardSortType>("popular");
+  const [boardsReload, setBoardsReload] = useState(0);
+  const [boards, setBoards] = useState<BoardItem[] | null>(null);
+  const [boardsError, setBoardsError] = useState(false);
   const [likedBoards, setLikedBoards] = useState<Record<number, boolean>>({});
   const [loadingBoards, setLoadingBoards] = useState<Record<number, boolean>>({});
   const [boardLikesLoading, setBoardLikesLoading] = useState(true);
@@ -123,6 +126,7 @@ export default function MainPage() {
   const [boardLikeError, setBoardLikeError] = useState<string | null>(null);
   const [boardLikesReload, setBoardLikesReload] = useState(0);
   const pendingBoardLikes = useRef(new Set<number>());
+  const boardLikeCountsDuringLoad = useRef<Record<number, number>>({});
   const [canBoardScrollLeft, setCanBoardScrollLeft] = useState(false);
   const [canBoardScrollRight, setCanBoardScrollRight] = useState(false);
 
@@ -276,25 +280,32 @@ export default function MainPage() {
   useEffect(() => {
     let ignore = false;
 
-    setPopularBoards(null);
-    setPopularBoardsError(false);
+    setBoards(null);
+    setBoardsError(false);
+    setCanBoardScrollLeft(false);
+    setCanBoardScrollRight(false);
+    boardLikeCountsDuringLoad.current = {};
 
-    fetchPopularBoards({ size: 6 })
+    fetchBoards({ sort: boardSort, size: 6 })
       .then((res) => {
         if (!ignore) {
-          setPopularBoards(res.items);
+          // 정렬 요청 중 완료된 좋아요 개수가 이전 시점의 응답에 덮어쓰이지 않게 한다.
+          setBoards(res.items.map((board) => ({
+            ...board,
+            likeCount: boardLikeCountsDuringLoad.current[board.boardId] ?? board.likeCount,
+          })));
         }
       })
       .catch(() => {
         if (!ignore) {
-          setPopularBoardsError(true);
+          setBoardsError(true);
         }
       });
 
     return () => {
       ignore = true;
     };
-  }, []);
+  }, [boardSort, boardsReload]);
 
   useEffect(() => {
     let ignore = false;
@@ -348,7 +359,7 @@ export default function MainPage() {
     return () => {
       window.removeEventListener("resize", handleResize);
     };
-  }, [popularBoards, updateBoardScrollButtons]);
+  }, [boards, updateBoardScrollButtons]);
 
   const handleGuideScroll = (direction: -1 | 1) => {
     if (!guideCarouselRef.current) return;
@@ -467,8 +478,9 @@ export default function MainPage() {
 
     try {
       const result = wasLiked ? await unlikeBoard(boardId) : await likeBoard(boardId);
+      boardLikeCountsDuringLoad.current[boardId] = result.likeCount;
       setLikedBoards((prev) => ({ ...prev, [boardId]: result.liked }));
-      setPopularBoards((prev) => prev?.map((board) => (
+      setBoards((prev) => prev?.map((board) => (
         board.boardId === boardId ? { ...board, likeCount: result.likeCount } : board
       )) ?? prev);
     } catch (error) {
@@ -676,20 +688,40 @@ export default function MainPage() {
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </Link>
           </div>
-          <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground sm:text-sm">마음에 드는 이야기에 좋아요를 누르면 위시리스트의 여행 이야기에서 다시 볼 수 있어요.</p>
+          <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-5">
+            <p className="text-[13px] leading-relaxed text-muted-foreground sm:text-sm">마음에 드는 이야기에 좋아요를 누르면 위시리스트의 여행 이야기에서 다시 볼 수 있어요.</p>
+            <div role="group" aria-label="여행 이야기 정렬" className="flex shrink-0 self-start rounded-full bg-muted p-1 sm:self-auto">
+              {(["popular", "latest"] as const).map((sort) => (
+                <button
+                  key={sort}
+                  type="button"
+                  aria-pressed={boardSort === sort}
+                  onClick={() => setBoardSort(sort)}
+                  className={`min-h-10 rounded-full px-4 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${boardSort === sort ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}
+                >
+                  {sort === "popular" ? "인기순" : "최신순"}
+                </button>
+              ))}
+            </div>
+          </div>
           {boardLikeError && <p role="alert" className="mt-4 text-sm text-destructive">{boardLikeError}</p>}
-          {boardLikesError && !popularBoardsError && !!popularBoards?.length && (
+          {boardLikesError && !boardsError && !!boards?.length && (
             <div role="alert" className="mt-4 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
               <p>이야기 좋아요 상태를 불러오지 못했습니다.</p>
               <button type="button" onClick={() => setBoardLikesReload((value) => value + 1)} className="rounded-lg border border-border px-3 py-2 font-medium text-primary hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">좋아요 상태 다시 확인</button>
             </div>
           )}
-          {popularBoards === null && !popularBoardsError ? (
+          {boards === null && !boardsError ? (
             <div role="status" className="mt-6 flex h-44 items-center justify-center gap-2 text-sm text-muted-foreground sm:h-72">
               <Loader2 className="h-5 w-5 animate-spin text-primary motion-reduce:animate-none" aria-hidden="true" />
               <span>여행 이야기를 불러오는 중...</span>
             </div>
-          ) : popularBoardsError || popularBoards?.length === 0 ? (
+          ) : boardsError ? (
+            <div role="alert" className="mt-6 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+              <p>여행 이야기를 불러오지 못했습니다. 다시 시도해 주세요.</p>
+              <button type="button" onClick={() => setBoardsReload((value) => value + 1)} className="rounded-lg border border-border px-3 py-2 font-medium text-primary hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">이야기 다시 불러오기</button>
+            </div>
+          ) : boards?.length === 0 ? (
             <p className="mt-6 text-base text-muted-foreground">표시할 게시글이 없어요.</p>
           ) : (
             <div className="relative mt-6">
@@ -709,7 +741,7 @@ export default function MainPage() {
                 onScroll={updateBoardScrollButtons}
                 className="travel-card-track -mx-1 flex gap-4 overflow-x-auto p-1 snap-x snap-mandatory scrollbar-hide sm:gap-5"
               >
-                {(popularBoards ?? []).map((board) => (
+                {(boards ?? []).map((board) => (
                   <article
                     key={board.boardId}
                     className="travel-story-card group block w-[82%] shrink-0 snap-start rounded-3xl sm:w-[46%] lg:w-[calc((100%_-_2.5rem)/3)]"
