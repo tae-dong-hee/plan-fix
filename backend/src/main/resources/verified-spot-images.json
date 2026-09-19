@@ -136,6 +136,14 @@
       "latitude": 37.7522165,
       "longitude": 128.7859934,
       "url": "https://planfix.cloud/images/verified-spots/543.jpg"
+    },
+    {
+      "spotId": 534,
+      "title": "강릉통일공원안보전시관",
+      "address": "강원특별자치도 강릉시 강동면 율곡로 1715-38",
+      "latitude": 37.7204604,
+      "longitude": 128.9984085,
+      "url": "https://tong.visitkorea.or.kr/cms/resource/52/3516852_image2_1.jpg"
     }
   ]
 }
