@@ -2,6 +2,7 @@ package taedonghee.plan_fix.interfaces.api.auth;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
@@ -20,6 +21,7 @@ import taedonghee.plan_fix.infrastructure.security.JwtTokenProvider;
 import taedonghee.plan_fix.infrastructure.security.SecurityConfig;
 import taedonghee.plan_fix.support.error.CoreException;
 import taedonghee.plan_fix.support.error.ErrorType;
+import taedonghee.plan_fix.support.error.RateLimitException;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -32,6 +34,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class PasswordResetControllerTest {
     @TestConfiguration @EnableWebSecurity static class SecurityTestConfiguration { }
     @Autowired MockMvc mvc;
+    @Value("${app.frontend-base-url}") String frontendBaseUrl;
     @MockitoBean PasswordResetApplicationService service;
     @MockitoBean RecoveryRateLimiter rateLimiter;
     @MockitoBean RecoveryRequestLimiter requestLimiter;
@@ -56,7 +59,8 @@ class PasswordResetControllerTest {
         mvc.perform(post("/api/v1/auth/password-reset/request").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"loginId\":\"traveler\",\"email\":\"person@example.com\"}"))
                 .andExpect(status().isNoContent()).andExpect(content().string(""))
-                .andExpect(header().string("Cache-Control", "no-store"));
+                .andExpect(header().string("Cache-Control", "no-store"))
+                .andExpect(header().doesNotExist("Retry-After"));
         verify(service).request("traveler", "person@example.com");
         verify(requestLimiter).acquireRequest("127.0.0.1");
         verify(rateLimiter).acquire("email-login", "traveler", 20, 0);
@@ -64,22 +68,22 @@ class PasswordResetControllerTest {
 
     @Test
     void requestLimitAppliesBeforeAccountLookupAndIgnoresForwardedHeader() throws Exception {
-        doThrow(new CoreException(ErrorType.TOO_MANY_REQUESTS)).when(requestLimiter)
+        doThrow(new RateLimitException(1234)).when(requestLimiter)
                 .acquireRequest("127.0.0.1");
         mvc.perform(post("/api/v1/auth/password-reset/request").contentType(MediaType.APPLICATION_JSON)
                         .header("X-Forwarded-For", "203.0.113.10")
                         .content("{\"loginId\":\"traveler\",\"email\":\"person@example.com\"}"))
-                .andExpect(status().isTooManyRequests());
+                .andExpect(status().isTooManyRequests()).andExpect(header().string("Retry-After", "1234"));
         verifyNoInteractions(service);
     }
 
     @Test
     void loginIdLimitAppliesBeforeCheckingEmail() throws Exception {
-        doThrow(new CoreException(ErrorType.TOO_MANY_REQUESTS)).when(rateLimiter)
+        doThrow(new RateLimitException(3541)).when(rateLimiter)
                 .acquire("email-login", "traveler", 20, 0);
         mvc.perform(post("/api/v1/auth/password-reset/request").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"loginId\":\" traveler \",\"email\":\"different@example.com\"}"))
-                .andExpect(status().isTooManyRequests());
+                .andExpect(status().isTooManyRequests()).andExpect(header().string("Retry-After", "3541"));
         verifyNoInteractions(service);
     }
 
@@ -88,7 +92,47 @@ class PasswordResetControllerTest {
         when(service.request(any(), any())).thenReturn(new PasswordResetMail("person@example.com", "test-token"));
         mvc.perform(post("/api/v1/auth/password-reset/request").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"loginId\":\"traveler\",\"email\":\"person@example.com\"}"))
-                .andExpect(status().isServiceUnavailable());
+                .andExpect(status().isServiceUnavailable()).andExpect(header().doesNotExist("Retry-After"));
+    }
+
+    @Test
+    void accountCooldownReturnsItsActualRemainingSeconds() throws Exception {
+        when(service.request("traveler", "person@example.com")).thenThrow(new RateLimitException(23));
+        mvc.perform(post("/api/v1/auth/password-reset/request").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"loginId\":\"traveler\",\"email\":\"person@example.com\"}"))
+                .andExpect(status().isTooManyRequests()).andExpect(header().string("Retry-After", "23"))
+                .andExpect(jsonPath("$.message").value("요청이 많습니다. 23초 후 다시 시도해 주세요."));
+    }
+
+    @Test
+    void allowedFrontendOriginCanReadRetryAfterButOtherOriginsRemainBlocked() throws Exception {
+        when(service.request("traveler", "person@example.com")).thenThrow(new RateLimitException(23));
+        mvc.perform(post("/api/v1/auth/password-reset/request").contentType(MediaType.APPLICATION_JSON)
+                        .header("Origin", frontendBaseUrl)
+                        .content("{\"loginId\":\"traveler\",\"email\":\"person@example.com\"}"))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(header().string("Retry-After", "23"))
+                .andExpect(header().string("Access-Control-Allow-Origin", frontendBaseUrl))
+                .andExpect(header().string("Access-Control-Expose-Headers", "Retry-After"));
+
+        clearInvocations(service);
+        mvc.perform(post("/api/v1/auth/password-reset/request").contentType(MediaType.APPLICATION_JSON)
+                        .header("Origin", "https://untrusted.example")
+                        .content("{\"loginId\":\"traveler\",\"email\":\"person@example.com\"}"))
+                .andExpect(status().isForbidden())
+                .andExpect(header().doesNotExist("Access-Control-Allow-Origin"))
+                .andExpect(header().doesNotExist("Retry-After"));
+        verifyNoInteractions(service);
+    }
+
+    @Test
+    void confirmationRateLimitReturnsRetryTimeBeforeConsumingAnyToken() throws Exception {
+        doThrow(new RateLimitException(1800)).when(requestLimiter).acquireConfirmation("127.0.0.1");
+        mvc.perform(post("/api/v1/auth/password-reset/confirm").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"token\":\"example\",\"password\":\"Newpass123\"}"))
+                .andExpect(status().isTooManyRequests()).andExpect(header().string("Retry-After", "1800"))
+                .andExpect(header().doesNotExist("Set-Cookie"));
+        verifyNoInteractions(service);
     }
 
     @Test
@@ -97,6 +141,7 @@ class PasswordResetControllerTest {
         mvc.perform(post("/api/v1/auth/password-reset/request").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"loginId\":\"traveler\",\"email\":\"person@example.com\"}"))
                 .andExpect(status().isBadRequest())
+                .andExpect(header().doesNotExist("Retry-After"))
                 .andExpect(jsonPath("$.message").value("아이디 또는 이메일이 일치하지 않습니다."));
     }
 

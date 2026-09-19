@@ -1,3 +1,5 @@
+import { recoveryRetryAfter, recoveryWaitMessage } from "@/lib/recovery-retry";
+
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "");
 
 export const idRecoveryUnavailableMessage = "현재 아이디 안내 메일을 보낼 수 없습니다. 잠시 후 다시 시도해 주세요.";
@@ -29,8 +31,8 @@ export async function requestIdRecovery(payload: { email: string }): Promise<voi
   const body = (await response.json().catch(() => null)) as { code?: string; message?: string } | null;
   if (body?.code === "RECOVERY_EMAIL_MISMATCH") throw new IdRecoveryError(idRecoveryEmailMismatchMessage);
   if (response.status === 429) {
-    const retryAfter = Number(response.headers?.get("Retry-After"));
-    throw new IdRecoveryError("요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.", Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter : 60);
+    const retryAfter = recoveryRetryAfter(response.headers);
+    throw new IdRecoveryError(recoveryWaitMessage(retryAfter), retryAfter);
   }
   throw new IdRecoveryError(response.status >= 500 || response.ok ? idRecoveryUnavailableMessage : body?.message || idRecoveryUnavailableMessage);
 }

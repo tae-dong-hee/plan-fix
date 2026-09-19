@@ -57,10 +57,31 @@ test.each([
   });
 });
 
-test("요청 제한 오류에는 다시 시도할 수 있는 안내를 제공한다", async () => {
-  global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 429, json: async () => null });
+test.each([
+  ["90", 90, "1분 30초"],
+  ["3600", 3600, "1시간"],
+  [null, 60, "1분"],
+  ["0", 60, "1분"],
+  ["-1", 60, "1분"],
+  ["Infinity", 60, "1분"],
+  ["not-a-number", 60, "1분"],
+  ["1.5", 60, "1분"],
+  ["1e3", 60, "1분"],
+  ["999999999999999999999", 60, "1분"],
+])("429는 서버 대기 시간을 보존하고 잘못된 헤더에는 60초를 적용한다: %s", async (header, retryAfter, wait) => {
+  global.fetch = vi.fn().mockResolvedValue(new Response(JSON.stringify({ message: "internal rate limit details" }), {
+    status: 429, headers: header ? { "Retry-After": String(header) } : {},
+  }));
   const { requestPasswordReset } = await import("./password-reset");
-  await expect(requestPasswordReset({ loginId: "testuser1", email: "user@example.com" })).rejects.toThrow("요청이 너무 많습니다.");
+  await expect(requestPasswordReset({ loginId: "testuser1", email: "user@example.com" })).rejects.toMatchObject({
+    message: `요청이 너무 많습니다. ${wait} 후 다시 시도해 주세요.`, retryAfter, invalidToken: false,
+  });
+});
+
+test.each([400, 503])("다른 오류는 Retry-After가 있어도 발송 제한으로 처리하지 않는다: %s", async (status) => {
+  global.fetch = vi.fn().mockResolvedValue(new Response(JSON.stringify({ message: "요청 실패" }), { status, headers: { "Retry-After": "3600" } }));
+  const { requestPasswordReset } = await import("./password-reset");
+  await expect(requestPasswordReset({ loginId: "testuser1", email: "user@example.com" })).rejects.toMatchObject({ retryAfter: 0 });
 });
 
 test("아이디와 이메일 불일치는 지정된 문구로 안내한다", async () => {

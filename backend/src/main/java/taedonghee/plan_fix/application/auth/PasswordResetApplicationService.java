@@ -13,6 +13,7 @@ import taedonghee.plan_fix.infrastructure.auth.PasswordResetMailSender;
 import taedonghee.plan_fix.infrastructure.user.UserCredentialJpaRepository;
 import taedonghee.plan_fix.support.error.CoreException;
 import taedonghee.plan_fix.support.error.ErrorType;
+import taedonghee.plan_fix.support.error.RateLimitException;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -53,8 +54,9 @@ public class PasswordResetApplicationService {
 
         Instant now = Instant.now();
         var reset = resets.findById(user.getId()).orElseGet(() -> new PasswordResetJpaEntity(user.getId()));
-        if (reset.isCoolingDown(now)) {
-            throw new CoreException(ErrorType.TOO_MANY_REQUESTS, "재설정 메일은 60초 후 다시 요청해 주세요.");
+        long retryAfterSeconds = reset.cooldownRemainingSeconds(now);
+        if (retryAfterSeconds > 0) {
+            throw new RateLimitException(retryAfterSeconds);
         }
         String token = issue(reset, now);
         // The synchronous AFTER_COMMIT listener records SMTP acceptance. The HTTP

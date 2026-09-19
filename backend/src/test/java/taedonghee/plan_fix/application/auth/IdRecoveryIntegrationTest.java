@@ -19,6 +19,7 @@ import taedonghee.plan_fix.infrastructure.auth.PasswordResetJpaRepository;
 import taedonghee.plan_fix.infrastructure.security.JwtTokenProvider;
 import taedonghee.plan_fix.support.error.CoreException;
 import taedonghee.plan_fix.support.error.ErrorType;
+import taedonghee.plan_fix.support.error.RateLimitException;
 
 import java.util.List;
 import java.util.Locale;
@@ -47,6 +48,7 @@ class IdRecoveryIntegrationTest {
     @Autowired PasswordEncryptor passwords;
     @Autowired JwtTokenProvider sessions;
     @Autowired RecoveryRateLimitKey keys;
+    @Autowired RecoveryRateLimiter limits;
     @Autowired JdbcTemplate jdbc;
     @Autowired PlatformTransactionManager transactions;
     @Autowired ApplicationEvents events;
@@ -151,17 +153,77 @@ class IdRecoveryIntegrationTest {
     @Test
     void normalizationCannotBypassCooldownOrFivePerHourLimit() {
         service.request(email).requireAccepted();
-        assertError(() -> service.request(" " + email.toUpperCase(Locale.ROOT) + " "), ErrorType.TOO_MANY_REQUESTS);
+        assertThatThrownBy(() -> service.request(" " + email.toUpperCase(Locale.ROOT) + " "))
+                .isInstanceOfSatisfying(RateLimitException.class, e -> assertThat(e.getRetryAfterSeconds()).isBetween(58L, 60L));
         for (int count = 2; count <= 5; count++) {
             allowResend(email);
             service.request(email).requireAccepted();
         }
         allowResend(email);
-        assertError(() -> service.request(email), ErrorType.TOO_MANY_REQUESTS);
+        assertThatThrownBy(() -> service.request(email))
+                .isInstanceOfSatisfying(RateLimitException.class, e -> assertThat(e.getRetryAfterSeconds()).isBetween(3590L, 3600L));
         verify(mail, times(5)).send(any(SimpleMailMessage.class));
+        assertThat(requestCount(bucket(email))).isEqualTo(5);
         jdbc.update("update account_recovery_rate_limits set window_started_at = now() - interval '3601 seconds' where bucket_key = ?", bucket(email));
         service.request(email).requireAccepted();
         verify(mail, times(6)).send(any(SimpleMailMessage.class));
+    }
+
+    @Test
+    void twentyAttemptLimitRetainsItsWindowOnRejectionAndResetsAfterTheDatabaseBoundary() {
+        String bucket = keys.hash("rate-email-login", loginId);
+        for (int attempt = 0; attempt < 20; attempt++) limits.acquire("email-login", loginId, 20, 0);
+        var before = jdbc.queryForMap("select window_started_at, last_requested_at from account_recovery_rate_limits where bucket_key = ?", bucket);
+
+        for (int attempt = 0; attempt < 2; attempt++) {
+            assertThatThrownBy(() -> limits.acquire("email-login", loginId, 20, 0))
+                    .isInstanceOfSatisfying(RateLimitException.class, e -> assertThat(e.getRetryAfterSeconds()).isBetween(3590L, 3600L));
+        }
+        assertThat(requestCount(bucket)).isEqualTo(20);
+        assertThat(jdbc.queryForMap("select window_started_at, last_requested_at from account_recovery_rate_limits where bucket_key = ?", bucket)).isEqualTo(before);
+
+        jdbc.update("update account_recovery_rate_limits set window_started_at = now() - interval '3600 seconds' where bucket_key = ?", bucket);
+        limits.acquire("email-login", loginId, 20, 0);
+        assertThat(requestCount(bucket)).isEqualTo(1);
+    }
+
+    @Test
+    void concurrentRequestsAtTheFinalSlotAcceptExactlyOneAndExposeRemainingTime() throws Exception {
+        String domain = "retry-concurrent";
+        String bucket = keys.hash("rate-" + domain, loginId);
+        limits.acquire(domain, loginId, 2, 0);
+        var ready = new CountDownLatch(4);
+        var go = new CountDownLatch(1);
+        try (var executor = Executors.newFixedThreadPool(4)) {
+            var futures = new java.util.ArrayList<Future<Boolean>>();
+            for (int request = 0; request < 4; request++) futures.add(executor.submit(() -> {
+                ready.countDown();
+                if (!go.await(5, TimeUnit.SECONDS)) throw new AssertionError("start timeout");
+                try { limits.acquire(domain, loginId, 2, 0); return true; }
+                catch (RateLimitException rejected) {
+                    assertThat(rejected.getRetryAfterSeconds()).isBetween(3590L, 3600L);
+                    return false;
+                }
+            }));
+            assertThat(ready.await(5, TimeUnit.SECONDS)).isTrue();
+            go.countDown();
+            var accepted = new java.util.ArrayList<Boolean>();
+            for (var future : futures) accepted.add(future.get(10, TimeUnit.SECONDS));
+            assertThat(accepted).containsExactlyInAnyOrder(true, false, false, false);
+        }
+        assertThat(requestCount(bucket)).isEqualTo(2);
+    }
+
+    @Test
+    void failedBusinessTransactionCannotRefundTheAttemptOrLoseItsRetryTime() {
+        assertThatThrownBy(() -> new TransactionTemplate(transactions).executeWithoutResult(status -> {
+            limits.acquire("retry-rollback", loginId, 1, 0);
+            throw new CoreException(ErrorType.RECOVERY_ACCOUNT_MISMATCH);
+        })).isInstanceOf(CoreException.class);
+
+        assertThat(requestCount(keys.hash("rate-retry-rollback", loginId))).isEqualTo(1);
+        assertThatThrownBy(() -> limits.acquire("retry-rollback", loginId, 1, 0))
+                .isInstanceOfSatisfying(RateLimitException.class, e -> assertThat(e.getRetryAfterSeconds()).isBetween(3590L, 3600L));
     }
 
     @Test
@@ -258,6 +320,9 @@ class IdRecoveryIntegrationTest {
 
     private static String newLogin() { return "find" + UUID.randomUUID().toString().replace("-", "").substring(0, 10); }
     private String bucket(String address) { return keys.hash("rate-id-recovery-email", address.toLowerCase(Locale.ROOT)); }
+    private int requestCount(String bucket) {
+        return jdbc.queryForObject("select request_count from account_recovery_rate_limits where bucket_key = ?", Integer.class, bucket);
+    }
     private void allowResend(String address) {
         jdbc.update("update account_recovery_rate_limits set last_requested_at = now() - interval '61 seconds' where bucket_key = ?", bucket(address));
     }

@@ -8,6 +8,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.Duration;
 import java.time.Instant;
 
 /** One row per local account; keep the session version after consuming the token. */
@@ -33,7 +34,13 @@ public class PasswordResetJpaEntity {
     }
 
     public boolean isCoolingDown(Instant now) {
-        return requestedAt != null && now.isBefore(requestedAt.plusSeconds(60));
+        return cooldownRemainingSeconds(now) > 0;
+    }
+
+    public long cooldownRemainingSeconds(Instant now) {
+        if (requestedAt == null || !now.isBefore(requestedAt.plusSeconds(60))) return 0;
+        Duration remaining = Duration.between(now, requestedAt.plusSeconds(60));
+        return remaining.getSeconds() + (remaining.getNano() > 0 ? 1 : 0);
     }
 
     public void issue(String tokenHash, Instant now) {

@@ -21,6 +21,7 @@ import taedonghee.plan_fix.infrastructure.security.JwtTokenProvider;
 import taedonghee.plan_fix.infrastructure.user.UserCredentialJpaRepository;
 import taedonghee.plan_fix.support.error.CoreException;
 import taedonghee.plan_fix.support.error.ErrorType;
+import taedonghee.plan_fix.support.error.RateLimitException;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -179,6 +180,24 @@ class PasswordResetIntegrationTest {
         assertThat(second).isNotEqualTo(first);
         assertInvalid(() -> service.confirm(first, "Newpass456"));
         service.confirm(second, "Newpass456");
+    }
+
+    @Test
+    void cooldownReportsTimeSinceTheStoredRequestAndRejectedAttemptsPreserveTheLink() {
+        String token = requestToken();
+        jdbc.update("update password_reset_tokens set requested_at = now() - interval '29 seconds' where user_id = ?", user.getUserId());
+        var before = resets.findById(user.getUserId()).orElseThrow();
+
+        for (int attempt = 0; attempt < 2; attempt++) {
+            assertThatThrownBy(() -> service.request(loginId, email)).isInstanceOfSatisfying(RateLimitException.class,
+                    e -> assertThat(e.getRetryAfterSeconds()).isBetween(29L, 31L));
+        }
+
+        var after = resets.findById(user.getUserId()).orElseThrow();
+        assertThat(after.getRequestedAt()).isEqualTo(before.getRequestedAt());
+        assertThat(after.getTokenHash()).isEqualTo(before.getTokenHash());
+        verify(mail, times(1)).send(any(SimpleMailMessage.class));
+        service.confirm(token, "Newpass456");
     }
 
     @Test
