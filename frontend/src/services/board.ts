@@ -93,10 +93,20 @@ export type PopularBoardsParams = {
   offset?: number;
 };
 
+export type BoardSortType = "popular" | "latest";
+
+export type BoardListParams = PopularBoardsParams & {
+  sort?: BoardSortType;
+};
+
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "");
 
+export function fetchPopularBoards(params: PopularBoardsParams = {}): Promise<BoardListResult> {
+  return fetchBoards({ ...params, sort: "popular" });
+}
+
 /** 공개 API라 인증 쿠키가 필요 없다. 백엔드 미설정 환경(예: 테스트)에서는 빈 목록으로 조용히 넘어간다. */
-export async function fetchPopularBoards(params: PopularBoardsParams = {}): Promise<BoardListResult> {
+export async function fetchBoards(params: BoardListParams = {}): Promise<BoardListResult> {
   if (!apiBaseUrl) {
     return {
       items: [],
@@ -106,7 +116,7 @@ export async function fetchPopularBoards(params: PopularBoardsParams = {}): Prom
     };
   }
 
-  const query = new URLSearchParams({ sort: "popular", size: String(params.size ?? 6) });
+  const query = new URLSearchParams({ sort: params.sort ?? "popular", size: String(params.size ?? 6) });
   if (params.offset !== undefined) {
     query.set("offset", String(params.offset));
   }

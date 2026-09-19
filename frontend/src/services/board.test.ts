@@ -1,5 +1,72 @@
 import { setApiBaseUrl } from "@/test-utils/env";
 
+describe("fetchBoards", () => {
+  const originalApiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+  const originalFetch = global.fetch;
+
+  afterEach(() => {
+    setApiBaseUrl(originalApiBaseUrl);
+    global.fetch = originalFetch;
+    vi.resetModules();
+  });
+
+  test.each(["popular", "latest"] as const)("%s 정렬과 페이지 범위를 서버에 전달하고 응답 순서를 유지한다", async (sort) => {
+    setApiBaseUrl("http://localhost:8080/api/v1/");
+    const result = {
+      items: [
+        { boardId: 201, title: "첫 번째 이야기", thumbnail: null, userId: 1, likeCount: 1, viewCount: 20, commentCount: 0, createdAt: "2026-09-19T10:00:00Z" },
+        { boardId: 101, title: "두 번째 이야기", thumbnail: null, userId: 2, likeCount: 50, viewCount: 100, commentCount: 5, createdAt: "2026-09-18T10:00:00Z" },
+      ],
+      offset: 12,
+      size: 6,
+      totalCount: 30,
+    };
+    const fetchSpy = vi.fn().mockResolvedValue({ ok: true, json: async () => result });
+    global.fetch = fetchSpy as unknown as typeof fetch;
+    vi.resetModules();
+    const { fetchBoards } = await import("./board");
+
+    expect(await fetchBoards({ sort, size: 6, offset: 12 })).toEqual(result);
+
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    const calledUrl = new URL(fetchSpy.mock.calls[0][0] as string);
+    expect(calledUrl.origin + calledUrl.pathname).toBe("http://localhost:8080/api/v1/boards");
+    expect(calledUrl.searchParams.get("sort")).toBe(sort);
+    expect(calledUrl.searchParams.get("size")).toBe("6");
+    expect(calledUrl.searchParams.get("offset")).toBe("12");
+  });
+
+  test("정렬을 생략하면 인기순으로 여섯 개를 요청한다", async () => {
+    setApiBaseUrl("http://localhost:8080/api/v1");
+    const fetchSpy = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ items: [], offset: 0, size: 6, totalCount: 0 }),
+    });
+    global.fetch = fetchSpy as unknown as typeof fetch;
+    vi.resetModules();
+    const { fetchBoards } = await import("./board");
+
+    await fetchBoards();
+
+    const calledUrl = new URL(fetchSpy.mock.calls[0][0] as string);
+    expect(calledUrl.searchParams.get("sort")).toBe("popular");
+    expect(calledUrl.searchParams.get("size")).toBe("6");
+  });
+
+  test("API 주소가 없으면 최신순도 요청한 페이지 범위의 빈 목록을 반환한다", async () => {
+    setApiBaseUrl(undefined);
+    const fetchSpy = vi.fn();
+    global.fetch = fetchSpy as unknown as typeof fetch;
+    vi.resetModules();
+    const { fetchBoards } = await import("./board");
+
+    expect(await fetchBoards({ sort: "latest", offset: 12, size: 3 })).toEqual({
+      items: [], offset: 12, size: 3, totalCount: 0,
+    });
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+});
+
 describe("fetchPopularBoards", () => {
   const originalApiBaseUrl = import.meta.env.VITE_API_BASE_URL;
   const originalFetch = global.fetch;

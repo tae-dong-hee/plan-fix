@@ -5,7 +5,7 @@ import { Link, MemoryRouter, Route, Routes, useLocation } from "react-router-dom
 
 import MainPage from "@/pages/main-page";
 import { signOut } from "@/services/auth";
-import { fetchPopularBoards, likeBoard, unlikeBoard, type BoardDetail, type BoardItem, type BoardLikeState } from "@/services/board";
+import { fetchBoards, likeBoard, unlikeBoard, type BoardDetail, type BoardItem, type BoardLikeState } from "@/services/board";
 import { fetchPublicCourses, likeCourse, unlikeCourse, type CourseResponse, type PublicCourseItem } from "@/services/course";
 import {
   fetchPopularSpots,
@@ -37,7 +37,7 @@ const mockedFetchPublicCourses = vi.mocked(fetchPublicCourses);
 const mockedFetchLikedCourses = vi.mocked(fetchLikedCourses);
 const mockedLikeCourse = vi.mocked(likeCourse);
 const mockedUnlikeCourse = vi.mocked(unlikeCourse);
-const mockedFetchPopularBoards = fetchPopularBoards as MockedFunction<typeof fetchPopularBoards>;
+const mockedFetchBoards = fetchBoards as MockedFunction<typeof fetchBoards>;
 const mockedFetchLikedBoards = vi.mocked(fetchLikedBoards);
 const mockedLikeBoard = vi.mocked(likeBoard);
 const mockedUnlikeBoard = vi.mocked(unlikeBoard);
@@ -124,6 +124,7 @@ function deferred<T>() {
 }
 
 beforeEach(() => {
+  mockedFetchBoards.mockReset().mockResolvedValue({ items: [], offset: 0, size: 6, totalCount: 0 });
   mockedFetchPublicCourses.mockReset().mockResolvedValue({ items: [], offset: 0, size: 20, totalCount: 0 });
   mockedFetchLikedCourses.mockReset().mockResolvedValue([]);
   mockedFetchLikedBoards.mockReset().mockResolvedValue([]);
@@ -138,7 +139,7 @@ describe("MainPage public course carousel", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockedFetchPopularSpots.mockResolvedValue(emptySpotResult);
-    mockedFetchPopularBoards.mockResolvedValue({ items: [], offset: 0, size: 6, totalCount: 0 });
+    mockedFetchBoards.mockResolvedValue({ items: [], offset: 0, size: 6, totalCount: 0 });
     mockedFetch5DayWeather.mockResolvedValue(mockWeatherItems);
   });
 
@@ -414,7 +415,7 @@ describe("MainPage public course carousel", () => {
 describe("MainPage popular spots carousel", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockedFetchPopularBoards.mockResolvedValue({ items: [], offset: 0, size: 6, totalCount: 0 });
+    mockedFetchBoards.mockResolvedValue({ items: [], offset: 0, size: 6, totalCount: 0 });
     mockedFetch5DayWeather.mockResolvedValue(mockWeatherItems);
   });
 
@@ -686,7 +687,7 @@ describe("MainPage travel story likes", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockedFetchPopularSpots.mockResolvedValue(emptySpotResult);
-    mockedFetchPopularBoards.mockResolvedValue(publicBoardResult);
+    mockedFetchBoards.mockResolvedValue(publicBoardResult);
     mockedFetch5DayWeather.mockResolvedValue(mockWeatherItems);
   });
 
@@ -758,7 +759,7 @@ describe("MainPage travel story likes", () => {
     await waitFor(() => expect(button).toBeEnabled());
     expect(button).toHaveAttribute("aria-pressed", "true");
     expect(mockedFetchLikedBoards).toHaveBeenCalledTimes(2);
-    expect(mockedFetchPopularBoards).toHaveBeenCalledTimes(1);
+    expect(mockedFetchBoards).toHaveBeenCalledTimes(1);
     expect(screen.queryByText("이야기 좋아요 상태를 불러오지 못했습니다.")).not.toBeInTheDocument();
     fireEvent.click(button);
     await waitFor(() => expect(button).toHaveAttribute("aria-pressed", "false"));
@@ -811,7 +812,7 @@ describe("MainPage travel story likes", () => {
   });
 });
 
-describe("MainPage popular boards carousel", () => {
+describe("MainPage travel story sorting and carousel", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockedFetchPopularSpots.mockResolvedValue({ items: [], offset: 0, size: 6, totalCount: 0 });
@@ -819,7 +820,7 @@ describe("MainPage popular boards carousel", () => {
   });
 
   test("fetches popular boards with size 6 on initial load and renders cards", async () => {
-    mockedFetchPopularBoards.mockResolvedValue({
+    mockedFetchBoards.mockResolvedValue({
       items: [
         {
           boardId: 101,
@@ -849,7 +850,7 @@ describe("MainPage popular boards carousel", () => {
 
     renderMainPage();
 
-    expect(mockedFetchPopularBoards).toHaveBeenCalledWith({ size: 6 });
+    expect(mockedFetchBoards).toHaveBeenCalledWith({ sort: "popular", size: 6 });
 
     expect(await screen.findByText("강릉 카페 투어 추천")).toBeInTheDocument();
     expect(screen.getByText("속초 1박 2일 코스")).toBeInTheDocument();
@@ -864,16 +865,168 @@ describe("MainPage popular boards carousel", () => {
     expect(link2).toHaveAttribute("href", "/boards/102");
   });
 
-  test("shows empty message when fetch boards fails or returns empty list", async () => {
-    mockedFetchPopularBoards.mockResolvedValue({ items: [], offset: 0, size: 6, totalCount: 0 });
+  test("shows empty message when boards returns an empty list", async () => {
+    mockedFetchBoards.mockResolvedValue({ items: [], offset: 0, size: 6, totalCount: 0 });
 
     renderMainPage();
 
     expect(await screen.findByText("표시할 게시글이 없어요.")).toBeInTheDocument();
   });
 
+  test("인기순을 기본으로 표시하고 최신순과 인기순을 선택할 때 서버 목록을 새로 조회한다", async () => {
+    const latestRequest = deferred<Awaited<ReturnType<typeof fetchBoards>>>();
+    const latestBoards = [
+      { ...publicBoard, boardId: 201, title: "오늘 떠난 양양 여행", likeCount: 1, createdAt: "2026-09-19T10:00:00Z" },
+      { ...publicBoard, boardId: 202, title: "어제 떠난 춘천 여행", likeCount: 50, createdAt: "2026-09-18T10:00:00Z" },
+    ];
+    mockedFetchBoards
+      .mockResolvedValueOnce(publicBoardResult)
+      .mockReturnValueOnce(latestRequest.promise)
+      .mockResolvedValueOnce(publicBoardResult);
+    renderMainPage();
+    const stories = screen.getByRole("region", { name: "여행 이야기" });
+    const sorting = within(stories).getByRole("group", { name: "여행 이야기 정렬" });
+    const popularButton = within(sorting).getByRole("button", { name: "인기순" });
+    const latestButton = within(sorting).getByRole("button", { name: "최신순" });
+    expect(popularButton).toHaveAttribute("aria-pressed", "true");
+    expect(latestButton).toHaveAttribute("aria-pressed", "false");
+    await within(stories).findByRole("heading", { name: publicBoard.title });
+
+    fireEvent.click(latestButton);
+    expect(mockedFetchBoards).toHaveBeenNthCalledWith(2, { sort: "latest", size: 6 });
+    expect(latestButton).toHaveAttribute("aria-pressed", "true");
+    expect(popularButton).toHaveAttribute("aria-pressed", "false");
+    expect(within(stories).getByRole("status")).toHaveTextContent("여행 이야기를 불러오는 중...");
+    expect(within(stories).queryByRole("heading", { name: publicBoard.title })).not.toBeInTheDocument();
+
+    await act(async () => latestRequest.resolve({ ...publicBoardResult, items: latestBoards, totalCount: 2 }));
+    expect(within(stories).getAllByRole("heading", { level: 3 }).map((heading) => heading.textContent)).toEqual(
+      latestBoards.map((board) => board.title),
+    );
+    expect(within(stories).queryByRole("status")).not.toBeInTheDocument();
+
+    fireEvent.click(popularButton);
+    expect(await within(stories).findByRole("heading", { name: publicBoard.title })).toBeInTheDocument();
+    expect(within(stories).queryByText(latestBoards[0].title)).not.toBeInTheDocument();
+    expect(mockedFetchBoards).toHaveBeenNthCalledWith(3, { sort: "popular", size: 6 });
+    expect(popularButton).toHaveAttribute("aria-pressed", "true");
+    expect(latestButton).toHaveAttribute("aria-pressed", "false");
+    expect(mockedFetchPublicCourses).toHaveBeenCalledTimes(1);
+    expect(mockedFetchPopularSpots).toHaveBeenCalledTimes(1);
+  });
+
+  test("정렬을 바꾼 뒤 늦게 도착한 이전 정렬 응답은 현재 목록을 덮어쓰지 않는다", async () => {
+    const popularRequest = deferred<Awaited<ReturnType<typeof fetchBoards>>>();
+    const latestBoard = { ...publicBoard, boardId: 201, title: "방금 올린 속초 여행 이야기" };
+    mockedFetchBoards
+      .mockReturnValueOnce(popularRequest.promise)
+      .mockResolvedValueOnce({ ...publicBoardResult, items: [latestBoard] });
+    renderMainPage();
+    const sorting = screen.getByRole("group", { name: "여행 이야기 정렬" });
+
+    fireEvent.click(within(sorting).getByRole("button", { name: "최신순" }));
+    await screen.findByRole("heading", { name: latestBoard.title });
+    await act(async () => popularRequest.resolve(publicBoardResult));
+
+    expect(screen.getByRole("heading", { name: latestBoard.title })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: publicBoard.title })).not.toBeInTheDocument();
+    expect(within(sorting).getByRole("button", { name: "최신순" })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  test("정렬을 바꿔도 방금 누른 좋아요를 유지하고 위시리스트를 다시 조회하지 않는다", async () => {
+    mockedFetchBoards.mockResolvedValue(publicBoardResult);
+    renderMainPage();
+    const likeButton = await screen.findByRole("button", { name: `${publicBoard.title} 좋아요` });
+    await waitFor(() => expect(likeButton).toBeEnabled());
+    fireEvent.click(likeButton);
+    await waitFor(() => expect(likeButton).toHaveAttribute("aria-pressed", "true"));
+    await waitFor(() => expect(likeButton).toBeEnabled());
+
+    const sorting = screen.getByRole("group", { name: "여행 이야기 정렬" });
+    for (const sort of ["최신순", "인기순"]) {
+      fireEvent.click(within(sorting).getByRole("button", { name: sort }));
+      const button = await screen.findByRole("button", { name: `${publicBoard.title} 좋아요` });
+      expect(button).toHaveAttribute("aria-pressed", "true");
+      expect(button).toBeEnabled();
+    }
+
+    expect(mockedFetchLikedBoards).toHaveBeenCalledTimes(1);
+    expect(mockedFetchBoards).toHaveBeenCalledTimes(3);
+    fireEvent.click(screen.getByRole("button", { name: `${publicBoard.title} 좋아요` }));
+    await waitFor(() => expect(mockedUnlikeBoard).toHaveBeenCalledExactlyOnceWith(publicBoard.boardId));
+    expect(mockedLikeBoard).toHaveBeenCalledExactlyOnceWith(publicBoard.boardId);
+  });
+
+  test("최신순 조회 실패를 빈 목록과 구분하고 재시도할 때 선택한 정렬을 유지한다", async () => {
+    const latestBoard = { ...publicBoard, boardId: 201, title: "새로 올라온 여행 이야기" };
+    mockedFetchBoards
+      .mockResolvedValueOnce(publicBoardResult)
+      .mockRejectedValueOnce(new Error("Network failed"))
+      .mockResolvedValueOnce({ ...publicBoardResult, items: [latestBoard] });
+    renderMainPage();
+    await screen.findByRole("heading", { name: publicBoard.title });
+    const sorting = screen.getByRole("group", { name: "여행 이야기 정렬" });
+
+    fireEvent.click(within(sorting).getByRole("button", { name: "최신순" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("여행 이야기를 불러오지 못했습니다. 다시 시도해 주세요.");
+    expect(screen.queryByText("표시할 게시글이 없어요.")).not.toBeInTheDocument();
+    expect(within(sorting).getByRole("button", { name: "최신순" })).toHaveAttribute("aria-pressed", "true");
+
+    fireEvent.click(screen.getByRole("button", { name: "이야기 다시 불러오기" }));
+    expect(await screen.findByRole("heading", { name: latestBoard.title })).toBeInTheDocument();
+    expect(mockedFetchBoards).toHaveBeenNthCalledWith(3, { sort: "latest", size: 6 });
+    expect(mockedFetchLikedBoards).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(within(sorting).getByRole("button", { name: "최신순" })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  test("정렬을 불러오는 동안 완료된 좋아요 개수를 늦게 도착한 목록 응답이 되돌리지 않는다", async () => {
+    const likeRequest = deferred<BoardLikeState>();
+    const latestRequest = deferred<Awaited<ReturnType<typeof fetchBoards>>>();
+    mockedLikeBoard.mockReturnValueOnce(likeRequest.promise);
+    mockedFetchBoards.mockResolvedValueOnce(publicBoardResult).mockReturnValueOnce(latestRequest.promise);
+    renderMainPage();
+    const likeButton = await screen.findByRole("button", { name: `${publicBoard.title} 좋아요` });
+    await waitFor(() => expect(likeButton).toBeEnabled());
+    fireEvent.click(likeButton);
+    expect(likeButton).toBeDisabled();
+
+    fireEvent.click(within(screen.getByRole("group", { name: "여행 이야기 정렬" })).getByRole("button", { name: "최신순" }));
+    await act(async () => likeRequest.resolve({ liked: true, likeCount: 20 }));
+    await act(async () => latestRequest.resolve(publicBoardResult));
+
+    const sortedLikeButton = screen.getByRole("button", { name: `${publicBoard.title} 좋아요` });
+    expect(sortedLikeButton).toHaveAttribute("aria-pressed", "true");
+    expect(sortedLikeButton).toBeEnabled();
+    expect(within(sortedLikeButton).getByText("20")).toBeInTheDocument();
+    expect(within(sortedLikeButton).queryByText("12")).not.toBeInTheDocument();
+    expect(mockedFetchLikedBoards).toHaveBeenCalledTimes(1);
+  });
+
+  test("정렬을 바꾸면 새 이야기 목록을 캐러셀의 처음부터 보여준다", async () => {
+    const latestRequest = deferred<Awaited<ReturnType<typeof fetchBoards>>>();
+    const latestBoard = { ...publicBoard, boardId: 201, title: "새로운 강릉 여행 이야기" };
+    mockedFetchBoards.mockResolvedValueOnce(publicBoardResult).mockReturnValueOnce(latestRequest.promise);
+    renderMainPage();
+    const heading = await screen.findByRole("heading", { name: publicBoard.title });
+    const carousel = heading.closest(".overflow-x-auto") as HTMLElement;
+    Object.defineProperties(carousel, {
+      scrollWidth: { value: 1000, configurable: true },
+      clientWidth: { value: 300, configurable: true },
+      scrollLeft: { value: 400, configurable: true, writable: true },
+    });
+    fireEvent.scroll(carousel);
+    expect(await screen.findByRole("button", { name: "이전 게시글 보기" })).toBeInTheDocument();
+
+    fireEvent.click(within(screen.getByRole("group", { name: "여행 이야기 정렬" })).getByRole("button", { name: "최신순" }));
+    await act(async () => latestRequest.resolve({ ...publicBoardResult, items: [latestBoard] }));
+    const nextCarousel = screen.getByRole("heading", { name: latestBoard.title }).closest(".overflow-x-auto") as HTMLElement;
+    expect(nextCarousel.scrollLeft).toBe(0);
+    expect(screen.queryByRole("button", { name: "이전 게시글 보기" })).not.toBeInTheDocument();
+  });
+
   test("board carousel arrow buttons scroll the board carousel left and right based on scroll position", async () => {
-    mockedFetchPopularBoards.mockResolvedValue({
+    mockedFetchBoards.mockResolvedValue({
       items: [
         {
           boardId: 101,
@@ -931,7 +1084,7 @@ describe("MainPage navigation and logout", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockedFetchPopularSpots.mockResolvedValue({ items: [], offset: 0, size: 6, totalCount: 0 });
-    mockedFetchPopularBoards.mockResolvedValue({ items: [], offset: 0, size: 6, totalCount: 0 });
+    mockedFetchBoards.mockResolvedValue({ items: [], offset: 0, size: 6, totalCount: 0 });
     mockedFetch5DayWeather.mockResolvedValue(mockWeatherItems);
   });
 
@@ -1039,7 +1192,7 @@ describe("MainPage weather section", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockedFetchPopularSpots.mockResolvedValue({ items: [], offset: 0, size: 6, totalCount: 0 });
-    mockedFetchPopularBoards.mockResolvedValue({ items: [], offset: 0, size: 6, totalCount: 0 });
+    mockedFetchBoards.mockResolvedValue({ items: [], offset: 0, size: 6, totalCount: 0 });
   });
 
   test("fetches weather for default region (null) on initial mount and displays weather data", async () => {
@@ -1096,7 +1249,7 @@ describe("MainPage travel header", () => {
     vi.clearAllMocks();
     mockedFetchPublicCourses.mockResolvedValue(publicCourseResult);
     mockedFetchPopularSpots.mockReset().mockResolvedValue(emptySpotResult);
-    mockedFetchPopularBoards.mockReset().mockResolvedValue({ items: [], offset: 0, size: 6, totalCount: 0 });
+    mockedFetchBoards.mockReset().mockResolvedValue({ items: [], offset: 0, size: 6, totalCount: 0 });
     mockedFetch5DayWeather.mockReset().mockResolvedValue(mockWeatherItems);
   });
 

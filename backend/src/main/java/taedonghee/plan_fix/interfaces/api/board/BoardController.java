@@ -43,6 +43,7 @@ public class BoardController {
 
     /**
      * 공개 게시글 목록 조회 API
+     * sort=latest는 최신순, sort=popular는 좋아요 많은 순으로 조회한다.
      * 예: GET /api/v1/boards?sort=popular&offset=0&size=20
      */
     @GetMapping
