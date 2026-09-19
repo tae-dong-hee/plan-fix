@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type DragEvent } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   Calendar,
@@ -103,6 +103,18 @@ function formatDisplayDate(dateStr: string): string {
 /** 몇 번째 Day의 몇 번째 장소인지 가리키는 위치. */
 type SpotPosition = { dayIndex: number; spotIndex: number };
 
+function SpotDropIndicator({ edge = "top" }: { edge?: "top" | "bottom" }) {
+  return (
+    <div
+      aria-hidden="true"
+      data-testid="spot-drop-indicator"
+      className={`pointer-events-none absolute inset-x-0 z-10 h-0.5 rounded-full bg-primary ${edge === "top" ? "-top-[7px]" : "-bottom-[7px]"}`}
+    >
+      <span className="absolute -left-1 top-1/2 h-2 w-2 -translate-y-1/2 rounded-full border-2 border-primary bg-background" />
+    </div>
+  );
+}
+
 export default function CourseCreatePage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -186,6 +198,7 @@ export default function CourseCreatePage() {
 
   // 드래그 앤 드롭으로 장소 순서/일차 변경
   const [dragSource, setDragSource] = useState<SpotPosition | null>(null);
+  // spotIndex는 이동 전 목록의 삽입 경계(0부터 장소 수까지)를 가리킨다.
   const [dragTarget, setDragTarget] = useState<SpotPosition | null>(null);
   /** 손잡이를 누른 행만 draggable로 만들어, 메모 입력창에서 텍스트를 끌 때 드래그가 시작되지 않게 한다. */
   const [dragHandleActiveKey, setDragHandleActiveKey] = useState<string | null>(null);
@@ -387,11 +400,13 @@ export default function CourseCreatePage() {
 
   /**
    * 드래그로 장소를 옮긴다. 같은 Day 안의 순서 변경과 다른 Day로의 이동을 함께 처리한다.
-   * 놓은 위치의 인덱스를 그대로 쓰기 때문에, 같은 Day에서 아래로 내리면 그 항목 뒤에,
-   * 위로 올리면 그 항목 앞에 들어간다.
+   * 같은 Day에서 아래로 옮길 때는 원래 장소를 제거하면서 당겨진 삽입 경계를 보정한다.
    */
   const moveSpot = (from: SpotPosition, to: SpotPosition) => {
-    if (from.dayIndex === to.dayIndex && from.spotIndex === to.spotIndex) return;
+    const insertionIndex = to.spotIndex - (
+      from.dayIndex === to.dayIndex && from.spotIndex < to.spotIndex ? 1 : 0
+    );
+    if (from.dayIndex === to.dayIndex && from.spotIndex === insertionIndex) return;
 
     setDays((prev) => {
       const next = prev.map((daySpots) => [...daySpots]);
@@ -404,26 +419,51 @@ export default function CourseCreatePage() {
         return prev;
       }
 
-      const insertAt = Math.min(Math.max(to.spotIndex, 0), next[to.dayIndex].length);
+      const insertAt = Math.min(Math.max(insertionIndex, 0), next[to.dayIndex].length);
       next[to.dayIndex].splice(insertAt, 0, moved);
       return next;
     });
   };
 
-  const handleDragStart = (position: SpotPosition) => {
+  const handleDragStart = (event: DragEvent<HTMLDivElement>, position: SpotPosition) => {
+    if (dragHandleActiveKey !== `${position.dayIndex}-${position.spotIndex}`) {
+      event.preventDefault();
+      return;
+    }
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", days[position.dayIndex][position.spotIndex].title);
     setDragSource(position);
+    setDragTarget(null);
   };
 
-  const handleDragEnterTarget = (position: SpotPosition) => {
-    setDragTarget(position);
+  const getDropPosition = (event: DragEvent<HTMLDivElement>, dayIndex: number): SpotPosition => {
+    const rows = Array.from(event.currentTarget.querySelectorAll<HTMLElement>("[data-course-spot-index]"));
+    const nextRow = rows.find((row) => {
+      const bounds = row.getBoundingClientRect();
+      return event.clientY < bounds.top + bounds.height / 2;
+    });
+    return { dayIndex, spotIndex: nextRow ? Number(nextRow.dataset.courseSpotIndex) : rows.length };
+  };
+
+  const handleDragOverList = (event: DragEvent<HTMLDivElement>, dayIndex: number) => {
+    if (!dragSource) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+    const position = getDropPosition(event, dayIndex);
+    // 원래 자리의 앞뒤 경계는 순서가 바뀌지 않으므로 안내선을 표시하지 않는다.
+    const isUnchanged = dragSource.dayIndex === dayIndex &&
+      (position.spotIndex === dragSource.spotIndex || position.spotIndex === dragSource.spotIndex + 1);
+    const target = isUnchanged ? null : position;
+    setDragTarget((current) =>
+      current?.dayIndex === target?.dayIndex && current?.spotIndex === target?.spotIndex ? current : target,
+    );
   };
 
   const handleDropOn = (position: SpotPosition) => {
     if (dragSource) {
       moveSpot(dragSource, position);
     }
-    setDragSource(null);
-    setDragTarget(null);
+    handleDragEnd();
   };
 
   const handleDragEnd = () => {
@@ -945,126 +985,132 @@ export default function CourseCreatePage() {
 
                 {/* Day 장소 목록 */}
                 <div className="p-4 sm:p-6">
-                  {daySpots.length === 0 ? (
-                    <div
-                      onDragEnter={() => handleDragEnterTarget({ dayIndex, spotIndex: 0 })}
-                      onDragOver={(event) => event.preventDefault()}
-                      onDrop={(event) => {
-                        event.preventDefault();
-                        handleDropOn({ dayIndex, spotIndex: 0 });
-                      }}
-                      className={`flex flex-col items-center justify-center rounded-xl border border-dashed py-8 text-center text-muted-foreground transition-colors ${
-                        dragSource !== null && dragTarget?.dayIndex === dayIndex
-                          ? "border-primary bg-primary/5"
-                          : "border-border"
-                      }`}
-                    >
-                      <Calendar className="h-7 w-7 text-muted-foreground/40" />
-                      <p className="mt-2 text-xs font-medium">
-                        Day {dayNumber}에 담긴 장소가 없습니다.
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() => handleOpenSearchModal(dayIndex)}
-                        className="mt-2.5 text-xs font-semibold text-primary hover:underline"
+                  <div
+                    className="-my-1.5 py-1.5"
+                    onDragEnter={(event) => handleDragOverList(event, dayIndex)}
+                    onDragOver={(event) => handleDragOverList(event, dayIndex)}
+                    onDragLeave={(event) => {
+                      if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+                        setDragTarget((current) => current?.dayIndex === dayIndex ? null : current);
+                      }
+                    }}
+                    onDrop={(event) => {
+                      if (!dragSource) return;
+                      event.preventDefault();
+                      handleDropOn(getDropPosition(event, dayIndex));
+                    }}
+                  >
+                    {daySpots.length === 0 ? (
+                      <div
+                        className={`relative flex flex-col items-center justify-center rounded-xl border border-dashed py-8 text-center text-muted-foreground transition-colors ${
+                          dragSource !== null && dragTarget?.dayIndex === dayIndex
+                            ? "border-primary bg-primary/5"
+                            : "border-border"
+                        }`}
                       >
-                        + 명소 및 맛집 검색하여 추가하기
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {daySpots.map((spot, spotIndex) => {
-                        const rowKey = `${dayIndex}-${spotIndex}`;
-                        const isDragging =
-                          dragSource?.dayIndex === dayIndex && dragSource?.spotIndex === spotIndex;
-                        const isDropTarget =
-                          dragSource !== null &&
-                          dragTarget?.dayIndex === dayIndex &&
-                          dragTarget?.spotIndex === spotIndex &&
-                          !isDragging;
-
-                        return (
-                        <div
-                          key={`${spot.spotId}-${spotIndex}`}
-                          draggable={dragHandleActiveKey === rowKey}
-                          onDragStart={() => handleDragStart({ dayIndex, spotIndex })}
-                          onDragEnter={() => handleDragEnterTarget({ dayIndex, spotIndex })}
-                          onDragOver={(event) => event.preventDefault()}
-                          onDrop={(event) => {
-                            event.preventDefault();
-                            handleDropOn({ dayIndex, spotIndex });
-                          }}
-                          onDragEnd={handleDragEnd}
-                          className={`flex flex-col gap-3 rounded-xl border bg-background p-3.5 shadow-sm transition-all sm:flex-row sm:items-center sm:gap-4 sm:p-4 ${
-                            isDragging ? "opacity-40" : ""
-                          } ${isDropTarget ? "border-primary ring-2 ring-primary/30" : "border-border"}`}
+                        {dragTarget?.dayIndex === dayIndex && <SpotDropIndicator />}
+                        <Calendar className="h-7 w-7 text-muted-foreground/40" />
+                        <p className="mt-2 text-xs font-medium">
+                          Day {dayNumber}에 담긴 장소가 없습니다.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenSearchModal(dayIndex)}
+                          className="mt-2.5 text-xs font-semibold text-primary hover:underline"
                         >
-                          {/* 번호 및 썸네일 */}
-                          <div className="flex items-center gap-3">
-                            {/* 드래그 손잡이 */}
-                            <button
-                              type="button"
-                              aria-label={`${spot.title} 순서 변경 손잡이 (끌어서 이동)`}
-                              title="끌어서 순서를 바꾸거나 다른 Day로 옮길 수 있어요"
-                              onMouseDown={() => setDragHandleActiveKey(rowKey)}
-                              onMouseUp={() => setDragHandleActiveKey(null)}
-                              className="flex h-7 w-6 shrink-0 cursor-grab items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:cursor-grabbing"
+                          + 명소 및 맛집 검색하여 추가하기
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {daySpots.map((spot, spotIndex) => {
+                          const rowKey = `${dayIndex}-${spotIndex}`;
+                          const isDragging =
+                            dragSource?.dayIndex === dayIndex && dragSource?.spotIndex === spotIndex;
+                          const isTargetDay = dragTarget?.dayIndex === dayIndex;
+
+                          return (
+                            <div
+                              key={`${spot.spotId}-${spotIndex}`}
+                              data-course-spot-index={spotIndex}
+                              draggable={dragHandleActiveKey === rowKey}
+                              onDragStart={(event) => handleDragStart(event, { dayIndex, spotIndex })}
+                              onDragEnd={handleDragEnd}
+                              className={`relative flex flex-col gap-3 rounded-xl border border-border bg-background p-3.5 shadow-sm transition-opacity sm:flex-row sm:items-center sm:gap-4 sm:p-4 ${
+                                isDragging ? "opacity-40" : ""
+                              }`}
                             >
-                              <GripVertical className="h-4 w-4" aria-hidden="true" />
-                            </button>
-                            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-[11px] font-bold text-muted-foreground">
-                              {spotIndex + 1}
-                            </span>
-                            <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-muted">
-                              <SpotImage
-                                src={spot.thumbnail}
-                                alt={spot.title}
-                                className="h-full w-full object-cover"
-                              />
-                            </div>
-                          </div>
+                              {isTargetDay && dragTarget.spotIndex === spotIndex && <SpotDropIndicator />}
+                              {isTargetDay && dragTarget.spotIndex === daySpots.length && spotIndex === daySpots.length - 1 && (
+                                <SpotDropIndicator edge="bottom" />
+                              )}
+                              {/* 번호 및 썸네일 */}
+                              <div className="flex items-center gap-3">
+                                {/* 드래그 손잡이 */}
+                                <button
+                                  type="button"
+                                  aria-label={`${spot.title} 순서 변경 손잡이 (끌어서 이동)`}
+                                  title="끌어서 순서를 바꾸거나 다른 Day로 옮길 수 있어요"
+                                  onMouseDown={() => setDragHandleActiveKey(rowKey)}
+                                  onMouseUp={() => setDragHandleActiveKey(null)}
+                                  className="flex h-7 w-6 shrink-0 cursor-grab items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:cursor-grabbing"
+                                >
+                                  <GripVertical className="h-4 w-4" aria-hidden="true" />
+                                </button>
+                                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-[11px] font-bold text-muted-foreground">
+                                  {spotIndex + 1}
+                                </span>
+                                <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-muted">
+                                  <SpotImage
+                                    src={spot.thumbnail}
+                                    alt={spot.title}
+                                    className="h-full w-full object-cover"
+                                  />
+                                </div>
+                              </div>
 
-                          {/* 장소 정보 및 메모 */}
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2">
-                              <span className="truncate text-sm font-bold text-foreground">
-                                {spot.title}
-                              </span>
-                              <span className="shrink-0 rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-                                {spot.category}
-                              </span>
-                            </div>
-                            <input
-                              type="text"
-                              value={spot.memo}
-                              onChange={(e) =>
-                                handleMemoChange(dayIndex, spotIndex, e.target.value)
-                              }
-                              placeholder="메모 입력 (예: 점심 식사, 입장료 5000원)"
-                              className="mt-1.5 w-full rounded-lg border border-input bg-card/40 px-2.5 py-1 text-xs text-foreground placeholder:text-muted-foreground/70 focus:border-primary focus:outline-none"
-                              maxLength={200}
-                            />
-                          </div>
+                              {/* 장소 정보 및 메모 */}
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="truncate text-sm font-bold text-foreground">
+                                    {spot.title}
+                                  </span>
+                                  <span className="shrink-0 rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                                    {spot.category}
+                                  </span>
+                                </div>
+                                <input
+                                  type="text"
+                                  value={spot.memo}
+                                  onChange={(e) =>
+                                    handleMemoChange(dayIndex, spotIndex, e.target.value)
+                                  }
+                                  placeholder="메모 입력 (예: 점심 식사, 입장료 5000원)"
+                                  className="mt-1.5 w-full rounded-lg border border-input bg-card/40 px-2.5 py-1 text-xs text-foreground placeholder:text-muted-foreground/70 focus:border-primary focus:outline-none"
+                                  maxLength={200}
+                                />
+                              </div>
 
-                          {/* 액션 컨트롤 */}
-                          <div className="flex items-center justify-end gap-1 border-t border-border/50 pt-2 sm:border-0 sm:pt-0">
-                            <div className="flex items-center gap-1">
-                              {/* 삭제 */}
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveSpot(dayIndex, spotIndex)}
-                                className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-                                aria-label="장소 삭제"
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </button>
+                              {/* 액션 컨트롤 */}
+                              <div className="flex items-center justify-end gap-1 border-t border-border/50 pt-2 sm:border-0 sm:pt-0">
+                                <div className="flex items-center gap-1">
+                                  {/* 삭제 */}
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveSpot(dayIndex, spotIndex)}
+                                    className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                                    aria-label="장소 삭제"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </button>
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                        </div>
-                        );
-                      })}
-                    </div>
-                  )}
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
 
                   {/* 담은 장소들이 얼마나 흩어져 있는지 지도로 확인한다 */}
                   {daySpots.length > 0 && (

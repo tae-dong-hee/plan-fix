@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, createEvent, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { Mock } from "vitest";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import CourseCreatePage from "./course-create-page";
@@ -59,6 +59,123 @@ describe("CourseCreatePage", () => {
       </MemoryRouter>
     );
   };
+
+  describe("장소 드래그 삽입선", () => {
+    const savedSpotIds = () => JSON.parse(sessionStorage.getItem("planfix:course-draft")!)
+      .days.map((spots: { spotId: number }[]) => spots.map((spot) => spot.spotId));
+
+    const prepareDrag = (sourceIndex = 0, duplicate = false) => {
+      sessionStorage.setItem("planfix:course-draft", JSON.stringify({
+        title: "순서 변경 여행", startDate: "2030-06-01", endDate: "2030-06-03",
+        days: [[1, 2, 3, 4], duplicate ? [1, 5] : [5, 6], []].map((ids) => ids.map((spotId) => ({
+          spotId, title: `장소 ${spotId}`, category: "관광지", thumbnail: null, memo: `메모 ${spotId}`,
+        }))),
+      }));
+      renderPage();
+      const rows = [1, 2, 3].map((day) => Array.from(
+        screen.getByTestId(`day-card-${day}`).querySelectorAll<HTMLElement>("[data-course-spot-index]"),
+      ));
+      rows.forEach((dayRows) => dayRows.forEach((row, index) => {
+        vi.spyOn(row, "getBoundingClientRect").mockReturnValue({
+          top: index * 100, bottom: index * 100 + 88, height: 88,
+          left: 0, right: 800, width: 800, x: 0, y: index * 100, toJSON: () => ({}),
+        });
+      }));
+      const dataTransfer = { effectAllowed: "none", dropEffect: "none", setData: vi.fn() };
+      const source = rows[0][sourceIndex];
+      fireEvent.mouseDown(within(source).getByRole("button", { name: /순서 변경 손잡이/ }));
+      fireEvent.dragStart(source, { dataTransfer });
+      const dispatch = (type: "dragOver" | "drop", target: Element, clientY: number) => {
+        const event = createEvent[type](target, { dataTransfer });
+        Object.defineProperty(event, "clientY", { value: clientY });
+        fireEvent(target, event);
+      };
+      return { rows, source, dispatch, dataTransfer };
+    };
+
+    it.each([
+      { label: "아래 카드의 위쪽", sourceIndex: 0, targetDay: 0, targetIndex: 2, y: 210, boundary: 2, expected: [[2, 1, 3, 4], [5, 6], []] },
+      { label: "아래 카드의 아래쪽", sourceIndex: 0, targetDay: 0, targetIndex: 2, y: 270, boundary: 3, expected: [[2, 3, 1, 4], [5, 6], []] },
+      { label: "위 카드의 위쪽", sourceIndex: 3, targetDay: 0, targetIndex: 1, y: 110, boundary: 1, expected: [[1, 4, 2, 3], [5, 6], []] },
+      { label: "위 카드의 아래쪽", sourceIndex: 3, targetDay: 0, targetIndex: 1, y: 170, boundary: 2, expected: [[1, 2, 4, 3], [5, 6], []] },
+      { label: "목록 맨 앞", sourceIndex: 3, targetDay: 0, targetIndex: 0, y: 10, boundary: 0, expected: [[4, 1, 2, 3], [5, 6], []] },
+      { label: "목록 맨 뒤", sourceIndex: 0, targetDay: 0, targetIndex: 3, y: 370, boundary: 4, expected: [[2, 3, 4, 1], [5, 6], []] },
+      { label: "다른 Day 카드 위쪽", sourceIndex: 0, targetDay: 1, targetIndex: 0, y: 10, boundary: 0, expected: [[2, 3, 4], [1, 5, 6], []] },
+      { label: "다른 Day 카드 아래쪽", sourceIndex: 0, targetDay: 1, targetIndex: 0, y: 70, boundary: 1, expected: [[2, 3, 4], [5, 1, 6], []] },
+      { label: "다른 Day 맨 뒤", sourceIndex: 0, targetDay: 1, targetIndex: 1, y: 170, boundary: 2, expected: [[2, 3, 4], [5, 6, 1], []] },
+    ])("$label의 삽입선 위치에 놓고 순서와 메모를 저장한다", ({ sourceIndex, targetDay, targetIndex, y, boundary, expected }) => {
+      const { rows, dispatch, dataTransfer } = prepareDrag(sourceIndex);
+      // 자식 요소 위에서도 카드 전체의 중앙을 기준으로 위치를 계산한다.
+      const target = within(rows[targetDay][targetIndex]).getByRole("textbox");
+      dispatch("dragOver", target, y);
+      expect(screen.getAllByTestId("spot-drop-indicator")).toHaveLength(1);
+      expect(screen.getByTestId("spot-drop-indicator").parentElement).toBe(rows[targetDay][Math.min(boundary, rows[targetDay].length - 1)]);
+      expect(dataTransfer.dropEffect).toBe("move");
+      dispatch("drop", target, y);
+      expect(savedSpotIds()).toEqual(expected);
+      expect(screen.queryByTestId("spot-drop-indicator")).not.toBeInTheDocument();
+      expect(screen.getByDisplayValue(`메모 ${sourceIndex + 1}`)).toBeInTheDocument();
+    });
+
+    it("같은 카드 안에서 위아래로 움직이면 삽입선도 바뀌고 카드 사이 간격에도 놓을 수 있다", () => {
+      const { rows, dispatch } = prepareDrag();
+      dispatch("dragOver", rows[0][2], 210);
+      expect(screen.getByTestId("spot-drop-indicator").parentElement).toBe(rows[0][2]);
+      dispatch("dragOver", rows[0][2], 270);
+      expect(screen.getByTestId("spot-drop-indicator").parentElement).toBe(rows[0][3]);
+      const gap = rows[0][2].parentElement!;
+      dispatch("dragOver", gap, 195);
+      expect(screen.getByTestId("spot-drop-indicator").parentElement).toBe(rows[0][2]);
+      dispatch("drop", gap, 195);
+      expect(savedSpotIds()[0]).toEqual([2, 1, 3, 4]);
+    });
+
+    it("빈 Day에도 삽입선을 표시하고 장소를 옮긴다", () => {
+      const { dispatch } = prepareDrag();
+      const emptyDay = screen.getByText("Day 3에 담긴 장소가 없습니다.");
+      dispatch("dragOver", emptyDay, 0);
+      expect(within(screen.getByTestId("day-card-3")).getByTestId("spot-drop-indicator")).toBeInTheDocument();
+      dispatch("drop", emptyDay, 0);
+      expect(savedSpotIds()).toEqual([[2, 3, 4], [5, 6], [1]]);
+    });
+
+    it("원래 자리에는 선을 표시하지 않고 목록 이탈과 드래그 취소 시 선을 지운다", () => {
+      const { rows, source, dispatch } = prepareDrag();
+      for (const y of [10, 70]) {
+        dispatch("dragOver", source, y);
+        expect(screen.queryByTestId("spot-drop-indicator")).not.toBeInTheDocument();
+      }
+      dispatch("dragOver", rows[0][2], 210);
+      const list = rows[0][2].parentElement!.parentElement!;
+      const leave = (relatedTarget: Element) => {
+        const event = createEvent.dragLeave(list);
+        Object.defineProperty(event, "relatedTarget", { value: relatedTarget });
+        fireEvent(list, event);
+      };
+      leave(within(rows[0][2]).getByRole("textbox"));
+      expect(screen.getByTestId("spot-drop-indicator")).toBeInTheDocument();
+      leave(document.body);
+      expect(screen.queryByTestId("spot-drop-indicator")).not.toBeInTheDocument();
+      dispatch("dragOver", rows[0][2], 270);
+      fireEvent.dragEnd(source);
+      expect(screen.queryByTestId("spot-drop-indicator")).not.toBeInTheDocument();
+      expect(source).toHaveAttribute("draggable", "false");
+      expect(savedSpotIds()).toEqual([[1, 2, 3, 4], [5, 6], []]);
+      dispatch("dragOver", rows[0][2], 210);
+      expect(screen.queryByTestId("spot-drop-indicator")).not.toBeInTheDocument();
+    });
+
+    it("다른 Day에 같은 장소가 있으면 중복 이동을 막고 삽입선을 지운다", () => {
+      const alert = vi.spyOn(window, "alert").mockImplementation(() => {});
+      const { rows, dispatch } = prepareDrag(0, true);
+      dispatch("dragOver", rows[1][0], 70);
+      dispatch("drop", rows[1][0], 70);
+      expect(alert).toHaveBeenCalledWith("해당 일차에 이미 같은 장소가 추가되어 있습니다.");
+      expect(savedSpotIds()).toEqual([[1, 2, 3, 4], [1, 5], []]);
+      expect(screen.queryByTestId("spot-drop-indicator")).not.toBeInTheDocument();
+      alert.mockRestore();
+    });
+  });
 
   const renderAccommodationEditPage = (initialEntry = "/courses/99/edit", daytrip = false) => {
     vi.mocked(courseService.fetchCourse).mockResolvedValue({
