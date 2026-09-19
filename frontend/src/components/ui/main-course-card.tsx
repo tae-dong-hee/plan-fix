@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 
 import type { PublicCourseItem } from "@/services/course";
 import { getCourseCoverCredit, getCourseCoverImageSrc } from "@/lib/course-cover-images";
-import CourseMetadata, { CourseSummaryBadges } from "@/components/ui/course-metadata";
+import { CourseCardSummary, CourseThemeLine } from "@/components/ui/course-metadata";
 
 type MainCourseCardProps = {
   course: PublicCourseItem;
@@ -26,7 +26,7 @@ export default function MainCourseCard({
   const credit = getCourseCoverCredit(thumbnail);
 
   return (
-    <article className="group/card relative w-[76%] shrink-0 snap-start rounded-[24px] border border-primary/10 bg-background shadow-[0_4px_20px_-10px_hsl(var(--primary)/0.12)] transition-[transform,box-shadow,border-color] duration-300 hover:-translate-y-1 hover:border-primary/20 hover:shadow-[0_16px_32px_-16px_hsl(var(--primary)/0.25)] motion-reduce:transform-none motion-reduce:transition-none sm:w-[46%] lg:w-[calc((100%_-_3.75rem)/4)]">
+    <article className="group/card relative w-[76%] shrink-0 snap-start rounded-[24px] border border-zinc-200/80 bg-white shadow-[0_4px_16px_-10px_rgb(0_0_0/0.12)] transition-[transform,box-shadow,border-color] duration-300 hover:-translate-y-1 hover:border-zinc-300 hover:shadow-[0_14px_28px_-14px_rgb(0_0_0/0.18)] motion-reduce:transform-none motion-reduce:transition-none dark:border-zinc-700 dark:bg-background dark:hover:border-zinc-600 sm:w-[46%] lg:w-[calc((100%_-_3.75rem)/4)]">
       <Link
         to={`/courses/${course.courseId}`}
         className="group block rounded-[23px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-4 focus-visible:ring-offset-background"
@@ -48,12 +48,14 @@ export default function MainCourseCard({
           <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-black/5" />
         </div>
         <div className="p-4 sm:p-5">
-          <h3 className="line-clamp-2 break-keep text-[16px] font-bold leading-snug tracking-tight text-foreground transition-colors group-hover:text-primary motion-reduce:transition-none [overflow-wrap:anywhere]">
+          <h3 title={course.title} className="truncate text-[16px] font-bold leading-6 tracking-tight text-foreground">
             {course.title}
           </h3>
-          <CourseSummaryBadges generatedBy={course.generatedBy} dayCount={course.dayCount} className="mt-3" />
-          <CourseMetadata themes={course.themes} className="mt-2.5" />
-          <div className="mt-4 flex items-center justify-between border-t border-primary/[0.08] pt-3">
+          <CourseCardSummary generatedBy={course.generatedBy} dayCount={course.dayCount} className="mt-2.5" />
+          <div className="mt-2 h-6 min-w-0">
+            <CourseThemeLine themes={course.themes} />
+          </div>
+          <div className="mt-3 flex items-center justify-between border-t border-zinc-100 pt-3 dark:border-zinc-800">
             <p className="flex items-center gap-1.5 text-[12px] font-medium text-muted-foreground">
               <MapPin className="h-3.5 w-3.5 shrink-0 text-primary/65" aria-hidden="true" />
               방문 {course.spotCount}곳

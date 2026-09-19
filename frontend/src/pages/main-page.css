@@ -97,12 +97,13 @@
 .travel-story-card {
   border: 1px solid hsl(var(--border));
   background: hsl(0 0% 100%);
-  box-shadow: 0 4px 18px -10px hsl(var(--primary) / 0.14);
+  box-shadow: 0 4px 18px -10px rgb(0 0 0 / 0.12);
   transition: border-color 200ms, box-shadow 200ms, transform 200ms;
 }
 
 .dark .travel-story-card { background: hsl(var(--muted) / 0.6); }
-.travel-story-card:hover { transform: translateY(-3px); border-color: hsl(var(--primary) / 0.25); box-shadow: 0 10px 24px -12px hsl(var(--primary) / 0.22); }
+.travel-story-card:hover { transform: translateY(-3px); border-color: #d4d4d8; box-shadow: 0 10px 24px -12px rgb(0 0 0 / 0.18); }
+.dark .travel-story-card:hover { border-color: #52525b; }
 
 .travel-story-image-label {
   position: absolute;

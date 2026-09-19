@@ -1,4 +1,4 @@
-import { Coffee, Compass, Landmark, Leaf, Mountain, Route, Sparkles, UtensilsCrossed } from "lucide-react";
+import { CalendarDays, Coffee, Compass, Landmark, Leaf, Mountain, Route, Sparkles, UtensilsCrossed } from "lucide-react";
 
 import type { AiCourseTheme } from "@/services/ai-course";
 import type { CourseGenerationSource } from "@/services/course";
@@ -16,6 +16,59 @@ const themeDetails = {
   ACTIVITY: { label: "액티비티", icon: Mountain },
   CULTURE: { label: "문화·역사", icon: Landmark },
 } satisfies Record<AiCourseTheme, { label: string; icon: typeof Leaf }>;
+
+const compactThemeDetails = {
+  HEALING: { label: "힐링·자연", color: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300" },
+  FOOD: { label: "맛집", color: "bg-orange-50 text-orange-700 dark:bg-orange-950/50 dark:text-orange-300" },
+  CAFE: { label: "카페", color: "bg-amber-50 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300" },
+  ACTIVITY: { label: "액티비티", color: "bg-sky-50 text-sky-700 dark:bg-sky-950/50 dark:text-sky-300" },
+  CULTURE: { label: "문화·역사", color: "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300" },
+} satisfies Record<AiCourseTheme, { label: string; color: string }>;
+
+/** Compact hierarchy for discovery cards; other course views keep their full badges. */
+export function CourseCardSummary({ generatedBy, dayCount, className = "" }: {
+  generatedBy?: CourseGenerationSource | null;
+  dayCount: number;
+  className?: string;
+}) {
+  const isAi = generatedBy === "LLM";
+  const hasSource = isAi || generatedBy === "RULE_BASED";
+  const SourceIcon = isAi ? Sparkles : Compass;
+
+  return (
+    <div className={`flex h-6 min-w-0 items-center gap-2.5 whitespace-nowrap ${className}`}>
+      {hasSource && (
+        <>
+          <span className={`inline-flex h-6 shrink-0 items-center gap-1 rounded-md px-2 text-[11px] font-semibold ${isAi ? "bg-violet-50 text-violet-700 dark:bg-violet-950/50 dark:text-violet-300" : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"}`}>
+            <SourceIcon className="h-3 w-3" aria-hidden="true" />
+            {isAi ? "AI 생성" : "맞춤 추천"}
+          </span>
+          <span className="h-3 w-px shrink-0 bg-zinc-200 dark:bg-zinc-700" aria-hidden="true" />
+        </>
+      )}
+      <span className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-600 dark:text-zinc-300">
+        <CalendarDays className="h-3.5 w-3.5 shrink-0 text-zinc-400" aria-hidden="true" />
+        <span><strong className="font-semibold text-zinc-800 dark:text-zinc-100">{dayCount}일</strong> 일정</span>
+      </span>
+    </div>
+  );
+}
+
+export function CourseThemeLine({ themes, className = "" }: Pick<CourseMetadataProps, "themes" | "className">) {
+  const selectedThemes = [...new Set(themes ?? [])].filter((theme) => Object.prototype.hasOwnProperty.call(themeDetails, theme));
+  if (selectedThemes.length === 0) return null;
+  const description = selectedThemes.map((theme) => themeDetails[theme].label).join(" · ");
+
+  return (
+    <div role="group" aria-label={`선택한 테마: ${description}`} title={description} className={`overflow-hidden text-ellipsis whitespace-nowrap text-[11px] leading-6 ${className}`}>
+      {selectedThemes.map((theme) => (
+        <span key={theme} className={`mr-1 inline-block rounded-md px-1.5 align-middle text-[10.5px] font-medium leading-[22px] last:mr-0 ${compactThemeDetails[theme].color}`}>
+          {compactThemeDetails[theme].label}
+        </span>
+      ))}
+    </div>
+  );
+}
 
 export function CourseGenerationBadge({
   generatedBy,
