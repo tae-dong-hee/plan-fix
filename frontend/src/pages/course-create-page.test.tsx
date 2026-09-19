@@ -26,6 +26,7 @@ describe("CourseCreatePage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     sessionStorage.clear();
+    localStorage.clear();
     (courseService.fetchDayAccommodations as Mock).mockResolvedValue([]);
     (courseService.saveDayAccommodations as Mock).mockResolvedValue(undefined);
     (spotService.searchSpots as Mock).mockResolvedValue({
@@ -53,6 +54,89 @@ describe("CourseCreatePage", () => {
     );
   };
 
+  const renderAccommodationEditPage = () => {
+    vi.mocked(courseService.fetchCourse).mockResolvedValue({
+      courseId: 99,
+      userId: 1,
+      title: "숙소를 추가할 여행",
+      description: null,
+      thumbnail: null,
+      visibility: "PRIVATE",
+      status: "ACTIVE",
+      viewCount: 0,
+      likeCount: 0,
+      startDate: "2026-09-10",
+      endDate: "2026-09-11",
+      days: [{ dayNumber: 1, spots: [] }, { dayNumber: 2, spots: [] }],
+      createdAt: "2026-09-01T00:00:00Z",
+      updatedAt: "2026-09-01T00:00:00Z",
+    });
+    return render(
+      <MemoryRouter initialEntries={["/courses/99/edit"]}>
+        <Routes><Route path="/courses/:courseId/edit" element={<CourseCreatePage />} /></Routes>
+      </MemoryRouter>,
+    );
+  };
+
+  it("수정 화면에서 숙소 조회 후 비어 있는 첫 일차에 안내를 표시하고 숙소 추가로 연결한다", async () => {
+    let resolveAccommodations!: (values: courseService.DayAccommodation[]) => void;
+    vi.mocked(courseService.fetchDayAccommodations).mockReturnValue(new Promise((resolve) => {
+      resolveAccommodations = resolve;
+    }));
+    renderAccommodationEditPage();
+
+    await screen.findByDisplayValue("숙소를 추가할 여행");
+    expect(screen.queryByRole("complementary", { name: "숙소도 일정에 추가해 보세요" })).not.toBeInTheDocument();
+    await act(async () => resolveAccommodations([{ dayNumber: 1, name: "첫날 숙소" }]));
+
+    const dayOne = within(screen.getByTestId("day-card-1"));
+    const dayTwo = within(screen.getByTestId("day-card-2"));
+    expect(dayOne.queryByRole("complementary")).not.toBeInTheDocument();
+    expect(dayTwo.getByRole("complementary", { name: "숙소도 일정에 추가해 보세요" })).toBeVisible();
+    const addAccommodation = dayTwo.getByRole("button", { name: /숙소 추가/ });
+    expect(addAccommodation).toHaveAccessibleDescription("머무를 숙소를 등록하면 지도에서 여행 동선을 함께 확인할 수 있어요.");
+    fireEvent.click(addAccommodation);
+    expect(screen.getByRole("dialog", { name: "Day 2 숙소 추가" })).toBeVisible();
+    expect(screen.queryByRole("complementary")).not.toBeInTheDocument();
+  });
+
+  it("숙소 안내 닫기는 현재 화면에만 적용하고 다시 보지 않기는 수정 화면 재방문에도 유지한다", async () => {
+    const firstVisit = renderAccommodationEditPage();
+    const closeHint = await screen.findByRole("button", { name: "숙소 안내 닫기" });
+    fireEvent.click(closeHint);
+    expect(screen.queryByRole("complementary")).not.toBeInTheDocument();
+    expect(within(screen.getByTestId("day-card-1")).getByRole("button", { name: /숙소 추가/ })).toHaveFocus();
+    expect(localStorage.getItem("planfix:accommodation-hint-dismissed")).toBeNull();
+
+    firstVisit.unmount();
+    const secondVisit = renderAccommodationEditPage();
+    fireEvent.click(await screen.findByRole("button", { name: "다시 보지 않기" }));
+    expect(localStorage.getItem("planfix:accommodation-hint-dismissed")).toBe("true");
+    secondVisit.unmount();
+
+    renderAccommodationEditPage();
+    await screen.findByDisplayValue("숙소를 추가할 여행");
+    expect(screen.queryByRole("complementary")).not.toBeInTheDocument();
+  });
+
+  it("모든 일차에 숙소가 있으면 추가 안내를 표시하지 않는다", async () => {
+    vi.mocked(courseService.fetchDayAccommodations).mockResolvedValue([
+      { dayNumber: 1, name: "첫날 숙소" },
+      { dayNumber: 2, name: "둘째 날 숙소" },
+    ]);
+    renderAccommodationEditPage();
+    await screen.findByText("둘째 날 숙소");
+    expect(screen.getAllByRole("button", { name: /숙소 변경/ })).toHaveLength(2);
+    expect(screen.queryByRole("complementary")).not.toBeInTheDocument();
+  });
+
+  it("숙소 조회가 실패하면 기존 숙소가 없는 것으로 안내하지 않는다", async () => {
+    vi.mocked(courseService.fetchDayAccommodations).mockRejectedValue(new Error("network unavailable"));
+    renderAccommodationEditPage();
+    await screen.findByDisplayValue("숙소를 추가할 여행");
+    expect(screen.queryByRole("complementary")).not.toBeInTheDocument();
+  });
+
   it("초기 렌더링 시 기본 날짜 범위에 맞춰 Day 카드가 렌더링된다", () => {
     renderPage();
     expect(screen.getByText("나만의 여행 코스 만들기")).toBeInTheDocument();
@@ -60,6 +144,7 @@ describe("CourseCreatePage", () => {
     expect(screen.getByTestId("day-card-2")).toBeInTheDocument();
     expect(screen.getByTestId("day-card-3")).toBeInTheDocument();
     expect(screen.queryByTestId("day-theme-1")).not.toBeInTheDocument();
+    expect(screen.queryByRole("complementary", { name: "숙소도 일정에 추가해 보세요" })).not.toBeInTheDocument();
   });
 
   it("제목이 없거나 담긴 장소가 0개이면 저장 버튼이 비활성화된다", () => {
