@@ -8,11 +8,15 @@
 
 - 실행 카탈로그: `backend/src/main/resources/recommended-gangwon-spots.json`
 - [360곳의 출처·분류·주소·좌표·TourAPI contentId](assets/recommended-spot-sources.json)
-- S3: `s3://planfix-bucket-975050156432-ap-northeast-2-an/catalogs/recommended-spots/2026-09-19-v1/`
+- S3: `s3://planfix-bucket-975050156432-ap-northeast-2-an/catalogs/recommended-spots/2026-09-19-v2/`
 - `catalog.json`은 실행 카탈로그와 바이트 단위로 같고, `sources.json`은 검수 메타데이터다. `places/{sigungu}/{contentId}.json`에 장소별 레코드 360개를 저장한다(총 362객체).
 - 객체는 비공개이며 같은 버전의 다른 내용으로 덮어쓰지 않는다. 업로드 후 전 객체를 내려받아 내용·SHA-256·Content-Type을 역검증한다.
 - 서버는 배포에 포함된 동일 카탈로그를 읽는다. S3는 검수 데이터 보관본이며 실행 중 S3 변경으로 추천 목록이 바뀌지 않는다. 변경은 새 카탈로그 버전과 배포로 반영한다.
 - 저장 대상은 **장소 데이터와 기존 사진 URL**이다. 이번 작업에서 외부 이미지 파일을 S3에 복제하지 않았다.
+
+## 휴관·휴장 정보 반영
+
+정선군의 [삼탄아트마인 임시휴관 공지](https://www.jeongseon.go.kr/tour/travelguide/travel_news?articleSeq=301338)와 [가리왕산케이블카 임시휴장 안내](https://www.jeongseon.go.kr/tour/jeongseontour/attractions?contentSeq=254812&mode=read)를 확인해 두 곳을 국립 가리왕산자연휴양림·오장폭포로 교체했다. 지역당 20곳과 기존 54곳 유지는 그대로다. S3 `v1` 저장본은 이력을 보존하고 `v2`를 현행 목록으로 사용한다.
 
 ## 확인 결과
 
@@ -22,9 +26,15 @@
 - 실제 PostgreSQL 통합 검증: 전체 후보 수 360, `size=100`이면 100개, 18개 시군 각각 20개, 숨김·타지역·미선정 장소 제외.
 - 프론트 검증: 20개 카드의 분류·상세 링크, 사진 없는 카드, 새로고침·재진입·지역 변경·재시도·좋아요 연동 및 오류 응답에 관한 회귀 테스트.
 
-- 최신 main 반영 후 백엔드 632개·프론트 806개 테스트, 타입 검사 및 빌드 통과.
+- 최신 main 반영 후 백엔드 633개·프론트 806개 테스트, 타입 검사 및 빌드 통과.
 - 역검증: 카탈로그 상한을 100으로 되돌리거나 카드를 3개로 자르면 새 회귀 테스트가 실패하고, 원복 후 통과하는 것을 확인했다.
 - [기계 판독 검증 결과](assets/recommended-spot-verification.json)
+
+### 배포 후 양방향 재검증
+
+`python3 scripts/verify-recommended-spots.py --base-url https://planfix.cloud --output /tmp/recommended-spots-live.json`
+
+이 읽기 전용 검사는 18개 시군의 추천 API를 조회해 각각 20곳인지 확인한 뒤, 응답의 합집합을 실행 카탈로그와 역대조한다. 전체 360곳의 상세 API에서 이름·지역·분류·주소·좌표도 다시 대조한다. 전체 표본 20/100개, 중복 ID, 미지원 지역, 잘못된 size, `no-store` 헤더까지 검사하며 하나라도 다르면 실패한다. `RecommendedSpotIntegrationTest`는 같은 경로를 임시 PostgreSQL과 MockMvc로 검증한다.
 
 ## API 동작
 
@@ -361,12 +371,12 @@ python scripts/publish-recommended-spots.py --bucket planfix-bucket-975050156432
 | 정선레일바이크 | 레포츠 | 1936389 |
 | 민둥산 | 관광지 | 125616 |
 | 화암동굴 (강원고생대 국가지질공원) | 관광지 | 128661 |
-| 삼탄아트마인 | 관광지 | 2470392 |
+| 국립 가리왕산자연휴양림 | 관광지 | 125413 |
 | 정암사 수마노탑 | 관광지 | 125765 |
 | 화암약수 (강원고생대 국가지질공원) | 관광지 | 128660 |
 | 만항재 | 관광지 | 2704698 |
 | 아라리촌 | 관광지 | 2414753 |
-| 가리왕산케이블카 | 관광지 | 3068424 |
+| 오장폭포 | 관광지 | 2785719 |
 | 아리랑박물관 | 문화시설 | 2783023 |
 | 정선 아리랑시장·정선 5일장(2, 7일) | 쇼핑 | 132003 |
 | 고한 구공탄시장 | 쇼핑 | 2777909 |
