@@ -74,6 +74,29 @@ class CourseMetadataApplicationServiceTest {
         assertThat(result.themes()).isEmpty();
     }
 
+    @Test
+    void day_themes_survive_create_read_old_editor_save_and_response_serialization() {
+        var themedDays = List.of(
+                new CourseDayModel(1, days.getFirst().spots(), null, List.of(CourseTripIdea.ACTIVITY)),
+                new CourseDayModel(2, List.of(), null, List.of(CourseTripIdea.CAFE)));
+        var created = service.create(10L, new CourseCommand.Create("일차별 여행", null, null,
+                CourseVisibility.PRIVATE, null, null, themedDays, CourseGenerationSource.LLM,
+                List.of(CourseTravelTheme.ACTIVITY, CourseTravelTheme.CAFE)));
+        assertThat(created.days().getFirst().tripIdeas()).containsExactly(CourseTripIdea.ACTIVITY);
+        assertThat(service.getMine(10L, 1L).days().get(1).tripIdeas()).containsExactly(CourseTripIdea.CAFE);
+
+        var updated = service.update(10L, 1L, new CourseCommand.Update("수정", null, null,
+                CourseVisibility.PRIVATE, null, null,
+                List.of(new CourseDayModel(1, days.getFirst().spots()), new CourseDayModel(2, List.of()))));
+        var response = CourseResponse.from(updated);
+        assertThat(response.days().getFirst().themes()).containsExactly(CourseTravelTheme.ACTIVITY);
+        assertThat(response.days().get(1).tripIdeas()).containsExactly(CourseTripIdea.CAFE);
+        assertThat(response.days().get(1).spots()).isEmpty();
+        var json = tools.jackson.databind.json.JsonMapper.builder().build().valueToTree(response);
+        assertThat(json.get("days").get(0).get("tripIdeas").get(0).asString()).isEqualTo("ACTIVITY");
+        assertThat(json.get("days").get(1).get("tripIdeas").get(0).asString()).isEqualTo("CAFE");
+    }
+
     private void createAi() {
         service.create(10L, new CourseCommand.Create("AI 코스", null, null,
                 CourseVisibility.PRIVATE, null, null, days, CourseGenerationSource.LLM,

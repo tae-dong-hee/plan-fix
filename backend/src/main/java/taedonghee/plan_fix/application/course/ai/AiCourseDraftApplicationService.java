@@ -9,6 +9,7 @@ import taedonghee.plan_fix.domain.spot.SpotModel;
 import taedonghee.plan_fix.domain.spot.SpotRepository;
 import taedonghee.plan_fix.domain.spot.SpotSearchCondition;
 import taedonghee.plan_fix.domain.spot.SpotSortType;
+import taedonghee.plan_fix.domain.course.CourseDayTheme;
 import taedonghee.plan_fix.support.error.CoreException;
 import taedonghee.plan_fix.support.error.ErrorType;
 
@@ -70,13 +71,19 @@ public class AiCourseDraftApplicationService {
 		// LLM에는 규칙 기반 점수로 추린 상위 후보만 넘긴다. 전체를 주면 비용도 크고
 		// 목록이 길수록 없는 장소를 지어내는 빈도가 올라간다.
 		List<SpotModel> shortlist = shortlistForLlm(candidates, command, likedCategoryCounts);
+		List<CourseDayTheme> preferences = DailyThemePreferences.resolve(command.themes(), command.dayThemes(), dayCount);
+		var llmPlan = command.dayThemes().isEmpty()
+			? llmPlanner.plan(shortlist, anchors, dayCount, command.themes(), command.companion())
+			: llmPlanner.plan(shortlist, anchors, dayCount, command.themes(), command.companion(), preferences);
 
-		return llmPlanner.plan(shortlist, anchors, dayCount, command.themes(), command.companion())
-			.flatMap(plan -> planValidator.validate(plan, shortlist, anchors, dayCount))
+		return llmPlan
+			.flatMap(plan -> command.dayThemes().isEmpty()
+				? planValidator.validate(plan, shortlist, anchors, dayCount)
+				: planValidator.validate(plan, shortlist, anchors, dayCount, preferences))
 			.map(validated -> toResult(command, validated.days(), anchors, dayCount, validated.reasons(), "LLM"))
 			.orElseGet(() -> {
 				List<List<SpotModel>> plannedDays = coursePlanner.plan(
-					candidates, anchors, dayCount, command.themes(), command.companion(), likedCategoryCounts);
+					candidates, anchors, dayCount, command.themes(), command.companion(), likedCategoryCounts, command.dayThemes());
 				return toResult(command, plannedDays, anchors, dayCount, Map.of(), "RULE_BASED");
 			});
 	}
@@ -87,6 +94,13 @@ public class AiCourseDraftApplicationService {
 
 		Map<Long, Double> scores =
 			coursePlanner.scoreAll(candidates, command.themes(), likedCategoryCounts);
+		List<CourseDayTheme> preferences = command.dayThemes().isEmpty() ? List.of()
+			: DailyThemePreferences.resolve(command.themes(), command.dayThemes(), resolveDayCount(command));
+		if (!preferences.isEmpty()) {
+			scores.clear();
+			for (CourseDayTheme day : preferences) coursePlanner.scoreAll(candidates, day, likedCategoryCounts)
+				.forEach((id, score) -> scores.merge(id, score, Math::max));
+		}
 
 		List<SpotModel> ranked = candidates.stream()
 			.filter(spot -> spot.latitude() != null && spot.longitude() != null)
@@ -100,7 +114,12 @@ public class AiCourseDraftApplicationService {
 			.collect(Collectors.groupingBy(spot -> spot.category() == null ? "기타" : spot.category(),
 				java.util.LinkedHashMap::new, Collectors.toList()))
 			.values().stream().flatMap(list -> list.stream().limit(perCategory)).toList();
-		return java.util.stream.Stream.concat(diversified.stream(), ranked.stream())
+		// Reserve relevant representatives before the overall ranking, including smaller daily themes.
+		List<SpotModel> representatives = preferences.stream()
+			.flatMap(day -> DailyThemePreferences.requirements(day).stream()
+				.flatMap(requirement -> ranked.stream().filter(requirement::matches).limit(2))).distinct().toList();
+		return java.util.stream.Stream.concat(representatives.stream(),
+			java.util.stream.Stream.concat(diversified.stream(), ranked.stream()))
 			.distinct().limit(LLM_SHORTLIST_SIZE).toList();
 	}
 
@@ -151,6 +170,7 @@ public class AiCourseDraftApplicationService {
 			plannedDays.stream().flatMap(List::stream).distinct().toList());
 
 		List<RoadCourseOptimizer.Result> orderedDays = roadCourseOptimizer.optimizeDays(plannedDays);
+		List<CourseDayTheme> preferences = DailyThemePreferences.resolve(command.themes(), command.dayThemes(), dayCount);
 		List<AiCourseDraftResult.Day> days = new java.util.ArrayList<>();
 		for (int i = 0; i < orderedDays.size(); i++) {
 			RoadCourseOptimizer.Result orderedDay = orderedDays.get(i);
@@ -161,7 +181,9 @@ public class AiCourseDraftApplicationService {
 					return AiCourseDraftResult.Spot.from(spot, reason, thumbnails.get(spot.spotId()));
 				})
 				.toList();
-			days.add(new AiCourseDraftResult.Day(i + 1, spots, orderedDay.routeStatus(), orderedDay.drivingDistanceMeters()));
+			CourseDayTheme preference = preferences.get(i);
+			days.add(new AiCourseDraftResult.Day(i + 1, spots, orderedDay.routeStatus(), orderedDay.drivingDistanceMeters(),
+				preference.themes(), preference.tripIdeas()));
 		}
 
 		return new AiCourseDraftResult(

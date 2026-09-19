@@ -25,6 +25,17 @@ API의 `generatedBy`는 `LLM`, `RULE_BASED`, `MANUAL` 중 하나이며 이전 �
 `themes`는 선택 순서대로 `HEALING`, `FOOD`, `CAFE`, `ACTIVITY`, `CULTURE` 코드를 받는다.
 수정 요청에서 생성 방식·테마를 생략하거나 `null`로 보내면 기존 값을 유지하고, `themes: []`는 선택을 지운다.
 
+`2026-09-19-add-course-day-themes.sql`은 일차별 여행 제안을 `courses.day_themes` TEXT 컬럼에 JSON으로 보존한다.
+새 백엔드 배포 전에 적용하며, 기존 코스의 `null`은 기록된 일차별 테마가 없는 것으로 읽는다.
+현재 `application-prod.yml`의 `ddl-auto: update`도 컬럼을 추가할 수 있지만 명시적 SQL로 먼저 적용할 수 있다.
+JSON은 `[{"dayNumber":1,"themes":["HEALING","CAFE"],"tripIdeas":["COAST_CAFE"]}]` 형식이다.
+날짜를 지정하지 않은 여행에서도 장소가 없는 마지막 일차까지 유지하도록 모든 일차를 기록한다.
+코스 생성·수정 API의 `days[]`에도 선택적인 `themes`, `tripIdeas` 배열을 추가한다.
+`tripIdeas`는 `COAST_CAFE`, `FOOD_WALK`, `NATURE`, `ACTIVITY`, `CULTURE_LOCAL`, `CAFE`를 받는다.
+여행 제안에 필요한 기본 취향은 서버가 `themes`에 합친다. 둘 다 생략하거나 `null`이면 수정 시 기존 일차의
+메타데이터를 유지하고, 하나라도 제공하면 해당 일차의 메타데이터를 교체한다. 둘 다 `[]`로 보내면 지운다.
+수정에서 제거한 일차의 메타데이터는 함께 제거되며, 이전 코스에 테마를 추정하여 채우지 않는다.
+
 `2026-09-19-hide-leaked-gangneung-test-spots.sql`은 서비스 DB에 남은 강릉 테스트 장소 6건을
 숨기는 데이터 보정이다. 감사에서 확인한 ID·원본 contentid·제목·좌표·이미지 등 모든 조건이
 일치할 때만 적용하며, 실제 경포해수욕장(`spot_id=429`, TourAPI `contentid=128758`)은 유지한다.

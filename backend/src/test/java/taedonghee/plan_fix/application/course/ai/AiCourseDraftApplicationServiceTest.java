@@ -1,6 +1,7 @@
 package taedonghee.plan_fix.application.course.ai;
 
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InOrder;
 import taedonghee.plan_fix.application.spot.SpotThumbnailResolver;
@@ -9,6 +10,8 @@ import taedonghee.plan_fix.domain.spot.SpotModel;
 import taedonghee.plan_fix.domain.spot.SpotRepository;
 import taedonghee.plan_fix.domain.spot.SpotSourceType;
 import taedonghee.plan_fix.domain.spot.TourDataImageRepository;
+import taedonghee.plan_fix.domain.course.CourseTripIdea;
+import taedonghee.plan_fix.domain.course.CourseTravelTheme;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -24,6 +27,35 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 class AiCourseDraftApplicationServiceTest {
+
+    @Test
+    void daily_assignments_reach_the_llm_fallback_spot_selection_and_response_metadata() {
+        SpotRepository spots = mock(SpotRepository.class);
+        TourDataImageRepository images = mock(TourDataImageRepository.class);
+        AiCourseLlmPlanner llm = mock(AiCourseLlmPlanner.class);
+        var candidates = List.of(DailyCourseThemePlanningTest.spot(1, "카페", "카페/음료", 128.9),
+                DailyCourseThemePlanningTest.spot(2, "서핑", "레포츠", 128.901));
+        when(spots.searchActive(any(), any(), eq(0), eq(2000))).thenReturn(candidates);
+        var assignments = List.of(DailyCourseThemePlanningTest.day(1, CourseTripIdea.CAFE),
+                DailyCourseThemePlanningTest.day(2, CourseTripIdea.ACTIVITY));
+        var reversed = new LlmCoursePlan(List.of(new LlmCoursePlan.Day(1, List.of(new LlmCoursePlan.Entry(2L, "서핑"))),
+                new LlmCoursePlan.Day(2, List.of(new LlmCoursePlan.Entry(1L, "카페")))));
+        when(llm.plan(anyList(), anyList(), eq(2), anyList(), any(), eq(assignments))).thenReturn(Optional.of(reversed));
+        var service = new AiCourseDraftApplicationService(spots, llm, new AiCoursePlanValidator(),
+                new SpotThumbnailResolver(images), new RoadCourseOptimizer(ignored -> Optional.empty()));
+        LocalDate date = LocalDate.of(2026, 9, 19);
+
+        var result = service.createDraft(null, new AiCourseCommand("51", null, date, date.plusDays(1),
+                List.of(CourseTheme.FOOD), CourseCompanion.COUPLE, List.of(), assignments));
+
+        assertThat(result.generatedBy()).isEqualTo("RULE_BASED");
+        assertThat(result.days().get(0).spots()).extracting(AiCourseDraftResult.Spot::spotId).containsExactly(1L);
+        assertThat(result.days().get(1).spots()).extracting(AiCourseDraftResult.Spot::spotId).containsExactly(2L);
+        assertThat(result.days().get(0).themes()).containsExactly(CourseTravelTheme.CAFE);
+        assertThat(result.days().get(1).tripIdeas()).containsExactly(CourseTripIdea.ACTIVITY);
+        verify(llm).plan(anyList(), anyList(), eq(2), eq(List.of(CourseTheme.FOOD)), eq(CourseCompanion.COUPLE), eq(assignments));
+        verify(spots, never()).save(any());
+    }
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})

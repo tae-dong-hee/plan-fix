@@ -10,7 +10,13 @@ import java.util.Set;
 /**
  * 코스의 일차(Day)별 spot 목록을 나타내는 도메인 값 객체
  */
-public record CourseDayModel(int dayNumber, List<CourseSpotModel> spots) {
+public record CourseDayModel(int dayNumber, List<CourseSpotModel> spots,
+                             List<CourseTravelTheme> themes, List<CourseTripIdea> tripIdeas) {
+
+    /** null metadata distinguishes an old editor's omitted fields from an explicit clear. */
+    public CourseDayModel(int dayNumber, List<CourseSpotModel> spots) {
+        this(dayNumber, spots, null, null);
+    }
 
     private static final int SPOTS_PER_DAY_MAX_SIZE = 30;
 
@@ -39,5 +45,14 @@ public record CourseDayModel(int dayNumber, List<CourseSpotModel> spots) {
         }
 
         spots = List.copyOf(spots);
+        if (themes != null || tripIdeas != null) {
+            CourseDayTheme metadata = new CourseDayTheme(dayNumber, themes, tripIdeas);
+            themes = metadata.themes();
+            tripIdeas = metadata.tripIdeas();
+        }
+    }
+
+    public CourseDayTheme dayTheme() {
+        return new CourseDayTheme(dayNumber, themes, tripIdeas);
     }
 }

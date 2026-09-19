@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 import taedonghee.plan_fix.domain.spot.SpotModel;
+import taedonghee.plan_fix.domain.course.CourseDayTheme;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,6 +47,13 @@ public class AiCourseLlmPlanner {
 		List<CourseTheme> themes,
 		CourseCompanion companion
 	) {
+		return plan(candidates, anchors, dayCount, themes, companion, List.of());
+	}
+
+	public Optional<LlmCoursePlan> plan(
+		List<SpotModel> candidates, List<SpotModel> anchors, int dayCount,
+		List<CourseTheme> themes, CourseCompanion companion, List<CourseDayTheme> dayThemes
+	) {
 		ChatLanguageModel model = chatLanguageModelProvider.getIfAvailable();
 		if (model == null) {
 			log.info("[AI 코스] Gemini 모델이 설정되지 않아 규칙 기반으로 진행합니다.");
@@ -55,7 +63,7 @@ public class AiCourseLlmPlanner {
 			return Optional.empty();
 		}
 
-		String prompt = buildPrompt(candidates, anchors, dayCount, themes, companion);
+		String prompt = buildPrompt(candidates, anchors, dayCount, themes, companion, dayThemes);
 		try {
 			String response = model.chat(prompt);
 			LlmCoursePlan plan = parse(response, dayCount);
@@ -71,9 +79,9 @@ public class AiCourseLlmPlanner {
 		}
 	}
 
-	private String buildPrompt(
+	String buildPrompt(
 		List<SpotModel> candidates, List<SpotModel> anchors, int dayCount,
-		List<CourseTheme> themes, CourseCompanion companion) {
+		List<CourseTheme> themes, CourseCompanion companion, List<CourseDayTheme> dayThemes) {
 
 		List<SpotModel> trimmed = candidates.size() > MAX_CANDIDATES_IN_PROMPT
 			? candidates.subList(0, MAX_CANDIDATES_IN_PROMPT)
@@ -84,8 +92,16 @@ public class AiCourseLlmPlanner {
 		sb.append("[여행 조건]\n");
 		sb.append("- 기간: ").append(dayCount).append("일\n");
 		sb.append("- 동행: ").append(describeCompanion(companion)).append('\n');
-		sb.append("- 테마: ").append(describeThemes(themes)).append('\n');
+		if (dayThemes.isEmpty()) sb.append("- 테마: ").append(describeThemes(themes)).append('\n');
 		sb.append("- 하루 방문 장소 수: ").append(companion.spotsPerDay()).append("곳 내외\n\n");
+		List<CourseDayTheme> daily = DailyThemePreferences.resolve(themes, dayThemes, dayCount);
+		if (!dayThemes.isEmpty()) {
+			sb.append("[날짜별 테마 — 각 날짜의 장소 선택에 적용]\n");
+			for (CourseDayTheme day : daily) sb.append("DAY ").append(day.dayNumber()).append(": ")
+				.append(DailyThemePreferences.describe(day)).append('\n');
+			sb.append("테마가 여러 개면 가능한 범위에서 각각 맞는 장소를 포함하세요. 날짜끼리 테마를 바꾸지 마세요.\n")
+				.append("AI에게 맡긴 날은 별도 테마 없이 구성하세요. 테마 장소가 없으면 가까운 후보로 구성하고 없는 특성을 지어내지 마세요.\n\n");
+		}
 
 		if (!anchors.isEmpty()) {
 			sb.append("[반드시 포함할 장소]\n");
@@ -100,6 +116,9 @@ public class AiCourseLlmPlanner {
 				.append(spot.title()).append(" | ")
 				.append(spot.category()).append(" | ")
 				.append(spot.latitude()).append(',').append(spot.longitude())
+				.append(" | 특성: ").append(daily.stream().flatMap(day -> DailyThemePreferences.requirements(day).stream())
+					.filter(requirement -> requirement.matches(spot)).map(DailyThemePreferences.Requirement::key)
+					.distinct().collect(java.util.stream.Collectors.joining(", ")))
 				.append('\n');
 		}
 

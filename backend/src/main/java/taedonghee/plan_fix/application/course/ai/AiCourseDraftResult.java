@@ -1,6 +1,8 @@
 package taedonghee.plan_fix.application.course.ai;
 
 import taedonghee.plan_fix.domain.spot.SpotModel;
+import taedonghee.plan_fix.domain.course.CourseTravelTheme;
+import taedonghee.plan_fix.domain.course.CourseTripIdea;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -26,8 +28,13 @@ public record AiCourseDraftResult(
 		List<Spot> spots,
 		/** ROAD_DISTANCE: 조회한 도로거리로 최적화, UNAVAILABLE: 추천 순서 유지. */
 		String routeStatus,
-		Long drivingDistanceMeters
+		Long drivingDistanceMeters,
+		List<CourseTravelTheme> themes,
+		List<CourseTripIdea> tripIdeas
 	) {
+		public Day(int dayNumber, List<Spot> spots, String routeStatus, Long drivingDistanceMeters) {
+			this(dayNumber, spots, routeStatus, drivingDistanceMeters, List.of(), List.of());
+		}
 	}
 
 	public record Spot(

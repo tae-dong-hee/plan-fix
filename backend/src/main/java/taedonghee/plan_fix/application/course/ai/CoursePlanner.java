@@ -1,6 +1,7 @@
 package taedonghee.plan_fix.application.course.ai;
 
 import taedonghee.plan_fix.domain.spot.SpotModel;
+import taedonghee.plan_fix.domain.course.CourseDayTheme;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -31,6 +32,106 @@ public class CoursePlanner {
 	private static final String CATEGORY_RESTAURANT = "음식점";
 	/** 지구 반지름(km). 두 좌표 사이 거리를 구할 때 쓴다. */
 	private static final double EARTH_RADIUS_KM = 6371.0;
+	private static final double MAX_DAILY_DISTANCE_KM = 40.0;
+
+	/** Daily selections determine both the region seed and spot ranking for that date. */
+	public List<List<SpotModel>> plan(
+		List<SpotModel> candidates, List<SpotModel> anchors, int dayCount,
+		List<CourseTheme> themes, CourseCompanion companion, Map<String, Long> likedCategoryCounts,
+		List<CourseDayTheme> dayThemes
+	) {
+		if (dayThemes.isEmpty()) return plan(candidates, anchors, dayCount, themes, companion, likedCategoryCounts);
+		List<CourseDayTheme> preferences = DailyThemePreferences.resolve(themes, dayThemes, dayCount);
+		var poolById = new LinkedHashMap<Long, SpotModel>();
+		candidates.stream().filter(CoursePlanner::hasCoordinates).forEach(spot -> poolById.put(spot.spotId(), spot));
+		List<SpotModel> validAnchors = anchors.stream().filter(CoursePlanner::hasCoordinates).toList();
+		validAnchors.forEach(spot -> poolById.put(spot.spotId(), spot));
+		Set<Long> anchorIds = validAnchors.stream().map(SpotModel::spotId).collect(HashSet::new, Set::add, Set::addAll);
+		List<List<SpotModel>> anchorGroups = clusterByLocation(validAnchors, dayCount);
+		Set<Long> used = new HashSet<>();
+		List<List<SpotModel>> result = new ArrayList<>();
+		for (int dayIndex = 0; dayIndex < dayCount; dayIndex++) {
+			CourseDayTheme preference = preferences.get(dayIndex);
+			List<SpotModel> fixed = dayIndex < anchorGroups.size() ? anchorGroups.get(dayIndex) : List.of();
+			Set<Long> todayAnchors = fixed.stream().map(SpotModel::spotId).collect(HashSet::new, Set::add, Set::addAll);
+			List<SpotModel> remaining = poolById.values().stream()
+				.filter(spot -> !used.contains(spot.spotId()))
+				.filter(spot -> !anchorIds.contains(spot.spotId()) || todayAnchors.contains(spot.spotId())).toList();
+			Set<Long> reserved = reserveForFutureDays(remaining.stream().filter(spot -> !anchorIds.contains(spot.spotId())).toList(),
+				preferences.subList(dayIndex + 1, preferences.size()), likedCategoryCounts);
+			List<DailyThemePreferences.Requirement> required = DailyThemePreferences.requirements(preference);
+			List<SpotModel> available = remaining.stream().filter(spot -> !reserved.contains(spot.spotId())
+				|| todayAnchors.contains(spot.spotId()) || required.stream().anyMatch(requirement -> requirement.matches(spot)
+					&& remaining.stream().noneMatch(other -> !reserved.contains(other.spotId()) && requirement.matches(other)))).toList();
+			Map<Long, Double> scores = scoreAll(available, preference, likedCategoryCounts);
+			List<SpotModel> ranked = available.stream().sorted(Comparator
+				.comparingDouble((SpotModel spot) -> scores.getOrDefault(spot.spotId(), 0.0)).reversed()).toList();
+			SpotModel seed = fixed.isEmpty() ? ranked.stream().findFirst().orElse(null) : fixed.get(0);
+			List<SpotModel> local = seed == null ? List.of() : ranked.stream()
+				.filter(spot -> distanceKm(seed, spot) <= MAX_DAILY_DISTANCE_KM)
+				.filter(spot -> fitsNearby(spot, fixed)).toList();
+			List<SpotModel> picked = new ArrayList<>(fixed);
+			int remainingCount = poolById.size() - used.size();
+			int fairShare = (int) Math.ceil((double) remainingCount / (dayCount - dayIndex));
+			int limit = Math.max(Math.min(companion.spotsPerDay(), fairShare), fixed.size());
+			if (limit > 1 && picked.stream().noneMatch(CoursePlanner::isRestaurant) && picked.size() < limit) {
+				local.stream().filter(CoursePlanner::isRestaurant).findFirst().ifPresent(picked::add);
+			}
+			while (picked.size() < limit) {
+				List<DailyThemePreferences.Requirement> missing = required.stream()
+					.filter(requirement -> picked.stream().noneMatch(requirement::matches)).toList();
+				SpotModel next = local.stream().filter(spot -> canPick(spot, picked))
+					.filter(spot -> missing.stream().anyMatch(requirement -> requirement.matches(spot)))
+					.max(Comparator.comparingLong((SpotModel spot) -> missing.stream().filter(r -> r.matches(spot)).count())
+						.thenComparingDouble(spot -> scores.getOrDefault(spot.spotId(), 0.0))).orElse(null);
+				if (next == null) break;
+				picked.add(next);
+			}
+			for (SpotModel spot : local) {
+				if (picked.size() >= limit) break;
+				if (canPick(spot, picked)) picked.add(spot);
+			}
+			picked.forEach(spot -> used.add(spot.spotId()));
+			result.add(orderByProximity(picked));
+		}
+		return result;
+	}
+
+	/** Preserve a nearby representative of each later day's intent before filling an earlier day. */
+	private Set<Long> reserveForFutureDays(List<SpotModel> candidates, List<CourseDayTheme> futureDays,
+		Map<String, Long> likedCategoryCounts) {
+		Set<Long> reserved = new HashSet<>();
+		for (CourseDayTheme future : futureDays) {
+			Map<Long, Double> scores = scoreAll(candidates, future, likedCategoryCounts);
+			List<SpotModel> dayRepresentatives = new ArrayList<>();
+			for (DailyThemePreferences.Requirement requirement : DailyThemePreferences.requirements(future)) {
+				if (dayRepresentatives.stream().anyMatch(requirement::matches)) continue;
+				candidates.stream().filter(requirement::matches).filter(spot -> !reserved.contains(spot.spotId()))
+					.filter(spot -> fitsNearby(spot, dayRepresentatives))
+					.max(Comparator.comparingDouble(spot -> scores.getOrDefault(spot.spotId(), 0.0)))
+					.ifPresent(spot -> { reserved.add(spot.spotId()); dayRepresentatives.add(spot); });
+			}
+		}
+		return reserved;
+	}
+
+	private static boolean fitsNearby(SpotModel spot, List<SpotModel> picked) {
+		return picked.stream().allMatch(other -> distanceKm(spot, other) <= MAX_DAILY_DISTANCE_KM);
+	}
+
+	private static boolean canPick(SpotModel spot, List<SpotModel> picked) {
+		return picked.stream().noneMatch(other -> other.spotId().equals(spot.spotId()))
+			&& fitsNearby(spot, picked)
+			&& (!isRestaurant(spot) || picked.stream().filter(CoursePlanner::isRestaurant).count() < MAX_MEALS_PER_DAY);
+	}
+
+	Map<Long, Double> scoreAll(List<SpotModel> spots, CourseDayTheme day, Map<String, Long> likedCategoryCounts) {
+		var scores = new LinkedHashMap<Long, Double>();
+		for (SpotModel spot : spots) scores.put(spot.spotId(), qualityScore(spot)
+			* (preferenceScore(spot, DailyThemePreferences.themes(day), likedCategoryCounts)
+				+ DailyThemePreferences.semanticBonus(spot, day)));
+		return scores;
+	}
 
 	/**
 	 * @param candidates 지역으로 이미 걸러진 후보들
