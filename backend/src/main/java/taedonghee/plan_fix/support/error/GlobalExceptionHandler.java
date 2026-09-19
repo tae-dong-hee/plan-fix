@@ -1,6 +1,7 @@
 package taedonghee.plan_fix.support.error;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -28,8 +29,11 @@ public class GlobalExceptionHandler {
 	public ResponseEntity<ErrorResponse> handleCoreException(CoreException e) {
 		ErrorType errorType = e.getErrorType();
 		log.warn("CoreException: {} - {}", errorType, e.getMessage());
-		return ResponseEntity.status(errorType.getStatus())
-			.body(ErrorResponse.of(errorType, e.getMessage()));
+		var response = ResponseEntity.status(errorType.getStatus());
+		if (e instanceof RateLimitException rateLimit) {
+			response.header(HttpHeaders.RETRY_AFTER, Long.toString(rateLimit.getRetryAfterSeconds()));
+		}
+		return response.body(ErrorResponse.of(errorType, e.getMessage()));
 	}
 
 	/**

@@ -1,11 +1,12 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { MailCheck } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 
 import PasswordRecoveryLayout, { recoveryButtonClassName, recoveryInputClassName } from "@/components/ui/password-recovery-layout";
 import { LoaderOne } from "@/components/ui/unique-loader-components";
 import { authPathWithReturnTo, getInviteReturnTo } from "@/lib/auth-return-to";
-import { requestPasswordReset, passwordResetUnavailableMessage } from "@/services/password-reset";
+import { formatRecoveryWait, recoveryWaitMessage } from "@/lib/recovery-retry";
+import { PasswordResetError, requestPasswordReset, passwordResetUnavailableMessage } from "@/services/password-reset";
 
 export default function ForgotPasswordPage() {
   const [searchParams] = useSearchParams();
@@ -19,6 +20,8 @@ export default function ForgotPasswordPage() {
   const [submitted, setSubmitted] = useState(false);
   const [retryAt, setRetryAt] = useState(0);
   const [cooldown, setCooldown] = useState(0);
+  const [rateLimited, setRateLimited] = useState(false);
+  const requestLock = useRef(false);
 
   useEffect(() => {
     if (!retryAt) return;
@@ -30,7 +33,7 @@ export default function ForgotPasswordPage() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (isSubmitting || Date.now() < retryAt) return;
+    if (requestLock.current || Date.now() < retryAt) return;
     const nextErrors: typeof errors = {};
     if (!loginId.trim()) nextErrors.loginId = "아이디를 입력해 주세요.";
     else if (!/^[a-z0-9]{6,20}$/.test(loginId.trim())) nextErrors.loginId = "영문 소문자와 숫자로 6~20자로 입력해 주세요.";
@@ -38,8 +41,10 @@ export default function ForgotPasswordPage() {
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) nextErrors.email = "올바른 이메일 주소를 입력해 주세요.";
     setErrors(nextErrors);
     setError(null);
+    setRateLimited(false);
     setSubmitted(false);
     if (Object.keys(nextErrors).length) return;
+    requestLock.current = true;
     setIsSubmitting(true);
     try {
       await requestPasswordReset({ loginId: loginId.trim(), email: email.trim() });
@@ -48,7 +53,13 @@ export default function ForgotPasswordPage() {
       setCooldown(60);
     } catch (failure) {
       setError(failure instanceof Error ? failure.message : passwordResetUnavailableMessage);
+      if (failure instanceof PasswordResetError && failure.retryAfter > 0) {
+        setRetryAt(Date.now() + failure.retryAfter * 1000);
+        setCooldown(failure.retryAfter);
+        setRateLimited(true);
+      }
     } finally {
+      requestLock.current = false;
       setIsSubmitting(false);
     }
   }
@@ -64,7 +75,14 @@ export default function ForgotPasswordPage() {
         <div>
           <label htmlFor="recovery-login-id" className="text-sm font-medium">아이디</label>
           <input id="recovery-login-id" name="loginId" autoComplete="username" autoCapitalize="none" spellCheck={false} required maxLength={20} placeholder="가입한 아이디" value={loginId}
-            onChange={(event) => { setLoginId(event.target.value); setSubmitted(false); setError(null); setErrors((current) => ({ ...current, loginId: undefined })); }}
+            onChange={(event) => {
+              const nextLoginId = event.target.value;
+              // The local wait belongs to this login ID; the server still enforces shared limits.
+              if (nextLoginId.trim() !== loginId.trim()) {
+                setRetryAt(0); setCooldown(0); setRateLimited(false);
+              }
+              setLoginId(nextLoginId); setSubmitted(false); setError(null); setErrors((current) => ({ ...current, loginId: undefined }));
+            }}
             disabled={isSubmitting} className={recoveryInputClassName} aria-invalid={Boolean(errors.loginId)} aria-describedby={errors.loginId ? "recovery-login-id-error" : undefined} />
           {errors.loginId && <p id="recovery-login-id-error" role="alert" className="mt-2 text-xs text-destructive">{errors.loginId}</p>}
         </div>
@@ -72,13 +90,14 @@ export default function ForgotPasswordPage() {
           <label htmlFor="recovery-email" className="text-sm font-medium">이메일</label>
           <input id="recovery-email" name="email" type="email" autoComplete="email" autoCapitalize="none" spellCheck={false} required maxLength={254} placeholder="name@example.com" value={email}
             onChange={(event) => { setEmail(event.target.value); setSubmitted(false); setError(null); setErrors((current) => ({ ...current, email: undefined })); }}
-            disabled={isSubmitting} className={recoveryInputClassName} aria-invalid={Boolean(errors.email)} aria-describedby={errors.email ? "recovery-email-error" : undefined} />
+            disabled={isSubmitting} className={recoveryInputClassName} aria-invalid={Boolean(errors.email)} aria-describedby={`recovery-email-help${errors.email ? " recovery-email-error" : ""}`} />
+          <p id="recovery-email-help" className="mt-2 text-xs leading-5 text-muted-foreground">가입할 때 등록한 이메일로만 메일을 보낼 수 있어요.</p>
           {errors.email && <p id="recovery-email-error" role="alert" className="mt-2 text-xs text-destructive">{errors.email}</p>}
         </div>
-        {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+        {(error || rateLimited) && <p role="alert" className="text-sm text-destructive">{rateLimited ? recoveryWaitMessage(cooldown) : error}</p>}
         <button type="submit" disabled={isSubmitting || cooldown > 0} className={recoveryButtonClassName}>
           {isSubmitting && <span aria-hidden="true"><LoaderOne variant="inverse" /></span>}
-          {isSubmitting ? "요청 중..." : cooldown > 0 ? `다시 보내기 (${cooldown}초 후)` : submitted ? "재설정 메일 다시 보내기" : "재설정 메일 보내기"}
+          {isSubmitting ? "요청 중..." : cooldown > 0 ? `다시 보내기 (${formatRecoveryWait(cooldown)} 후)` : submitted ? "재설정 메일 다시 보내기" : "재설정 메일 보내기"}
         </button>
       </form>
       <Link to={authPathWithReturnTo("/find-id", returnTo)} className="mt-5 block text-center text-sm text-primary hover:underline">아이디를 모르겠어요 · 아이디 찾기</Link>

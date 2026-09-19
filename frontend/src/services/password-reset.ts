@@ -1,3 +1,5 @@
+import { recoveryRetryAfter, recoveryWaitMessage } from "@/lib/recovery-retry";
+
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "");
 
 export const passwordResetUnavailableMessage =
@@ -7,7 +9,7 @@ export const invalidPasswordResetLinkMessage =
   "유효하지 않거나 만료된 링크입니다. 비밀번호 재설정 메일을 다시 요청해 주세요.";
 
 export class PasswordResetError extends Error {
-  constructor(message: string, public readonly invalidToken = false) {
+  constructor(message: string, public readonly invalidToken = false, public readonly retryAfter = 0) {
     super(message);
     this.name = "PasswordResetError";
   }
@@ -33,12 +35,14 @@ async function postPasswordReset(path: "request" | "confirm", payload: object): 
     const body = (await response.json().catch(() => null)) as { code?: string; message?: string } | null;
     const invalidToken = path === "confirm" &&
       (body?.code === "INVALID_PASSWORD_RESET_TOKEN" || response.status === 410);
+    const retryAfter = response.status === 429 ? recoveryRetryAfter(response.headers) : 0;
     throw new PasswordResetError(
       invalidToken ? invalidPasswordResetLinkMessage :
         body?.code === "RECOVERY_ACCOUNT_MISMATCH" ? "아이디 또는 이메일이 일치하지 않습니다." :
-        response.status === 429 ? "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요." :
+        response.status === 429 ? recoveryWaitMessage(retryAfter) :
         body?.message ?? passwordResetUnavailableMessage,
       invalidToken,
+      retryAfter,
     );
   }
 }

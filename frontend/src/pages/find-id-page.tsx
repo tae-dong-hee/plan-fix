@@ -4,6 +4,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import PasswordRecoveryLayout, { recoveryButtonClassName, recoveryInputClassName } from "@/components/ui/password-recovery-layout";
 import { LoaderOne } from "@/components/ui/unique-loader-components";
 import { authPathWithReturnTo, getInviteReturnTo } from "@/lib/auth-return-to";
+import { formatRecoveryWait, recoveryWaitMessage } from "@/lib/recovery-retry";
 import { IdRecoveryError, idRecoveryUnavailableMessage, requestIdRecovery } from "@/services/id-recovery";
 
 export default function FindIdPage() {
@@ -17,6 +18,7 @@ export default function FindIdPage() {
   const [submitted, setSubmitted] = useState(false);
   const [retryAt, setRetryAt] = useState(0);
   const [cooldown, setCooldown] = useState(0);
+  const [rateLimited, setRateLimited] = useState(false);
   const requestLock = useRef(false);
   const version = useRef(0);
 
@@ -36,6 +38,7 @@ export default function FindIdPage() {
     const validationError = !trimmedEmail ? "가입할 때 등록한 이메일을 입력해 주세요." : !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail) ? "올바른 이메일 주소를 입력해 주세요." : null;
     setEmailError(validationError);
     setError(null);
+    setRateLimited(false);
     setSubmitted(false);
     if (validationError) return;
     requestLock.current = true;
@@ -53,6 +56,7 @@ export default function FindIdPage() {
       if (failure instanceof IdRecoveryError && failure.retryAfter) {
         setRetryAt(Date.now() + failure.retryAfter * 1000);
         setCooldown(failure.retryAfter);
+        setRateLimited(true);
       }
     } finally {
       requestLock.current = false;
@@ -70,14 +74,22 @@ export default function FindIdPage() {
       <div>
         <label htmlFor="find-id-email" className="text-sm font-medium">이메일</label>
         <input id="find-id-email" name="email" type="email" autoComplete="email" autoCapitalize="none" spellCheck={false} required maxLength={254} placeholder="name@example.com" value={email}
-          onChange={(event) => { version.current += 1; setEmail(event.target.value); setEmailError(null); setError(null); setSubmitted(false); setIsSubmitting(false); }} disabled={isSubmitting}
-          className={recoveryInputClassName} aria-invalid={Boolean(emailError)} aria-describedby={emailError ? "find-id-email-error" : undefined} />
+          onChange={(event) => {
+            const nextEmail = event.target.value;
+            // Match the server's email quota key; a different account may make its own request.
+            if (nextEmail.trim().toLowerCase() !== email.trim().toLowerCase()) {
+              setRetryAt(0); setCooldown(0); setRateLimited(false);
+            }
+            version.current += 1; setEmail(nextEmail); setEmailError(null); setError(null); setSubmitted(false); setIsSubmitting(false);
+          }} disabled={isSubmitting}
+          className={recoveryInputClassName} aria-invalid={Boolean(emailError)} aria-describedby={`find-id-email-help${emailError ? " find-id-email-error" : ""}`} />
+        <p id="find-id-email-help" className="mt-2 text-xs leading-5 text-muted-foreground">가입할 때 등록한 이메일로만 메일을 보낼 수 있어요.</p>
         {emailError && <p id="find-id-email-error" role="alert" className="mt-2 text-xs text-destructive">{emailError}</p>}
       </div>
-      {error && <p role="alert" className="text-sm leading-6 text-destructive">{error}</p>}
+      {(error || rateLimited) && <p role="alert" className="text-sm leading-6 text-destructive">{rateLimited ? recoveryWaitMessage(cooldown) : error}</p>}
       <button type="submit" disabled={isSubmitting || cooldown > 0} className={recoveryButtonClassName}>
         {isSubmitting && <span aria-hidden="true"><LoaderOne variant="inverse" /></span>}
-        {isSubmitting ? "요청 중..." : cooldown > 0 ? `다시 보내기 (${cooldown}초 후)` : submitted ? "아이디 안내 메일 다시 보내기" : "아이디 안내 메일 보내기"}
+        {isSubmitting ? "요청 중..." : cooldown > 0 ? `다시 보내기 (${formatRecoveryWait(cooldown)} 후)` : submitted ? "아이디 안내 메일 다시 보내기" : "아이디 안내 메일 보내기"}
       </button>
     </form>
     <Link to={authPathWithReturnTo("/forgot-password", returnTo)} className="mt-5 block text-center text-sm text-primary hover:underline">비밀번호도 모르겠어요 · 비밀번호 찾기</Link>

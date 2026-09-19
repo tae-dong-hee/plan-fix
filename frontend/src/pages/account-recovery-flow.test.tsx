@@ -65,6 +65,15 @@ test.each(["", "incorrect-address"])("잘못된 이메일은 발송 요청 전�
   expect(requestIdRecovery).not.toHaveBeenCalled();
 });
 
+test.each(["/find-id", "/forgot-password"])("메일 입력 근처에 가입 이메일 안내를 표시하고 입력 오류와 함께 연결한다: %s", async (path) => {
+  renderFlow(path);
+  const email = screen.getByLabelText("이메일");
+  expect(email).toHaveAccessibleDescription("가입할 때 등록한 이메일로만 메일을 보낼 수 있어요.");
+  fireEvent.change(email, { target: { value: "incorrect-address" } });
+  await act(async () => fireEvent.submit(screen.getByRole("form")));
+  expect(email).toHaveAccessibleDescription("가입할 때 등록한 이메일로만 메일을 보낼 수 있어요. 올바른 이메일 주소를 입력해 주세요.");
+});
+
 test.each([idRecoveryEmailMismatchMessage, idRecoveryUnavailableMessage, "서버에 연결할 수 없습니다."])("이메일 불일치·발송 실패·연결 실패에는 성공 안내를 표시하지 않는다: %s", async (message) => {
   vi.mocked(requestIdRecovery).mockRejectedValue(new Error(message));
   renderFlow(); await submitEmail();
@@ -85,7 +94,7 @@ test("발송 중 중복 요청을 차단하고 성공 후 60초가 지나면 다
   expect(screen.getByRole("button", { name: "요청 중..." })).toBeDisabled();
   expect(screen.getByLabelText("이메일")).toBeDisabled();
   await act(async () => resolve());
-  expect(screen.getByRole("button", { name: "다시 보내기 (60초 후)" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "다시 보내기 (1분 후)" })).toBeDisabled();
   fireEvent.submit(screen.getByRole("form"));
   expect(requestIdRecovery).toHaveBeenCalledTimes(1);
   await act(async () => { await vi.advanceTimersByTimeAsync(60_000); });
@@ -95,15 +104,37 @@ test("발송 중 중복 요청을 차단하고 성공 후 60초가 지나면 다
 
 test("서버 429의 대기 시간을 지키고 성공으로 표시하지 않는다", async () => {
   vi.useFakeTimers();
-  vi.mocked(requestIdRecovery).mockRejectedValue(new IdRecoveryError("요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.", 90));
+  vi.mocked(requestIdRecovery).mockRejectedValueOnce(new IdRecoveryError("요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.", 90));
   renderFlow(); await submitEmail();
-  expect(screen.getByRole("alert")).toHaveTextContent("요청이 너무 많습니다.");
-  expect(screen.getByRole("button", { name: "다시 보내기 (90초 후)" })).toBeDisabled();
+  expect(screen.getByRole("alert")).toHaveTextContent("1분 30초 후 다시 시도해 주세요.");
+  expect(screen.getByRole("button", { name: "다시 보내기 (1분 30초 후)" })).toBeDisabled();
+  await act(async () => fireEvent.submit(screen.getByRole("form")));
+  expect(requestIdRecovery).toHaveBeenCalledTimes(1);
   await act(async () => { await vi.advanceTimersByTimeAsync(89_000); });
   expect(screen.getByRole("button", { name: "다시 보내기 (1초 후)" })).toBeDisabled();
   await act(async () => { await vi.advanceTimersByTimeAsync(1_000); });
   expect(screen.getByRole("button", { name: "아이디 안내 메일 보내기" })).toBeEnabled();
   expect(screen.queryByText("가입한 이메일로 아이디 안내를 보냈습니다. 메일함을 확인해 주세요.")).not.toBeInTheDocument();
+  expect(screen.getByRole("alert")).toHaveTextContent("대기 시간이 지났습니다.");
+  await act(async () => fireEvent.click(screen.getByRole("button", { name: "아이디 안내 메일 보내기" })));
+  expect(requestIdRecovery).toHaveBeenCalledTimes(2);
+  expect(screen.getByRole("status")).toHaveTextContent("가입한 이메일로 아이디 안내를 보냈습니다.");
+});
+
+test("아이디 찾기는 이메일 공백·대소문자 수정으로 대기를 풀지 않고 다른 이메일이면 새 요청을 허용한다", async () => {
+  vi.useFakeTimers();
+  vi.mocked(requestIdRecovery).mockRejectedValueOnce(new IdRecoveryError("요청이 너무 많습니다.", 3600));
+  renderFlow(); await submitEmail();
+  fireEvent.change(screen.getByLabelText("이메일"), { target: { value: " User@EXAMPLE.com " } });
+  expect(screen.getByRole("button", { name: "다시 보내기 (1시간 후)" })).toBeDisabled();
+  expect(screen.getByRole("alert")).toHaveTextContent("1시간 후 다시 시도해 주세요.");
+  await act(async () => fireEvent.submit(screen.getByRole("form")));
+  expect(requestIdRecovery).toHaveBeenCalledTimes(1);
+  fireEvent.change(screen.getByLabelText("이메일"), { target: { value: "other@gmail.com" } });
+  expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  await act(async () => fireEvent.click(screen.getByRole("button", { name: "아이디 안내 메일 보내기" })));
+  expect(requestIdRecovery).toHaveBeenCalledTimes(2);
+  expect(requestIdRecovery).toHaveBeenLastCalledWith({ email: "other@gmail.com" });
 });
 
 test("다른 이메일로 수정하면 이전 성공 안내를 지우고 이전의 늦은 응답도 무시한다", async () => {

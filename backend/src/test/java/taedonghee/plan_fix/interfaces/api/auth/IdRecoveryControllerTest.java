@@ -17,6 +17,7 @@ import taedonghee.plan_fix.domain.user.UserRepository;
 import taedonghee.plan_fix.infrastructure.security.*;
 import taedonghee.plan_fix.support.error.CoreException;
 import taedonghee.plan_fix.support.error.ErrorType;
+import taedonghee.plan_fix.support.error.RateLimitException;
 
 import java.util.List;
 
@@ -70,15 +71,15 @@ class IdRecoveryControllerTest {
 
     @Test
     void perEmailAndSharedPeerQuotaErrorsCannotBecomeSuccess() throws Exception {
-        when(service.request(any())).thenThrow(new CoreException(ErrorType.TOO_MANY_REQUESTS));
+        when(service.request(any())).thenThrow(new RateLimitException(3200));
         mvc.perform(post("/api/v1/auth/id-recovery/request").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"email\":\"private@example.com\"}"))
-                .andExpect(status().isTooManyRequests());
+                .andExpect(status().isTooManyRequests()).andExpect(header().string("Retry-After", "3200"));
         clearInvocations(service);
-        doThrow(new CoreException(ErrorType.TOO_MANY_REQUESTS)).when(limits).acquireRequest(any());
+        doThrow(new RateLimitException(700)).when(limits).acquireRequest(any());
         mvc.perform(post("/api/v1/auth/id-recovery/request").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"email\":\"another@example.com\"}"))
-                .andExpect(status().isTooManyRequests());
+                .andExpect(status().isTooManyRequests()).andExpect(header().string("Retry-After", "700"));
         verifyNoInteractions(service);
     }
 

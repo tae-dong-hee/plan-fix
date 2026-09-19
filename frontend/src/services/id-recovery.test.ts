@@ -29,10 +29,10 @@ test("등록 이메일 불일치를 지정된 한글 문구로 전달한다", as
   await expect(requestIdRecovery({ email: "wrong@example.com" })).rejects.toThrow(idRecoveryEmailMismatchMessage);
 });
 
-test.each(["90", null])("429 요청 제한과 Retry-After 대기 시간을 보존한다: %s", async (retryAfter) => {
-  global.fetch = vi.fn().mockResolvedValue(new Response(null, { status: 429, headers: retryAfter ? { "Retry-After": retryAfter } : {} }));
+test.each([["90", 90], ["3600", 3600], [null, 60], ["-10", 60], ["NaN", 60], ["1.5", 60], ["0", 60]])("429 요청 제한과 유효한 Retry-After 대기 시간을 보존한다: %s", async (header, retryAfter) => {
+  global.fetch = vi.fn().mockResolvedValue(new Response(null, { status: 429, headers: header ? { "Retry-After": String(header) } : {} }));
   const { requestIdRecovery } = await import("./id-recovery");
-  await expect(requestIdRecovery({ email: "user@example.com" })).rejects.toMatchObject({ retryAfter: retryAfter ? 90 : 60 });
+  await expect(requestIdRecovery({ email: "user@example.com" })).rejects.toMatchObject({ retryAfter });
 });
 
 test("메일 서버 장애와 네트워크 장애는 발송 성공으로 처리하지 않는다", async () => {

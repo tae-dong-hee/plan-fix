@@ -80,7 +80,7 @@ test("메일 발송이 성공하면 명확히 안내하고 60초 뒤 재전송�
   await act(async () => fireEvent.submit(screen.getByRole("form")));
   expect(requestPasswordReset).toHaveBeenCalledWith({ loginId: "testuser1", email: "user@example.com" });
   expect(screen.getByRole("status")).toHaveTextContent("비밀번호 재설정 메일을 발송했습니다.");
-  expect(screen.getByRole("button", { name: "다시 보내기 (60초 후)" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "다시 보내기 (1분 후)" })).toBeDisabled();
   await act(async () => fireEvent.submit(screen.getByRole("form")));
   expect(requestPasswordReset).toHaveBeenCalledTimes(1);
   await act(async () => { await vi.advanceTimersByTimeAsync(60_000); });
@@ -89,12 +89,70 @@ test("메일 발송이 성공하면 명확히 안내하고 60초 뒤 재전송�
   expect(requestPasswordReset).toHaveBeenCalledTimes(2);
 });
 
+test("429 뒤 남은 시간을 표시하고 입력 수정과 연속 제출로 대기를 건너뛸 수 없으며 만료 후 재시도한다", async () => {
+  vi.useFakeTimers();
+  vi.mocked(requestPasswordReset).mockRejectedValueOnce(new PasswordResetError("요청이 너무 많습니다.", false, 3661));
+  renderFlow("/forgot-password");
+  fillRequest();
+  await act(async () => fireEvent.submit(screen.getByRole("form")));
+  expect(screen.getByRole("alert")).toHaveTextContent("1시간 1분 1초 후 다시 시도해 주세요.");
+  expect(screen.getByRole("button", { name: "다시 보내기 (1시간 1분 1초 후)" })).toBeDisabled();
+  expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  fireEvent.change(screen.getByLabelText("이메일"), { target: { value: "other@gmail.com" } });
+  await act(async () => { fireEvent.submit(screen.getByRole("form")); fireEvent.submit(screen.getByRole("form")); });
+  expect(requestPasswordReset).toHaveBeenCalledTimes(1);
+  expect(screen.getByRole("alert")).toHaveTextContent("1시간 1분 1초 후");
+  await act(async () => { await vi.advanceTimersByTimeAsync(3_600_000); });
+  expect(screen.getByRole("alert")).toHaveTextContent("1분 1초 후 다시 시도해 주세요.");
+  await act(async () => { await vi.advanceTimersByTimeAsync(60_000); });
+  expect(screen.getByRole("button", { name: "다시 보내기 (1초 후)" })).toBeDisabled();
+  await act(async () => fireEvent.submit(screen.getByRole("form")));
+  expect(requestPasswordReset).toHaveBeenCalledTimes(1);
+  await act(async () => { await vi.advanceTimersByTimeAsync(1_000); });
+  expect(screen.getByRole("alert")).toHaveTextContent("대기 시간이 지났습니다. 다시 시도해 주세요.");
+  await act(async () => fireEvent.click(screen.getByRole("button", { name: "재설정 메일 보내기" })));
+  expect(requestPasswordReset).toHaveBeenCalledTimes(2);
+  expect(requestPasswordReset).toHaveBeenLastCalledWith({ loginId: "testuser1", email: "other@gmail.com" });
+  expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  expect(screen.getByRole("status")).toHaveTextContent("비밀번호 재설정 메일을 발송했습니다.");
+});
+
+test.each(["아이디 또는 이메일이 일치하지 않습니다.", passwordResetUnavailableMessage])("계정 불일치·메일 서버 장애는 대기 없이 수정 후 재시도할 수 있다: %s", async (message) => {
+  vi.mocked(requestPasswordReset).mockRejectedValueOnce(new PasswordResetError(message));
+  renderFlow("/forgot-password");
+  fillRequest();
+  await act(async () => fireEvent.submit(screen.getByRole("form")));
+  expect(screen.getByRole("alert")).toHaveTextContent(message);
+  expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  await act(async () => fireEvent.click(screen.getByRole("button", { name: "재설정 메일 보내기" })));
+  expect(requestPasswordReset).toHaveBeenCalledTimes(2);
+});
+
+test("같은 아이디의 공백 수정은 대기를 유지하고 다른 아이디는 바로 요청할 수 있다", async () => {
+  vi.useFakeTimers();
+  vi.mocked(requestPasswordReset).mockRejectedValueOnce(new PasswordResetError("요청이 너무 많습니다.", false, 3600));
+  renderFlow("/forgot-password");
+  fillRequest();
+  await act(async () => fireEvent.submit(screen.getByRole("form")));
+  fireEvent.change(screen.getByLabelText("아이디"), { target: { value: " testuser1 " } });
+  expect(screen.getByRole("button", { name: "다시 보내기 (1시간 후)" })).toBeDisabled();
+  await act(async () => fireEvent.submit(screen.getByRole("form")));
+  expect(requestPasswordReset).toHaveBeenCalledTimes(1);
+  fireEvent.change(screen.getByLabelText("아이디"), { target: { value: "otheruser1" } });
+  expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  await act(async () => fireEvent.click(screen.getByRole("button", { name: "재설정 메일 보내기" })));
+  expect(requestPasswordReset).toHaveBeenCalledTimes(2);
+  expect(requestPasswordReset).toHaveBeenLastCalledWith({ loginId: "otheruser1", email: "user@example.com" });
+});
+
 test("발송 중 중복 요청을 막고 서비스 실패는 성공으로 표시하지 않는다", async () => {
   let rejectRequest!: (reason: Error) => void;
   vi.mocked(requestPasswordReset).mockImplementation(() => new Promise((_resolve, reject) => { rejectRequest = reject; }));
   renderFlow("/forgot-password");
   fillRequest();
   fireEvent.submit(screen.getByRole("form"));
+  fireEvent.submit(screen.getByRole("form"));
+  expect(requestPasswordReset).toHaveBeenCalledTimes(1);
   expect(screen.getByRole("button", { name: "요청 중..." })).toBeDisabled();
   await act(async () => rejectRequest(new Error(passwordResetUnavailableMessage)));
   expect(screen.getByRole("alert")).toHaveTextContent(passwordResetUnavailableMessage);
