@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import taedonghee.plan_fix.application.user.UserApplicationService;
@@ -37,6 +38,13 @@ public class UserController {
     public ResponseEntity<UsernameAvailabilityResponse> usernameAvailability(@org.springframework.web.bind.annotation.RequestParam String username) {
         boolean available = userApplicationService.isUsernameAvailable(username);
         return ResponseEntity.ok(new UsernameAvailabilityResponse(available, available ? "사용 가능한 아이디입니다." : "이미 사용 중인 아이디입니다."));
+    }
+
+    @GetMapping("/email-availability")
+    public ResponseEntity<EmailAvailabilityResponse> emailAvailability(@RequestParam String email) {
+        boolean available = userApplicationService.isEmailAvailable(email);
+        return ResponseEntity.ok(new EmailAvailabilityResponse(
+                available, available ? "사용 가능한 이메일입니다." : "이미 가입된 이메일입니다."));
     }
 
     /** 현재 로그인한 사용자 프로필 수정 API */
@@ -96,4 +104,5 @@ public class UserController {
     }
 
     public record UsernameAvailabilityResponse(boolean available, String message) { }
+    public record EmailAvailabilityResponse(boolean available, String message) { }
 }

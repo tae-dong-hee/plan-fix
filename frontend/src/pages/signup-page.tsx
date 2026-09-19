@@ -2,14 +2,12 @@ import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 import SignupForm, {
-  type EmailAvailabilityResult,
   type SignupFormMessage,
   type SignupFormValues,
 } from "@/components/ui/signup-form";
 import { authPathWithReturnTo, getInviteReturnTo } from "@/lib/auth-return-to";
-import { checkUsernameAvailability, isUserApiConfigured, signUp } from "@/services/user";
+import { checkEmailAvailability, checkUsernameAvailability, isUserApiConfigured, signUp } from "@/services/user";
 
-const emailCheckDelay = 450;
 const redirectDelay = 1500;
 const demoDelay = 600;
 
@@ -63,24 +61,6 @@ export default function SignupPage() {
     }
   };
 
-  const handleCheckEmailAvailability = async (
-    email: string,
-  ): Promise<EmailAvailabilityResult> => {
-    await wait(emailCheckDelay);
-
-    if (email.toLowerCase() === "demo@planfix.kr") {
-      return {
-        available: false,
-        message: "이미 사용 중인 이메일입니다.",
-      };
-    }
-
-    return {
-      available: true,
-      message: "사용 가능한 이메일입니다.",
-    };
-  };
-
   return (
     <main className="relative flex min-h-dvh items-start justify-center overflow-x-hidden overflow-y-auto bg-gradient-to-b from-primary/10 via-background to-background px-3 py-6 sm:items-center sm:px-8 sm:py-8">
       <div className="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-primary/15 blur-3xl" />
@@ -90,7 +70,7 @@ export default function SignupPage() {
           isSubmitting={isSubmitting}
           message={message}
           onSubmit={handleSubmit}
-          onCheckEmailAvailability={handleCheckEmailAvailability}
+          onCheckEmailAvailability={checkEmailAvailability}
           onCheckUsernameAvailability={async (username) => checkUsernameAvailability(username)}
           loginHref={loginPath}
           onBackToLogin={() => navigate(loginPath)}

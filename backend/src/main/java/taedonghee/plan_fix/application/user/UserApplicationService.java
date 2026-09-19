@@ -97,6 +97,12 @@ public class UserApplicationService {
                 && !userRepository.existsByUsername(username);
     }
 
+    /** 회원가입과 동일한 형식 및 저장소 기준으로 이메일 사용 가능 여부를 조회한다. */
+    public boolean isEmailAvailable(String email) {
+        UserModel.validateEmail(email);
+        return email != null && !userRepository.existsByEmail(email);
+    }
+
     /**
      * 사용자 조회 실패 예외 처리
      */
@@ -124,7 +130,7 @@ public class UserApplicationService {
      */
     private void validateUniqueEmail(String email) {
         if (email != null && userRepository.existsByEmail(email)) {
-            throw new CoreException(ErrorType.CONFLICT, "email already exists. email=" + email);
+            throw new CoreException(ErrorType.CONFLICT, "이미 가입된 이메일입니다.");
         }
     }
 
