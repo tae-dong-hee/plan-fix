@@ -5,7 +5,6 @@ export type SignUpRequest = {
   email?: string | null;
   username?: string | null;
   birthDate?: string | null;
-  phoneVerificationToken?: string;
 };
 
 export type SignUpResponse = {

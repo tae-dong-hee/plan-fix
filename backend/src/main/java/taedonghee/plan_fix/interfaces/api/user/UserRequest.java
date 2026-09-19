@@ -20,12 +20,8 @@ public final class UserRequest {
             String email,
             String loginId,
             String password,
-            LocalDate birthDate,
-            String phoneVerificationToken
+            LocalDate birthDate
     ) {
-        public Create(String username, String name, String email, String loginId, String password, LocalDate birthDate) {
-            this(username, name, email, loginId, password, birthDate, null);
-        }
 
         @Override public String toString() { return "UserCreate[redacted]"; }
 
@@ -33,7 +29,7 @@ public final class UserRequest {
          * application 입력값 변환
          */
         public UserCommand.Create toCommand() {
-            return new UserCommand.Create(username, name, email, loginId, password, birthDate, phoneVerificationToken);
+            return new UserCommand.Create(username, name, email, loginId, password, birthDate);
         }
     }
 

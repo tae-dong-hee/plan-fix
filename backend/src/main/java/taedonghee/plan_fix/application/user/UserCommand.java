@@ -19,14 +19,10 @@ public final class UserCommand {
             String email,
             String loginId,
             String password,
-            LocalDate birthDate,
-            String phoneVerificationToken
+            LocalDate birthDate
     ) {
         public Create(String username, String name, String email, String loginId, String password) {
-            this(username, name, email, loginId, password, null, null);
-        }
-        public Create(String username, String name, String email, String loginId, String password, LocalDate birthDate) {
-            this(username, name, email, loginId, password, birthDate, null);
+            this(username, name, email, loginId, password, null);
         }
 
         @Override public String toString() { return "UserCreate[redacted]"; }

@@ -131,7 +131,7 @@ test("새로고침으로 토큰을 잃으면 메일 링크를 다시 여는 방�
   const refreshedPath = screen.getByTestId("current-path").textContent!;
   first.unmount();
   renderFlow(refreshedPath);
-  expect(screen.getByText("화면을 새로고침했다면 메일의 링크를 다시 열거나 휴대폰 인증을 다시 진행해 주세요.")).toBeInTheDocument();
+  expect(screen.getByText("화면을 새로고침했다면 메일의 링크를 다시 열어 주세요.")).toBeInTheDocument();
   expect(screen.queryByRole("form")).not.toBeInTheDocument();
 });
 

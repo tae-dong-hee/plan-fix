@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import taedonghee.plan_fix.application.auth.PasswordResetApplicationService;
-import taedonghee.plan_fix.application.auth.PhoneVerificationRateLimiter;
+import taedonghee.plan_fix.application.auth.RecoveryRateLimiter;
 import taedonghee.plan_fix.application.auth.RecoveryRequestLimiter;
 import taedonghee.plan_fix.infrastructure.security.CookieFactory;
 
@@ -20,7 +20,7 @@ import taedonghee.plan_fix.infrastructure.security.CookieFactory;
 public class PasswordResetController {
     private final PasswordResetApplicationService service;
     private final CookieFactory cookieFactory;
-    private final PhoneVerificationRateLimiter rateLimiter;
+    private final RecoveryRateLimiter rateLimiter;
     private final RecoveryRequestLimiter requestLimiter;
 
     @PostMapping("/request")
@@ -34,7 +34,8 @@ public class PasswordResetController {
     }
 
     @PostMapping("/confirm")
-    public ResponseEntity<Void> confirm(@RequestBody Confirm request) {
+    public ResponseEntity<Void> confirm(@RequestBody Confirm request, HttpServletRequest http) {
+        requestLimiter.acquireConfirmation(http.getRemoteAddr());
         service.confirm(request.token(), request.password());
         return ResponseEntity.noContent().cacheControl(CacheControl.noStore())
                 .header(HttpHeaders.SET_COOKIE, cookieFactory.expiredAccessToken().toString()).build();

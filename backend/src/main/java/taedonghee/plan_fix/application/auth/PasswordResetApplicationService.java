@@ -64,16 +64,6 @@ public class PasswordResetApplicationService {
         return delivery;
     }
 
-    /** Called only after a purpose-bound phone proof has been verified, in its transaction. */
-    @Transactional
-    public String issueForVerifiedUser(Long userId) {
-        var credential = credentials.findByUserIdForUpdate(userId)
-                .orElseThrow(PasswordResetApplicationService::invalidToken);
-        if (credential.getUser().getStatus() != UserStatus.ACTIVE) throw invalidToken();
-        var reset = resets.findById(userId).orElseGet(() -> new PasswordResetJpaEntity(userId));
-        return issue(reset, Instant.now());
-    }
-
     private String issue(PasswordResetJpaEntity reset, Instant now) {
         byte[] bytes = new byte[32];
         RANDOM.nextBytes(bytes);

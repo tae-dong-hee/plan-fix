@@ -86,7 +86,7 @@ export default function ResetPasswordPage() {
         비밀번호가 변경되었습니다.
       </div> : invalidLink ? <div>
         <p role="alert" className="text-sm leading-6 text-destructive">{invalidPasswordResetLinkMessage}</p>
-        <p className="mt-3 text-sm leading-6 text-muted-foreground">화면을 새로고침했다면 메일의 링크를 다시 열거나 휴대폰 인증을 다시 진행해 주세요.</p>
+        <p className="mt-3 text-sm leading-6 text-muted-foreground">화면을 새로고침했다면 메일의 링크를 다시 열어 주세요.</p>
         <Link to={authPathWithReturnTo("/forgot-password", returnTo)} className={`${recoveryButtonClassName} mt-6`}>재설정 메일 다시 요청하기</Link>
       </div> : <form onSubmit={handleSubmit} noValidate aria-label="새 비밀번호 설정" aria-busy={isSubmitting} className="space-y-5">
         <div>

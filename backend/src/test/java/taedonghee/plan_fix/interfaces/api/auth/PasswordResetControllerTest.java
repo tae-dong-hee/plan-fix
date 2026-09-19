@@ -11,7 +11,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import taedonghee.plan_fix.application.auth.PasswordResetApplicationService;
 import taedonghee.plan_fix.application.auth.PasswordResetMail;
-import taedonghee.plan_fix.application.auth.PhoneVerificationRateLimiter;
+import taedonghee.plan_fix.application.auth.RecoveryRateLimiter;
 import taedonghee.plan_fix.application.auth.RecoveryRequestLimiter;
 import taedonghee.plan_fix.domain.user.UserRepository;
 import taedonghee.plan_fix.infrastructure.security.CookieFactory;
@@ -33,7 +33,7 @@ class PasswordResetControllerTest {
     @TestConfiguration @EnableWebSecurity static class SecurityTestConfiguration { }
     @Autowired MockMvc mvc;
     @MockitoBean PasswordResetApplicationService service;
-    @MockitoBean PhoneVerificationRateLimiter rateLimiter;
+    @MockitoBean RecoveryRateLimiter rateLimiter;
     @MockitoBean RecoveryRequestLimiter requestLimiter;
     @MockitoBean JwtTokenProvider tokenProvider;
     @MockitoBean UserRepository users;

@@ -7,9 +7,9 @@ import lombok.NoArgsConstructor;
 import java.time.Instant;
 
 @Entity
-@Table(name = "phone_verification_rate_limits")
+@Table(name = "account_recovery_rate_limits")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class PhoneRateLimitJpaEntity {
+public class RecoveryRateLimitJpaEntity {
     @Id
     @Column(length = 64)
     private String bucketKey;

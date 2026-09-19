@@ -9,9 +9,9 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class RecoveryRequestLimiterTest {
-    private final PhoneVerificationRateLimiter persistentLimits = mock(PhoneVerificationRateLimiter.class);
+    private final RecoveryRateLimiter persistentLimits = mock(RecoveryRateLimiter.class);
     private final ApplicationContextRunner context = new ApplicationContextRunner()
-            .withBean(PhoneVerificationRateLimiter.class, () -> persistentLimits)
+            .withBean(RecoveryRateLimiter.class, () -> persistentLimits)
             .withBean(RecoveryRequestLimiter.class);
 
     @Test

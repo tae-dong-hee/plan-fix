@@ -6,15 +6,15 @@ import org.springframework.stereotype.Component;
 /**
  * A shared socket-peer abuse ceiling, not an individual client's IP quota.
  * Multiple users can share the same peer behind Cloud Run or another proxy.
- * Per-phone cooldowns/quotas and per-challenge attempt limits remain mandatory.
+ * Per-email cooldowns/quotas and single-use reset tokens remain mandatory.
  */
 @Component
 public class RecoveryRequestLimiter {
-    private final PhoneVerificationRateLimiter limits;
+    private final RecoveryRateLimiter limits;
     private final int requestHourlyLimit;
     private final int confirmationHourlyLimit;
 
-    public RecoveryRequestLimiter(PhoneVerificationRateLimiter limits,
+    public RecoveryRequestLimiter(RecoveryRateLimiter limits,
             @Value("${app.account-recovery.request-hourly-limit:1000}") int requestHourlyLimit,
             @Value("${app.account-recovery.confirmation-hourly-limit:3000}") int confirmationHourlyLimit) {
         if (requestHourlyLimit <= 0 || confirmationHourlyLimit <= 0) {

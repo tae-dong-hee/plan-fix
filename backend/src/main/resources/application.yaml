@@ -26,6 +26,7 @@ spring:
     properties:
       mail.smtp.auth: ${MAIL_SMTP_AUTH:true}
       mail.smtp.ssl.enable: ${MAIL_SMTP_SSL_ENABLE:false}
+      mail.smtp.ssl.checkserveridentity: true
       mail.smtp.starttls.enable: ${MAIL_SMTP_STARTTLS_ENABLE:true}
       mail.smtp.starttls.required: ${MAIL_SMTP_STARTTLS_REQUIRED:true}
       mail.smtp.connectiontimeout: 5000
@@ -53,14 +54,6 @@ app:
   cookie:
     secure: ${COOKIE_SECURE:false}
     same-site: ${COOKIE_SAME_SITE:Lax}
-
-sms:
-  enabled: ${SMS_ENABLED:false}
-  solapi:
-    api-key: ${SOLAPI_API_KEY:}
-    api-secret: ${SOLAPI_API_SECRET:}
-    sender-number: ${SMS_FROM:}
-    api-base-url: ${SOLAPI_API_BASE_URL:https://api.solapi.com}
 
 oauth:
   kakao:

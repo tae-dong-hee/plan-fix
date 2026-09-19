@@ -2,7 +2,6 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 
 import ProfilePage from "./profile-page";
-import { getMyRecoveryPhone } from "@/services/phone-verification";
 import {
   fetchMyProfile,
   removeMyProfileImage,
@@ -12,10 +11,6 @@ import {
 } from "@/services/user";
 
 vi.mock("@/components/ui/app-nav", () => ({ default: () => null }));
-vi.mock("@/services/phone-verification", async (importOriginal) => ({
-  ...await importOriginal<typeof import("@/services/phone-verification")>(),
-  getMyRecoveryPhone: vi.fn(),
-}));
 vi.mock("@/services/user", () => ({
   fetchMyProfile: vi.fn(),
   updateMyProfile: vi.fn(),
@@ -49,7 +44,6 @@ function choosePhoto(file: File) {
 
 beforeEach(() => {
   vi.resetAllMocks();
-  vi.mocked(getMyRecoveryPhone).mockResolvedValue({ phoneNumber: null });
 });
 
 test.each([
