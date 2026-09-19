@@ -23,6 +23,8 @@ public final class UserRequest {
             LocalDate birthDate
     ) {
 
+        @Override public String toString() { return "UserCreate[redacted]"; }
+
         /**
          * application 입력값 변환
          */

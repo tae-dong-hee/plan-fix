@@ -25,6 +25,8 @@ spring:
     password: ${MAIL_PASSWORD:}
     properties:
       mail.smtp.auth: ${MAIL_SMTP_AUTH:true}
+      mail.smtp.ssl.enable: ${MAIL_SMTP_SSL_ENABLE:false}
+      mail.smtp.ssl.checkserveridentity: true
       mail.smtp.starttls.enable: ${MAIL_SMTP_STARTTLS_ENABLE:true}
       mail.smtp.starttls.required: ${MAIL_SMTP_STARTTLS_REQUIRED:true}
       mail.smtp.connectiontimeout: 5000
@@ -46,6 +48,9 @@ app:
   password-reset:
     enabled: ${PASSWORD_RESET_ENABLED:false}
     from: ${PASSWORD_RESET_FROM:}
+  account-recovery:
+    request-hourly-limit: ${RECOVERY_REQUESTS_PER_PEER_HOUR:1000}
+    confirmation-hourly-limit: ${RECOVERY_CONFIRMATIONS_PER_PEER_HOUR:3000}
   cookie:
     secure: ${COOKIE_SECURE:false}
     same-site: ${COOKIE_SAME_SITE:Lax}

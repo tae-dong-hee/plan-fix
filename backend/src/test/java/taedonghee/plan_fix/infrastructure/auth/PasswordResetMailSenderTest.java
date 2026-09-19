@@ -74,7 +74,7 @@ class PasswordResetMailSenderTest {
     }
 
     @Test
-    void deliveryFailuresNeverEscapeToRequest() {
+    void deliveryFailuresLeaveReceiptUnacceptedWithoutExposingProviderDetails() {
         var mail = mock(JavaMailSender.class);
         when(provider.getObject()).thenReturn(mail);
         doThrow(new MailSendException("sensitive SMTP details")).when(mail).send(any(SimpleMailMessage.class));
@@ -82,6 +82,9 @@ class PasswordResetMailSenderTest {
         assertThatCode(() -> sender(true, "smtp.example.com", "noreply@example.com").send(event))
                 .doesNotThrowAnyException();
         assertThat(event.toString()).doesNotContain("private");
+        assertThatThrownBy(event::requireAccepted).isInstanceOfSatisfying(CoreException.class,
+                e -> assertThat(e.getErrorType()).isEqualTo(ErrorType.SERVICE_UNAVAILABLE))
+                .hasMessageNotContaining("sensitive");
     }
 
     private PasswordResetMailSender sender(boolean enabled, String host, String from) {

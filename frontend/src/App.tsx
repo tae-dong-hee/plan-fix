@@ -11,6 +11,7 @@ import CourseListPage from "@/pages/course-list-page";
 import CourseInvitePage from "@/pages/course-invite-page";
 import LoginPage from "@/pages/login-page";
 import ForgotPasswordPage from "@/pages/forgot-password-page";
+import FindIdPage from "@/pages/find-id-page";
 import ResetPasswordPage from "@/pages/reset-password-page";
 import MainPage from "@/pages/main-page";
 import ImageCreditsPage from "@/pages/image-credits-page";
@@ -28,6 +29,7 @@ export default function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/find-id" element={<FindIdPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/login/demo" element={<LoginFormDemo />} />
       <Route path="/loading/demo" element={<UniqueLoaderDemo />} />

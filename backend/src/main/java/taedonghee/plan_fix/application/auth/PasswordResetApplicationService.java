@@ -36,35 +36,41 @@ public class PasswordResetApplicationService {
     private final ApplicationEventPublisher events;
 
     @Transactional
-    public void request(String loginId, String email) {
-        // This check must happen before any account lookup, including invalid inputs.
-        mailSender.requireAvailable();
+    public PasswordResetMail request(String loginId, String email) {
         if (loginId == null || email == null || loginId.length() > 20 || email.length() > 255) {
-            return;
+            throw new CoreException(ErrorType.RECOVERY_ACCOUNT_MISMATCH);
         }
         var credential = credentials.findByLoginIdForUpdate(loginId.trim()).orElse(null);
         if (credential == null) {
-            return;
+            throw new CoreException(ErrorType.RECOVERY_ACCOUNT_MISMATCH);
         }
         var user = credential.getUser();
         if (user.getStatus() != UserStatus.ACTIVE || user.getEmail() == null
                 || !user.getEmail().equalsIgnoreCase(email.trim())) {
-            return;
+            throw new CoreException(ErrorType.RECOVERY_ACCOUNT_MISMATCH);
         }
+        mailSender.requireAvailable();
 
         Instant now = Instant.now();
         var reset = resets.findById(user.getId()).orElseGet(() -> new PasswordResetJpaEntity(user.getId()));
         if (reset.isCoolingDown(now)) {
-            return;
+            throw new CoreException(ErrorType.TOO_MANY_REQUESTS, "재설정 메일은 60초 후 다시 요청해 주세요.");
         }
+        String token = issue(reset, now);
+        // The synchronous AFTER_COMMIT listener records SMTP acceptance. The HTTP
+        // controller checks that result after commit instead of claiming success on failure.
+        var delivery = new PasswordResetMail(user.getEmail(), token);
+        events.publishEvent(delivery);
+        return delivery;
+    }
+
+    private String issue(PasswordResetJpaEntity reset, Instant now) {
         byte[] bytes = new byte[32];
         RANDOM.nextBytes(bytes);
         String token = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
         reset.issue(hash(token), now);
         resets.save(reset);
-        // Delivery runs only after a successful commit, before returning HTTP.
-        // SMTP failures never expose account-dependent HTTP errors.
-        events.publishEvent(new PasswordResetMail(user.getEmail(), token));
+        return token;
     }
 
     @Transactional

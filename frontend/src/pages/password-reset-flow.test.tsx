@@ -73,13 +73,13 @@ test("잘못된 아이디와 이메일은 요청 전에 검사한다", () => {
   expect(requestPasswordReset).not.toHaveBeenCalled();
 });
 
-test("메일 요청 후 계정 존재 여부를 드러내지 않고 60초 뒤 재전송할 수 있다", async () => {
+test("메일 발송이 성공하면 명확히 안내하고 60초 뒤 재전송할 수 있다", async () => {
   vi.useFakeTimers();
   renderFlow("/forgot-password");
   fillRequest();
   await act(async () => fireEvent.submit(screen.getByRole("form")));
   expect(requestPasswordReset).toHaveBeenCalledWith({ loginId: "testuser1", email: "user@example.com" });
-  expect(screen.getByRole("status")).toHaveTextContent("입력한 정보와 일치하는 계정이 있으면");
+  expect(screen.getByRole("status")).toHaveTextContent("비밀번호 재설정 메일을 발송했습니다.");
   expect(screen.getByRole("button", { name: "다시 보내기 (60초 후)" })).toBeDisabled();
   await act(async () => fireEvent.submit(screen.getByRole("form")));
   expect(requestPasswordReset).toHaveBeenCalledTimes(1);

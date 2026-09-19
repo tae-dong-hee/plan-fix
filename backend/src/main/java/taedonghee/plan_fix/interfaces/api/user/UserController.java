@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import taedonghee.plan_fix.application.user.UserApplicationService;
 import taedonghee.plan_fix.infrastructure.security.AuthenticatedUser;
+import taedonghee.plan_fix.support.error.CoreException;
+import taedonghee.plan_fix.support.error.ErrorType;
 
 import java.util.List;
 
@@ -89,9 +91,11 @@ public class UserController {
      */
     @PatchMapping("/{userId}")
     public ResponseEntity<UserResponse> update(
+            @AuthenticationPrincipal AuthenticatedUser principal,
             @PathVariable Long userId,
             @RequestBody UserRequest.Update request
     ) {
+        requireOwner(principal, userId);
         return ResponseEntity.ok(UserResponse.from(userApplicationService.update(userId, request.toCommand())));
     }
 
@@ -99,8 +103,18 @@ public class UserController {
      * 사용자 탈퇴 API
      */
     @DeleteMapping("/{userId}")
-    public ResponseEntity<UserResponse> withdraw(@PathVariable Long userId) {
+    public ResponseEntity<UserResponse> withdraw(
+            @AuthenticationPrincipal AuthenticatedUser principal,
+            @PathVariable Long userId
+    ) {
+        requireOwner(principal, userId);
         return ResponseEntity.ok(UserResponse.from(userApplicationService.withdraw(userId)));
+    }
+
+    private static void requireOwner(AuthenticatedUser principal, Long userId) {
+        if (principal == null || principal.id() == null || !principal.id().equals(userId)) {
+            throw new CoreException(ErrorType.FORBIDDEN, "본인 계정만 수정하거나 탈퇴할 수 있습니다.");
+        }
     }
 
     public record UsernameAvailabilityResponse(boolean available, String message) { }

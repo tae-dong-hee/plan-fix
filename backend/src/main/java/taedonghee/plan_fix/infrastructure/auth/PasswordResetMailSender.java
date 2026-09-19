@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 import taedonghee.plan_fix.application.auth.PasswordResetMail;
+import taedonghee.plan_fix.application.auth.IdRecoveryMail;
 import taedonghee.plan_fix.support.error.CoreException;
 import taedonghee.plan_fix.support.error.ErrorType;
 
@@ -40,7 +41,7 @@ public class PasswordResetMailSender {
     public void requireAvailable() {
         if (!enabled || host.isBlank() || !validFrom() || !validFrontendUrl() || mailSender.getIfAvailable() == null) {
             throw new CoreException(ErrorType.SERVICE_UNAVAILABLE,
-                    "현재 비밀번호 재설정 메일을 보낼 수 없습니다. 잠시 후 다시 시도해 주세요.");
+                    "현재 계정 안내 메일을 보낼 수 없습니다. 잠시 후 다시 시도해 주세요.");
         }
     }
 
@@ -58,10 +59,31 @@ public class PasswordResetMailSender {
                     + frontendBaseUrl + "/reset-password#token=" + event.token()
                     + "\n\n본인이 요청하지 않았다면 이 메일을 무시해 주세요. 비밀번호는 변경되지 않습니다.");
             mailSender.getObject().send(message);
+            event.markAccepted();
         } catch (RuntimeException e) {
             // Do not leak recipients, tokens, SMTP credentials or links through logs
-            // or account-dependent HTTP errors. The caller can request a new link.
+            // The controller reads the unaccepted receipt and returns a generic 503.
             log.warn("Password reset mail delivery failed ({})", e.getClass().getSimpleName());
+        }
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void send(IdRecoveryMail event) {
+        try {
+            var message = new SimpleMailMessage();
+            message.setFrom(from);
+            message.setTo(event.recipient());
+            message.setSubject("[PlanFix] 아이디 찾기 안내");
+            message.setText("안녕하세요. PlanFix에 등록된 아이디를 안내합니다.\n\n"
+                    + "아이디: " + String.join(", ", event.loginIds())
+                    + "\n\n로그인: " + frontendBaseUrl + "/login"
+                    + "\n비밀번호 찾기: " + frontendBaseUrl + "/forgot-password"
+                    + "\n\n본인이 요청하지 않았다면 이 메일을 무시해 주세요. 비밀번호는 변경되지 않습니다.");
+            mailSender.getObject().send(message);
+            event.markAccepted();
+        } catch (RuntimeException e) {
+            // Never log provider diagnostics, recipients or account IDs.
+            log.warn("ID recovery mail delivery failed ({})", e.getClass().getSimpleName());
         }
     }
 

@@ -35,6 +35,7 @@ async function postPasswordReset(path: "request" | "confirm", payload: object): 
       (body?.code === "INVALID_PASSWORD_RESET_TOKEN" || response.status === 410);
     throw new PasswordResetError(
       invalidToken ? invalidPasswordResetLinkMessage :
+        body?.code === "RECOVERY_ACCOUNT_MISMATCH" ? "아이디 또는 이메일이 일치하지 않습니다." :
         response.status === 429 ? "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요." :
         body?.message ?? passwordResetUnavailableMessage,
       invalidToken,
