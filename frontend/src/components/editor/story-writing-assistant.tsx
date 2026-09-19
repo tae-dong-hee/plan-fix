@@ -5,6 +5,8 @@ import { generateBoardDraft, MAX_STORY_PHOTOS, validateStoryPhotos } from "@/ser
 import type { CourseResponse } from "@/services/course";
 import "./story-writing-assistant.css";
 
+const TITLE_CHANGED_MESSAGE = "제목이 바뀌었어요. 다시 써주기를 눌러 새 제목에 맞게 작성해 주세요.";
+
 interface Props {
   title: string;
   files: File[];
@@ -43,6 +45,15 @@ export default function StoryWritingAssistant({ title, files, onFilesChange, onB
   const requestRef = useRef<{ id: number; controller?: AbortController }>({ id: 0 });
   const currentTitle = useRef(title);
   currentTitle.current = title;
+  const previousTitle = useRef(title);
+
+  useEffect(() => {
+    if (previousTitle.current === title) return;
+    previousTitle.current = title;
+    setDraft("");
+    setError("");
+    setMessage(files.length ? TITLE_CHANGED_MESSAGE : "");
+  }, [title, files.length]);
 
   useEffect(() => {
     setConfirmedPlaces({ courseId: course?.courseId ?? null, ids: [] });
@@ -88,12 +99,16 @@ export default function StoryWritingAssistant({ title, files, onFilesChange, onB
         ...(course ? { courseId: course.courseId, visitedSpotIds } : {}),
       }, controller.signal);
       if (requestId !== requestRef.current.id) return;
+      if (currentTitle.current !== title) {
+        setMessage(TITLE_CHANGED_MESSAGE);
+        return;
+      }
       if (currentFacts.current !== factsKey) {
         setMessage("코스나 다녀온 장소가 바뀌었어요. 다시 써주기를 눌러 새 정보로 작성해 주세요.");
         return;
       }
       const editor = editorRef.current;
-      if (editor && editor.isEmpty && editor.getHTML() === initialHtml && currentTitle.current === title) {
+      if (editor && editor.isEmpty && editor.getHTML() === initialHtml) {
         editor.commands.setContent({ type: "doc", content: draftParagraphs(result.content) });
         setMessage("본문을 채웠어요. 여행의 기억에 맞게 자유롭게 다듬어 보세요.");
       } else {
@@ -102,6 +117,10 @@ export default function StoryWritingAssistant({ title, files, onFilesChange, onB
       }
     } catch (err) {
       if (requestId !== requestRef.current.id) return;
+      if (currentTitle.current !== title) {
+        setMessage(TITLE_CHANGED_MESSAGE);
+        return;
+      }
       setError(controller.signal.aborted
         ? "작성 시간이 길어지고 있어요. 다시 시도하거나 직접 작성해 주세요."
         : err instanceof Error ? err.message : "AI 본문을 작성하지 못했어요. 다시 시도해 주세요.");

@@ -340,19 +340,61 @@ describe("StoryWritingAssistant", () => {
     expect(screen.getByRole("status")).toHaveTextContent("작성 중인 글은 그대로 두었어요");
   });
 
-  test("생성 중 제목을 바꾸면 이전 제목의 초안을 본문에 자동 적용하지 않는다", async () => {
+  test.each(["<p></p>", "<p>직접 쓴 여행 기록</p>"])("생성 중 제목이 바뀌면 이전 결과를 버리고 본문을 보존한다: %s", async (html) => {
     const pending = deferred<{ content: string }>();
     generateMock.mockReturnValueOnce(pending.promise);
-    const { editor, changeTitle } = setup();
+    const { editor, changeTitle, onBusyChange } = setup({ html });
     selectPhotos([photo()]);
+    const signal = generateMock.mock.calls[0][1]!;
     changeTitle("친구와 다녀온 제주 여행");
+    expect(signal.aborted).toBe(false);
 
     await act(async () => pending.resolve({ content: "이전 강릉 제목으로 생성한 초안" }));
 
     expect(generateMock).toHaveBeenCalledTimes(1);
     expect(editor.commands.setContent).not.toHaveBeenCalled();
-    expect(screen.getByText("이전 강릉 제목으로 생성한 초안")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "이 초안으로 본문 바꾸기" })).toBeInTheDocument();
+    expect(editor.commands.insertContentAt).not.toHaveBeenCalled();
+    expect(editor.getHTML()).toBe(html);
+    expect(screen.queryByText("이전 강릉 제목으로 생성한 초안")).not.toBeInTheDocument();
+    expect(screen.queryByText("새로 쓴 AI 초안")).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("제목이 바뀌었어요. 다시 써주기");
+    expect(onBusyChange).toHaveBeenLastCalledWith(false);
+  });
+
+  test("초안을 본 뒤 제목을 바꾸면 미리보기만 지우고 새 제목으로 다시 작성한다", async () => {
+    const html = "<p>직접 쓴 소중한 기록</p>";
+    const { editor, changeTitle } = setup({ html });
+    selectPhotos([photo()]);
+    await screen.findByText("새로 쓴 AI 초안");
+
+    changeTitle("춘천 여행 2박 3일");
+
+    expect(screen.queryByText("새로 쓴 AI 초안")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "이 초안으로 본문 바꾸기" })).not.toBeInTheDocument();
+    expect(editor.getHTML()).toBe(html);
+    expect(editor.commands.setContent).not.toHaveBeenCalled();
+    expect(editor.commands.insertContentAt).not.toHaveBeenCalled();
+    expect(screen.getByRole("status")).toHaveTextContent("제목이 바뀌었어요. 다시 써주기");
+    expect(generateMock).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(screen.getByRole("button", { name: "다시 써주기" }));
+    await screen.findByText("새로 쓴 AI 초안");
+    expect(generateMock.mock.calls[1][0].title).toBe("춘천 여행 2박 3일");
+    expect(editor.getHTML()).toBe(html);
+  });
+
+  test("제목이 바뀐 요청의 오류 대신 새 제목으로 다시 작성하도록 안내한다", async () => {
+    const pending = deferred<{ content: string }>();
+    generateMock.mockReturnValueOnce(pending.promise);
+    const { changeTitle, onBusyChange } = setup();
+    selectPhotos([photo()]);
+    changeTitle("춘천 여행");
+
+    await act(async () => pending.reject(new Error("이전 요청 오류")));
+
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("제목이 바뀌었어요. 다시 써주기");
+    expect(onBusyChange).toHaveBeenLastCalledWith(false);
   });
 
   test("생성이 실패하면 사진과 본문을 보존하고 같은 사진으로 다시 시도한다", async () => {

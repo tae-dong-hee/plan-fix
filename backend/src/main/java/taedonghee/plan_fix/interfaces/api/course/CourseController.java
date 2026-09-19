@@ -46,7 +46,7 @@ public class CourseController {
     @GetMapping
     public ResponseEntity<List<CourseResponse>> listMine(@AuthenticationPrincipal AuthenticatedUser principal) {
         List<CourseResponse> responses = courseApplicationService.listMine(principal.id()).stream()
-                .map(CourseResponse::from)
+                .map(course -> CourseResponse.from(course, principal.id()))
                 .toList();
         return ResponseEntity.ok(responses);
     }

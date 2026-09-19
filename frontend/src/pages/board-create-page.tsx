@@ -38,6 +38,8 @@ export default function BoardCreatePage() {
   const editorRef = useRef<Editor | null>(null);
   const [storyPhotos, setStoryPhotos] = useState<File[]>([]);
   const [isAiWriting, setIsAiWriting] = useState(false);
+  const [isEditorImageUploading, setIsEditorImageUploading] = useState(false);
+  const editorImageUploadingRef = useRef(false);
   const uploadedStoryPhotos = useRef(new Map<File, string>());
   const publishingRef = useRef(false);
 
@@ -58,7 +60,7 @@ export default function BoardCreatePage() {
     fetchMyCourses()
       .then((courses) => {
         if (!cancelled) {
-          setMyCourses(courses || []);
+          setMyCourses((courses || []).filter((course) => course.isOwner === true));
         }
       })
       .catch((err) => {
@@ -126,7 +128,7 @@ export default function BoardCreatePage() {
 
   // 게시글 발행
   const handleSubmit = async () => {
-    if (publishingRef.current || isAiWriting || isCoverUploading) return;
+    if (publishingRef.current || isAiWriting || isCoverUploading || editorImageUploadingRef.current) return;
     if (!title.trim()) {
       alert("여행 후기 제목을 입력해 주세요.");
       return;
@@ -208,7 +210,7 @@ export default function BoardCreatePage() {
             <button
               type="button"
               onClick={handleSubmit}
-              disabled={isSubmitting || isAiWriting || isCoverUploading}
+              disabled={isSubmitting || isAiWriting || isCoverUploading || isEditorImageUploading}
               className="flex items-center gap-1.5 rounded-full bg-primary px-5 py-2 text-sm font-bold text-primary-foreground shadow-sm transition-all hover:opacity-90 hover:shadow-md disabled:opacity-50"
             >
               {isSubmitting ? (
@@ -253,7 +255,7 @@ export default function BoardCreatePage() {
               <div className="flex items-center gap-2">
                 <RouteIcon className="h-4 w-4 text-primary" />
                 <span className="text-xs font-bold text-foreground sm:text-sm">내 여행 코스 연결</span>
-                <span className="text-xs text-muted-foreground">(선택)</span>
+                <span className="text-xs text-muted-foreground">(선택 · 직접 만든 코스)</span>
               </div>
 
               <select
@@ -369,6 +371,10 @@ export default function BoardCreatePage() {
             <BlogEditor
               initialContent={contentHtml}
               onChange={setContentHtml}
+              onImageUploadingChange={(uploading) => {
+                editorImageUploadingRef.current = uploading;
+                setIsEditorImageUploading(uploading);
+              }}
               onOpenSpotSearch={() => setIsSpotSearchOpen(true)}
               courseSpots={courseSpots}
               editorInstanceRef={editorRef}

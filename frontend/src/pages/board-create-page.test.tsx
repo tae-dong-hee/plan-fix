@@ -25,7 +25,7 @@ vi.mock("@/services/course", () => ({
 
 const mockCourse: courseService.CourseResponse = {
   courseId: 101, userId: 1, title: "제주 동쪽 감성 코스", description: "동쪽 힐링 코스",
-  thumbnail: "https://example.com/jeju.jpg", visibility: "PRIVATE", status: "ACTIVE",
+  thumbnail: "https://example.com/jeju.jpg", visibility: "PRIVATE", status: "ACTIVE", isOwner: true,
   viewCount: 0, likeCount: 0, startDate: null, endDate: null,
   days: [{ dayNumber: 1, spots: [
     { spotId: 10, title: "성산일출봉", address: "제주 서귀포시 성산읍", sequence: 1, category: "여행지",
@@ -81,6 +81,21 @@ describe("BoardCreatePage (블로그형 여행 후기 에디터)", () => {
     fireEvent.change(select, { target: { value: "101" } });
 
     expect(screen.getByText("+ 성산일출봉")).toBeInTheDocument();
+  });
+
+  it("발행 권한이 있는 내 코스만 연결하고 공유받은 코스는 제외한다", async () => {
+    vi.mocked(courseService.fetchMyCourses).mockResolvedValue([
+      mockCourse,
+      { ...mockCourse, courseId: 102, title: "친구가 공유한 여행", userId: 2, isOwner: false },
+      { ...mockCourse, courseId: 103, title: "소유권을 확인하지 못한 여행", isOwner: undefined },
+    ]);
+    render(<MemoryRouter><BoardCreatePage /></MemoryRouter>);
+
+    await screen.findByRole("option", { name: "제주 동쪽 감성 코스 (1일 코스)" });
+
+    expect(screen.queryByRole("option", { name: /친구가 공유한 여행/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: /소유권을 확인하지 못한 여행/ })).not.toBeInTheDocument();
+    expect(screen.getByText("(선택 · 직접 만든 코스)")).toBeInTheDocument();
   });
 
   it("코스만 연결하면 방문을 가정하지 않고 직접 고른 장소만 AI에 전달한다", async () => {
@@ -195,5 +210,43 @@ describe("BoardCreatePage (블로그형 여행 후기 에디터)", () => {
     expect(imageService.uploadImageFile).toHaveBeenNthCalledWith(1, files[0]);
     expect(imageService.uploadImageFile).toHaveBeenNthCalledWith(3, files[1]);
     alertMock.mockRestore();
+  });
+
+  it("본문 사진을 고르거나 붙여넣어 동시에 업로드해도 모두 끝나야 사진과 함께 발행한다", async () => {
+    let resolveFirst!: (value: imageService.UploadImageResult) => void;
+    let resolveSecond!: (value: imageService.UploadImageResult) => void;
+    vi.mocked(imageService.uploadImageFile)
+      .mockReturnValueOnce(new Promise((resolve) => { resolveFirst = resolve; }))
+      .mockReturnValueOnce(new Promise((resolve) => { resolveSecond = resolve; }));
+    vi.mocked(boardService.createBoard).mockResolvedValue({ boardId: 202 } as boardService.BoardDetail);
+    const { container } = render(<MemoryRouter><BoardCreatePage /></MemoryRouter>);
+    fireEvent.change(screen.getByLabelText("여행 후기 제목"), { target: { value: "본문 사진 여행" } });
+    const first = new File(["first"], "first.jpg", { type: "image/jpeg" });
+    const second = new File(["second"], "second.jpg", { type: "image/jpeg" });
+
+    fireEvent.change(screen.getByLabelText("본문 사진 선택"), { target: { files: [first] } });
+    const editor = container.querySelector("[contenteditable='true']");
+    expect(editor).not.toBeNull();
+    fireEvent.paste(editor!, { clipboardData: { files: [second], getData: () => "" } });
+    expect(imageService.uploadImageFile).toHaveBeenCalledTimes(2);
+    expect(screen.getByRole("button", { name: "발행하기" })).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: "발행하기" }));
+    expect(boardService.createBoard).not.toHaveBeenCalled();
+
+    await act(async () => resolveFirst({ imageUrl: "https://example.com/first.jpg" }));
+    expect(screen.getByRole("button", { name: "발행하기" })).toBeDisabled();
+    expect(screen.getByRole("img", { name: "first" })).toBeInTheDocument();
+
+    await act(async () => resolveSecond({ imageUrl: "https://example.com/second.jpg" }));
+    expect(screen.getByRole("button", { name: "발행하기" })).toBeEnabled();
+    fireEvent.click(screen.getByRole("button", { name: "발행하기" }));
+
+    await waitFor(() => expect(boardService.createBoard).toHaveBeenCalledTimes(1));
+    const payload = vi.mocked(boardService.createBoard).mock.calls[0][0];
+    expect(payload.content).toContain("https://example.com/first.jpg");
+    expect(payload.content).toContain("https://example.com/second.jpg");
+    expect(payload.images).toEqual(expect.arrayContaining([
+      { imageUrl: "https://example.com/first.jpg" }, { imageUrl: "https://example.com/second.jpg" },
+    ]));
   });
 });
