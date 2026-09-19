@@ -1,3 +1,5 @@
+import type { DefaultAvatarColor } from "@/services/user";
+
 export type BoardItem = {
   boardId: number;
   title: string;
@@ -54,6 +56,8 @@ export type BoardComment = {
   createdAt: string;
   updatedAt: string;
   authorName?: string | null;
+  authorProfileImageUrl?: string | null;
+  authorDefaultAvatarColor?: DefaultAvatarColor;
 };
 
 /** 게시글의 활성 댓글 목록 조회. 백엔드 주소가 없으면 빈 목록을 반환한다. */

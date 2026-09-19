@@ -22,7 +22,7 @@ import taedonghee.plan_fix.support.error.ErrorType;
 
 import java.util.UUID;
 
-/** Stores profile images in private S3 and serves them only to their authenticated owner. */
+/** Stores profile images in private S3 and serves the user's current avatar through the API. */
 @Service
 @RequiredArgsConstructor
 @Slf4j

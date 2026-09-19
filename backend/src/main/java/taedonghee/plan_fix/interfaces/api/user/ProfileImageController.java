@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -18,25 +19,34 @@ import taedonghee.plan_fix.support.error.CoreException;
 import taedonghee.plan_fix.support.error.ErrorType;
 
 @RestController
-@RequestMapping("/api/v1/users/me/profile-image")
+@RequestMapping("/api/v1/users")
 @RequiredArgsConstructor
 public class ProfileImageController {
     private final ProfileImageApplicationService profileImages;
 
-    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/me/profile-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<UserResponse> upload(@AuthenticationPrincipal AuthenticatedUser principal,
                                                @RequestParam("file") MultipartFile file) {
         return ResponseEntity.ok(UserResponse.from(profileImages.upload(userId(principal), file)));
     }
 
-    @DeleteMapping
+    @DeleteMapping("/me/profile-image")
     public ResponseEntity<UserResponse> remove(@AuthenticationPrincipal AuthenticatedUser principal) {
         return ResponseEntity.ok(UserResponse.from(profileImages.remove(userId(principal))));
     }
 
-    @GetMapping
+    @GetMapping("/me/profile-image")
     public ResponseEntity<byte[]> get(@AuthenticationPrincipal AuthenticatedUser principal) {
-        var image = profileImages.get(userId(principal));
+        return imageResponse(userId(principal));
+    }
+
+    @GetMapping("/{userId}/profile-image")
+    public ResponseEntity<byte[]> getPublic(@PathVariable Long userId) {
+        return imageResponse(userId);
+    }
+
+    private ResponseEntity<byte[]> imageResponse(Long userId) {
+        var image = profileImages.get(userId);
         return ResponseEntity.ok().contentType(MediaType.parseMediaType(image.contentType()))
                 .contentLength(image.bytes().length).cacheControl(CacheControl.noStore())
                 .header("X-Content-Type-Options", "nosniff").body(image.bytes());

@@ -74,7 +74,7 @@ class ProfileImageApplicationServiceTest {
     }
 
     @Test
-    void getReadsOnlyTheAuthenticatedUsersPersistedKey() {
+    void getReadsOnlyTheRequestedUsersPersistedKey() {
         when(s3.getObjectAsBytes(any(GetObjectRequest.class))).thenReturn(
                 ResponseBytes.fromByteArray(GetObjectResponse.builder().build(), png));
         var result = service.get(7L);
