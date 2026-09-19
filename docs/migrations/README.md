@@ -1,5 +1,11 @@
 # Database migrations
 
+`2026-09-19-backfill-verified-spot-photos.sql`은 검수된 장소 13곳의 빈 대표사진만 채운다.
+실행 전 관련 `spots`, `tour_data_spots`, `tour_data_images`를 백업하고 프론트의 정적 사진·출처
+페이지를 먼저 배포한다. 대상/원본 장소와 사진 상태가 검수 기록과 달라지면 전체를 중단한다.
+재실행할 수 있으며 원본 관광공사 레코드와 갤러리는 변경하지 않는다.
+출처와 판단 근거는 [검수 가이드](../assets/verified-spot-photos.md)에 기록했다.
+
 이 디렉터리의 SQL은 PostgreSQL 스키마 변경 이력이다. 이미 배포된 파일은 수정하지 않고,
 새 변경은 날짜와 의도를 담은 새 파일로 추가한다.
 
