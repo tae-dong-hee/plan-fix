@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Loader2, MapPin, Search, X } from "lucide-react";
 import {
   formatSpotRegion,
@@ -55,6 +55,9 @@ function SpotSearchContent({
   const [totalCount, setTotalCount] = useState(0);
   const [retryCount, setRetryCount] = useState(0);
   const listRef = useRef<HTMLDivElement>(null);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+  const pageRequestPendingRef = useRef(true);
+  const [visibleSpotIds, setVisibleSpotIds] = useState<number[] | null>(null);
   const [hoveredSpotId, setHoveredSpotId] = useState<number | null>(null);
   const keywordPending = keyword.trim() !== debouncedKeyword;
 
@@ -69,6 +72,7 @@ function SpotSearchContent({
 
   useEffect(() => {
     let ignore = false;
+    pageRequestPendingRef.current = true;
     setLoading(true);
     setError(null);
     if (offset === 0) {
@@ -76,6 +80,7 @@ function SpotSearchContent({
       setTotalCount(0);
       setNextOffset(null);
       setHoveredSpotId(null);
+      setVisibleSpotIds(null);
       if (listRef.current) listRef.current.scrollTop = 0;
     }
 
@@ -103,12 +108,87 @@ function SpotSearchContent({
           setError(err instanceof Error ? err.message : "장소 검색에 실패했습니다.");
         }
       } finally {
-        if (!ignore) setLoading(false);
+        if (!ignore) {
+          pageRequestPendingRef.current = false;
+          setLoading(false);
+        }
       }
     };
     void fetchSpots();
     return () => { ignore = true; };
   }, [debouncedKeyword, selectedCategory, selectedRegion.region, selectedRegion.sigungu, offset, retryCount]);
+
+  const requestNextPage = useCallback(() => {
+    if (pageRequestPendingRef.current || loading || error || keywordPending || nextOffset === null) return;
+    // 같은 스크롤 구간에서 observer와 scroll 이벤트가 겹쳐도 한 번만 요청한다.
+    pageRequestPendingRef.current = true;
+    setOffset(nextOffset);
+  }, [loading, error, keywordPending, nextOffset]);
+
+  useEffect(() => {
+    const root = listRef.current;
+    const sentinel = loadMoreRef.current;
+    if (!root || !sentinel || typeof IntersectionObserver === "undefined" || loading || error || keywordPending || nextOffset === null) return;
+    let active = true;
+    const observer = new IntersectionObserver((entries) => {
+      if (active && entries.some((entry) => entry.isIntersecting)) requestNextPage();
+    }, { root, rootMargin: "200px 0px", threshold: 0 });
+    observer.observe(sentinel);
+    return () => { active = false; observer.disconnect(); };
+  }, [requestNextPage, loading, error, keywordPending, nextOffset]);
+
+  useEffect(() => {
+    const root = listRef.current;
+    if (!root || spots.length === 0) return;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let active = true;
+    const visibleIds = new Set<number>();
+    const publishVisibleRows = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        if (!active) return;
+        const next = spots.filter((spot) => visibleIds.has(spot.spotId)).map((spot) => spot.spotId);
+        setVisibleSpotIds((previous) => previous?.length === next.length && previous.every((id, index) => id === next[index]) ? previous : next);
+      }, 150);
+    };
+    const rows = root.querySelectorAll<HTMLElement>("[data-spot-id]");
+    // 구형 브라우저에서도 목록의 현재 위치에 맞춰 지도를 갱신한다.
+    const measureVisibleRows = () => {
+      const bounds = root.getBoundingClientRect();
+      visibleIds.clear();
+      rows.forEach((row) => {
+        const rowBounds = row.getBoundingClientRect();
+        if (rowBounds.bottom > bounds.top && rowBounds.top < bounds.bottom) visibleIds.add(Number(row.dataset.spotId));
+      });
+      publishVisibleRows();
+    };
+    const observer = typeof IntersectionObserver === "undefined" ? null : new IntersectionObserver((entries) => {
+      if (!active) return;
+      entries.forEach((entry) => {
+        const id = Number((entry.target as HTMLElement).dataset.spotId);
+        if (entry.isIntersecting) visibleIds.add(id);
+        else visibleIds.delete(id);
+      });
+      publishVisibleRows();
+    }, { root, threshold: 0 });
+    if (observer) rows.forEach((row) => observer.observe(row));
+    else {
+      measureVisibleRows();
+      root.addEventListener("scroll", measureVisibleRows);
+      window.addEventListener("resize", measureVisibleRows);
+    }
+    return () => {
+      active = false;
+      if (timer) clearTimeout(timer);
+      observer?.disconnect();
+      root.removeEventListener("scroll", measureVisibleRows);
+      window.removeEventListener("resize", measureVisibleRows);
+    };
+  }, [spots]);
+
+  const mapSpots = spots
+    .map((spot, index) => ({ ...spot, markerNumber: index + 1 }))
+    .filter((spot, index) => visibleSpotIds === null ? index < 5 : visibleSpotIds.includes(spot.spotId));
 
   // 스크롤 잠금 및 ESC 키 이벤트
   useEffect(() => {
@@ -270,11 +350,14 @@ function SpotSearchContent({
         {/* 지도 + 목록: 목록에서 마우스를 올리면 지도에서 해당 위치가 강조된다 */}
         <div className="flex min-h-0 flex-1 flex-col sm:flex-row">
           {/* 지도 (모바일은 위, 데스크톱은 오른쪽) */}
-          <div className="shrink-0 border-b border-border p-3 sm:order-2 sm:flex sm:w-[45%] sm:border-b-0 sm:border-l sm:p-4">
+          <div className="flex shrink-0 flex-col border-b border-border p-3 sm:order-2 sm:w-[45%] sm:border-b-0 sm:border-l sm:p-4">
+            <p className="mb-2 text-xs text-muted-foreground">목록에 보이는 장소</p>
             <KakaoMap
-              className="w-full sm:flex sm:flex-col"
+              key={JSON.stringify([selectedRegion.region, selectedRegion.sigungu, debouncedKeyword, selectedCategory])}
+              className="w-full sm:flex sm:min-h-0 sm:flex-1 sm:flex-col"
               mapClassName="h-40 sm:h-full sm:min-h-0 sm:flex-1"
-              spots={spots}
+              spots={mapSpots}
+              viewportSpots={spots}
               showRoute={false}
               highlightedSpotId={hoveredSpotId}
               onSpotClick={(spot) => {
@@ -288,7 +371,16 @@ function SpotSearchContent({
           </div>
 
           {/* 장소 목록 */}
-          <div ref={listRef} aria-label="장소 검색 결과" aria-busy={loading} className="min-h-0 flex-1 overflow-y-auto p-4 sm:order-1 sm:p-5">
+          <div
+            ref={listRef}
+            aria-label="장소 검색 결과"
+            aria-busy={loading}
+            onScroll={(event) => {
+              const list = event.currentTarget;
+              if (list.scrollHeight - list.scrollTop - list.clientHeight < 200) requestNextPage();
+            }}
+            className="min-h-0 flex-1 overflow-y-auto p-4 sm:order-1 sm:p-5"
+          >
           {loading && offset === 0 ? (
             <div className="flex h-48 flex-col items-center justify-center gap-2 text-muted-foreground">
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -309,12 +401,13 @@ function SpotSearchContent({
             </div>
           ) : (
             <div className="grid gap-2.5">
-              {spots.map((spot) => {
+              {spots.map((spot, index) => {
                 const isExcluded = excludedSpotIds.includes(spot.spotId);
                 return (
                   <div
                     key={spot.spotId}
                     data-testid={`spot-search-item-${spot.spotId}`}
+                    data-spot-id={spot.spotId}
                     onMouseEnter={() => setHoveredSpotId(isExcluded ? null : spot.spotId)}
                     onMouseLeave={() =>
                       setHoveredSpotId((prev) => (prev === spot.spotId ? null : prev))
@@ -327,13 +420,16 @@ function SpotSearchContent({
                     } ${!isExcluded && hoveredSpotId === spot.spotId ? "border-primary/60 bg-muted/40" : ""}`}
                   >
                     {/* 썸네일 */}
-                    <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-muted">
+                    <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-muted">
                       <SpotImage
                         src={spot.thumbnail}
                         alt={spot.title}
                         className="h-full w-full object-cover"
                         loading="lazy"
                       />
+                      <span className="absolute left-0.5 top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground" aria-label={`장소 ${index + 1}번`}>
+                        {index + 1}
+                      </span>
                     </div>
 
                     {/* 장소 정보 */}
@@ -368,22 +464,27 @@ function SpotSearchContent({
             </div>
           )}
           {spots.length > 0 && (
-            <div className="mt-4 text-center">
-              {error && <p role="alert" className="mb-2 text-xs text-destructive">{error}</p>}
-              {(nextOffset !== null || error) && (
-                <button
-                  type="button"
-                  disabled={loading || keywordPending}
-                  onClick={() => {
-                    if (error) setRetryCount((count) => count + 1);
-                    else if (nextOffset !== null) setOffset(nextOffset);
-                  }}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-primary/30 bg-primary/5 py-3 text-sm font-semibold text-primary transition-colors hover:bg-primary/10 disabled:opacity-50"
-                >
-                  {loading && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
-                  {loading ? "장소를 불러오는 중..." : error ? "다시 시도" : "장소 더 보기"}
-                </button>
-              )}
+            <div ref={loadMoreRef} data-testid="spot-search-load-more" className="mt-4 text-center">
+              {error ? (
+                <>
+                  <p role="alert" className="mb-2 text-xs text-destructive">{error}</p>
+                  <button
+                    type="button"
+                    disabled={loading || keywordPending}
+                    onClick={() => setRetryCount((count) => count + 1)}
+                    className="w-full rounded-xl border border-primary/30 bg-primary/5 py-3 text-sm font-semibold text-primary hover:bg-primary/10 disabled:opacity-50"
+                  >
+                    다시 시도
+                  </button>
+                </>
+              ) : loading ? (
+                <p role="status" className="flex items-center justify-center gap-2 py-2 text-xs text-primary">
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                  장소를 불러오는 중...
+                </p>
+              ) : nextOffset !== null ? (
+                <p className="py-2 text-xs text-muted-foreground">아래로 스크롤하면 장소를 더 불러옵니다.</p>
+              ) : null}
               <p className="mt-2 text-xs text-muted-foreground">
                 {totalCount.toLocaleString()}개 중 {spots.length.toLocaleString()}개 표시
               </p>

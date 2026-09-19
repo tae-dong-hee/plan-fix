@@ -5,10 +5,81 @@ import * as spotService from "@/services/spots";
 
 vi.mock("@/services/spots");
 vi.mock("@/components/ui/kakao-map", () => ({
-  default: ({ spots }: { spots: spotService.PopularSpot[] }) => (
-    <div data-testid="search-map" data-spot-ids={spots.map((spot) => spot.spotId).join(",")} />
+  default: ({ spots, viewportSpots }: {
+    spots: Array<spotService.PopularSpot & { markerNumber?: number }>;
+    viewportSpots?: spotService.PopularSpot[];
+  }) => (
+    <div
+      data-testid="search-map"
+      data-spot-ids={spots.map((spot) => spot.spotId).join(",")}
+      data-marker-numbers={spots.map((spot) => spot.markerNumber).join(",")}
+      data-viewport-spot-ids={viewportSpots?.map((spot) => spot.spotId).join(",")}
+    />
   ),
 }));
+
+class MockIntersectionObserver {
+  static instances: MockIntersectionObserver[] = [];
+  readonly targets = new Set<Element>();
+  readonly root: Element | Document | null;
+  readonly rootMargin: string;
+  readonly thresholds: readonly number[];
+
+  constructor(
+    private readonly callback: IntersectionObserverCallback,
+    options: IntersectionObserverInit = {},
+  ) {
+    this.root = options.root ?? null;
+    this.rootMargin = options.rootMargin ?? "0px";
+    this.thresholds = Array.isArray(options.threshold) ? options.threshold : [options.threshold ?? 0];
+    MockIntersectionObserver.instances.push(this);
+  }
+
+  observe(target: Element) { this.targets.add(target); }
+  unobserve(target: Element) { this.targets.delete(target); }
+  disconnect() { this.targets.clear(); }
+  takeRecords() { return []; }
+
+  emit(entries: Array<{ target: Element; isIntersecting: boolean }>) {
+    this.callback(entries.map(({ target, isIntersecting }) => ({
+      target,
+      isIntersecting,
+      intersectionRatio: isIntersecting ? 1 : 0,
+      time: 0,
+      boundingClientRect: target.getBoundingClientRect(),
+      intersectionRect: target.getBoundingClientRect(),
+      rootBounds: null,
+    })), this as unknown as IntersectionObserver);
+  }
+}
+
+function observerFor(target: Element) {
+  const observer = [...MockIntersectionObserver.instances].reverse().find((candidate) => candidate.targets.has(target));
+  expect(observer).toBeDefined();
+  return observer!;
+}
+
+async function triggerLoadMore(repetitions = 1) {
+  const sentinel = await screen.findByTestId("spot-search-load-more");
+  let observer!: MockIntersectionObserver;
+  await waitFor(() => { observer = observerFor(sentinel); });
+  expect(observer.root).toBe(screen.getByLabelText("장소 검색 결과"));
+  await act(async () => {
+    for (let index = 0; index < repetitions; index += 1) {
+      observer.emit([{ target: sentinel, isIntersecting: true }]);
+    }
+  });
+}
+
+function showRows(visibleIds: number[]) {
+  const rows = screen.getAllByTestId(/^spot-search-item-/);
+  const observer = observerFor(rows[0]);
+  expect(observer.root).toBe(screen.getByLabelText("장소 검색 결과"));
+  act(() => observer.emit(rows.map((target) => ({
+    target,
+    isIntersecting: visibleIds.includes(Number(target.getAttribute("data-spot-id"))),
+  }))));
+}
 
 const mockSpots: spotService.PopularSpot[] = [
   {
@@ -84,7 +155,14 @@ describe("SpotSearchModal", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    MockIntersectionObserver.instances = [];
+    vi.stubGlobal("IntersectionObserver", MockIntersectionObserver);
     (spotService.searchSpots as Mock).mockReset().mockResolvedValue(result());
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
   });
 
   it("open=false 일 때는 렌더링되지 않고 검색하지 않는다", () => {
@@ -162,7 +240,7 @@ describe("SpotSearchModal", () => {
     }
   });
 
-  it("20개 이후의 장소를 더 불러와 목록과 지도에서 확인하고 선택할 수 있다", async () => {
+  it("목록 끝으로 스크롤하면 20개 이후 장소를 자동으로 불러와 선택할 수 있다", async () => {
     const firstPage = makeSpots(1, 20);
     const lastSpot = makeSpots(21, 1)[0];
     (spotService.searchSpots as Mock)
@@ -170,23 +248,27 @@ describe("SpotSearchModal", () => {
       .mockResolvedValueOnce(result([lastSpot], 20, 21));
     render(<SpotSearchModal {...defaultProps} regions={[courseRegions[0]]} />);
 
-    const moreButton = await screen.findByRole("button", { name: "장소 더 보기" });
+    await screen.findByText("장소 20");
     expect(screen.getByText("전체 21개")).toBeInTheDocument();
     expect(screen.getByText("21개 중 20개 표시")).toBeInTheDocument();
-    fireEvent.click(moreButton);
+    expect(screen.getByText("아래로 스크롤하면 장소를 더 불러옵니다.")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "장소 더 보기" })).not.toBeInTheDocument();
+    await triggerLoadMore();
     expect(await screen.findByText("장소 21")).toBeInTheDocument();
     expect(screen.getAllByTestId(/^spot-search-item-/)).toHaveLength(21);
     expect(screen.getByText("21개 중 21개 표시")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "장소 더 보기" })).not.toBeInTheDocument();
+    expect(screen.queryByText("아래로 스크롤하면 장소를 더 불러옵니다.")).not.toBeInTheDocument();
     expect(spotService.searchSpots).toHaveBeenLastCalledWith({
       ...initialQuery,
       sigungu: "150",
       offset: 20,
     });
     expect(screen.getByTestId("search-map")).toHaveAttribute(
-      "data-spot-ids",
+      "data-viewport-spot-ids",
       [...firstPage, lastSpot].map((spot) => spot.spotId).join(","),
     );
+    showRows([19, 20, 21]);
+    await waitFor(() => expect(screen.getByTestId("search-map")).toHaveAttribute("data-spot-ids", "19,20,21"));
     fireEvent.click(within(screen.getByTestId("spot-search-item-21")).getByRole("button", { name: "선택" }));
     expect(defaultProps.onSelect).toHaveBeenCalledWith(lastSpot);
     expect(defaultProps.onClose).toHaveBeenCalled();
@@ -199,14 +281,89 @@ describe("SpotSearchModal", () => {
       .mockResolvedValueOnce(result(makeSpots(23, 1), 23, 24));
     render(<SpotSearchModal {...defaultProps} />);
 
-    fireEvent.click(await screen.findByRole("button", { name: "장소 더 보기" }));
+    await triggerLoadMore();
     await screen.findByText("장소 22");
     expect(screen.getAllByTestId(/^spot-search-item-/)).toHaveLength(22);
     expect(screen.getAllByTestId("spot-search-item-20")).toHaveLength(1);
-    fireEvent.click(screen.getByRole("button", { name: "장소 더 보기" }));
+    await triggerLoadMore();
     await screen.findByText("장소 23");
     expect(spotService.searchSpots).toHaveBeenLastCalledWith({ ...initialQuery, offset: 23 });
-    expect(screen.queryByRole("button", { name: "장소 더 보기" })).not.toBeInTheDocument();
+    expect(screen.queryByText("아래로 스크롤하면 장소를 더 불러옵니다.")).not.toBeInTheDocument();
+  });
+
+  it("하단 교차 이벤트가 반복되거나 요청 중 다시 스크롤해도 한 번만 불러온다", async () => {
+    const secondPage = deferredResult();
+    (spotService.searchSpots as Mock)
+      .mockResolvedValueOnce(result(makeSpots(1, 20), 0, 21))
+      .mockReturnValueOnce(secondPage.promise);
+    render(<SpotSearchModal {...defaultProps} />);
+    await screen.findByText("장소 20");
+    const list = screen.getByLabelText("장소 검색 결과");
+    Object.defineProperties(list, {
+      scrollHeight: { configurable: true, value: 2000 },
+      clientHeight: { configurable: true, value: 400 },
+    });
+    fireEvent.scroll(list, { target: { scrollTop: 100 } });
+    expect(spotService.searchSpots).toHaveBeenCalledTimes(1);
+
+    await triggerLoadMore(3);
+    expect(spotService.searchSpots).toHaveBeenCalledTimes(2);
+    expect(screen.getByText("장소 1")).toBeInTheDocument();
+    fireEvent.scroll(list, { target: { scrollTop: 1600 } });
+    fireEvent.scroll(list, { target: { scrollTop: 1600 } });
+    expect(spotService.searchSpots).toHaveBeenCalledTimes(2);
+    await act(async () => secondPage.resolve(result(makeSpots(21, 1), 20, 21)));
+    fireEvent.scroll(list, { target: { scrollTop: 1600 } });
+    expect(spotService.searchSpots).toHaveBeenCalledTimes(2);
+  });
+
+  it("현재 보이는 행만 150ms 후 지도에 표시하고 전체 목록의 마커 번호와 지도 범위를 유지한다", async () => {
+    const spots = makeSpots(1, 20);
+    (spotService.searchSpots as Mock).mockResolvedValue(result(spots));
+    render(<SpotSearchModal {...defaultProps} />);
+    await screen.findByText("장소 20");
+    const map = screen.getByTestId("search-map");
+    expect(map).toHaveAttribute("data-spot-ids", "1,2,3,4,5");
+    expect(map).toHaveAttribute("data-viewport-spot-ids", spots.map((spot) => spot.spotId).join(","));
+
+    vi.useFakeTimers();
+    showRows([6, 7, 8, 9, 10]);
+    await act(async () => { await vi.advanceTimersByTimeAsync(149); });
+    expect(map).toHaveAttribute("data-spot-ids", "1,2,3,4,5");
+    await act(async () => { await vi.advanceTimersByTimeAsync(1); });
+    expect(map).toHaveAttribute("data-spot-ids", "6,7,8,9,10");
+    expect(map).toHaveAttribute("data-marker-numbers", "6,7,8,9,10");
+
+    showRows([8, 9, 10, 11, 12]);
+    await act(async () => { await vi.advanceTimersByTimeAsync(150); });
+    expect(map).toHaveAttribute("data-spot-ids", "8,9,10,11,12");
+    expect(map).toHaveAttribute("data-marker-numbers", "8,9,10,11,12");
+    expect(map).toHaveAttribute("data-viewport-spot-ids", spots.map((spot) => spot.spotId).join(","));
+
+    showRows([]);
+    await act(async () => { await vi.advanceTimersByTimeAsync(150); });
+    expect(map).toHaveAttribute("data-spot-ids", "");
+    expect(map).toHaveAttribute("data-viewport-spot-ids", spots.map((spot) => spot.spotId).join(","));
+  });
+
+  it("검색어를 입력하는 동안 이전 검색의 다음 페이지를 자동으로 요청하지 않는다", async () => {
+    (spotService.searchSpots as Mock)
+      .mockResolvedValueOnce(result(makeSpots(1, 20), 0, 40))
+      .mockResolvedValueOnce(result([mockSpots[1]]));
+    render(<SpotSearchModal {...defaultProps} regions={[courseRegions[0]]} />);
+    await screen.findByText("장소 20");
+    vi.useFakeTimers();
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: "커피" } });
+    fireEvent.scroll(screen.getByLabelText("장소 검색 결과"));
+    expect(spotService.searchSpots).toHaveBeenCalledTimes(1);
+    await act(async () => { await vi.advanceTimersByTimeAsync(300); });
+    expect(spotService.searchSpots).toHaveBeenCalledTimes(2);
+    expect(spotService.searchSpots).toHaveBeenLastCalledWith(expect.objectContaining({
+      keyword: "커피",
+      sigungu: "150",
+      offset: 0,
+    }));
+    expect(screen.getByTestId("search-map")).toHaveAttribute("data-spot-ids", "2");
   });
 
   it("다음 페이지가 실패해도 기존 목록을 유지하고 같은 offset에서 다시 시도한다", async () => {
@@ -217,22 +374,23 @@ describe("SpotSearchModal", () => {
       .mockReturnValueOnce(secondPage.promise);
     render(<SpotSearchModal {...defaultProps} />);
 
-    fireEvent.click(await screen.findByRole("button", { name: "장소 더 보기" }));
+    await triggerLoadMore();
     expect(await screen.findByText("네트워크 오류")).toBeInTheDocument();
     expect(screen.getByText("경포해변")).toBeInTheDocument();
     expect(screen.getByTestId("search-map")).toHaveAttribute("data-spot-ids", "1,2");
+    fireEvent.scroll(screen.getByLabelText("장소 검색 결과"));
+    expect(spotService.searchSpots).toHaveBeenCalledTimes(2);
     fireEvent.click(screen.getByRole("button", { name: "다시 시도" }));
     expect(spotService.searchSpots).toHaveBeenLastCalledWith({ ...initialQuery, offset: 2 });
     expect(screen.getByText("경포해변")).toBeInTheDocument();
-    const paginationButton = screen.getByRole("button", { name: /장소 더 보기|불러오는 중|다시 시도/ });
-    expect(paginationButton).toBeDisabled();
-    fireEvent.click(paginationButton);
+    expect(screen.getByText("장소를 불러오는 중...")).toBeInTheDocument();
+    fireEvent.scroll(screen.getByLabelText("장소 검색 결과"));
     expect(spotService.searchSpots).toHaveBeenCalledTimes(3);
 
     await act(async () => secondPage.resolve(result(makeSpots(3, 1), 2, 3)));
     expect(await screen.findByText("장소 3")).toBeInTheDocument();
     expect(screen.queryByText("네트워크 오류")).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "장소 더 보기" })).not.toBeInTheDocument();
+    expect(screen.queryByText("아래로 스크롤하면 장소를 더 불러옵니다.")).not.toBeInTheDocument();
   });
 
   it("카테고리를 바꾸면 누적 페이지를 비우고 지역은 유지한다", async () => {
@@ -243,8 +401,10 @@ describe("SpotSearchModal", () => {
       .mockReturnValueOnce(filtered.promise);
     render(<SpotSearchModal {...defaultProps} regions={[courseRegions[0]]} />);
 
-    fireEvent.click(await screen.findByRole("button", { name: "장소 더 보기" }));
+    await triggerLoadMore();
     await screen.findByText("장소 3");
+    showRows([3]);
+    await waitFor(() => expect(screen.getByTestId("search-map")).toHaveAttribute("data-spot-ids", "3"));
     fireEvent.click(screen.getByRole("button", { name: "음식점" }));
     expect(spotService.searchSpots).toHaveBeenLastCalledWith({
       ...initialQuery,
@@ -256,7 +416,10 @@ describe("SpotSearchModal", () => {
     expect(screen.getByTestId("search-map")).toHaveAttribute("data-spot-ids", "");
     await act(async () => filtered.resolve(result([mockSpots[1]])));
     expect(await screen.findByText("안목커피거리")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "장소 더 보기" })).not.toBeInTheDocument();
+    expect(screen.getByTestId("search-map")).toHaveAttribute("data-spot-ids", "2");
+    expect(screen.getByTestId("search-map")).toHaveAttribute("data-marker-numbers", "1");
+    expect(screen.getByTestId("search-map")).toHaveAttribute("data-viewport-spot-ids", "2");
+    expect(screen.queryByText("아래로 스크롤하면 장소를 더 불러옵니다.")).not.toBeInTheDocument();
   });
 
   it.each(["지역", "검색어"])("%s 변경 전에 요청한 추가 페이지가 늦게 도착해도 새 검색에 섞이지 않는다", async (filter) => {
@@ -268,7 +431,7 @@ describe("SpotSearchModal", () => {
       .mockResolvedValueOnce(result([replacement]));
     render(<SpotSearchModal {...defaultProps} regions={courseRegions} />);
 
-    fireEvent.click(await screen.findByRole("button", { name: "장소 더 보기" }));
+    await triggerLoadMore();
     if (filter === "지역") {
       chooseRegion("속초시");
     } else {
