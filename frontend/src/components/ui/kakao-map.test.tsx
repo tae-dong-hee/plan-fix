@@ -4,6 +4,9 @@ import userEvent from "@testing-library/user-event";
 import KakaoMap, { type KakaoMapSpot } from "@/components/ui/kakao-map";
 import { hasMapCoordinates } from "@/lib/map-coordinates";
 
+import { fetchDrivingRoute } from "@/services/course";
+vi.mock("@/services/course", () => ({ fetchDrivingRoute: vi.fn() }));
+
 const spots: KakaoMapSpot[] = [
   { spotId: 1, title: "경포해변", latitude: 37.8, longitude: 128.9 },
   { spotId: 2, title: "정동진", latitude: 37.6, longitude: 129.0 },
@@ -204,6 +207,7 @@ function expectUnobstructedLabels(sdk: ReturnType<typeof installSdkMock>, viewpo
 describe("KakaoMap", () => {
   beforeEach(() => {
     vi.stubEnv("VITE_KAKAO_JS_KEY", "test-kakao-js-key");
+    vi.mocked(fetchDrivingRoute).mockImplementation(async (points) => ({ paths: [points] }));
   });
 
   afterEach(async () => {
@@ -219,6 +223,23 @@ describe("KakaoMap", () => {
     vi.unstubAllEnvs();
     vi.useRealTimers();
     vi.restoreAllMocks();
+  });
+
+  test("도로 조회 실패 시 직선을 그리지 않고 재시도로 실제 도로 좌표를 표시한다", async () => {
+    const sdk = installSdkMock();
+    vi.mocked(fetchDrivingRoute).mockResolvedValueOnce(null);
+    render(<KakaoMap spots={spots} />);
+    await screen.findByText("자동차 경로를 불러오지 못했어요.");
+    expect(sdk.routes).toHaveLength(0);
+    const road = [
+      { latitude: 37.8, longitude: 128.9 },
+      { latitude: 37.75, longitude: 128.95 },
+      { latitude: 37.6, longitude: 129 },
+    ];
+    vi.mocked(fetchDrivingRoute).mockResolvedValueOnce({ paths: [road] });
+    fireEvent.click(screen.getByRole("button", { name: "경로 다시 시도" }));
+    await waitFor(() => expect(sdk.routes).toHaveLength(1));
+    expect(sdk.routes[0].options.path).toEqual(road);
   });
 
   test("키가 없어도 지도 높이를 유지하며 제품 안내만 보여준다", () => {
@@ -436,11 +457,11 @@ describe("KakaoMap", () => {
     rerender(<KakaoMap spots={[spots[1], spots[0]]} />);
     expect(firstRoute.setMap).toHaveBeenLastCalledWith(null);
     firstMarkers.forEach((overlay) => expect(overlay.setMap).toHaveBeenLastCalledWith(null));
-    expect(sdk.routes[1].options.path[0]).toEqual(expect.objectContaining({ latitude: 37.6 }));
+    await waitFor(() => expect(sdk.routes.at(-1)!.options.path[0]).toEqual(expect.objectContaining({ latitude: 37.6 })));
     rerender(<KakaoMap spots={[]} />);
     expect(screen.getByRole("status")).toHaveTextContent("지도에 표시할 장소가 없어요.");
     sdk.overlays.forEach((overlay) => expect(overlay.setMap).toHaveBeenLastCalledWith(null));
-    expect(sdk.routes[1].setMap).toHaveBeenLastCalledWith(null);
+    expect(sdk.routes.at(-1)!.setMap).toHaveBeenLastCalledWith(null);
     unmount();
   });
 

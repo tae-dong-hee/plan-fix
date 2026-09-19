@@ -60,6 +60,10 @@ public class AiCourseDraftApplicationService {
 		List<SpotModel> anchors = command.anchorSpotIds().isEmpty()
 			? List.of()
 			: spotRepository.findAllByIdIn(command.anchorSpotIds());
+		if (!anchors.stream().map(SpotModel::spotId).collect(Collectors.toSet()).containsAll(command.anchorSpotIds())) {
+			throw new CoreException(ErrorType.BAD_REQUEST,
+				"선택한 필수 장소를 찾을 수 없습니다. 장소를 다시 검색해 선택해 주세요.");
+		}
 
 		if (candidates.isEmpty() && anchors.isEmpty()) {
 			throw new CoreException(ErrorType.NOT_FOUND,

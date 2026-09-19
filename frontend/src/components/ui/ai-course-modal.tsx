@@ -280,6 +280,8 @@ export default function AiCourseModal({ open, startDate: initialStartDate, endDa
   const addAnchor = (spot: PopularSpot) => {
     setAnchors((prev) => prev.some((anchor) => anchor.spotId === spot.spotId) ? prev : [...prev, spot]);
     setAnchorKeyword("");
+    setAnchorResults([]);
+    setError(null);
     anchorInputRef.current?.focus();
   };
 
@@ -302,6 +304,12 @@ export default function AiCourseModal({ open, startDate: initialStartDate, endDa
 
   const handleSubmit = async () => {
     if (requestPending.current || dateError) return;
+    if (anchorKeyword.trim()) {
+      setDetailsOpen(true);
+      setError("검색 결과에서 꼭 가고 싶은 장소를 선택해 주세요. 추가하지 않으려면 검색어를 지워 주세요.");
+      anchorInputRef.current?.focus();
+      return;
+    }
     requestPending.current = true;
     const version = ++requestVersion.current;
     setSubmitting(true);
@@ -527,7 +535,7 @@ export default function AiCourseModal({ open, startDate: initialStartDate, endDa
                     </fieldset>
                     <div>
                       <label htmlFor="ai-course-anchor" className="text-xs font-semibold">꼭 가고 싶은 곳도 담아둘까요? <span className="ml-1 font-normal text-muted-foreground">선택</span></label>
-                      <p className="mt-1 text-[11px] leading-5 text-muted-foreground">이 장소를 포함해 주변으로 코스를 구성해 드릴게요.</p>
+                      <p id="ai-course-anchor-help" className="mt-1 text-[11px] leading-5 text-muted-foreground">검색 후 아래 목록에서 장소를 선택해 주세요. 선택한 장소는 코스에 꼭 포함돼요.</p>
                       {anchors.length > 0 && (
                         <div className="mt-2 flex flex-wrap gap-1.5">
                           {anchors.map((anchor) => (
@@ -540,7 +548,7 @@ export default function AiCourseModal({ open, startDate: initialStartDate, endDa
                       )}
                       <div className="relative mt-2.5">
                         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
-                        <input ref={anchorInputRef} id="ai-course-anchor" type="text" value={anchorKeyword} onChange={(event) => setAnchorKeyword(event.target.value)} placeholder="장소 이름으로 검색 (예: 경포해변)" aria-label="고정할 장소 검색" autoComplete="off" className="ai-course-control w-full rounded-xl border border-input bg-background py-2.5 pl-9 pr-3 text-xs placeholder:text-muted-foreground" />
+                        <input ref={anchorInputRef} id="ai-course-anchor" type="text" value={anchorKeyword} onChange={(event) => { setAnchorKeyword(event.target.value); setError(null); }} placeholder="장소 이름으로 검색 (예: 경포해변)" aria-label="고정할 장소 검색" aria-describedby="ai-course-anchor-help" aria-controls="ai-course-anchor-results" autoComplete="off" className="ai-course-control w-full rounded-xl border border-input bg-background py-2.5 pl-9 pr-3 text-xs placeholder:text-muted-foreground" />
                       </div>
                       <div aria-live="polite">
                         {anchorSearching && <p className="mt-2 text-xs text-muted-foreground">검색 중...</p>}
@@ -548,7 +556,7 @@ export default function AiCourseModal({ open, startDate: initialStartDate, endDa
                         {!anchorSearching && !anchorSearchError && anchorKeyword.trim() && anchorResults.length === 0 && <p className="mt-2 text-xs text-muted-foreground">검색 결과가 없어요. 다른 장소 이름을 입력해 보세요.</p>}
                       </div>
                       {anchorResults.length > 0 && (
-                        <ul className="mt-2 space-y-1">
+                        <ul id="ai-course-anchor-results" aria-label="장소 검색 결과" className="mt-1 max-h-60 overflow-y-auto rounded-xl border border-primary/20 bg-background p-1 shadow-lg">
                           {anchorResults.map((spot) => {
                             const added = anchors.some((anchor) => anchor.spotId === spot.spotId);
                             return (

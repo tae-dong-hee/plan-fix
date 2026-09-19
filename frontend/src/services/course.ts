@@ -381,7 +381,10 @@ export async function fetchDrivingRoute(points: DrivingRoutePoint[]): Promise<Dr
     });
     if (!response.ok) return null;
     const route = await response.json() as DrivingRoute;
-    return Array.isArray(route.paths) && route.paths.every((path) => Array.isArray(path) && path.length >= 2)
+    return Array.isArray(route.paths) && route.paths.length > 0 && route.paths.every((path) =>
+      Array.isArray(path) && path.length >= 2 && path.every((point) =>
+        Number.isFinite(point.latitude) && Number.isFinite(point.longitude)
+        && Math.abs(point.latitude) <= 90 && Math.abs(point.longitude) <= 180))
       ? route : null;
   } catch {
     return null;

@@ -44,6 +44,14 @@ public class KakaoRoadRouteClient {
         }
         List<List<Point>> segments = new ArrayList<>();
         for (int index = 1; index < points.size(); index++) {
+            Point origin = points.get(index - 1);
+            Point destination = points.get(index);
+            // 동일 위치의 연속 방문은 길찾기가 실패할 수 있으므로 이동 없는 구간으로 처리한다.
+            if (origin.latitude().compareTo(destination.latitude()) == 0
+                    && origin.longitude().compareTo(destination.longitude()) == 0) {
+                segments.add(List.of(origin, destination));
+                continue;
+            }
             Optional<List<Point>> segment = fetch(points.get(index - 1), points.get(index));
             if (segment.isEmpty()) return Optional.empty();
             segments.add(segment.get());
