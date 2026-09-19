@@ -343,25 +343,22 @@ export default function BoardDetailPage() {
               </div>
             </div>
 
-            <div className="mt-6 flex flex-col gap-4 rounded-2xl border border-primary/15 bg-primary/5 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
-              <div>
-                <p className="text-sm font-semibold">마음에 드는 여행 이야기인가요?</p>
-                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                  좋아요한 이야기는{" "}
-                  <Link to="/wishlist?tab=boards" className="font-medium text-primary underline underline-offset-4 hover:text-primary/80">
-                    위시리스트 · 여행 이야기
-                  </Link>
-                  에서 다시 볼 수 있어요.
-                </p>
-              </div>
+            <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1">
               <StoryLikeButton
                 title={board.title}
                 isLiked={Boolean(board.isLiked)}
                 likeCount={board.likeCount}
                 isLoading={isTogglingLike}
                 onClick={toggleLike}
-                className="w-full sm:w-auto"
+                className="-ml-2"
               />
+              <Link
+                to="/wishlist?tab=boards"
+                className="inline-flex min-h-8 items-center gap-1 rounded-md text-xs text-muted-foreground transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+              >
+                위시리스트 · 여행 이야기
+                <ArrowRight className="h-3 w-3" aria-hidden="true" />
+              </Link>
             </div>
             {likeNotice && <p className="mt-2 text-sm text-destructive" role="alert">{likeNotice}</p>}
 

@@ -732,7 +732,7 @@ export default function MainPage() {
                         <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
                       </div>
                     </Link>
-                    <div className="mx-5 flex flex-wrap items-center justify-between gap-2 border-t border-border/70 pb-4 pt-3">
+                    <div className="mx-5 flex flex-wrap items-center gap-3 border-t border-border/70 py-2">
                       <StoryLikeButton
                         title={board.title}
                         isLiked={!!likedBoards[board.boardId]}
@@ -740,6 +740,7 @@ export default function MainPage() {
                         isLoading={boardLikesLoading || !!loadingBoards[board.boardId]}
                         disabled={boardLikesError}
                         onClick={() => handleToggleBoardLike(board.boardId)}
+                        className="-ml-2"
                       />
                       <span className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground" aria-label={`댓글 ${board.commentCount}개`}>
                         <MessageSquare className="h-3.5 w-3.5" aria-hidden="true" />

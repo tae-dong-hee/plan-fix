@@ -690,7 +690,7 @@ describe("MainPage travel story likes", () => {
     mockedFetch5DayWeather.mockResolvedValue(mockWeatherItems);
   });
 
-  test("이야기에 좋아요와 취소 버튼을 표시하고 상세 이동 없이 서버의 개수로 갱신한다", async () => {
+  test("같은 좋아요 버튼으로 이야기를 저장하고 다시 눌러 취소하며 서버의 개수로 갱신한다", async () => {
     render(
       <MemoryRouter initialEntries={["/"]} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <MainPage />
@@ -706,15 +706,19 @@ describe("MainPage travel story likes", () => {
 
     mockedLikeBoard.mockResolvedValue({ liked: true, likeCount: 20 });
     fireEvent.click(button);
-    const unlikeButton = await screen.findByRole("button", { name: `${publicBoard.title} 좋아요 취소` });
-    await waitFor(() => expect(unlikeButton).toBeEnabled());
-    expect(unlikeButton).toHaveAttribute("aria-pressed", "true");
-    expect(within(unlikeButton).getByText("20")).toBeInTheDocument();
+    await waitFor(() => expect(button).toBeEnabled());
+    expect(button).toHaveAttribute("aria-pressed", "true");
+    expect(button).toHaveAccessibleName(`${publicBoard.title} 좋아요`);
+    expect(within(button).getByText("좋아요")).toBeInTheDocument();
+    expect(button).not.toHaveTextContent("취소");
+    expect(within(button).getByText("20")).toBeInTheDocument();
     expect(mockedLikeBoard).toHaveBeenCalledExactlyOnceWith(101);
     expect(screen.getByTestId("current-location")).toHaveTextContent(/^\/$/);
 
-    fireEvent.click(unlikeButton);
+    fireEvent.click(button);
     await waitFor(() => expect(button).toHaveAttribute("aria-pressed", "false"));
+    expect(button).toHaveAccessibleName(`${publicBoard.title} 좋아요`);
+    expect(within(button).getByText("좋아요")).toBeInTheDocument();
     expect(within(button).getByText("11")).toBeInTheDocument();
     expect(mockedUnlikeBoard).toHaveBeenCalledExactlyOnceWith(101);
     expect(screen.getByTestId("current-location")).toHaveTextContent(/^\/$/);
@@ -732,10 +736,10 @@ describe("MainPage travel story likes", () => {
     expect(mockedLikeBoard).not.toHaveBeenCalled();
 
     await act(async () => request.resolve([likedBoard]));
-    const unlikeButton = screen.getByRole("button", { name: `${publicBoard.title} 좋아요 취소` });
-    expect(unlikeButton).toBeEnabled();
-    expect(unlikeButton).toHaveAttribute("aria-pressed", "true");
-    fireEvent.click(unlikeButton);
+    expect(button).toHaveAccessibleName(`${publicBoard.title} 좋아요`);
+    expect(button).toBeEnabled();
+    expect(button).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(button);
     await waitFor(() => expect(button).toHaveAttribute("aria-pressed", "false"));
     expect(mockedUnlikeBoard).toHaveBeenCalledExactlyOnceWith(101);
     expect(mockedLikeBoard).not.toHaveBeenCalled();
@@ -751,12 +755,12 @@ describe("MainPage travel story likes", () => {
     expect(mockedLikeBoard).not.toHaveBeenCalled();
 
     fireEvent.click(screen.getByRole("button", { name: "좋아요 상태 다시 확인" }));
-    const unlikeButton = await screen.findByRole("button", { name: `${publicBoard.title} 좋아요 취소` });
-    await waitFor(() => expect(unlikeButton).toBeEnabled());
+    await waitFor(() => expect(button).toBeEnabled());
+    expect(button).toHaveAttribute("aria-pressed", "true");
     expect(mockedFetchLikedBoards).toHaveBeenCalledTimes(2);
     expect(mockedFetchPopularBoards).toHaveBeenCalledTimes(1);
     expect(screen.queryByText("이야기 좋아요 상태를 불러오지 못했습니다.")).not.toBeInTheDocument();
-    fireEvent.click(unlikeButton);
+    fireEvent.click(button);
     await waitFor(() => expect(button).toHaveAttribute("aria-pressed", "false"));
     expect(mockedUnlikeBoard).toHaveBeenCalledExactlyOnceWith(101);
   });
