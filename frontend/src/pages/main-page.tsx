@@ -697,7 +697,7 @@ export default function MainPage() {
                   type="button"
                   aria-pressed={boardSort === sort}
                   onClick={() => setBoardSort(sort)}
-                  className={`min-h-10 rounded-full px-4 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${boardSort === sort ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}
+                  className={`min-h-10 rounded-full px-4 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${boardSort === sort ? "bg-primary/10 text-primary dark:bg-primary/5" : "text-muted-foreground hover:bg-primary/5 hover:text-primary"}`}
                 >
                   {sort === "popular" ? "인기순" : "최신순"}
                 </button>
