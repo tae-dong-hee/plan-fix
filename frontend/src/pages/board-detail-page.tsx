@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 
 import AppNav from "@/components/ui/app-nav";
+import ProfileAvatar from "@/components/ui/profile-avatar";
 import StoryLikeButton from "@/components/ui/story-like-button";
 import { LoaderFour } from "@/components/ui/unique-loader-components";
 import { createBoardComment, deleteBoardComment, fetchBoardComments, fetchBoardDetail, likeBoard, unlikeBoard, updateBoardComment, type BoardComment, type BoardDetail } from "@/services/board";
@@ -479,8 +480,15 @@ export default function BoardDetailPage() {
                     <div key={item.commentId} className={depth > 0 ? "ml-6 border-l-2 border-primary/20 pl-4" : ""}>
                       <div className="rounded-xl bg-muted/40 px-4 py-3 text-sm">
                         <div className="flex items-center justify-between gap-2">
-                          <span className="font-semibold text-foreground">{item.authorName || `사용자 #${item.userId}`}</span>
-                          <time className="text-xs text-muted-foreground">{formatDate(item.createdAt)}</time>
+                          <div className="flex min-w-0 items-center gap-2">
+                            <ProfileAvatar
+                              imageUrl={item.authorProfileImageUrl ?? null}
+                              color={item.authorDefaultAvatarColor ?? "violet"}
+                              className="h-8 w-8 shrink-0"
+                            />
+                            <span className="min-w-0 break-all font-semibold text-foreground">{item.authorName || `사용자 #${item.userId}`}</span>
+                          </div>
+                          <time className="shrink-0 text-xs text-muted-foreground">{formatDate(item.createdAt)}</time>
                         </div>
                         {editingCommentId === item.commentId ? (
                           <div className="mt-2 flex gap-2">

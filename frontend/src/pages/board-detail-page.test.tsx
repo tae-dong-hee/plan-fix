@@ -19,7 +19,10 @@ vi.mock("react-router-dom", async () => {
 
 vi.mock("@/services/board");
 vi.mock("@/services/course");
-vi.mock("@/services/user");
+vi.mock("@/services/user", async (importOriginal) => ({
+  ...await importOriginal<typeof import("@/services/user")>(),
+  fetchMyProfile: vi.fn(),
+}));
 
 const mockedFetchBoardDetail = fetchBoardDetail as MockedFunction<typeof fetchBoardDetail>;
 const mockedFetchCourse = fetchCourse as MockedFunction<typeof fetchCourse>;
@@ -98,6 +101,45 @@ describe("BoardDetailPage", () => {
       createdAt: "2026-09-01T10:00:00Z",
       updatedAt: "2026-09-01T10:00:00Z",
     });
+  });
+
+  test("내 프로필 조회가 실패해도 댓글과 중첩 대댓글에 각 작성자의 사진과 기본 이미지를 표시한다", async () => {
+    mockedFetchBoardDetail.mockResolvedValue(boardFixture());
+    vi.mocked(fetchMyProfile).mockRejectedValue(new Error("로그인이 필요합니다."));
+    vi.mocked(fetchBoardComments).mockResolvedValue([
+      commentFixture({ authorProfileImageUrl: "/api/v1/users/10/profile-image?v=1" }),
+      commentFixture({ commentId: 2, userId: 20, parentCommentId: 1, content: "사진 있는 대댓글", authorProfileImageUrl: "/api/v1/users/20/profile-image?v=2" }),
+      commentFixture({ commentId: 3, userId: 30, parentCommentId: 2, content: "기본 이미지 대댓글", authorDefaultAvatarColor: "green" }),
+    ]);
+
+    renderAt("1");
+
+    const parentCard = (await screen.findByText("부모 댓글")).parentElement!;
+    const replyCard = screen.getByText("사진 있는 대댓글").parentElement!;
+    const nestedCard = screen.getByText("기본 이미지 대댓글").parentElement!;
+    expect(within(parentCard).getByRole("img", { name: "프로필 사진" })).toHaveAttribute("src", "/api/v1/users/10/profile-image?v=1");
+    expect(within(replyCard).getByRole("img", { name: "프로필 사진" })).toHaveAttribute("src", "/api/v1/users/20/profile-image?v=2");
+    expect(within(nestedCard).getByRole("img", { name: "기본 프로필 이미지" })).toBeInTheDocument();
+
+    fireEvent.error(within(replyCard).getByRole("img", { name: "프로필 사진" }));
+    expect(within(replyCard).getByRole("img", { name: "기본 프로필 이미지" })).toBeInTheDocument();
+    expect(within(parentCard).getByRole("img", { name: "프로필 사진" })).toBeInTheDocument();
+  });
+
+  test("댓글을 등록하면 응답의 작성자 사진을 즉시 표시한다", async () => {
+    mockedFetchBoardDetail.mockResolvedValue(boardFixture());
+    vi.mocked(createBoardComment).mockResolvedValue(commentFixture({
+      content: "새 댓글",
+      authorProfileImageUrl: "/api/v1/users/10/profile-image?v=new",
+    }));
+
+    renderAt("1");
+
+    fireEvent.change(await screen.findByPlaceholderText("댓글을 남겨보세요"), { target: { value: "새 댓글" } });
+    fireEvent.click(within(screen.getByRole("region", { name: "댓글" })).getByRole("button", { name: "등록" }));
+
+    const card = (await screen.findByText("새 댓글")).parentElement!;
+    expect(within(card).getByRole("img", { name: "프로필 사진" })).toHaveAttribute("src", "/api/v1/users/10/profile-image?v=new");
   });
 
   test("삭제된 부모가 목록에 없어도 대댓글과 자손을 기존 스레드와 함께 한 번씩 표시한다", async () => {

@@ -3,7 +3,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import taedonghee.plan_fix.infrastructure.board.*;
-import taedonghee.plan_fix.infrastructure.user.UserJpaRepository;
+import taedonghee.plan_fix.domain.user.UserRepository;
 import taedonghee.plan_fix.support.error.*;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -14,7 +14,7 @@ public class CommentApplicationService {
     private static final int MAX_LENGTH=1000;
     private final CommentJpaRepository repository;
     private final BoardJpaRepository boardRepository;
-    private final UserJpaRepository userRepository;
+    private final UserRepository userRepository;
     /** 게시글의 활성 댓글과 대댓글을 작성 시각·댓글 ID 순으로 조회한다. */
     public List<CommentResult> list(Long boardId) { return repository.findByBoardIdAndStatusOrderByCreatedAtAscCommentIdAsc(boardId,"ACTIVE").stream().map(this::toResult).toList(); }
     /** 댓글 등록. 대댓글은 같은 게시글에 속한 활성 부모 댓글이 있어야 한다. */
@@ -34,8 +34,7 @@ public class CommentApplicationService {
     private void ensureOwner(Long userId, CommentJpaEntity c){if(!c.getUserId().equals(userId)) throw new CoreException(ErrorType.FORBIDDEN,"comment access denied.");}
     private CommentResult toResult(CommentJpaEntity comment) {
         // 서비스에서 username을 닉네임으로 사용하므로 댓글에도 동일한 값을 노출한다.
-        String authorName = userRepository.findById(comment.getUserId()).map(user -> user.getUsername()).orElse("사용자");
-        return CommentResult.from(comment, authorName);
+        return CommentResult.from(comment, userRepository.findByUserId(comment.getUserId()).orElse(null));
     }
     /** 공백만 있는 입력을 거절하고, 앞뒤 공백을 제외한 본문 길이를 1~1000자로 제한한다. */
     private void validate(String s){if(s==null||s.isBlank()||s.strip().length()>MAX_LENGTH) throw new CoreException(ErrorType.BAD_REQUEST,"댓글은 1~1000자로 입력해주세요.");}

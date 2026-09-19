@@ -58,6 +58,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/v1/users").permitAll()
                         // 회원가입 전에도 아이디 사용 가능 여부를 확인할 수 있어야 한다.
                         .requestMatchers(HttpMethod.GET, "/api/v1/users/username-availability").permitAll()
+                        // 댓글에 작성자 사진을 표시한다. 내 사진 조회·변경은 계속 인증이 필요하다.
+                        .requestMatchers("/api/v1/users/me/profile-image").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/users/*/profile-image").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/logout").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/auth/kakao", "/api/v1/auth/kakao/callback").permitAll()
