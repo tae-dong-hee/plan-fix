@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.mail.MailSendException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -189,6 +190,77 @@ class PasswordResetIntegrationTest {
         assertInvalid(() -> service.confirm("invalid", "Newpass456"));
         assertThat(passwords.matches("Oldpass123", credentials.findByLoginId(loginId).orElseThrow().getPassword())).isTrue();
         assertThat(resets.findSessionVersion(user.getUserId())).contains(0L);
+    }
+
+    @Test
+    void wellFormedUnknownTokenDoesNotConsumeIssuedLink() {
+        String token = requestToken();
+        String unknownToken = (token.startsWith("A") ? "B" : "A") + token.substring(1);
+
+        assertInvalid(() -> service.confirm(unknownToken, "Newpass456"));
+
+        assertThat(passwords.matches("Oldpass123", credentials.findByLoginId(loginId).orElseThrow().getPassword())).isTrue();
+        assertThat(resets.findSessionVersion(user.getUserId())).contains(0L);
+        service.confirm(token, "Newpass456");
+        assertThat(passwords.matches("Newpass456", credentials.findByLoginId(loginId).orElseThrow().getPassword())).isTrue();
+    }
+
+    @Test
+    void accountWithdrawnAfterIssuingLinkCannotResetPassword() {
+        String token = requestToken();
+        String tokenHash = resets.findById(user.getUserId()).orElseThrow().getTokenHash();
+        users.save(user.withdraw());
+
+        assertInvalid(() -> service.confirm(token, "Newpass456"));
+
+        assertThat(passwords.matches("Oldpass123", credentials.findByLoginId(loginId).orElseThrow().getPassword())).isTrue();
+        assertThat(resets.findById(user.getUserId()).orElseThrow().getTokenHash()).isEqualTo(tokenHash);
+        assertThat(resets.findSessionVersion(user.getUserId())).contains(0L);
+    }
+
+    @Test
+    void credentialRemovedAfterIssuingLinkCannotBeRecreatedByReset() {
+        String token = requestToken();
+        String tokenHash = resets.findById(user.getUserId()).orElseThrow().getTokenHash();
+        credentialEntities.deleteById(credentials.findByLoginId(loginId).orElseThrow().getUserCredentialId());
+
+        assertInvalid(() -> service.confirm(token, "Newpass456"));
+
+        assertThat(credentials.findByLoginId(loginId)).isEmpty();
+        assertThat(resets.findById(user.getUserId()).orElseThrow().getTokenHash()).isEqualTo(tokenHash);
+        assertThat(resets.findSessionVersion(user.getUserId())).contains(0L);
+    }
+
+    @Test
+    void smtpFailureKeepsCommittedLinkAndPasswordAndEnforcesCooldownBeforeRetry() {
+        String previousJwt = auth.login(new AuthCommand.Login(loginId, "Oldpass123")).accessToken();
+        doThrow(new MailSendException("simulated delivery failure")).when(mail).send(any(SimpleMailMessage.class));
+
+        String token = requestToken();
+        var issued = resets.findById(user.getUserId()).orElseThrow();
+        assertThat(issued.getTokenHash()).isNotNull();
+        assertThat(issued.getExpiresAt()).isAfter(Instant.now());
+        assertThat(passwords.matches("Oldpass123", credentials.findByLoginId(loginId).orElseThrow().getPassword())).isTrue();
+        assertThat(tokens.parse(previousJwt)).isPresent();
+        assertThat(issued.getSessionVersion()).isZero();
+
+        service.request(loginId, email);
+        verify(mail, times(1)).send(any(SimpleMailMessage.class));
+        assertThat(events.stream(PasswordResetMail.class)).hasSize(1);
+        var afterCooldownRequest = resets.findById(user.getUserId()).orElseThrow();
+        assertThat(afterCooldownRequest.getTokenHash()).isEqualTo(issued.getTokenHash());
+        assertThat(afterCooldownRequest.getRequestedAt()).isEqualTo(issued.getRequestedAt());
+        // A transport error can happen after SMTP acceptance. Such a link is still usable.
+        service.confirm(token, "Newpass456");
+        assertThat(passwords.matches("Newpass456", credentials.findByLoginId(loginId).orElseThrow().getPassword())).isTrue();
+
+        allowResend();
+        doNothing().when(mail).send(any(SimpleMailMessage.class));
+        String retryToken = requestToken();
+        verify(mail, times(2)).send(any(SimpleMailMessage.class));
+        assertThat(retryToken).isNotEqualTo(token);
+        service.confirm(retryToken, "Another789");
+        assertThat(passwords.matches("Another789", credentials.findByLoginId(loginId).orElseThrow().getPassword())).isTrue();
     }
 
     @Test
