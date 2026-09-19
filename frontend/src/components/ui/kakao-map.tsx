@@ -20,6 +20,8 @@ export type KakaoMapSpot = {
 
 type KakaoMapProps = {
   spots: KakaoMapSpot[];
+  /** 지도 범위를 정할 장소. 지정하면 표시 마커만 바뀔 때 사용자의 확대·이동 상태를 유지한다. */
+  viewportSpots?: KakaoMapSpot[];
   /** 지점 사이를 방문 순서대로 자동차 도로 경로로 연결한다. */
   showRoute?: boolean;
   /** 마지막 방문지에서 첫 지점(예: 숙소)으로 돌아오는 경로를 포함한다. */
@@ -110,6 +112,7 @@ type MarkerEntry = {
 
 export default function KakaoMap({
   spots,
+  viewportSpots,
   showRoute = true,
   returnToStart = false,
   onSpotClick,
@@ -124,6 +127,7 @@ export default function KakaoMap({
   const markersRef = useRef<MarkerEntry[]>([]);
   const layoutLabelsRef = useRef<(() => void) | null>(null);
   const fitViewportRef = useRef<(() => void) | null>(null);
+  const fittedViewportKeyRef = useRef<string | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "no-key" | "error" | "empty">("loading");
   const [retryCount, setRetryCount] = useState(0);
   const [roadPaths, setRoadPaths] = useState<DrivingRoutePoint[][] | null>(null);
@@ -137,10 +141,16 @@ export default function KakaoMap({
     .map((spot, index) => ({ spot, markerNumber: spot.markerNumber ?? index + 1 }))
     .filter(({ spot }) => hasMapCoordinates(spot));
   const hasPlottable = plottable.length > 0;
+  const viewportCoordinates = viewportSpots?.filter(hasMapCoordinates);
+  const hasMapLocations = hasPlottable || Boolean(viewportCoordinates?.length);
+  const hasExplicitViewport = viewportSpots !== undefined;
   // 배열 참조나 클릭 핸들러가 바뀌어도 같은 지도를 다시 그리지 않는다.
   const positionsKey = JSON.stringify(plottable.map(({ spot, markerNumber }) => [
     spot.spotId, spot.title, spot.latitude, spot.longitude, markerNumber,
   ]));
+  const viewportKey = hasExplicitViewport
+    ? JSON.stringify(viewportCoordinates!.map((spot) => [spot.latitude, spot.longitude]))
+    : positionsKey;
   const interactive = Boolean(onSpotClick);
 
   useEffect(() => {
@@ -162,7 +172,7 @@ export default function KakaoMap({
   const roadPathsKey = JSON.stringify(roadPaths);
 
   useEffect(() => {
-    if (!hasPlottable) {
+    if (!hasMapLocations) {
       setStatus("empty");
       return;
     }
@@ -182,6 +192,7 @@ export default function KakaoMap({
           center: new kakao.maps.LatLng(37.8228, 128.1555),
           level: 9,
         });
+        fittedViewportKeyRef.current = null;
         setStatus("ready");
       })
       .catch(() => {
@@ -191,10 +202,11 @@ export default function KakaoMap({
     return () => {
       cancelled = true;
       mapRef.current = null;
+      fittedViewportKeyRef.current = null;
       // SDK가 붙인 자식만 정리한다. React가 관리하는 컨테이너는 항상 유지한다.
       container?.replaceChildren();
     };
-  }, [appKey, retryCount, hasPlottable]);
+  }, [appKey, retryCount, hasMapLocations]);
 
   useEffect(() => {
     if (status !== "ready" || !mapRef.current) return;
@@ -303,15 +315,18 @@ export default function KakaoMap({
       overlays.push(polyline);
     }
 
-    if (positions.length > 0) {
+    const viewportPositions = hasExplicitViewport
+      ? viewportCoordinates!.map((spot) => new kakao.maps.LatLng(spot.latitude, spot.longitude))
+      : positions;
+    if (viewportPositions.length > 0) {
       const bounds = new kakao.maps.LatLngBounds();
-      positions.forEach((position: KakaoNamespace) => bounds.extend(position));
+      viewportPositions.forEach((position: KakaoNamespace) => bounds.extend(position));
       const fitViewport = () => {
         if (disposed || !containerRef.current) return;
         map.setBounds(bounds, 48, 48, 48, 48);
-        if (positions.length === 1) {
+        if (viewportPositions.length === 1) {
           map.setLevel(5);
-        } else if (containerRef.current.clientWidth && containerRef.current.clientHeight) {
+        } else if (!hasExplicitViewport && containerRef.current.clientWidth && containerRef.current.clientHeight) {
           const level = chooseInitialMapZoom(measureLabels(), {
             width: containerRef.current.clientWidth,
             height: containerRef.current.clientHeight,
@@ -321,7 +336,13 @@ export default function KakaoMap({
         scheduleLayout();
       };
       fitViewportRef.current = fitViewport;
-      fitViewport();
+      if (!hasExplicitViewport || fittedViewportKeyRef.current !== viewportKey) {
+        fitViewport();
+        fittedViewportKeyRef.current = viewportKey;
+      } else {
+        // 스크롤로 표시 마커만 교체할 때 지도 중심과 확대 수준은 유지한다.
+        scheduleLayout();
+      }
     }
 
     return () => {
@@ -333,7 +354,7 @@ export default function KakaoMap({
       overlays.forEach((overlay) => overlay.setMap(null));
       markersRef.current = [];
     };
-  }, [status, positionsKey, roadPathsKey, showRoute, returnToStart, interactive]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [status, positionsKey, viewportKey, hasExplicitViewport, roadPathsKey, showRoute, returnToStart, interactive]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     markersRef.current.forEach(({ element, overlay, spotId }) => {
@@ -343,7 +364,7 @@ export default function KakaoMap({
       overlay.setZIndex?.(highlighted ? 10 : 1);
     });
     layoutLabelsRef.current?.();
-  }, [highlightedSpotId, focusedSpotId, status, positionsKey, showRoute, interactive]);
+  }, [highlightedSpotId, focusedSpotId, status, positionsKey, viewportKey, showRoute, interactive]);
 
   useEffect(() => {
     const marker = markersRef.current.find(({ spotId }) => spotId === focusedSpotId);
@@ -362,7 +383,7 @@ export default function KakaoMap({
         const focused = markersRef.current.find(({ spotId }) => spotId === focusedSpotIdRef.current);
         if (focused) {
           map.panTo(focused.position);
-        } else {
+        } else if (!hasExplicitViewport) {
           fitViewportRef.current?.();
         }
         layoutLabelsRef.current?.();
@@ -377,7 +398,7 @@ export default function KakaoMap({
       window.removeEventListener("resize", resize);
       if (frame !== undefined) cancelAnimationFrame(frame);
     };
-  }, [status]);
+  }, [status, hasExplicitViewport]);
 
   const missingCoordCount = spots.length - plottable.length;
   const message = status === "error"
@@ -417,7 +438,7 @@ export default function KakaoMap({
           </div>
         )}
       </div>
-      {missingCoordCount > 0 && hasPlottable && (
+      {missingCoordCount > 0 && hasMapLocations && (
         <p className="mt-1.5 text-xs text-muted-foreground">
           위치를 확인할 수 없는 장소 {missingCoordCount}곳은 목록에서 볼 수 있어요.
         </p>

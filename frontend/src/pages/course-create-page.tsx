@@ -35,6 +35,7 @@ import { type AiCourseDraft, type AiCourseTheme, type AiCourseTripIdea } from "@
 import { PopularSpot, UnauthorizedError } from "@/services/spots";
 import { aiCourseNotice } from "@/lib/ai-course-notice";
 import { describeDayThemes } from "@/lib/ai-trip-themes";
+import { inferCourseSearchRegions } from "@/lib/course-search-regions";
 
 const DRAFT_STORAGE_KEY = "planfix:course-draft";
 const ACCOMMODATION_HINT_STORAGE_KEY = "planfix:accommodation-hint-dismissed";
@@ -1114,6 +1115,7 @@ export default function CourseCreatePage() {
           onSelect={handleSelectSpot}
           excludedSpotIds={days[activeDayIndex]?.map((s) => s.spotId) || []}
           dayNumber={activeDayIndex + 1}
+          regions={inferCourseSearchRegions(days, activeDayIndex)}
         />
       )}
       {accommodationDayNumber !== null && (

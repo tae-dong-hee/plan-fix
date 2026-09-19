@@ -296,6 +296,114 @@ describe("KakaoMap", () => {
     expect(sdk.routes[sdk.routes.length - 1].options.path).toHaveLength(2);
   });
 
+  test("표시 마커만 바뀌면 이동·확대와 목록 번호를 유지하고 범위 좌표가 바뀌면 다시 맞춘다", async () => {
+    const sdk = installSdkMock({ viewport: { width: 800, height: 400 }, fittedLevel: 6 });
+    const frames = installFrameQueue();
+    const onSpotClick = vi.fn();
+    const { rerender } = render(<KakaoMap
+      spots={[{ ...spots[0], markerNumber: 21 }]}
+      viewportSpots={spots}
+      showRoute={false}
+      onSpotClick={onSpotClick}
+    />);
+    await screen.findByRole("button", { name: "21번 경포해변 선택" });
+    frames.flush();
+    const map = sdk.maps[0];
+    expect(map.positions).toEqual(spots.map(({ latitude, longitude }) => ({ latitude, longitude })));
+    // 표시된 마커가 하나여도 두 장소를 포함하는 범위로 맞춘다.
+    expect(map.getLevel()).toBe(6);
+    act(() => {
+      map.setLevel(4);
+      map.panTo(map.positions[0]);
+    });
+    frames.flush();
+    const userOffset = { ...map.offset };
+    map.setBounds.mockClear();
+    map.setLevel.mockClear();
+    map.panTo.mockClear();
+    const oldMarker = sdk.overlays[0];
+
+    rerender(<KakaoMap
+      spots={[{ ...spots[1], markerNumber: 22 }]}
+      viewportSpots={spots.map((spot) => ({ ...spot, title: `${spot.title} 새 이름` }))}
+      showRoute={false}
+      onSpotClick={onSpotClick}
+      highlightedSpotId={2}
+    />);
+    frames.flush();
+    const marker = screen.getByRole("button", { name: "22번 정동진 선택" });
+    expect(marker.querySelector('[data-role="badge"]')).toHaveTextContent("22");
+    expect(oldMarker.setMap).toHaveBeenLastCalledWith(null);
+    expect(map.setBounds).not.toHaveBeenCalled();
+    expect(map.setLevel).not.toHaveBeenCalled();
+    expect(map.panTo).not.toHaveBeenCalled();
+    expect(map.getLevel()).toBe(4);
+    expect(map.offset).toEqual(userOffset);
+    // 목록의 좌표 안내 등으로 지도 크기가 변해도 지정된 범위를 다시 맞추지 않는다.
+    fireEvent(window, new Event("resize"));
+    frames.flush();
+    expect(map.setBounds).not.toHaveBeenCalled();
+    expect(map.getLevel()).toBe(4);
+    expect(map.offset).toEqual(userOffset);
+
+    const extendedViewport = [...spots, { spotId: 3, title: "속초해변", latitude: 38.19, longitude: 128.6 }];
+    rerender(<KakaoMap
+      spots={[{ ...spots[1], markerNumber: 22 }]}
+      viewportSpots={extendedViewport}
+      showRoute={false}
+      onSpotClick={onSpotClick}
+      highlightedSpotId={2}
+    />);
+    frames.flush();
+    expect(map.setBounds).toHaveBeenCalledTimes(1);
+    expect(map.positions).toEqual(extendedViewport.map(({ latitude, longitude }) => ({ latitude, longitude })));
+    expect(map.getLevel()).toBe(6);
+    expect(screen.getByRole("button", { name: "22번 정동진 선택" })).toHaveAttribute("data-highlighted", "true");
+    expect(sdk.maps).toHaveLength(1);
+  });
+
+  test("현재 목록에 표시할 좌표가 없어도 전체 범위의 지도는 유지한다", async () => {
+    const sdk = installSdkMock();
+    const frames = installFrameQueue();
+    const onSpotClick = vi.fn();
+    const unavailable = { spotId: 3, title: "위치 없음", latitude: null, longitude: null };
+    const { rerender } = render(<KakaoMap spots={[]} viewportSpots={spots} showRoute={false} onSpotClick={onSpotClick} />);
+    const mapContainer = await screen.findByRole("region", { name: "장소 위치 지도" });
+    frames.flush();
+    expect(sdk.overlays).toHaveLength(0);
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    const map = sdk.maps[0];
+    map.setBounds.mockClear();
+
+    rerender(<KakaoMap spots={[spots[0]]} viewportSpots={spots} showRoute={false} onSpotClick={onSpotClick} />);
+    const marker = screen.getByRole("button", { name: "1번 경포해변 선택" });
+    rerender(<KakaoMap spots={[unavailable]} viewportSpots={spots} showRoute={false} onSpotClick={onSpotClick} />);
+    frames.flush();
+
+    expect(screen.getByRole("region", { name: "장소 위치 지도" })).toBe(mapContainer);
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(marker).not.toBeInTheDocument();
+    expect(screen.getByText("위치를 확인할 수 없는 장소 1곳은 목록에서 볼 수 있어요.")).toBeInTheDocument();
+    expect(map.setBounds).not.toHaveBeenCalled();
+    expect(sdk.maps).toHaveLength(1);
+  });
+
+  test("범위를 따로 지정하지 않은 기존 지도는 장소 변경 시 범위를 다시 맞춘다", async () => {
+    const sdk = installSdkMock();
+    const frames = installFrameQueue();
+    const { rerender } = render(<KakaoMap spots={spots} showRoute={false} />);
+    await screen.findByRole("region", { name: "장소 위치 지도" });
+    frames.flush();
+    const map = sdk.maps[0];
+    map.setBounds.mockClear();
+
+    rerender(<KakaoMap spots={[spots[1]]} showRoute={false} />);
+    frames.flush();
+    expect(map.setBounds).toHaveBeenCalledTimes(1);
+    expect(map.positions).toEqual([{ latitude: spots[1].latitude, longitude: spots[1].longitude }]);
+    expect(map.getLevel()).toBe(5);
+  });
+
   test("선택한 마커로 이동하고 키보드와 최신 클릭 핸들러를 지원한다", async () => {
     const sdk = installSdkMock();
     const firstClick = vi.fn();
