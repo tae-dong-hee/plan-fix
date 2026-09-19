@@ -36,6 +36,13 @@ describe("AppNav component", () => {
     vi.clearAllMocks();
   });
 
+  test("공개 코스 목록은 내 코스 대신 여행 메뉴를 활성화한다", () => {
+    renderAppNav("/courses/public");
+
+    expect(screen.getByRole("button", { name: "내 코스" })).not.toHaveAttribute("aria-current");
+    expect(screen.getByRole("button", { name: "여행" })).toHaveAttribute("aria-current", "page");
+  });
+
   test("renders the brand logo and all navigation items", () => {
     renderAppNav();
 

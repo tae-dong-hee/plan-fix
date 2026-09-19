@@ -1,5 +1,5 @@
 import { CourseAccessError } from "@/lib/course-errors";
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { Mock } from "vitest";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import CourseDetailPage from "./course-detail-page";
@@ -27,6 +27,7 @@ const mockCourse: courseService.CourseResponse = {
   thumbnail: null,
   visibility: "PUBLIC",
   status: "ACTIVE",
+  isOwner: true,
   viewCount: 15,
   likeCount: 5,
   startDate: "2026-09-12",
@@ -71,6 +72,7 @@ describe("CourseDetailPage", () => {
     vi.resetAllMocks();
     vi.mocked(courseService.fetchCourse).mockResolvedValue(mockCourse);
     vi.mocked(courseService.fetchCourseMembers).mockResolvedValue([]);
+    vi.mocked(courseService.fetchDayAccommodations).mockResolvedValue([]);
     vi.mocked(courseService.fetchPendingCourseInvites).mockResolvedValue([]);
     vi.mocked(courseService.createCourseInvite).mockResolvedValue(mockInvite);
     writeClipboard.mockResolvedValue(undefined);
@@ -97,6 +99,55 @@ describe("CourseDetailPage", () => {
     fireEvent.click(await screen.findByRole("button", { name: "친구 초대" }));
     return screen.getByRole("button", { name: "초대 링크 만들기" });
   };
+
+  it("소유권을 확인하기 전에는 내 여행 코스로 표시하거나 관리 정보를 요청하지 않는다", async () => {
+    vi.mocked(courseService.fetchCourse).mockReturnValue(new Promise(() => {}));
+    renderComponent();
+
+    const breadcrumb = screen.getByRole("navigation", { name: "현재 위치" });
+    expect(within(breadcrumb).queryByText("내 여행 코스")).not.toBeInTheDocument();
+    expect(within(breadcrumb).getByRole("link", { name: "공개 여행 코스" })).toHaveAttribute("href", "/courses/public");
+    expect(screen.getByRole("button", { name: "내 코스" })).not.toHaveAttribute("aria-current");
+    expect(courseService.fetchCourseMembers).not.toHaveBeenCalled();
+    expect(courseService.fetchDayAccommodations).not.toHaveBeenCalled();
+  });
+
+  it.each(["PUBLIC", "PRIVATE"] as const)("본인 코스(%s)는 내 여행 코스 경로와 목록을 유지한다", async (visibility) => {
+    vi.mocked(courseService.fetchCourse).mockResolvedValue({ ...mockCourse, visibility });
+    renderComponent();
+    await screen.findByRole("heading", { name: mockCourse.title });
+
+    const breadcrumb = screen.getByRole("navigation", { name: "현재 위치" });
+    expect(within(breadcrumb).getByRole("link", { name: "내 여행 코스" })).toHaveAttribute("href", "/courses");
+    expect(screen.getByRole("button", { name: "내 코스" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: "코스 목록" })).toHaveAttribute("href", "/courses");
+    expect(screen.getByRole("link", { name: "코스 수정" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "코스 삭제" })).toBeInTheDocument();
+  });
+
+  it.each([
+    ["다른 여행자의 코스", false, false],
+    ["소유권 정보가 없는 코스", undefined, undefined],
+    ["편집 권한만 있는 코스", false, true],
+  ] as const)("%s는 공개 여행 코스로 표시하고 공개 목록으로 돌아간다", async (_label, isOwner, canEdit) => {
+    vi.mocked(courseService.fetchCourse).mockResolvedValue({ ...mockCourse, isOwner, canEdit });
+    renderComponent();
+    await screen.findByRole("heading", { name: mockCourse.title });
+
+    const breadcrumb = screen.getByRole("navigation", { name: "현재 위치" });
+    expect(within(breadcrumb).getByRole("link", { name: "공개 여행 코스" })).toHaveAttribute("href", "/courses/public");
+    expect(within(breadcrumb).queryByText("내 여행 코스")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "코스 목록" })).toHaveAttribute("href", "/courses/public");
+    expect(screen.getByRole("button", { name: "내 코스" })).not.toHaveAttribute("aria-current");
+    expect(screen.getByRole("button", { name: "여행" })).toHaveAttribute("aria-current", "page");
+    expect(Boolean(screen.queryByRole("link", { name: "코스 수정" }))).toBe(canEdit === true);
+    expect(screen.queryByRole("button", { name: "코스 삭제" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "친구 초대" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "멤버 관리" })).not.toBeInTheDocument();
+    expect(screen.queryByText("참여 멤버")).not.toBeInTheDocument();
+    expect(courseService.fetchCourseMembers).not.toHaveBeenCalled();
+    expect(courseService.fetchDayAccommodations).not.toHaveBeenCalled();
+  });
 
   it("코스 정보를 성공적으로 로드하여 Day별 장소를 렌더링한다", async () => {
     (courseService.fetchCourse as Mock).mockResolvedValue(mockCourse);
@@ -188,6 +239,7 @@ describe("CourseDetailPage", () => {
     await waitFor(() => {
       expect(screen.getByText("존재하지 않거나 삭제된 코스입니다.")).toBeInTheDocument();
     });
+    expect(screen.getByRole("link", { name: "코스 목록으로" })).toHaveAttribute("href", "/courses/public");
   });
 
   it("편집 멤버에게는 수정만 허용하고 소유자 관리 버튼은 숨긴다", async () => {

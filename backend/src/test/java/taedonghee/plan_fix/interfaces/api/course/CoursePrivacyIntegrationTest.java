@@ -110,6 +110,37 @@ class CoursePrivacyIntegrationTest {
         mvc.perform(get("/api/v1/courses")).andExpect(status().isUnauthorized());
     }
 
+    @Test
+    void publicCourseOwnershipDependsOnAuthenticatedViewer() throws Exception {
+        setVisibility("PUBLIC");
+
+        for (Cookie viewer : new Cookie[]{null, owner, stranger}) {
+            MockHttpServletRequestBuilder request = get(path());
+            if (viewer != null) request.cookie(viewer);
+            mvc.perform(request).andExpect(status().isOk())
+                    .andExpect(jsonPath("$.userId").value(ownerId))
+                    .andExpect(jsonPath("$.isOwner").value(viewer == owner))
+                    .andExpect(jsonPath("$.canEdit").value(viewer == owner));
+        }
+    }
+
+    @Test
+    void discoveringAnotherTravelersPublicCourseDoesNotAddItToMyCourses() throws Exception {
+        setVisibility("PUBLIC");
+
+        as(stranger, get("/api/v1/courses/public").param("sort", "random"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[0].courseId").value(privateId));
+        as(stranger, get(path())).andExpect(status().isOk())
+                .andExpect(jsonPath("$.isOwner").value(false))
+                .andExpect(jsonPath("$.canEdit").value(false));
+        as(stranger, get("/api/v1/courses")).andExpect(status().isOk())
+                .andExpect(jsonPath("$").isEmpty());
+        as(owner, get("/api/v1/courses")).andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].courseId").value(privateId))
+                .andExpect(jsonPath("$[0].isOwner").value(true));
+    }
+
     @ParameterizedTest
     @ValueSource(strings = {"latest", "popular", "random"})
     void allPublicListSortsExcludePrivateCoursesForAnonymousAndLoggedInUsers(String sort) throws Exception {
@@ -178,6 +209,8 @@ class CoursePrivacyIntegrationTest {
         as(stranger, post("/api/v1/course-invites/" + invite + "/accept")).andExpect(status().isOk());
         as(stranger, get(path())).andExpect(status().isOk())
                 .andExpect(jsonPath("$.visibility").value("PUBLIC"))
+                .andExpect(jsonPath("$.isOwner").value(false))
+                .andExpect(jsonPath("$.canEdit").value("EDITOR".equals(role)))
                 .andExpect(jsonPath("$.days[0].spots[0].memo").value("PRIVATE-MEMO"));
         as(stranger, get("/api/v1/courses")).andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].courseId").value(privateId));

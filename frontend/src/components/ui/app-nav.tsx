@@ -13,9 +13,10 @@ import { signOut } from "@/services/auth";
 
 export interface AppNavProps {
   className?: string;
+  courseIsOwner?: boolean;
 }
 
-export default function AppNav({ className = "" }: AppNavProps) {
+export default function AppNav({ className = "", courseIsOwner }: AppNavProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
@@ -23,13 +24,16 @@ export default function AppNav({ className = "" }: AppNavProps) {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const profileContainerRef = useRef<HTMLDivElement>(null);
 
-  // 현재 경로가 내 코스 관련 페이지일 때 '내 코스' 활성 상태로 표시 (생성 페이지 제외)
+  // 공개 목록과 다른 여행자의 상세 코스는 '여행' 메뉴에 속한다.
+  const isPublicCourse = location.pathname === "/courses/public" ||
+    (location.pathname.startsWith("/courses/") && courseIsOwner === false);
   const isMyCourseActive =
     location.pathname === "/courses" ||
-    (location.pathname.startsWith("/courses/") && !location.pathname.startsWith("/courses/create"));
+    (location.pathname.startsWith("/courses/") && !location.pathname.startsWith("/courses/create") && !isPublicCourse);
 
   // 현재 경로가 메인, 장소, 게시글, 코스생성 관련 페이지일 때 '여행' 메뉴를 활성 상태로 표시
   const isTripActive =
+    isPublicCourse ||
     location.pathname.startsWith("/main") ||
     location.pathname.startsWith("/spots") ||
     location.pathname.startsWith("/boards") ||
