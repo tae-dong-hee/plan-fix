@@ -46,6 +46,7 @@ GitHub Secrets에 GCP 서비스 계정 JSON 키나 VM SSH 키를 저장하지 �
 - 신뢰 조건: 저장소 소유자 ID `243352673`, 저장소 ID `1328290631`, `refs/heads/main`, 워크플로 `tae-dong-hee/plan-fix/.github/workflows/deploy-frontend.yml@refs/heads/main`으로 제한합니다.
 - 배포 서비스 계정은 `planfix-frontend` Artifact Registry 저장소에만 `roles/artifactregistry.writer` 권한을 가집니다. VM의 기존 서비스 계정은 이 저장소를 읽습니다.
 - `VITE_API_BASE_URL=/api/v1`은 빌드 시 지정합니다. `VITE_KAKAO_JS_KEY`는 저장소의 **Settings → Secrets and variables → Actions → Variables**에 등록한 값을 사용합니다. 이 키가 없으면 빌드를 중단합니다.
+- `VITE_GOOGLE_MAPS_API_KEY`도 같은 저장소 Variables에서 빌드에 전달합니다. 검수된 장소의 Google 사진 카드에만 사용하며, 키가 없으면 기존 대체 화면을 유지합니다. 운영 키는 `https://planfix.cloud/*`와 Maps JavaScript API·Places UI Kit API로 제한합니다. [승인 기준과 비용 제한](assets/google-place-cards.md)을 함께 확인하세요.
 
 `VITE_*` 값은 브라우저에 공개되는 설정입니다. 서버 비밀번호나 카카오 REST API 시크릿을 넣지 마세요. [`.dockerignore`](../frontend/.dockerignore)는 로컬 `.env`와 임시 인증 파일 등을 빌드에서 제외합니다. 빌드 설정을 바꾸면 **Run workflow**에서 `main`을 선택해 새 이미지를 배포합니다.
 
