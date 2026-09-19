@@ -3,6 +3,7 @@ package taedonghee.plan_fix.application.course.ai;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import taedonghee.plan_fix.domain.spot.SpotModel;
+import taedonghee.plan_fix.domain.course.CourseDayTheme;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -29,6 +30,33 @@ public class AiCoursePlanValidator {
 	private static final double MAX_INTRA_DAY_DISTANCE_KM = 40.0;
 	/** 하루에 이보다 많이 넣으면 현실적으로 소화할 수 없다. */
 	private static final int MAX_SPOTS_PER_DAY = 6;
+
+	/** A valid-looking plan must also use available local places matching that day's intent. */
+	public Optional<ValidatedPlan> validate(LlmCoursePlan plan, List<SpotModel> candidates,
+		List<SpotModel> anchors, int dayCount, List<CourseDayTheme> preferences) {
+		return validate(plan, candidates, anchors, dayCount).filter(validated -> {
+			for (int i = 0; i < validated.days().size(); i++) {
+				List<SpotModel> day = validated.days().get(i);
+				boolean hasFixedPlace = day.stream()
+					.anyMatch(spot -> anchors.stream().anyMatch(anchor -> anchor.spotId().equals(spot.spotId())));
+				List<DailyThemePreferences.Requirement> requirements = DailyThemePreferences.requirements(preferences.get(i));
+				for (DailyThemePreferences.Requirement requirement : requirements) {
+					if (day.stream().anyMatch(requirement::matches)) continue;
+					// With no fixed place, a wrong neighborhood can be replanned entirely for the requested theme.
+					boolean matchExists = candidates.stream().filter(requirement::matches)
+						.anyMatch(candidate -> !hasFixedPlace || day.stream()
+							.allMatch(spot -> CoursePlanner.distanceKm(candidate, spot) <= MAX_INTRA_DAY_DISTANCE_KM));
+					boolean entirelyFixed = !day.isEmpty() && day.stream()
+						.allMatch(spot -> anchors.stream().anyMatch(anchor -> anchor.spotId().equals(spot.spotId())));
+					if (matchExists && !entirelyFixed) {
+						log.info("[AI 코스] DAY {}의 {} 선호가 반영되지 않아 규칙 기반으로 폴백합니다.", i + 1, requirement.key());
+						return false;
+					}
+				}
+			}
+			return true;
+		});
+	}
 
 	/**
 	 * @return 검증을 통과한(또는 고친) Day별 배치. 폴백해야 하면 비어 있다.

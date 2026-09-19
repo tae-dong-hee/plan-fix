@@ -58,7 +58,10 @@ public class CourseModel {
         this.likeCount = likeCount;
         this.startDate = startDate;
         this.endDate = endDate;
-        this.days = List.copyOf(days);
+        this.days = days.stream().map(day -> {
+            CourseDayTheme metadata = day.dayTheme();
+            return new CourseDayModel(day.dayNumber(), day.spots(), metadata.themes(), metadata.tripIdeas());
+        }).toList();
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
     }
@@ -115,8 +118,19 @@ public class CourseModel {
                               CourseGenerationSource generatedBy, List<CourseTravelTheme> themes) {
         ensureActive();
         return new CourseModel(courseId, userId, title, description, thumbnail, visibility, status,
-                viewCount, likeCount, startDate, endDate, days, createdAt, OffsetDateTime.now(),
+                viewCount, likeCount, startDate, endDate, preserveOmittedDayThemes(days), createdAt, OffsetDateTime.now(),
                 generatedBy == null ? this.generatedBy : generatedBy, themes == null ? this.themes : themes);
+    }
+
+    private List<CourseDayModel> preserveOmittedDayThemes(List<CourseDayModel> updatedDays) {
+        if (updatedDays == null) return null;
+        return updatedDays.stream().map(day -> {
+            if (day == null || day.themes() != null || day.tripIdeas() != null) return day;
+            CourseDayModel previous = days.stream()
+                    .filter(existing -> existing.dayNumber() == day.dayNumber()).findFirst().orElse(null);
+            return previous == null ? day : new CourseDayModel(day.dayNumber(), day.spots(),
+                    previous.themes(), previous.tripIdeas());
+        }).toList();
     }
 
     /**

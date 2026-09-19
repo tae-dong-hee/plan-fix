@@ -9,6 +9,7 @@ import taedonghee.plan_fix.domain.spot.SpotModel;
 
 import taedonghee.plan_fix.domain.course.CourseGenerationSource;
 import taedonghee.plan_fix.domain.course.CourseTravelTheme;
+import taedonghee.plan_fix.domain.course.CourseTripIdea;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -77,7 +78,7 @@ public record CourseResult(
                         spotInfo != null ? spotInfo.longitude() : null
                 ));
             }
-            dayResults.add(new Day(day.dayNumber(), spotResults));
+            dayResults.add(new Day(day.dayNumber(), spotResults, day.themes(), day.tripIdeas()));
         }
 
         return new CourseResult(
@@ -103,7 +104,11 @@ public record CourseResult(
     /**
      * 코스의 일차(Day)별 spot 목록 응답
      */
-    public record Day(int dayNumber, List<Spot> spots) {
+    public record Day(int dayNumber, List<Spot> spots,
+                      List<CourseTravelTheme> themes, List<CourseTripIdea> tripIdeas) {
+        public Day(int dayNumber, List<Spot> spots) {
+            this(dayNumber, spots, List.of(), List.of());
+        }
     }
 
     /**

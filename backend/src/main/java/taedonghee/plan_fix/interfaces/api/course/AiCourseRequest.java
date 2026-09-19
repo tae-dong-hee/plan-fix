@@ -3,6 +3,7 @@ package taedonghee.plan_fix.interfaces.api.course;
 import taedonghee.plan_fix.application.course.ai.AiCourseCommand;
 import taedonghee.plan_fix.application.course.ai.CourseCompanion;
 import taedonghee.plan_fix.application.course.ai.CourseTheme;
+import taedonghee.plan_fix.domain.course.CourseDayTheme;
 import taedonghee.plan_fix.support.error.CoreException;
 import taedonghee.plan_fix.support.error.ErrorType;
 
@@ -19,8 +20,13 @@ public record AiCourseRequest(
 	LocalDate endDate,
 	List<String> themes,
 	String companion,
-	List<Long> anchorSpotIds
+	List<Long> anchorSpotIds,
+	List<CourseDayTheme> dayThemes
 ) {
+	public AiCourseRequest(String region, String sigungu, LocalDate startDate, LocalDate endDate,
+		List<String> themes, String companion, List<Long> anchorSpotIds) {
+		this(region, sigungu, startDate, endDate, themes, companion, anchorSpotIds, List.of());
+	}
 
 	public AiCourseCommand toCommand() {
 		return new AiCourseCommand(
@@ -30,7 +36,8 @@ public record AiCourseRequest(
 			endDate,
 			parseThemes(themes),
 			parseCompanion(companion),
-			anchorSpotIds
+			anchorSpotIds,
+			dayThemes
 		);
 	}
 
@@ -43,8 +50,8 @@ public record AiCourseRequest(
 
 	private static CourseTheme parseTheme(String value) {
 		try {
-			return CourseTheme.valueOf(value.toUpperCase());
-		} catch (IllegalArgumentException e) {
+			return CourseTheme.valueOf(value.toUpperCase(java.util.Locale.ROOT));
+		} catch (IllegalArgumentException | NullPointerException e) {
 			throw new CoreException(ErrorType.BAD_REQUEST, "알 수 없는 테마입니다. theme=" + value);
 		}
 	}

@@ -19,6 +19,7 @@ import taedonghee.plan_fix.domain.course.CourseVisibility;
 
 import taedonghee.plan_fix.domain.course.CourseGenerationSource;
 import taedonghee.plan_fix.domain.course.CourseTravelTheme;
+import taedonghee.plan_fix.domain.course.CourseDayTheme;
 
 import java.util.List;
 import java.time.LocalDate;
@@ -67,6 +68,10 @@ public class CourseJpaEntity {
     @Column(name = "themes", length = 100)
     private List<CourseTravelTheme> themes;
 
+    @Convert(converter = CourseDayThemesConverter.class)
+    @Column(name = "day_themes", columnDefinition = "text")
+    private List<CourseDayTheme> dayThemes;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
     private CourseStatus status;
@@ -94,7 +99,8 @@ public class CourseJpaEntity {
                             CourseVisibility visibility, CourseStatus status, long viewCount, long likeCount,
                             LocalDate startDate, LocalDate endDate,
                             OffsetDateTime createdAt, OffsetDateTime updatedAt,
-                            CourseGenerationSource generatedBy, List<CourseTravelTheme> themes) {
+                            CourseGenerationSource generatedBy, List<CourseTravelTheme> themes,
+                            List<CourseDayTheme> dayThemes) {
         this.courseId = courseId;
         this.userId = userId;
         this.title = title;
@@ -103,6 +109,7 @@ public class CourseJpaEntity {
         this.visibility = visibility;
         this.generatedBy = generatedBy;
         this.themes = themes == null ? List.of() : List.copyOf(themes);
+        this.dayThemes = dayThemes == null ? List.of() : List.copyOf(dayThemes);
         this.status = status;
         this.viewCount = viewCount;
         this.likeCount = likeCount;

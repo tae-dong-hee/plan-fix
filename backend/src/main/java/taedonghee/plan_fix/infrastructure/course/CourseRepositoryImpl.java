@@ -3,6 +3,7 @@ package taedonghee.plan_fix.infrastructure.course;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 import taedonghee.plan_fix.domain.course.CourseDayModel;
+import taedonghee.plan_fix.domain.course.CourseDayTheme;
 import taedonghee.plan_fix.domain.course.CourseModel;
 import taedonghee.plan_fix.domain.course.CourseRepository;
 import taedonghee.plan_fix.domain.course.CourseSpotModel;
@@ -131,6 +132,7 @@ public class CourseRepositoryImpl implements CourseRepository {
                 .visibility(course.visibility())
                 .generatedBy(course.generatedBy())
                 .themes(course.themes())
+                .dayThemes(course.days().stream().map(CourseDayModel::dayTheme).toList())
                 .status(course.status())
                 .viewCount(course.viewCount())
                 .likeCount(course.likeCount())
@@ -154,17 +156,24 @@ public class CourseRepositoryImpl implements CourseRepository {
                     .add(new CourseSpotModel(spotEntity.getSpotId(), spotEntity.getMemo()));
         }
 
+        Map<Integer, CourseDayTheme> themesByDay = new LinkedHashMap<>();
+        if (entity.getDayThemes() != null) {
+            entity.getDayThemes().forEach(day -> themesByDay.put(day.dayNumber(), day));
+        }
+
         int totalDays;
         if (entity.getStartDate() != null && entity.getEndDate() != null) {
             totalDays = (int) ChronoUnit.DAYS.between(entity.getStartDate(), entity.getEndDate()) + 1;
         } else {
-            totalDays = spotsByDay.keySet().stream().max(Integer::compareTo).orElse(1);
+            totalDays = Math.max(spotsByDay.keySet().stream().max(Integer::compareTo).orElse(1),
+                    themesByDay.keySet().stream().max(Integer::compareTo).orElse(1));
         }
 
         List<CourseDayModel> days = new ArrayList<>(totalDays);
         for (int d = 1; d <= totalDays; d++) {
             List<CourseSpotModel> spots = spotsByDay.getOrDefault(d, List.of());
-            days.add(new CourseDayModel(d, spots));
+            CourseDayTheme metadata = themesByDay.getOrDefault(d, new CourseDayTheme(d, null, null));
+            days.add(new CourseDayModel(d, spots, metadata.themes(), metadata.tripIdeas()));
         }
 
         return CourseModel.reconstruct(entity.getCourseId(), entity.getUserId(), entity.getTitle(),

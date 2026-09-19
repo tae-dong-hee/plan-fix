@@ -6,6 +6,7 @@ import taedonghee.plan_fix.domain.course.CourseVisibility;
 
 import taedonghee.plan_fix.domain.course.CourseGenerationSource;
 import taedonghee.plan_fix.domain.course.CourseTravelTheme;
+import taedonghee.plan_fix.domain.course.CourseTripIdea;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -86,9 +87,14 @@ public record CourseResponse(
     /**
      * 코스의 일차(Day)별 spot 목록 응답
      */
-    public record Day(int dayNumber, List<Spot> spots) {
+    public record Day(int dayNumber, List<Spot> spots,
+                      List<CourseTravelTheme> themes, List<CourseTripIdea> tripIdeas) {
+        public Day(int dayNumber, List<Spot> spots) {
+            this(dayNumber, spots, List.of(), List.of());
+        }
+
         public static Day from(CourseResult.Day day) {
-            return new Day(day.dayNumber(), day.spots().stream().map(Spot::from).toList());
+            return new Day(day.dayNumber(), day.spots().stream().map(Spot::from).toList(), day.themes(), day.tripIdeas());
         }
     }
 
