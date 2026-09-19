@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   Calendar,
@@ -37,6 +37,7 @@ import { aiCourseNotice } from "@/lib/ai-course-notice";
 import { describeDayThemes } from "@/lib/ai-trip-themes";
 
 const DRAFT_STORAGE_KEY = "planfix:course-draft";
+const ACCOMMODATION_HINT_STORAGE_KEY = "planfix:accommodation-hint-dismissed";
 
 export type DraftSpot = {
   spotId: number;
@@ -127,6 +128,28 @@ export default function CourseCreatePage() {
   const [dayAccommodations, setDayAccommodations] = useState<Record<number, DayAccommodation>>({});
   const [dayThemes, setDayThemes] = useState<Record<number, DraftDayThemes>>({});
   const [accommodationDayNumber, setAccommodationDayNumber] = useState<number | null>(null);
+  const [accommodationsLoaded, setAccommodationsLoaded] = useState(false);
+  const [accommodationHintVisible, setAccommodationHintVisible] = useState(() => {
+    try {
+      return localStorage.getItem(ACCOMMODATION_HINT_STORAGE_KEY) !== "true";
+    } catch {
+      return true;
+    }
+  });
+  const accommodationHintButtonRef = useRef<HTMLButtonElement>(null);
+  const accommodationHintDayIndex = days.findIndex((_, index) => !dayAccommodations[index + 1]);
+
+  const dismissAccommodationHint = (permanently = false) => {
+    if (permanently) {
+      try {
+        localStorage.setItem(ACCOMMODATION_HINT_STORAGE_KEY, "true");
+      } catch {
+        // 저장소가 제한돼 있어도 현재 화면에서는 안내를 닫을 수 있다.
+      }
+    }
+    accommodationHintButtonRef.current?.focus();
+    setAccommodationHintVisible(false);
+  };
 
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -168,6 +191,7 @@ export default function CourseCreatePage() {
 
     let ignore = false;
     setLoadingCourse(true);
+    setAccommodationsLoaded(false);
     setErrorMessage(null);
 
     fetchCourse(courseId)
@@ -215,9 +239,15 @@ export default function CourseCreatePage() {
           setLoadingCourse(false);
         }
       });
-    void fetchDayAccommodations(courseId).then((values) => {
-      if (!ignore) setDayAccommodations(Object.fromEntries(values.map((value) => [value.dayNumber, value])));
-    });
+    void fetchDayAccommodations(courseId)
+      .then((values) => {
+        if (ignore) return;
+        setDayAccommodations(Object.fromEntries(values.map((value) => [value.dayNumber, value])));
+        setAccommodationsLoaded(true);
+      })
+      .catch(() => {
+        // 네트워크 오류로 숙소 조회가 중단되면 안내를 보류한다.
+      });
 
     return () => {
       ignore = true;
@@ -764,6 +794,8 @@ export default function CourseCreatePage() {
             const dayNumber = dayIndex + 1;
             const assignedThemes = dayThemes[dayNumber];
             const endAccommodation = dayAccommodations[dayNumber];
+            const showAccommodationHint = isEditMode && accommodationsLoaded
+              && accommodationHintVisible && dayIndex === accommodationHintDayIndex;
             const startAccommodation = dayIndex === 0 ? endAccommodation : dayAccommodations[dayNumber - 1];
             const hasStartAccommodationLocation = startAccommodation?.latitude != null
               && startAccommodation.longitude != null;
@@ -797,11 +829,16 @@ export default function CourseCreatePage() {
                       ) : null}
                     </div>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="ml-auto flex shrink-0 gap-2">
                     <button
+                      ref={dayIndex === accommodationHintDayIndex ? accommodationHintButtonRef : undefined}
                       type="button"
-                      onClick={() => setAccommodationDayNumber(dayNumber)}
-                      className="flex items-center gap-1.5 rounded-lg border border-primary/20 bg-background px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/5"
+                      aria-describedby={showAccommodationHint ? "accommodation-hint-description" : undefined}
+                      onClick={() => {
+                        setAccommodationHintVisible(false);
+                        setAccommodationDayNumber(dayNumber);
+                      }}
+                      className={`flex items-center gap-1.5 rounded-lg border border-primary/20 bg-background px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${showAccommodationHint ? "ring-2 ring-primary/25 ring-offset-2 ring-offset-background" : ""}`}
                     >
                       <span>🏠</span>
                       {endAccommodation ? "숙소 변경" : "숙소 추가"}
@@ -815,6 +852,43 @@ export default function CourseCreatePage() {
                       장소 추가
                     </button>
                   </div>
+                  {showAccommodationHint && (
+                    <div className="w-full">
+                      <aside
+                        aria-labelledby="accommodation-hint-title"
+                        onKeyDown={(event) => {
+                          if (event.key === "Escape") {
+                            event.stopPropagation();
+                            dismissAccommodationHint();
+                          }
+                        }}
+                        className="relative ml-auto max-w-sm rounded-xl border border-primary/20 bg-background p-4 shadow-sm"
+                      >
+                        <span aria-hidden="true" className="absolute -top-1.5 right-36 h-2.5 w-2.5 rotate-45 border-l border-t border-primary/20 bg-background" />
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <p id="accommodation-hint-title" className="text-sm font-semibold text-foreground">숙소도 일정에 추가해 보세요</p>
+                            <p id="accommodation-hint-description" className="mt-1.5 text-xs leading-relaxed text-muted-foreground">머무를 숙소를 등록하면 지도에서 여행 동선을 함께 확인할 수 있어요.</p>
+                          </div>
+                          <button
+                            type="button"
+                            aria-label="숙소 안내 닫기"
+                            onClick={() => dismissAccommodationHint()}
+                            className="-mr-1 -mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                          >
+                            <X className="h-4 w-4" aria-hidden="true" />
+                          </button>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => dismissAccommodationHint(true)}
+                          className="mt-2 min-h-8 rounded text-xs text-muted-foreground underline decoration-border underline-offset-4 transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                        >
+                          다시 보지 않기
+                        </button>
+                      </aside>
+                    </div>
+                  )}
                 </div>
 
                 {endAccommodation && (
