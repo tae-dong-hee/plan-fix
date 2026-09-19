@@ -21,6 +21,7 @@ import {
 import { LoaderFour } from "@/components/ui/unique-loader-components";
 import AppNav from "@/components/ui/app-nav";
 import SpotImage from "@/components/ui/spot-image";
+import GooglePlacePhotoCard from "@/components/ui/google-place-photo-card";
 import { getVerifiedSpotImageCredit } from "@/lib/verified-spot-images";
 import {
   hasSpotCoordinates,
@@ -264,23 +265,25 @@ export default function SpotDetailPage() {
           <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-7">
             <div className="min-w-0 space-y-6">
               <section aria-label="장소 사진" className="overflow-hidden rounded-3xl border border-primary/10 bg-white p-2 shadow-sm dark:bg-background sm:p-3">
-                <div className="relative aspect-[4/3] overflow-hidden rounded-[18px] bg-muted sm:aspect-[16/10]">
-                  <SpotImage
-                    className="h-full w-full object-cover"
-                    src={activeImage}
-                    alt={spot.title}
-                  />
-                  {galleryImages.length > 1 ? (
-                    <>
-                      <button type="button" aria-label="이전 사진" onClick={() => setSelectedImage((index) => (index - 1 + galleryImages.length) % galleryImages.length)} className={`absolute left-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-zinc-800 shadow-sm transition-colors hover:bg-white ${FOCUS_RING}`}>
-                        <ChevronLeft className="h-5 w-5" aria-hidden="true" />
-                      </button>
-                      <button type="button" aria-label="다음 사진" onClick={() => setSelectedImage((index) => (index + 1) % galleryImages.length)} className={`absolute right-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-zinc-800 shadow-sm transition-colors hover:bg-white ${FOCUS_RING}`}>
-                        <ChevronRight className="h-5 w-5" aria-hidden="true" />
-                      </button>
-                    </>
-                  ) : null}
-                </div>
+                <GooglePlacePhotoCard spot={spot}>
+                  <div className="relative aspect-[4/3] overflow-hidden rounded-[18px] bg-muted sm:aspect-[16/10]">
+                    <SpotImage
+                      className="h-full w-full object-cover"
+                      src={activeImage}
+                      alt={spot.title}
+                    />
+                    {galleryImages.length > 1 ? (
+                      <>
+                        <button type="button" aria-label="이전 사진" onClick={() => setSelectedImage((index) => (index - 1 + galleryImages.length) % galleryImages.length)} className={`absolute left-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-zinc-800 shadow-sm transition-colors hover:bg-white ${FOCUS_RING}`}>
+                          <ChevronLeft className="h-5 w-5" aria-hidden="true" />
+                        </button>
+                        <button type="button" aria-label="다음 사진" onClick={() => setSelectedImage((index) => (index + 1) % galleryImages.length)} className={`absolute right-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-zinc-800 shadow-sm transition-colors hover:bg-white ${FOCUS_RING}`}>
+                          <ChevronRight className="h-5 w-5" aria-hidden="true" />
+                        </button>
+                      </>
+                    ) : null}
+                  </div>
+                </GooglePlacePhotoCard>
                 {galleryImages.length > 1 ? (
                   <div className="flex items-center justify-end gap-1.5 px-2 pt-3 text-xs font-medium text-muted-foreground sm:px-3" role="status" aria-label="현재 사진">
                     <Images className="h-3.5 w-3.5" aria-hidden="true" />

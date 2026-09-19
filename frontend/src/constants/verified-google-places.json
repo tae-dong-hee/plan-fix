@@ -1,0 +1,509 @@
+{
+  "version": 1,
+  "places": [
+    {
+      "spotId": 728,
+      "title": "파인시티호텔",
+      "address": "강원특별자치도 강릉시 옥천로62번길 13 (옥천동)",
+      "latitude": 37.7608316,
+      "longitude": 128.8991773,
+      "placeId": "ChIJcTe4VeHlYTURAnfLGK3lkFY"
+    },
+    {
+      "spotId": 729,
+      "title": "위드호텔",
+      "address": "강원특별자치도 강릉시 옥천로65번길 2-5 (옥천동)",
+      "latitude": 37.759415,
+      "longitude": 128.8981247,
+      "placeId": "ChIJpZ04EgDlYTURjFkGqnDR1B4"
+    },
+    {
+      "spotId": 762,
+      "title": "슈밍게스트하우스",
+      "address": "강원특별자치도 강릉시 강릉대로 272 (교동)",
+      "latitude": 37.7615787,
+      "longitude": 128.8991718,
+      "placeId": "ChIJaedYTOHlYTURajaxEA-LisU"
+    },
+    {
+      "spotId": 791,
+      "title": "셀몬모텔",
+      "address": "강원특별자치도 강릉시 율곡로2874번길 33 (교동)",
+      "latitude": 37.7622008,
+      "longitude": 128.897908,
+      "placeId": "ChIJ4bORvublYTURBYj_kMJOUxE"
+    },
+    {
+      "spotId": 800,
+      "title": "모텔 휴",
+      "address": "강원특별자치도 강릉시 경강로2302번길 7 (포남동)",
+      "latitude": 37.7669339,
+      "longitude": 128.9135758,
+      "placeId": "ChIJ6Yj8NnDmYTUR7aYsYKcZrc8"
+    },
+    {
+      "spotId": 806,
+      "title": "모텔몽",
+      "address": "강원특별자치도 강릉시 교동광장로 116 (교동)",
+      "latitude": 37.7643418,
+      "longitude": 128.8774042,
+      "placeId": "ChIJEcm4Go7lYTURrr_nBbG3_q4"
+    },
+    {
+      "spotId": 810,
+      "title": "몽블랑모텔",
+      "address": "강원특별자치도 강릉시 교동광장로100번길 8-5 (교동)",
+      "latitude": 37.7657667,
+      "longitude": 128.8767209,
+      "placeId": "ChIJKxT0wpHlYTUR3yHtwB4CJGg"
+    },
+    {
+      "spotId": 813,
+      "title": "스카리아 풀빌라",
+      "address": "강원특별자치도 강릉시 난설헌로 261 (강문동)",
+      "latitude": 37.7954057,
+      "longitude": 128.9160275,
+      "placeId": "ChIJiZxjy2XnYTURYplHY8HEBhM"
+    },
+    {
+      "spotId": 828,
+      "title": "아이리스 스테이",
+      "address": "강원특별자치도 강릉시 창해로 255 (강문동)",
+      "latitude": 37.78799,
+      "longitude": 128.9252408,
+      "placeId": "ChIJvWN7NevmYTURxzazWI-ybtE"
+    },
+    {
+      "spotId": 830,
+      "title": "올인모텔",
+      "address": "강원특별자치도 강릉시 중앙시장2길 10-6 (성남동)",
+      "latitude": 37.7515992,
+      "longitude": 128.8962529,
+      "placeId": "ChIJNy77oPnlYTURIlWiMpqzWJ8"
+    },
+    {
+      "spotId": 840,
+      "title": "메인모텔",
+      "address": "강원특별자치도 강릉시 옥계면 현내시장길 17",
+      "latitude": 37.6132402,
+      "longitude": 129.0390027,
+      "placeId": "ChIJG4cNIXvBYTURZq1wLgvphU8"
+    },
+    {
+      "spotId": 914,
+      "title": "다이소 강릉내곡점",
+      "address": "강원특별자치도 강릉시 범일로 618 (내곡동)",
+      "latitude": 37.7422972,
+      "longitude": 128.8811795,
+      "placeId": "ChIJTUKmpWnvYTURiaLIG6-NtvM"
+    },
+    {
+      "spotId": 915,
+      "title": "강릉식자재마트",
+      "address": "강원특별자치도 강릉시 정원로 68 (교동)",
+      "latitude": 37.7626809,
+      "longitude": 128.8743351,
+      "placeId": "ChIJvx_eEI_lYTUR9j8rTe-uyog"
+    },
+    {
+      "spotId": 924,
+      "title": "주문진식자재마트",
+      "address": "강원특별자치도 강릉시 주문진읍 연주로 324",
+      "latitude": 37.8813884,
+      "longitude": 128.8262718,
+      "placeId": "ChIJg28Bze_jYTURGPjwmDGgaa0"
+    },
+    {
+      "spotId": 925,
+      "title": "베이비하우스 강릉점",
+      "address": "강원특별자치도 강릉시 옥가로 24 (옥천동)",
+      "latitude": 37.7584013,
+      "longitude": 128.8996329,
+      "placeId": "ChIJOYA_J0TlYTURczhSTLFAyq4"
+    },
+    {
+      "spotId": 942,
+      "title": "임계식당",
+      "address": "강원특별자치도 강릉시 중앙시장길 22-2 (성남동)",
+      "latitude": 37.7535599,
+      "longitude": 128.8988371,
+      "placeId": "ChIJBUXOh_vlYTUReEn0uo5fUMc"
+    },
+    {
+      "spotId": 943,
+      "title": "해변횟집",
+      "address": "강원특별자치도 강릉시 옥계면 헌화로 437-4",
+      "latitude": 37.6527942,
+      "longitude": 129.0494057,
+      "placeId": "ChIJg5dIkArDYTURGkn43qUpYKs"
+    },
+    {
+      "spotId": 951,
+      "title": "염전횟집",
+      "address": "강원특별자치도 강릉시 염전길 147",
+      "latitude": 37.7409859,
+      "longitude": 128.983755,
+      "placeId": "ChIJMdhfn4jnYTURKdn1MNDWrGo"
+    },
+    {
+      "spotId": 959,
+      "title": "송정해변막국수",
+      "address": "강원특별자치도 강릉시 창해로 267 (강문동)",
+      "latitude": 37.7885974,
+      "longitude": 128.9241723,
+      "placeId": "ChIJRSbuDevmYTUR2ZB8wNFgvmM"
+    },
+    {
+      "spotId": 970,
+      "title": "감자유원지",
+      "address": "강원특별자치도 강릉시 경강로2115번길 7",
+      "latitude": 37.756349,
+      "longitude": 128.8973879,
+      "placeId": "ChIJB4TOKfnlYTURFWKGovbvZCM"
+    },
+    {
+      "spotId": 979,
+      "title": "경포가든",
+      "address": "강원특별자치도 강릉시 경포로463번길 34",
+      "latitude": 37.804235,
+      "longitude": 128.903583,
+      "placeId": "ChIJTX9F_R3kYTUREQAxcKXFRhU"
+    },
+    {
+      "spotId": 988,
+      "title": "고려반점",
+      "address": "강원특별자치도 강릉시 경강로2323번길 9",
+      "latitude": 37.7692033,
+      "longitude": 128.9145275,
+      "placeId": "ChIJZcqDtHrmYTURY5Vmr5Ay-yI"
+    },
+    {
+      "spotId": 999,
+      "title": "대영유통",
+      "address": "강원특별자치도 강릉시 주문진읍 해안로 1767",
+      "latitude": 37.8928477,
+      "longitude": 128.8287986,
+      "placeId": "ChIJ53P30c_iYTURcKAiaDAN64E"
+    },
+    {
+      "spotId": 1009,
+      "title": "정은숙초당순두부",
+      "address": "강원특별자치도 강릉시 난설헌로 200 (초당동)",
+      "latitude": 37.7908395,
+      "longitude": 128.9119697,
+      "placeId": "ChIJL_yxSprmYTURNc2pqsNkwZk"
+    },
+    {
+      "spotId": 1012,
+      "title": "철뚝소머리집",
+      "address": "강원특별자치도 강릉시 주문진읍 철둑길 42",
+      "latitude": 37.8921427,
+      "longitude": 128.8243578,
+      "placeId": "ChIJFwIxgsziYTURzBwj8OxH-5M"
+    },
+    {
+      "spotId": 1019,
+      "title": "영진횟집",
+      "address": "강원특별자치도 강릉시 연곡면 해안로 1427",
+      "latitude": 37.8679737,
+      "longitude": 128.8475037,
+      "placeId": "ChIJW0HQGRrjYTURDOYGMzvbujI"
+    },
+    {
+      "spotId": 1020,
+      "title": "제주해인물회",
+      "address": "강원특별자치도 강릉시 사천면 진리해변길 68-9",
+      "latitude": 37.8377722,
+      "longitude": 128.876902,
+      "placeId": "ChIJUfVWWIXjYTUR3PI4Y4OWJhI"
+    },
+    {
+      "spotId": 1030,
+      "title": "강릉한우만",
+      "address": "강원특별자치도 강릉시 정원로 74-23 (교동)",
+      "latitude": 37.7646362,
+      "longitude": 128.8741211,
+      "placeId": "ChIJL7SWlo_lYTUR1WARpi9ixkg"
+    },
+    {
+      "spotId": 1031,
+      "title": "효주원",
+      "address": "강원특별자치도 강릉시 강릉대로211번길 1 (교동)",
+      "latitude": 37.7586512,
+      "longitude": 128.893639,
+      "placeId": "ChIJR74i_-_lYTURmD8TdaFC3Jc"
+    },
+    {
+      "spotId": 1036,
+      "title": "화로상회 주문진점",
+      "address": "강원특별자치도 강릉시 연곡면 영진길 5",
+      "latitude": 37.8709232,
+      "longitude": 128.8366323,
+      "placeId": "ChIJo43d1FvjYTURXAtvyHjXGxk"
+    },
+    {
+      "spotId": 1044,
+      "title": "강나루민물장어",
+      "address": "강원특별자치도 강릉시 교동광장로 88 (교동)",
+      "latitude": 37.7648501,
+      "longitude": 128.8742517,
+      "placeId": "ChIJO7ntv4_lYTUR0Cez7BlFTSU"
+    },
+    {
+      "spotId": 1050,
+      "title": "성산옛집",
+      "address": "강원특별자치도 강릉시 성산면 구산길 85",
+      "latitude": 37.7145744,
+      "longitude": 128.8278463,
+      "placeId": "ChIJEy0AthvuYTURasm803w2lns"
+    },
+    {
+      "spotId": 1054,
+      "title": "흑돈연가",
+      "address": "강원특별자치도 강릉시 경강로2533번길 2 (견소동)",
+      "latitude": 37.7744057,
+      "longitude": 128.9368513,
+      "placeId": "ChIJc-u1avrmYTURxrenD1yyZ5c"
+    },
+    {
+      "spotId": 1058,
+      "title": "춘하추동 교동택지점",
+      "address": "강원특별자치도 강릉시 정원로 73-2 (교동)",
+      "latitude": 37.7625753,
+      "longitude": 128.873213,
+      "placeId": "ChIJnV-TWY_lYTURpYQ4xxSxrGo"
+    },
+    {
+      "spotId": 1067,
+      "title": "만나옹심이손칼국수",
+      "address": "강원특별자치도 강릉시 임영로 54-1 (노암동)",
+      "latitude": 37.7473303,
+      "longitude": 128.8971196,
+      "placeId": "ChIJe86KOlbvYTURrBy6hXJs1Ko"
+    },
+    {
+      "spotId": 1083,
+      "title": "주문진순이네",
+      "address": "강원특별자치도 강릉시 가작로 15 (교동)",
+      "latitude": 37.7694996,
+      "longitude": 128.8774624,
+      "placeId": "ChIJGxWLrZblYTURjk_yrE_G8jk"
+    },
+    {
+      "spotId": 1084,
+      "title": "옛소라횟집",
+      "address": "강원특별자치도 강릉시 창해로350번길 13 (강문동)",
+      "latitude": 37.7955001,
+      "longitude": 128.9180523,
+      "placeId": "ChIJ5RHfvL3mYTURkWamx4WNo-c"
+    },
+    {
+      "spotId": 1098,
+      "title": "심곡홍가네식당",
+      "address": "강원특별자치도 강릉시 강동면 헌화로 653",
+      "latitude": 37.6650428,
+      "longitude": 129.0520388,
+      "placeId": "ChIJgd1kZGvDYTURQbpumbHVuQM"
+    },
+    {
+      "spotId": 1100,
+      "title": "어부네코다리조림 강릉내곡점",
+      "address": "강원특별자치도 강릉시 남부로17번길 17 (내곡동)",
+      "latitude": 37.7412196,
+      "longitude": 128.8817573,
+      "placeId": "ChIJ6607cADvYTURLvmCppl-9Wg"
+    },
+    {
+      "spotId": 1104,
+      "title": "정화식당",
+      "address": "강원특별자치도 강릉시 토성로 193 (옥천동)",
+      "latitude": 37.7577708,
+      "longitude": 128.8966832,
+      "placeId": "ChIJ-ZGc0OTlYTURD_2G6RXexsc"
+    },
+    {
+      "spotId": 1105,
+      "title": "이주환전통한우",
+      "address": "강원특별자치도 강릉시 성산면 사임당로107번길 89",
+      "latitude": 37.7578895,
+      "longitude": 128.8589838,
+      "placeId": "ChIJpatmrpbvYTURRlhDN9rhKsE"
+    },
+    {
+      "spotId": 1121,
+      "title": "사천항주문진물회",
+      "address": "강원특별자치도 강릉시 사천면 진리항구길 49",
+      "latitude": 37.8375222,
+      "longitude": 128.8754271,
+      "placeId": "ChIJPSju0o_jYTURZjKRlV-y-a0"
+    },
+    {
+      "spotId": 1130,
+      "title": "함흥횟집",
+      "address": "강원특별자치도 강릉시 주문진읍 신리천로 9",
+      "latitude": 37.8861046,
+      "longitude": 128.8291075,
+      "placeId": "ChIJ8Q-guxbjYTUR0GVfzTdSLsM"
+    },
+    {
+      "spotId": 1135,
+      "title": "노브랜드버거 강릉송정DI점",
+      "address": "강원특별자치도 강릉시 경강로 2518 (송정동)",
+      "latitude": 37.773703,
+      "longitude": 128.9342599,
+      "placeId": "ChIJC0zLcwDnYTURy7XP1x4Egro"
+    },
+    {
+      "spotId": 1139,
+      "title": "육대장 강릉점",
+      "address": "강원특별자치도 강릉시 경강로 2379 (송정동)",
+      "latitude": 37.7713224,
+      "longitude": 128.9205056,
+      "placeId": "ChIJt5xAiRLnYTURyWeQRrz-fRc"
+    },
+    {
+      "spotId": 1160,
+      "title": "동해횟집",
+      "address": "강원특별자치도 강릉시 창해로350번길 31 (강문동)",
+      "latitude": 37.7966694,
+      "longitude": 128.9169163,
+      "placeId": "ChIJfVHtA73mYTURP0fhvnFTPiU"
+    },
+    {
+      "spotId": 1168,
+      "title": "감천골",
+      "address": "강원특별자치도 강릉시 성덕포남로152번길 16 (포남동)",
+      "latitude": 37.7666923,
+      "longitude": 128.9130203,
+      "placeId": "ChIJwzkBs3HmYTUR5pk05yuHE3Q"
+    },
+    {
+      "spotId": 1179,
+      "title": "에펠루아",
+      "address": "강원특별자치도 강릉시 창해로 361-77 (강문동)",
+      "latitude": 37.7940059,
+      "longitude": 128.9176441,
+      "placeId": "ChIJ8SDqFwDnYTURYKNqx2QoTDE"
+    },
+    {
+      "spotId": 1181,
+      "title": "강릉가마솥설렁탕",
+      "address": "강원특별자치도 강릉시 사천면 동해대로 3566",
+      "latitude": 37.804373,
+      "longitude": 128.8617044,
+      "placeId": "ChIJ067akfjkYTURbo1jb81hghU"
+    },
+    {
+      "spotId": 1185,
+      "title": "사랑채막국수",
+      "address": "강원특별자치도 강릉시 강릉대로587번길 37-7 (초당동)",
+      "latitude": 37.7863845,
+      "longitude": 128.9163361,
+      "placeId": "ChIJp-9RO5DmYTURieIZxaZS7FQ"
+    },
+    {
+      "spotId": 1205,
+      "title": "장수삼계탕",
+      "address": "강원특별자치도 강릉시 주문진읍 시장길 51",
+      "latitude": 37.8924094,
+      "longitude": 128.8274269,
+      "placeId": "ChIJVwxnfkDjYTURUVzjj-J7Vmk"
+    },
+    {
+      "spotId": 1227,
+      "title": "초시막국수",
+      "address": "강원특별자치도 강릉시 연곡면 초시길 33-1",
+      "latitude": 37.8530058,
+      "longitude": 128.8392049,
+      "placeId": "ChIJd8V52ULjYTURMf9usBLHYC8"
+    },
+    {
+      "spotId": 1231,
+      "title": "똥고집",
+      "address": "강원특별자치도 강릉시 월대산로 85-8 (입암동)",
+      "latitude": 37.7604153,
+      "longitude": 128.9196422,
+      "placeId": "ChIJL4noPW_nYTURFzd3_N-qg-E"
+    },
+    {
+      "spotId": 1240,
+      "title": "하월당",
+      "address": "강원특별자치도 강릉시 초당순두부길 89-12 (초당동)",
+      "latitude": 37.7919727,
+      "longitude": 128.9149222,
+      "placeId": "ChIJo2mTJmHnYTURMQWfpUlCbDE"
+    },
+    {
+      "spotId": 1246,
+      "title": "맥도날드 강릉점",
+      "address": "강원특별자치도 강릉시 경강로 2097 (임당동)",
+      "latitude": 37.75501,
+      "longitude": 128.8961306,
+      "placeId": "ChIJmTHMVfrlYTURM1nOGotAQyc"
+    },
+    {
+      "spotId": 1272,
+      "title": "황가네함흥냉면",
+      "address": "강원특별자치도 강릉시 하슬라로206번길 8-4 (교동)",
+      "latitude": 37.7678442,
+      "longitude": 128.8763903,
+      "placeId": "ChIJ3y2NDpHlYTURRP8lh0ZNePk"
+    },
+    {
+      "spotId": 1277,
+      "title": "강릉남매삼계탕",
+      "address": "강원특별자치도 강릉시 교동광장로 84 (교동)",
+      "latitude": 37.7649139,
+      "longitude": 128.8737906,
+      "placeId": "ChIJL2ufk4_lYTUReFhnpnojHb4"
+    },
+    {
+      "spotId": 1301,
+      "title": "수정손칼국수",
+      "address": "강원특별자치도 강릉시 주문진읍 시장길 49",
+      "latitude": 37.89209,
+      "longitude": 128.8273714,
+      "placeId": "ChIJwWy6XwDjYTUR9CasvZgsK2A"
+    },
+    {
+      "spotId": 1303,
+      "title": "춘천수미닭갈비",
+      "address": "강원특별자치도 강릉시 월대산로 60 (입암동)",
+      "latitude": 37.7598876,
+      "longitude": 128.917023,
+      "placeId": "ChIJrdWCG23mYTURSNl-GqDMOnk"
+    },
+    {
+      "spotId": 1304,
+      "title": "에이엠브레드앤커피",
+      "address": "강원특별자치도 강릉시 창해로14번길 24 (견소동)",
+      "latitude": 37.7723867,
+      "longitude": 128.9475504,
+      "placeId": "ChIJDQzkwQLnYTURFqefdfh47VI"
+    },
+    {
+      "spotId": 1315,
+      "title": "정선 이모네 식당",
+      "address": "강원특별자치도 강릉시 강릉대로223번길 11 (교동)",
+      "latitude": 37.7597927,
+      "longitude": 128.8949666,
+      "placeId": "ChIJq7gJc-XlYTURXt69EREpIdU"
+    },
+    {
+      "spotId": 1323,
+      "title": "옹심이중국집",
+      "address": "강원특별자치도 강릉시 공항길 28 (병산동)",
+      "latitude": 37.7622988,
+      "longitude": 128.9394487,
+      "placeId": "ChIJZWSYP1HmYTURJGuB_UYZxSQ"
+    },
+    {
+      "spotId": 1327,
+      "title": "두딩",
+      "address": "강원특별자치도 강릉시 강릉대로 197 (교동)",
+      "latitude": 37.7581651,
+      "longitude": 128.8921642,
+      "placeId": "ChIJ67jUJq_lYTURkDiP7ypt0rI"
+    }
+  ]
+}
