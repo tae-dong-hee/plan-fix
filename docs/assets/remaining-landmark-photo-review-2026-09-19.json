@@ -1,0 +1,195 @@
+{
+  "version": 1,
+  "verifiedAt": "2026-09-19",
+  "scope": "Bounded follow-up for remaining492 landmarks IDs445–699; no DB/app/Cloud changes. Two candidates for root independent visual review, no automatic approval.",
+  "candidates": [
+    {
+      "spotId": 544,
+      "decision": "APPROVED_INDEPENDENT_ROOT_VISUAL_REVIEW",
+      "targetGuard": {
+        "spot_id": 544,
+        "contentid": 3532423,
+        "title": "보광리분청자요지",
+        "address": "강원특별자치도 강릉시 성산면 삼왕길 295",
+        "latitude": 37.7662983,
+        "longitude": 128.7907647,
+        "category": "관광지",
+        "status": "ACTIVE",
+        "thumbnail": null,
+        "source_type": "TOUR_API",
+        "source_title": "보광리분청자요지",
+        "source_address": "강원특별자치도 강릉시 성산면 삼왕길 295",
+        "source_latitude": 37.7662982655,
+        "source_longitude": 128.7907647122,
+        "source_thumbnail": null,
+        "info_collected_at": "2026-09-19T09:42:31.509519+09:00",
+        "image_collected_at": "2026-09-19T08:54:04.855663+09:00"
+      },
+      "source": "국가유산청 국가유산포털",
+      "sourceTitle": "강릉보광리분청자요지_정면 (촬영년도 : 2016년)",
+      "sourcePage": "https://www.heritage.go.kr/heri/cul/imgHeritage.do?ccimId=6951849&ccbaKdcd=23&ccbaAsno=0000690000000&ccbaCtcd=32",
+      "sourceRecord": {
+        "ccimId": "6951849",
+        "ccbaCpno": "2333200690000",
+        "ccbaKdcd": "23",
+        "ccbaAsno": "0000690000000",
+        "ccbaCtcd": "32"
+      },
+      "imageUrl": "https://www.heritage.go.kr/unisearch/images/monument/2022091417091501.jpg",
+      "file": "artifacts/remaining-492-photos-2026-09-19/official-landmarks/544-heritage-2016-front.jpg",
+      "bytes": 9825384,
+      "sha256": "6f363f9bf565cb8ec4bf1cec834749233b37b3fbfe077a12ddcad8c2d9a7b86c",
+      "width": 4000,
+      "height": 2670,
+      "fileVariant": "Official individual-photo page image URL; downloaded bytes unchanged. Not an editor-created screenshot or cropped review image.",
+      "year": 2016,
+      "credit": "국가유산청 국가유산포털",
+      "author": null,
+      "authorNote": "Individual photographer not identified in photo page; do not invent one. Credit the official provider and work title.",
+      "license": "공공누리 제1유형",
+      "licenseUrl": "https://www.kogl.or.kr/info/licenseType1.do",
+      "licenseEvidence": {
+        "file": "artifacts/remaining-492-photos-2026-09-19/official-landmarks/heritage-544-photo.html",
+        "element": "Individual photo metadata 공공누리 유형 links licenseType1.do and displays mark01.svg"
+      },
+      "identityEvidence": [
+        {
+          "url": "https://www.heritage.go.kr/heri/cul/culSelectDetail.do?ccbaCpno=2333200690000&pageNo=1_1_1_1",
+          "file": "artifacts/remaining-492-photos-2026-09-19/official-landmarks/heritage-bogwang-detail.html",
+          "name": "강릉보광리분청자요지",
+          "parcelAddress": "강원 강릉시 성산면 보광리 711-2번지 외 7필지",
+          "designation": "강원도기념물 제69호",
+          "designatedDate": "1994-09-23",
+          "areaSquareMeters": 4986,
+          "coordinates": {
+            "latitude": 37.7656829556497,
+            "longitude": 128.791269093744
+          },
+          "coordinateEvidence": "jsCntsForm('강릉보광리분청자요지','128.791269093744','37.7656829556497')",
+          "distanceMetersFromDb": 81.5,
+          "match": "Unique named heritage; own TourAPI description independently states the same No.69 designation and exact 1994-09-23 date. Location within ~82m is corroborating evidence, not an automatic small-business distance exception."
+        },
+        {
+          "url": "https://www.gn.go.kr/www/selectBbsNttView.do?key=1722&bbsNo=85&nttNo=1106",
+          "file": "artifacts/remaining-492-photos-2026-09-19/official-landmarks/gn-544-detail.html",
+          "name": "보광리 분청자요지(普光里 粉靑磁窯址)",
+          "parcelAddress": "강릉시 성산면 보광리 711-2",
+          "designatedDate": "1994-09-23",
+          "match": "Municipal independent record matches unique heritage and date; its own photo is not being used."
+        }
+      ],
+      "visualReview": "Viewed the actual 4000×2670 public source file. Front view of vegetated kiln-site mound with sign reading 강릉 보광리 분청자요지 / Gangneung Bogwang-ri Buncheong kiln site. This is an archaeological site, not a standing kiln building. No faces, unrelated business, or broken image.",
+      "limitations": [
+        "Photo taken in 2016; label year and do not claim current conditions.",
+        "No authoritative road-to-parcel conversion retrieved. Identity rests on exact unique designation/date/name plus official coordinates.",
+        "Preserve existing address and coordinates.",
+        "Most of scene is the grassy archaeological site; card crop should retain sign where possible."
+      ],
+      "changes": "없음. 공개 이미지 파일 바이트 그대로 저장."
+    },
+    {
+      "spotId": 527,
+      "decision": "APPROVED_INDEPENDENT_ROOT_VISUAL_REVIEW",
+      "targetGuard": {
+        "spot_id": 527,
+        "contentid": 3532403,
+        "title": "산계리3층석탑",
+        "address": "강원특별자치도 강릉시 옥계면 석화동굴길 238",
+        "latitude": 37.5749562,
+        "longitude": 128.918223,
+        "category": "관광지",
+        "status": "ACTIVE",
+        "thumbnail": null,
+        "source_type": "TOUR_API",
+        "source_title": "산계리3층석탑",
+        "source_address": "강원특별자치도 강릉시 옥계면 석화동굴길 238",
+        "source_latitude": 37.5749561892,
+        "source_longitude": 128.9182230117,
+        "source_thumbnail": null,
+        "info_collected_at": "2026-09-19T09:42:30.68115+09:00",
+        "image_collected_at": "2026-09-19T08:53:59.980237+09:00"
+      },
+      "source": "공공누리",
+      "sourceTitle": "문화재자료제43호강릉 산계리 석탑1",
+      "sourcePage": "https://www.kogl.or.kr/recommend/recommendDivView.do?division=img&recommendIdx=8334",
+      "sourceRecord": {
+        "recommendIdx": 8334,
+        "photo": 1
+      },
+      "imageUrl": "https://www.kogl.or.kr/upload_recommend/thumb_V/2018/%EA%B0%95%EC%9B%90%EB%8F%84/thumb_B001-C001-0026-01_L.jpg",
+      "file": "artifacts/remaining-spot-photos-2026-09-19/official-candidates/527-kogl-8334-1.jpg",
+      "bytes": 80890,
+      "sha256": "8453679e6ee09f358ab8fc7207891b29baa9f1d0d0a04a25f873b564c97faddd",
+      "width": 760,
+      "height": 507,
+      "fileVariant": "public page preview rendition; fetched original bytes unchanged, NOT full-resolution original",
+      "year": 2018,
+      "credit": "강원특별자치도·한국문화정보원",
+      "author": "강원특별자치도, 한국문화정보원",
+      "rightsHolder": "강원특별자치도",
+      "license": "공공누리 제1유형",
+      "licenseUrl": "https://www.kogl.or.kr/info/licenseType1.do",
+      "licenseEvidence": {
+        "file": "artifacts/remaining-492-photos-2026-09-19/official-landmarks/kogl-8334.html",
+        "element": "kogl-8334.html: individual view-type__image img_opentype01 + explicit provider ownership and type1 statement"
+      },
+      "identityEvidence": [
+        {
+          "url": "https://www.gn.go.kr/www/selectBbsNttView.do?key=1722&bbsNo=85&nttNo=1161",
+          "file": "artifacts/remaining-492-photos-2026-09-19/official-landmarks/gn-527-detail.html",
+          "name": "강릉 산계리석탑(江陵 山溪里石塔)",
+          "parcelAddress": "강릉시 옥계면 산계리 1230-2",
+          "designation": "문화유산자료",
+          "designatedDate": "1984-06-02",
+          "naverMapLinkCoordinates": {
+            "latitude": 37.5748835,
+            "longitude": 128.9185123
+          },
+          "distanceMetersFromDb": 26.7,
+          "coordinateCaveat": "These coordinates are map link lat/lng (potential map center), not a formally declared surveyed heritage point. searchCoord in same URL differs; therefore use as corroboration only.",
+          "daumMapLinkQuery": "산계리3층석탑",
+          "daumMapItemId": "12007697",
+          "match": "Official heritage-detail page itself links exact DB alias 산계리3층석탑. Unique named monument plus official linked map proximity support manual identity. Page describes weathered upper storeys, steep thick roof stones and 1990 reconstructed base, all consistent with photo."
+        }
+      ],
+      "visualReview": "Re-viewed actual 760×507 public source photograph. Clear three-storey stone pagoda with dark heavily weathered roof stones and visibly newer reconstructed base. Subject matches official unique-heritage title and morphology; no wrong-place or photo-content issue found.",
+      "priorHoldReason": "Only parcel-to-road conversion missing. Prior manifest had no photographic mismatch.",
+      "limitations": [
+        "2018 photo: label year; not current-condition claim.",
+        "Full-resolution download requires login and was not attempted. This file is the public official-page 760×507 rendition, not the login-only full-resolution original.",
+        "Road-to-parcel conversion remains unverified; preserve DB location.",
+        "Map center uncertainty retained; not an automatic coordinate match.",
+        "Own TourAPI description does not state heritage designation number/date."
+      ],
+      "changes": "없음. 공개 파일을 리사이즈·편집·워터마크 제거 없이 바이트 그대로 저장."
+    }
+  ],
+  "otherFindings": [
+    {
+      "spotId": 445,
+      "status": "HOLD_APPLICATION",
+      "reason": "PhotoKorea exact-title KOGL1 works found; photo usage application workflow not completed.",
+      "sourcePages": [
+        "https://korean1.visitkorea.or.kr/kor/nphotogallery/photo.kto?func_name=photo_view&newphotoDTO.photo_code=2712009201912009k&newphotoDTO.searchWord=&newphotoDTO.sub_menu=new",
+        "https://korean1.visitkorea.or.kr/kor/nphotogallery/photo.kto?func_name=photo_view&newphotoDTO.photo_code=2712009201912006k"
+      ]
+    },
+    {
+      "spotId": 496,
+      "status": "HOLD_RIGHTS",
+      "reason": "AKS exact place found; five individual photos explicitly media free-use unavailable. No reusable image established.",
+      "sourcePage": "https://encykorea.aks.ac.kr/Article/E0001083"
+    },
+    {
+      "spotId": 540,
+      "status": "HOLD_UNVERIFIED",
+      "reason": "No ready exact-place photo plus specific free-use grant established in this bounded pass. 소요산 경기소금강 false-positive excluded."
+    },
+    {
+      "spotId": 596,
+      "status": "HOLD_RIGHTS",
+      "reason": "Municipal museum notice uses KOGL4; not a commercial-app free photo candidate."
+    }
+  ],
+  "coverageLimitation": "Focused candidate audit, not an exhaustive assertion that all other 492 have no free images."
+}

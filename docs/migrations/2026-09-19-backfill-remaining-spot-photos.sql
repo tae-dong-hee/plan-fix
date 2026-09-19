@@ -11,7 +11,9 @@ CREATE TEMP TABLE verified_photos (
  source_title text, source_address text, source_latitude numeric, source_longitude numeric
 ) ON COMMIT DROP;
 INSERT INTO verified_photos VALUES
-    (534, 3547638, '강릉통일공원안보전시관', '강원특별자치도 강릉시 강동면 율곡로 1715-38', 37.7204604, 128.9984085, 'https://tong.visitkorea.or.kr/cms/resource/52/3516852_image2_1.jpg', 420, 126898, '통일공원(강릉)', '강원특별자치도 강릉시 율곡로 1715-38 통일안보전시관', 37.7204054, 128.9983814);
+    (527, 3532403, '산계리3층석탑', '강원특별자치도 강릉시 옥계면 석화동굴길 238', 37.5749562, 128.918223, 'https://planfix.cloud/images/verified-spots/527.jpg', NULL, NULL, NULL, NULL, NULL, NULL),
+    (534, 3547638, '강릉통일공원안보전시관', '강원특별자치도 강릉시 강동면 율곡로 1715-38', 37.7204604, 128.9984085, 'https://tong.visitkorea.or.kr/cms/resource/52/3516852_image2_1.jpg', 420, 126898, '통일공원(강릉)', '강원특별자치도 강릉시 율곡로 1715-38 통일안보전시관', 37.7204054, 128.9983814),
+    (544, 3532423, '보광리분청자요지', '강원특별자치도 강릉시 성산면 삼왕길 295', 37.7662983, 128.7907647, 'https://planfix.cloud/images/verified-spots/544.jpg', NULL, NULL, NULL, NULL, NULL, NULL);
 DO $$
 BEGIN
  IF EXISTS (

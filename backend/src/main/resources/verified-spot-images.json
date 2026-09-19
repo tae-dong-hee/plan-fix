@@ -144,6 +144,22 @@
       "latitude": 37.7204604,
       "longitude": 128.9984085,
       "url": "https://tong.visitkorea.or.kr/cms/resource/52/3516852_image2_1.jpg"
+    },
+    {
+      "spotId": 544,
+      "title": "보광리분청자요지",
+      "address": "강원특별자치도 강릉시 성산면 삼왕길 295",
+      "latitude": 37.7662983,
+      "longitude": 128.7907647,
+      "url": "https://planfix.cloud/images/verified-spots/544.jpg"
+    },
+    {
+      "spotId": 527,
+      "title": "산계리3층석탑",
+      "address": "강원특별자치도 강릉시 옥계면 석화동굴길 238",
+      "latitude": 37.5749562,
+      "longitude": 128.918223,
+      "url": "https://planfix.cloud/images/verified-spots/527.jpg"
     }
   ]
 }
