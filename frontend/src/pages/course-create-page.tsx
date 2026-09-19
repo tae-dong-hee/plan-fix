@@ -31,9 +31,10 @@ import {
   type CourseGenerationSource,
   type DayAccommodation,
 } from "@/services/course";
-import { type AiCourseDraft, type AiCourseTheme } from "@/services/ai-course";
+import { type AiCourseDraft, type AiCourseTheme, type AiCourseTripIdea } from "@/services/ai-course";
 import { PopularSpot, UnauthorizedError } from "@/services/spots";
 import { aiCourseNotice } from "@/lib/ai-course-notice";
+import { describeDayThemes } from "@/lib/ai-trip-themes";
 
 const DRAFT_STORAGE_KEY = "planfix:course-draft";
 
@@ -50,6 +51,11 @@ export type DraftSpot = {
   memo: string;
 };
 
+type DraftDayThemes = {
+  themes?: AiCourseTheme[];
+  tripIdeas?: AiCourseTripIdea[];
+};
+
 export type CourseDraft = {
   title: string;
   description: string;
@@ -60,7 +66,17 @@ export type CourseDraft = {
   dayAccommodations?: Record<number, DayAccommodation>;
   generatedBy?: CourseGenerationSource | null;
   themes?: AiCourseTheme[];
+  dayThemes?: Record<number, DraftDayThemes>;
 };
+
+function collectDayThemes(days: DraftDayThemes[]): Record<number, DraftDayThemes> {
+  return Object.fromEntries(days.flatMap((day, index) =>
+    // 빈 배열은 테마 해제 요청이다. 필드가 없는 이전 응답과 구분해 저장한다.
+    Array.isArray(day.themes) || Array.isArray(day.tripIdeas)
+      ? [[index + 1, { themes: day.themes, tripIdeas: day.tripIdeas }]]
+      : [],
+  ));
+}
 
 function formatDate(date: Date): string {
   const y = date.getFullYear();
@@ -109,6 +125,7 @@ export default function CourseCreatePage() {
     return Array.from({ length: initialDaysCount }, () => []);
   });
   const [dayAccommodations, setDayAccommodations] = useState<Record<number, DayAccommodation>>({});
+  const [dayThemes, setDayThemes] = useState<Record<number, DraftDayThemes>>({});
   const [accommodationDayNumber, setAccommodationDayNumber] = useState<number | null>(null);
 
   const [submitting, setSubmitting] = useState(false);
@@ -180,6 +197,7 @@ export default function CourseCreatePage() {
             }))
           );
           setDays(loadedDays);
+          setDayThemes(collectDayThemes(data.days));
         }
       })
       .catch((err) => {
@@ -222,6 +240,9 @@ export default function CourseCreatePage() {
         if (parsed.endDate) setEndDate(parsed.endDate);
         if (Array.isArray(parsed.days) && parsed.days.length > 0) {
           setDays(parsed.days);
+          setDayThemes(Object.fromEntries(Object.entries(parsed.dayThemes ?? {}).filter(
+            ([dayNumber]) => Number(dayNumber) >= 1 && Number(dayNumber) <= parsed.days.length,
+          )));
         }
         if (parsed.dayAccommodations) setDayAccommodations(parsed.dayAccommodations);
       }
@@ -244,24 +265,25 @@ export default function CourseCreatePage() {
         dayAccommodations,
         generatedBy,
         themes,
+        dayThemes,
       };
       sessionStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
     } catch {
       // sessionStorage 저장 오류 무시
     }
-  }, [isEditMode, title, description, visibility, startDate, endDate, days, dayAccommodations, generatedBy, themes]);
+  }, [isEditMode, title, description, visibility, startDate, endDate, days, dayAccommodations, generatedBy, themes, dayThemes]);
 
   // 여행 기간(시작일~종료일) 한 번에 변경 - 캘린더 모달에서 적용 버튼을 누르면 호출됨
   const handleApplyDateRange = (newStart: string, newEnd: string) => {
+    if (!syncDaysDuration(newStart, newEnd)) return;
     setStartDate(newStart);
     setEndDate(newEnd);
-    syncDaysDuration(newStart, newEnd);
     setDateModalOpen(false);
   };
 
   const syncDaysDuration = (start: string, end: string) => {
     const targetCount = calculateDayCount(start, end);
-    if (targetCount === days.length) return;
+    if (targetCount === days.length) return true;
 
     if (targetCount < days.length) {
       const removedDays = days.slice(targetCount);
@@ -271,10 +293,13 @@ export default function CourseCreatePage() {
           "선택한 기간을 줄이면 삭제되는 일차의 장소 목록이 사라집니다. 계속하시겠습니까?"
         );
         if (!confirmed) {
-          return;
+          return false;
         }
       }
       setDays(days.slice(0, targetCount));
+      setDayThemes((previous) => Object.fromEntries(Object.entries(previous).filter(
+        ([dayNumber]) => Number(dayNumber) <= targetCount,
+      )));
     } else {
       const additionalCount = targetCount - days.length;
       const newDays = [...days];
@@ -283,6 +308,7 @@ export default function CourseCreatePage() {
       }
       setDays(newDays);
     }
+    return true;
   };
 
   // 장소 추가 모달 열기
@@ -389,7 +415,10 @@ export default function CourseCreatePage() {
       })),
     );
 
-    setDays(draftDays.length > 0 ? draftDays : days);
+    if (draftDays.length > 0) {
+      setDays(draftDays);
+      setDayThemes(collectDayThemes(draft.days));
+    }
     setGeneratedBy(draft.generatedBy === "LLM" || draft.generatedBy === "RULE_BASED" ? draft.generatedBy : null);
     setThemes([...selectedThemes]);
     if (!title.trim()) {
@@ -434,6 +463,7 @@ export default function CourseCreatePage() {
         endDate,
         days: days.map((daySpots, idx) => ({
           dayNumber: idx + 1,
+          ...dayThemes[idx + 1],
           spots: daySpots.map((s) => ({
             spotId: s.spotId,
             memo: s.memo.trim() || null,
@@ -732,6 +762,7 @@ export default function CourseCreatePage() {
 
           {days.map((daySpots, dayIndex) => {
             const dayNumber = dayIndex + 1;
+            const assignedThemes = dayThemes[dayNumber];
             const endAccommodation = dayAccommodations[dayNumber];
             const startAccommodation = dayIndex === 0 ? endAccommodation : dayAccommodations[dayNumber - 1];
             const hasStartAccommodationLocation = startAccommodation?.latitude != null
@@ -749,15 +780,21 @@ export default function CourseCreatePage() {
                 className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all"
               >
                 {/* Day 헤더 */}
-                <div className="flex items-center justify-between border-b border-border bg-muted/30 px-5 py-3.5 sm:px-6">
-                  <div className="flex items-center gap-3">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary font-bold text-xs text-primary-foreground shadow-sm">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-muted/30 px-5 py-3.5 sm:px-6">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary font-bold text-xs text-primary-foreground shadow-sm">
                       D{dayNumber}
                     </span>
                     <div>
                       <h3 className="text-sm font-bold text-foreground sm:text-base">
                         Day {dayNumber}
                       </h3>
+                      {(assignedThemes?.themes?.length || assignedThemes?.tripIdeas?.length) ? (
+                        <p className="mt-1 flex items-start gap-1 text-xs font-medium text-primary" data-testid={`day-theme-${dayNumber}`}>
+                          <Sparkles className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
+                          <span>{describeDayThemes(assignedThemes)}</span>
+                        </p>
+                      ) : null}
                     </div>
                   </div>
                   <div className="flex gap-2">

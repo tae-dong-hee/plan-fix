@@ -1,6 +1,12 @@
 import { UnauthorizedError } from "./spots";
 
 export type AiCourseTheme = "HEALING" | "FOOD" | "CAFE" | "ACTIVITY" | "CULTURE";
+export type AiCourseTripIdea = "COAST_CAFE" | "FOOD_WALK" | "NATURE" | "ACTIVITY" | "CULTURE_LOCAL" | "CAFE";
+export type AiCourseDayTheme = {
+  dayNumber: number;
+  themes: AiCourseTheme[];
+  tripIdeas: AiCourseTripIdea[];
+};
 export type AiCourseCompanion = "SOLO" | "COUPLE" | "FRIENDS" | "FAMILY";
 
 export type AiCourseDraftRequest = {
@@ -9,6 +15,7 @@ export type AiCourseDraftRequest = {
   startDate: string;
   endDate: string;
   themes: AiCourseTheme[];
+  dayThemes?: AiCourseDayTheme[];
   companion: AiCourseCompanion;
   anchorSpotIds: number[];
 };
@@ -30,6 +37,8 @@ export type AiCourseDraftSpot = {
 export type AiCourseDraftDay = {
   dayNumber: number;
   spots: AiCourseDraftSpot[];
+  themes?: AiCourseTheme[];
+  tripIdeas?: AiCourseTripIdea[];
   /** 이전 서버의 응답에는 없을 수 있다. */
   routeStatus?: "ROAD_DISTANCE" | "UNAVAILABLE" | "NOT_NEEDED";
   drivingDistanceMeters?: number | null;

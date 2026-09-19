@@ -76,6 +76,7 @@ describe("AiCourseModal", () => {
       anchorSpotIds: [],
     }));
     expect(request.sigungu).toBeUndefined();
+    expect(request).not.toHaveProperty("dayThemes");
   });
 
   it.each([
@@ -111,13 +112,10 @@ describe("AiCourseModal", () => {
     { name: "신나는 액티비티", themes: ["ACTIVITY"] },
     { name: "문화와 골목 여행", themes: ["CULTURE", "FOOD"] },
     { name: "여유로운 카페 투어", themes: ["CAFE"] },
-  ])("'$name' 추천은 기존 테마를 교체하고 선택한 지역으로 요청한다", async ({ name, themes }) => {
+  ])("'$name' 추천을 선택하면 해당 테마와 선택한 지역으로 요청한다", async ({ name, themes }) => {
     const { onApply } = renderModal();
     const region = screen.getByRole("combobox", { name: "여행 지역" });
     fireEvent.change(region, { target: { value: "춘천" } });
-    fireEvent.click(screen.getByRole("button", { name: "문화·역사" }));
-    fireEvent.click(screen.getByRole("button", { name: "액티비티" }));
-
     const recommendation = screen.getByRole("button", { name });
     fireEvent.click(recommendation);
     expect(recommendation).toHaveAttribute("aria-pressed", "true");
@@ -154,22 +152,169 @@ describe("AiCourseModal", () => {
     }));
   });
 
-  it("추천의 선택 표시는 수동 선택 순서와 무관하며 테마를 추가하거나 해제하면 즉시 갱신된다", () => {
+  it("추천 카드는 독립적으로 중복 선택하고 수동 테마를 더해도 선택을 유지한다", () => {
     renderModal();
     const recommendation = screen.getByRole("button", { name: "문화와 골목 여행" });
     fireEvent.click(screen.getByRole("button", { name: "맛집 탐방" }));
     fireEvent.click(screen.getByRole("button", { name: "문화·역사" }));
-    expect(recommendation).toHaveAttribute("aria-pressed", "true");
-
-    fireEvent.click(screen.getByRole("button", { name: "카페 투어" }));
     expect(recommendation).toHaveAttribute("aria-pressed", "false");
+    fireEvent.click(recommendation);
+    fireEvent.click(screen.getByRole("button", { name: "바다와 카페" }));
+    expect(recommendation).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "바다와 카페" })).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(screen.getByRole("button", { name: "액티비티" }));
+    expect(recommendation).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("button", { name: "AI에게 테마 맡기기" })).toHaveAttribute("aria-pressed", "false");
     fireEvent.click(screen.getByRole("button", { name: "카페 투어 선택 해제" }));
     expect(recommendation).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "바다와 카페" })).toHaveAttribute("aria-pressed", "false");
     fireEvent.click(screen.getByRole("button", { name: "맛집 탐방 선택 해제" }));
     expect(recommendation).toHaveAttribute("aria-pressed", "false");
     expect(screen.getByRole("button", { name: "문화·역사 선택 해제" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "맛집 탐방 선택 해제" })).not.toBeInTheDocument();
+  });
+
+  it("테마 세 개를 함께 선택하면 선택한 순서로 날짜마다 배치해 요청한다", async () => {
+    const { onApply } = renderModal();
+    const names = ["바다와 카페", "자연 속 쉼", "신나는 액티비티"];
+    names.forEach((name) => fireEvent.click(screen.getByRole("button", { name })));
+
+    names.forEach((name, index) => {
+      expect(screen.getByRole("button", { name })).toHaveAttribute("aria-pressed", "true");
+      expect(screen.getByRole("button", { name: `${index + 1}일차 테마 변경` })).toHaveTextContent(name);
+    });
+    fireEvent.click(screen.getByRole("button", { name: "AI로 코스 만들기" }));
+
+    await waitFor(() => expect(onApply).toHaveBeenCalledWith(draft, ["HEALING", "CAFE", "ACTIVITY"]));
+    expect(vi.mocked(fetchAiCourseDraft).mock.calls[0][0].dayThemes).toEqual([
+      { dayNumber: 1, themes: ["HEALING", "CAFE"], tripIdeas: ["COAST_CAFE"] },
+      { dayNumber: 2, themes: ["HEALING"], tripIdeas: ["NATURE"] },
+      { dayNumber: 3, themes: ["ACTIVITY"], tripIdeas: ["ACTIVITY"] },
+    ]);
+  });
+
+  it("추천 하나를 해제해도 함께 선택한 추천이 사용하는 기본 테마를 유지한다", async () => {
+    const { onApply } = renderModal();
+    ["바다와 카페", "자연 속 쉼", "신나는 액티비티"].forEach((name) => fireEvent.click(screen.getByRole("button", { name })));
+    fireEvent.click(screen.getByRole("button", { name: "바다와 카페" }));
+
+    expect(screen.getByRole("button", { name: "바다와 카페" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("button", { name: "자연 속 쉼" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "힐링·자연" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "카페 투어" })).toHaveAttribute("aria-pressed", "false");
+    fireEvent.click(screen.getByRole("button", { name: "AI로 코스 만들기" }));
+
+    await waitFor(() => expect(onApply).toHaveBeenCalledWith(draft, ["HEALING", "ACTIVITY"]));
+    expect(vi.mocked(fetchAiCourseDraft).mock.calls[0][0].dayThemes).toEqual([
+      { dayNumber: 1, themes: ["HEALING"], tripIdeas: ["NATURE"] },
+      { dayNumber: 2, themes: ["ACTIVITY"], tripIdeas: ["ACTIVITY"] },
+      { dayNumber: 3, themes: ["HEALING"], tripIdeas: ["NATURE"] },
+    ]);
+  });
+
+  it("한 날짜에 테마를 추가하고 다른 날짜만 AI에 맡긴 결과로 요청과 전체 테마를 정한다", async () => {
+    const { onApply } = renderModal();
+    ["바다와 카페", "자연 속 쉼", "신나는 액티비티"].forEach((name) => fireEvent.click(screen.getByRole("button", { name })));
+    fireEvent.click(screen.getByRole("button", { name: "1일차 테마 변경" }));
+    fireEvent.click(screen.getByRole("button", { name: "1일차 신나는 액티비티" }));
+    expect(screen.getByRole("button", { name: "1일차 바다와 카페" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "1일차 신나는 액티비티" })).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(screen.getByRole("button", { name: "2일차 테마 변경" }));
+    fireEvent.click(screen.getByRole("button", { name: "2일차 AI 추천" }));
+
+    expect(screen.getByRole("button", { name: "1일차 테마 변경" })).toHaveTextContent("바다와 카페 · 신나는 액티비티");
+    expect(screen.getByRole("button", { name: "2일차 테마 변경" })).toHaveTextContent("AI 추천");
+    expect(screen.getByRole("button", { name: "3일차 테마 변경" })).toHaveTextContent("신나는 액티비티");
+    fireEvent.click(screen.getByRole("button", { name: "AI로 코스 만들기" }));
+
+    await waitFor(() => expect(onApply).toHaveBeenCalledWith(draft, ["HEALING", "CAFE", "ACTIVITY"]));
+    expect(vi.mocked(fetchAiCourseDraft).mock.calls[0][0]).toEqual(expect.objectContaining({
+      themes: ["HEALING", "CAFE", "ACTIVITY"],
+      dayThemes: [
+        { dayNumber: 1, themes: ["HEALING", "CAFE", "ACTIVITY"], tripIdeas: ["COAST_CAFE", "ACTIVITY"] },
+        { dayNumber: 2, themes: [], tripIdeas: [] },
+        { dayNumber: 3, themes: ["ACTIVITY"], tripIdeas: ["ACTIVITY"] },
+      ],
+    }));
+  });
+
+  it("당일 여행에 여러 추천을 골라도 모든 선택을 같은 날에 반영한다", async () => {
+    const { props, rerender, onApply } = renderModal();
+    rerender(<AiCourseModal {...props} endDate={props.startDate} />);
+    ["바다와 카페", "자연 속 쉼", "신나는 액티비티"].forEach((name) => fireEvent.click(screen.getByRole("button", { name })));
+
+    expect(screen.getByRole("button", { name: "1일차 테마 변경" })).toHaveTextContent("바다와 카페 · 자연 속 쉼 · 신나는 액티비티");
+    expect(screen.queryByRole("button", { name: "2일차 테마 변경" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "AI로 코스 만들기" }));
+
+    await waitFor(() => expect(onApply).toHaveBeenCalledWith(draft, ["HEALING", "CAFE", "ACTIVITY"]));
+    expect(vi.mocked(fetchAiCourseDraft).mock.calls[0][0].dayThemes).toEqual([
+      { dayNumber: 1, themes: ["HEALING", "CAFE", "ACTIVITY"], tripIdeas: ["COAST_CAFE", "NATURE", "ACTIVITY"] },
+    ]);
+  });
+
+  it("유일하게 배치된 테마를 AI 추천으로 바꾸면 전체 요청과 저장 테마에서도 제외한다", async () => {
+    const { onApply } = renderModal();
+    fireEvent.click(screen.getByRole("button", { name: "바다와 카페" }));
+    fireEvent.click(screen.getByRole("button", { name: "신나는 액티비티" }));
+    fireEvent.click(screen.getByRole("button", { name: "2일차 테마 변경" }));
+    fireEvent.click(screen.getByRole("button", { name: "2일차 AI 추천" }));
+    fireEvent.click(screen.getByRole("button", { name: "AI로 코스 만들기" }));
+
+    await waitFor(() => expect(onApply).toHaveBeenCalledWith(draft, ["HEALING", "CAFE"]));
+    expect(vi.mocked(fetchAiCourseDraft).mock.calls[0][0]).toEqual(expect.objectContaining({
+      themes: ["HEALING", "CAFE"],
+      dayThemes: [
+        { dayNumber: 1, themes: ["HEALING", "CAFE"], tripIdeas: ["COAST_CAFE"] },
+        { dayNumber: 2, themes: [], tripIdeas: [] },
+        { dayNumber: 3, themes: ["HEALING", "CAFE"], tripIdeas: ["COAST_CAFE"] },
+      ],
+    }));
+  });
+
+  it("공유 기본 테마를 칩에서 제거하면 해당 추천들을 해제하고 나머지 취향을 유지한다", async () => {
+    const { onApply } = renderModal();
+    fireEvent.click(screen.getByRole("button", { name: "바다와 카페" }));
+    fireEvent.click(screen.getByRole("button", { name: "자연 속 쉼" }));
+    fireEvent.click(screen.getByRole("button", { name: "힐링·자연 선택 해제" }));
+
+    expect(screen.getByRole("button", { name: "바다와 카페" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("button", { name: "자연 속 쉼" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("button", { name: "힐링·자연" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("button", { name: "카페 투어" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "1일차 테마 변경" })).toHaveTextContent("카페 투어");
+    fireEvent.click(screen.getByRole("button", { name: "AI로 코스 만들기" }));
+
+    await waitFor(() => expect(onApply).toHaveBeenCalledWith(draft, ["CAFE"]));
+    expect(vi.mocked(fetchAiCourseDraft).mock.calls[0][0].dayThemes).toEqual([
+      { dayNumber: 1, themes: ["CAFE"], tripIdeas: [] },
+      { dayNumber: 2, themes: ["CAFE"], tripIdeas: [] },
+      { dayNumber: 3, themes: ["CAFE"], tripIdeas: [] },
+    ]);
+  });
+
+  it("기간을 줄였다 늘리면 남은 날의 변경은 유지하고 삭제했던 날은 자동 배치한다", async () => {
+    const { props, rerender, onApply } = renderModal();
+    ["바다와 카페", "자연 속 쉼", "신나는 액티비티"].forEach((name) => fireEvent.click(screen.getByRole("button", { name })));
+    fireEvent.click(screen.getByRole("button", { name: "1일차 테마 변경" }));
+    fireEvent.click(screen.getByRole("button", { name: "1일차 신나는 액티비티" }));
+    fireEvent.click(screen.getByRole("button", { name: "3일차 테마 변경" }));
+    fireEvent.click(screen.getByRole("button", { name: "3일차 AI 추천" }));
+    expect(screen.getByRole("button", { name: "3일차 테마 변경" })).toHaveTextContent("AI 추천");
+
+    rerender(<AiCourseModal {...props} endDate="2026-09-15" />);
+    expect(screen.queryByRole("button", { name: "3일차 테마 변경" })).not.toBeInTheDocument();
+    rerender(<AiCourseModal {...props} />);
+    expect(screen.getByRole("button", { name: "1일차 테마 변경" })).toHaveTextContent("바다와 카페 · 신나는 액티비티");
+    expect(screen.getByRole("button", { name: "3일차 테마 변경" })).toHaveTextContent("신나는 액티비티");
+    fireEvent.click(screen.getByRole("button", { name: "AI로 코스 만들기" }));
+
+    await waitFor(() => expect(onApply).toHaveBeenCalled());
+    expect(vi.mocked(fetchAiCourseDraft).mock.calls[0][0].dayThemes).toEqual([
+      { dayNumber: 1, themes: ["HEALING", "CAFE", "ACTIVITY"], tripIdeas: ["COAST_CAFE", "ACTIVITY"] },
+      { dayNumber: 2, themes: ["HEALING"], tripIdeas: ["NATURE"] },
+      { dayNumber: 3, themes: ["ACTIVITY"], tripIdeas: ["ACTIVITY"] },
+    ]);
   });
 
   it("AI에게 테마를 맡겨도 지역과 동행, 꼭 갈 장소는 유지한다", async () => {
@@ -217,6 +362,33 @@ describe("AiCourseModal", () => {
 
     await waitFor(() => expect(onApply).toHaveBeenCalledWith(draft, []));
     expect(vi.mocked(fetchAiCourseDraft).mock.calls[0][0].sigungu).toBeUndefined();
+    expect(vi.mocked(fetchAiCourseDraft).mock.calls[0][0]).not.toHaveProperty("dayThemes");
+  });
+
+  it("모달을 다시 연 뒤 같은 추천을 골라도 이전 날짜 변경을 복원하지 않는다", async () => {
+    const { props, rerender, onApply } = renderModal();
+    const selectIdeas = () => {
+      fireEvent.click(screen.getByRole("button", { name: "바다와 카페" }));
+      fireEvent.click(screen.getByRole("button", { name: "신나는 액티비티" }));
+    };
+    selectIdeas();
+    fireEvent.click(screen.getByRole("button", { name: "1일차 테마 변경" }));
+    fireEvent.click(screen.getByRole("button", { name: "1일차 AI 추천" }));
+    fireEvent.click(screen.getByRole("button", { name: "창 닫기" }));
+    rerender(<AiCourseModal {...props} open={false} />);
+    rerender(<AiCourseModal {...props} />);
+    expect(screen.queryByRole("button", { name: "1일차 테마 변경" })).not.toBeInTheDocument();
+
+    selectIdeas();
+    expect(screen.getByRole("button", { name: "1일차 테마 변경" })).toHaveTextContent("바다와 카페");
+    expect(screen.getByRole("button", { name: "1일차 테마 변경" })).toHaveAttribute("aria-expanded", "false");
+    fireEvent.click(screen.getByRole("button", { name: "AI로 코스 만들기" }));
+    await waitFor(() => expect(onApply).toHaveBeenCalledWith(draft, ["HEALING", "CAFE", "ACTIVITY"]));
+    expect(vi.mocked(fetchAiCourseDraft).mock.calls[0][0].dayThemes).toEqual([
+      { dayNumber: 1, themes: ["HEALING", "CAFE"], tripIdeas: ["COAST_CAFE"] },
+      { dayNumber: 2, themes: ["ACTIVITY"], tripIdeas: ["ACTIVITY"] },
+      { dayNumber: 3, themes: ["HEALING", "CAFE"], tripIdeas: ["COAST_CAFE"] },
+    ]);
   });
 
   it("여러 테마를 고른 뒤 여행지와 동행을 바꿔도 선택한 테마를 유지한다", async () => {

@@ -59,6 +59,7 @@ describe("CourseCreatePage", () => {
     expect(screen.getByTestId("day-card-1")).toBeInTheDocument();
     expect(screen.getByTestId("day-card-2")).toBeInTheDocument();
     expect(screen.getByTestId("day-card-3")).toBeInTheDocument();
+    expect(screen.queryByTestId("day-theme-1")).not.toBeInTheDocument();
   });
 
   it("제목이 없거나 담긴 장소가 0개이면 저장 버튼이 비활성화된다", () => {
@@ -352,12 +353,12 @@ describe("CourseCreatePage", () => {
       endDate: request.endDate,
       generatedBy,
       days: [
-        { dayNumber: 1, spots: [{
+        { dayNumber: 1, themes: ["HEALING", "CAFE"], tripIdeas: ["COAST_CAFE"], spots: [{
           spotId: 101, title: "경포해변", category: "관광지", region: "51", sigungu: "150",
           address: null, thumbnail: null, latitude: null, longitude: null, reason: "바다를 즐길 수 있어요.",
         }] },
-        { dayNumber: 2, spots: [] },
-        { dayNumber: 3, spots: [] },
+        { dayNumber: 2, themes: ["CAFE"], tripIdeas: ["CAFE"], spots: [] },
+        { dayNumber: 3, themes: ["HEALING"], tripIdeas: ["NATURE"], spots: [] },
       ],
     }));
     vi.mocked(courseService.createCourse).mockResolvedValue({ courseId: 123 } as courseService.CourseResponse);
@@ -367,17 +368,141 @@ describe("CourseCreatePage", () => {
     fireEvent.click(screen.getByRole("button", { name: "카페 투어" }));
     fireEvent.click(screen.getByRole("button", { name: "AI로 코스 만들기" }));
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(within(screen.getByTestId("day-card-1")).getByTestId("day-theme-1")).toHaveTextContent("바다와 카페");
+    expect(within(screen.getByTestId("day-card-2")).getByTestId("day-theme-2")).toHaveTextContent("여유로운 카페 투어");
+    expect(within(screen.getByTestId("day-card-3")).getByTestId("day-theme-3")).toHaveTextContent("자연 속 쉼");
+    fireEvent.change(screen.getByDisplayValue("바다를 즐길 수 있어요."), { target: { value: "오전 바다 산책" } });
     expect(JSON.parse(sessionStorage.getItem("planfix:course-draft")!)).toEqual(expect.objectContaining({
       generatedBy, themes: ["HEALING", "CAFE"],
+      dayThemes: {
+        1: { themes: ["HEALING", "CAFE"], tripIdeas: ["COAST_CAFE"] },
+        2: { themes: ["CAFE"], tripIdeas: ["CAFE"] },
+        3: { themes: ["HEALING"], tripIdeas: ["NATURE"] },
+      },
     }));
 
     page.unmount();
     renderPage();
     expect(screen.getByText(generatedBy === "LLM" ? "AI로 만든 코스" : "맞춤 추천 코스")).toBeInTheDocument();
     expect(screen.getByText("카페 투어")).toBeInTheDocument();
+    expect(screen.getByTestId("day-theme-1")).toHaveTextContent("바다와 카페");
+    expect(screen.getByTestId("day-theme-2")).toHaveTextContent("여유로운 카페 투어");
+    expect(screen.getByTestId("day-theme-3")).toHaveTextContent("자연 속 쉼");
     fireEvent.click(screen.getByRole("button", { name: "코스 저장하기" }));
     await waitFor(() => expect(courseService.createCourse).toHaveBeenCalledWith(expect.objectContaining({
       generatedBy, themes: ["HEALING", "CAFE"],
+      days: [
+        { dayNumber: 1, themes: ["HEALING", "CAFE"], tripIdeas: ["COAST_CAFE"], spots: [{ spotId: 101, memo: "오전 바다 산책" }] },
+        { dayNumber: 2, themes: ["CAFE"], tripIdeas: ["CAFE"], spots: [] },
+        { dayNumber: 3, themes: ["HEALING"], tripIdeas: ["NATURE"], spots: [] },
+      ],
+    })));
+  });
+
+  it("일정을 줄인 뒤 다시 늘려도 삭제된 일차의 테마를 되살리지 않는다", () => {
+    const now = new Date();
+    const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    sessionStorage.setItem("planfix:course-draft", JSON.stringify({
+      title: "날짜별 취향 여행", description: "", startDate: `${month}-10`, endDate: `${month}-12`,
+      days: [[], [], []],
+      dayThemes: {
+        1: { themes: ["ACTIVITY"], tripIdeas: ["ACTIVITY"] },
+        2: { themes: ["CULTURE", "FOOD"], tripIdeas: ["CULTURE_LOCAL"] },
+        3: { themes: ["CAFE"], tripIdeas: ["CAFE"] },
+      },
+    }));
+    renderPage();
+
+    const applyRange = (endDay: number) => {
+      fireEvent.click(screen.getByRole("button", { name: /~/ }));
+      const label = (day: number) => `${now.getFullYear()}년 ${now.getMonth() + 1}월 ${day}일`;
+      fireEvent.click(screen.getByRole("button", { name: label(10) }));
+      fireEvent.click(screen.getByRole("button", { name: label(endDay) }));
+      fireEvent.click(screen.getByRole("button", { name: "적용" }));
+    };
+
+    applyRange(11);
+    expect(screen.queryByTestId("day-card-3")).not.toBeInTheDocument();
+    expect(screen.getByTestId("day-theme-1")).toHaveTextContent("신나는 액티비티");
+    expect(screen.getByTestId("day-theme-2")).toHaveTextContent("문화와 골목 여행");
+    applyRange(12);
+    expect(screen.getByTestId("day-card-3")).toBeInTheDocument();
+    expect(screen.queryByTestId("day-theme-3")).not.toBeInTheDocument();
+    expect(JSON.parse(sessionStorage.getItem("planfix:course-draft")!).dayThemes).toEqual({
+      1: { themes: ["ACTIVITY"], tripIdeas: ["ACTIVITY"] },
+      2: { themes: ["CULTURE", "FOOD"], tripIdeas: ["CULTURE_LOCAL"] },
+    });
+  });
+
+  it("AI가 명시적으로 비운 일차 테마는 복원과 저장까지 빈 배열로 유지하고 기존 누락 필드와 구분한다", async () => {
+    vi.mocked(fetchAiCourseDraft).mockImplementation(async (request) => ({
+      title: "하루는 자유롭게", startDate: request.startDate, endDate: request.endDate, generatedBy: "LLM",
+      days: [
+        { dayNumber: 1, themes: ["ACTIVITY"], tripIdeas: ["ACTIVITY"], spots: [{
+          spotId: 101, title: "강릉 서핑", category: "레포츠", region: "51", sigungu: "150",
+          address: null, thumbnail: null, latitude: null, longitude: null, reason: "서핑 체험",
+        }] },
+        { dayNumber: 2, themes: [], tripIdeas: [], spots: [] },
+        { dayNumber: 3, spots: [] },
+      ],
+    }));
+    vi.mocked(courseService.createCourse).mockResolvedValue({ courseId: 123 } as courseService.CourseResponse);
+    const page = renderPage();
+    fireEvent.click(screen.getByRole("button", { name: "AI에게 맡기기" }));
+    fireEvent.click(screen.getByRole("button", { name: "신나는 액티비티" }));
+    fireEvent.click(screen.getByRole("button", { name: "AI로 코스 만들기" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(JSON.parse(sessionStorage.getItem("planfix:course-draft")!).dayThemes).toEqual({
+      1: { themes: ["ACTIVITY"], tripIdeas: ["ACTIVITY"] },
+      2: { themes: [], tripIdeas: [] },
+    });
+
+    page.unmount();
+    renderPage();
+    expect(screen.getByTestId("day-theme-1")).toHaveTextContent("신나는 액티비티");
+    expect(screen.queryByTestId("day-theme-2")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("day-theme-3")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "코스 저장하기" }));
+    await waitFor(() => expect(courseService.createCourse).toHaveBeenCalled());
+    expect(vi.mocked(courseService.createCourse).mock.calls[0][0].days).toEqual([
+      { dayNumber: 1, themes: ["ACTIVITY"], tripIdeas: ["ACTIVITY"], spots: [{ spotId: 101, memo: "서핑 체험" }] },
+      { dayNumber: 2, themes: [], tripIdeas: [], spots: [] },
+      { dayNumber: 3, spots: [] },
+    ]);
+  });
+
+  it.each([
+    { dayThemes: { themes: ["CAFE"], tripIdeas: ["CAFE"] }, label: "여유로운 카페 투어" },
+    { dayThemes: { themes: [], tripIdeas: [] }, label: null },
+    { dayThemes: {}, label: null },
+  ])("저장된 코스를 수정할 때 일차별 테마의 값과 누락 여부를 보존한다 ($label)", async ({ dayThemes, label }) => {
+    vi.mocked(courseService.fetchCourse).mockResolvedValue({
+      courseId: 99, title: "날짜별 테마 여행", startDate: "2026-09-10", endDate: "2026-09-11",
+      generatedBy: "LLM", themes: ["ACTIVITY", "CAFE"],
+      days: [
+        { dayNumber: 1, themes: ["ACTIVITY"], tripIdeas: ["ACTIVITY"], spots: [{
+          spotId: 101, title: "강릉 서핑", category: "레포츠", region: "51", sigungu: "150",
+          thumbnail: null, sequence: 0, memo: "서핑 체험",
+        }] },
+        { dayNumber: 2, ...dayThemes, spots: [] },
+      ],
+    } as courseService.CourseResponse);
+    vi.mocked(courseService.updateCourse).mockResolvedValue({ courseId: 99 } as courseService.CourseResponse);
+    render(
+      <MemoryRouter initialEntries={["/courses/99/edit"]}>
+        <Routes><Route path="/courses/:courseId/edit" element={<CourseCreatePage />} /></Routes>
+      </MemoryRouter>,
+    );
+    expect(await screen.findByTestId("day-theme-1")).toHaveTextContent("신나는 액티비티");
+    if (label) expect(screen.getByTestId("day-theme-2")).toHaveTextContent(label);
+    else expect(screen.queryByTestId("day-theme-2")).not.toBeInTheDocument();
+    fireEvent.change(screen.getByDisplayValue("서핑 체험"), { target: { value: "오전 서핑 체험" } });
+    fireEvent.click(screen.getByRole("button", { name: "수정 완료" }));
+    await waitFor(() => expect(courseService.updateCourse).toHaveBeenCalledWith("99", expect.objectContaining({
+      days: [
+        { dayNumber: 1, themes: ["ACTIVITY"], tripIdeas: ["ACTIVITY"], spots: [{ spotId: 101, memo: "오전 서핑 체험" }] },
+        { dayNumber: 2, ...dayThemes, spots: [] },
+      ],
     })));
   });
 

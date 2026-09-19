@@ -11,8 +11,10 @@ import {
   type AiCourseCompanion,
   type AiCourseDraft,
   type AiCourseTheme,
+  type AiCourseTripIdea,
 } from "@/services/ai-course";
 import { searchSpots, UnauthorizedError, type PopularSpot } from "@/services/spots";
+import { TRIP_IDEA_DETAILS, dayThemeFromChoices, describeDayThemes, distributeDayThemeChoices, themeChoices } from "@/lib/ai-trip-themes";
 import "./ai-course-modal.css";
 
 const GANGWON_REGION_CODE = "51";
@@ -35,18 +37,19 @@ const THEME_OPTIONS: {
   { value: "CULTURE", label: "문화·역사", icon: Landmark },
 ];
 const TRIP_IDEAS: {
+  id: AiCourseTripIdea;
   title: string;
   description: string;
   themes: AiCourseTheme[];
   icon: typeof Trees;
   scene: string;
 }[] = [
-  { title: "바다와 카페", description: "물가의 여유, 커피 한 잔", themes: ["HEALING", "CAFE"], icon: Waves, scene: "coast" },
-  { title: "맛집과 산책", description: "맛있게 먹고 가볍게 걷기", themes: ["HEALING", "FOOD"], icon: Utensils, scene: "sunset" },
-  { title: "자연 속 쉼", description: "초록빛 풍경에 쉬어가기", themes: ["HEALING"], icon: Trees, scene: "forest" },
-  { title: "신나는 액티비티", description: "몸을 움직이며 기분 전환", themes: ["ACTIVITY"], icon: Mountain, scene: "activity" },
-  { title: "문화와 골목 여행", description: "이야기와 로컬 맛집 찾기", themes: ["CULTURE", "FOOD"], icon: Landmark, scene: "culture" },
-  { title: "여유로운 카페 투어", description: "취향에 맞는 공간 머물기", themes: ["CAFE"], icon: Coffee, scene: "cafe" },
+  { id: "COAST_CAFE", title: "바다와 카페", description: "물가의 여유, 커피 한 잔", themes: ["HEALING", "CAFE"], icon: Waves, scene: "coast" },
+  { id: "FOOD_WALK", title: "맛집과 산책", description: "맛있게 먹고 가볍게 걷기", themes: ["HEALING", "FOOD"], icon: Utensils, scene: "sunset" },
+  { id: "NATURE", title: "자연 속 쉼", description: "초록빛 풍경에 쉬어가기", themes: ["HEALING"], icon: Trees, scene: "forest" },
+  { id: "ACTIVITY", title: "신나는 액티비티", description: "몸을 움직이며 기분 전환", themes: ["ACTIVITY"], icon: Mountain, scene: "activity" },
+  { id: "CULTURE_LOCAL", title: "문화와 골목 여행", description: "이야기와 로컬 맛집 찾기", themes: ["CULTURE", "FOOD"], icon: Landmark, scene: "culture" },
+  { id: "CAFE", title: "여유로운 카페 투어", description: "취향에 맞는 공간 머물기", themes: ["CAFE"], icon: Coffee, scene: "cafe" },
 ];
 
 type AiCourseModalProps = {
@@ -65,7 +68,11 @@ function describeDuration(startDate: string, endDate: string) {
 export default function AiCourseModal({ open, startDate, endDate, onClose, onApply }: AiCourseModalProps) {
   const [region, setRegion] = useState<GangwonRegion | null>(null);
   const [companion, setCompanion] = useState<AiCourseCompanion>("COUPLE");
-  const [themes, setThemes] = useState<AiCourseTheme[]>([]);
+  const [manualThemes, setManualThemes] = useState<AiCourseTheme[]>([]);
+  const [selectedIdeas, setSelectedIdeas] = useState<AiCourseTripIdea[]>([]);
+  const [dayOverrides, setDayOverrides] = useState<Record<number, string[]>>({});
+  const [editingDay, setEditingDay] = useState<number | null>(null);
+  const dayCount = Math.max(1, Math.min(30, Math.round((Date.parse(endDate) - Date.parse(startDate)) / 86400000) + 1 || 1));
   const [anchors, setAnchors] = useState<PopularSpot[]>([]);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [anchorKeyword, setAnchorKeyword] = useState("");
@@ -96,7 +103,10 @@ export default function AiCourseModal({ open, startDate, endDate, onClose, onApp
     if (!open) return;
     setRegion(null);
     setCompanion("COUPLE");
-    setThemes([]);
+    setManualThemes([]);
+    setSelectedIdeas([]);
+    setDayOverrides({});
+    setEditingDay(null);
     setAnchors([]);
     setDetailsOpen(false);
     setAnchorKeyword("");
@@ -180,18 +190,62 @@ export default function AiCourseModal({ open, startDate, endDate, onClose, onApp
     };
   }, [anchorKeyword, open, detailsOpen, submitting]);
 
+  useEffect(() => {
+    setDayOverrides((previous) => Object.fromEntries(Object.entries(previous).filter(([day]) => Number(day) <= dayCount)));
+    setEditingDay((previous) => previous !== null && previous > dayCount ? null : previous);
+  }, [dayCount]);
+
   if (!open) return null;
+
+  const choices = themeChoices(selectedIdeas, manualThemes);
+  const themes = [...new Set(choices.flatMap((choice) => choice.themes))];
+  const automaticDays = distributeDayThemeChoices(dayCount, choices);
+  const dayChoiceKeys = automaticDays.map((keys, index) => dayOverrides[index + 1] ?? keys);
+  const dayThemes = dayChoiceKeys.map((keys, index) => dayThemeFromChoices(index + 1, keys.map((key) => choices.find((choice) => choice.key === key)).filter((choice) => choice !== undefined)));
+  const requestThemes = [...new Set(dayThemes.flatMap((day) => day.themes))];
 
   const companionSummary = COMPANION_OPTIONS.find((option) => option.value === companion)?.summary;
   const selectedThemeOptions = THEME_OPTIONS.filter((option) => themes.includes(option.value));
   const selectedThemeLabels = selectedThemeOptions.map((option) => option.label);
-  const selectedIdea = TRIP_IDEAS.find((idea) => idea.themes.length === themes.length && idea.themes.every((theme) => themes.includes(theme)));
   const duration = describeDuration(startDate, endDate);
   const preferenceSummary = selectedThemeLabels.length ? selectedThemeLabels.join(" · ") : "취향은 AI 추천으로";
 
+  const resetDayAssignments = () => {
+    setDayOverrides({});
+    setEditingDay(null);
+  };
+
+  const resetThemes = () => {
+    setSelectedIdeas([]);
+    setManualThemes([]);
+    resetDayAssignments();
+  };
+
+  const toggleIdea = (id: AiCourseTripIdea) => {
+    setSelectedIdeas((previous) => previous.includes(id) ? previous.filter((value) => value !== id) : [...previous, id]);
+    resetDayAssignments();
+  };
+
+  const toggleTheme = (value: AiCourseTheme) => {
+    if (themes.includes(value)) {
+      const remainingIdeas = selectedIdeas.filter((id) => !TRIP_IDEA_DETAILS[id].themes.includes(value));
+      const covered = new Set(remainingIdeas.flatMap((id) => TRIP_IDEA_DETAILS[id].themes));
+      setSelectedIdeas(remainingIdeas);
+      setManualThemes(themes.filter((theme) => theme !== value && !covered.has(theme)));
+    } else {
+      setManualThemes((previous) => [...previous, value]);
+    }
+    resetDayAssignments();
+  };
+
   const removeTheme = (value: AiCourseTheme) => {
-    setThemes((prev) => prev.filter((theme) => theme !== value));
+    toggleTheme(value);
     themeButtonRefs.current[value]?.focus();
+  };
+
+  const toggleDayChoice = (dayNumber: number, key: string) => {
+    const current = dayChoiceKeys[dayNumber - 1];
+    setDayOverrides((previous) => ({ ...previous, [dayNumber]: current.includes(key) ? current.filter((value) => value !== key) : [...current, key] }));
   };
 
   const addAnchor = (spot: PopularSpot) => {
@@ -212,11 +266,12 @@ export default function AiCourseModal({ open, startDate, endDate, onClose, onApp
         sigungu: region ? sigunguCodeByRegion[region] : undefined,
         startDate,
         endDate,
-        themes,
+        themes: requestThemes,
+        ...(choices.length ? { dayThemes } : {}),
         companion,
         anchorSpotIds: anchors.map((anchor) => anchor.spotId),
       });
-      if (version === requestVersion.current) callbacksRef.current.onApply(draft, [...themes]);
+      if (version === requestVersion.current) callbacksRef.current.onApply(draft, requestThemes);
     } catch (err) {
       if (version !== requestVersion.current) return;
       setError(err instanceof UnauthorizedError
@@ -322,7 +377,7 @@ export default function AiCourseModal({ open, startDate, endDate, onClose, onApp
                 </div>
                 <div className="mt-4 flex items-start gap-2 border-t border-primary/10 pt-3 text-xs leading-5 text-muted-foreground" aria-live="polite">
                   <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" aria-hidden="true" />
-                  <p>{selectedThemeLabels.length ? `${selectedIdea ? `‘${selectedIdea.title}’ 분위기로, ` : ""}${preferenceSummary} 취향을 담을게요. 장소와 이동 순서는 AI가 구성해 드려요.` : `${region ?? "강원"}에서 ${duration} 동안 즐길 장소와 동선을 AI가 골라드릴게요.`}{anchors.length > 0 && ` 꼭 갈 장소 ${anchors.length}곳도 함께 담을게요.`}</p>
+                  <p>{selectedThemeLabels.length ? `${choices.map((choice) => choice.label).join(" · ")} 취향을 날짜별로 나눠 담을게요. 각 날의 테마에 맞춰 장소와 동선을 구성해 드려요.` : `${region ?? "강원"}에서 ${duration} 동안 즐길 장소와 동선을 AI가 골라드릴게요.`}{anchors.length > 0 && ` 꼭 갈 장소 ${anchors.length}곳도 함께 담을게요.`}</p>
                 </div>
               </section>
 
@@ -332,10 +387,10 @@ export default function AiCourseModal({ open, startDate, endDate, onClose, onApp
                     <h3 id="ai-course-themes-title" className="text-sm font-semibold">이번 여행, 이렇게 시작해볼까요?</h3>
                     <span className="rounded-full bg-primary/[0.07] px-2 py-1 text-[10px] font-semibold text-primary">AI 여행 제안</span>
                   </div>
-                  <p id="ai-course-themes-description" className="mt-1.5 text-xs leading-5 text-muted-foreground">마음에 드는 분위기만 골라주세요. 나머지는 AI가 채울게요.</p>
+                  <p id="ai-course-themes-description" className="mt-1.5 text-xs leading-5 text-muted-foreground">마음에 드는 테마를 여러 개 골라주세요. 날짜별로 나눠 담아드려요.</p>
                 </div>
 
-                <button type="button" aria-label="AI에게 테마 맡기기" aria-pressed={themes.length === 0} onClick={() => setThemes([])} className={`ai-course-control ai-course-auto flex w-full items-center gap-3 rounded-2xl border p-3.5 text-left transition-colors ${themes.length === 0 ? "border-primary/40 bg-primary/[0.06]" : "border-border/80 bg-background hover:border-primary/30"}`}>
+                <button type="button" aria-label="AI에게 테마 맡기기" aria-pressed={themes.length === 0} onClick={resetThemes} className={`ai-course-control ai-course-auto flex w-full items-center gap-3 rounded-2xl border p-3.5 text-left transition-colors ${themes.length === 0 ? "border-primary/40 bg-primary/[0.06]" : "border-border/80 bg-background hover:border-primary/30"}`}>
                   <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary"><Sparkles className="h-5 w-5" aria-hidden="true" /></span>
                   <span className="min-w-0 flex-1">
                     <span className="block text-sm font-semibold">테마도 AI에게 맡길게요</span>
@@ -346,10 +401,10 @@ export default function AiCourseModal({ open, startDate, endDate, onClose, onApp
 
                 <div className="ai-course-ideas-grid mt-3" role="group" aria-label="여행 분위기 제안">
                   {TRIP_IDEAS.map((idea) => {
-                    const selected = selectedIdea === idea;
+                    const selected = selectedIdeas.includes(idea.id);
                     const Icon = idea.icon;
                     return (
-                      <button key={idea.title} type="button" aria-label={idea.title} aria-pressed={selected} onClick={() => setThemes(selected ? [] : [...idea.themes])} className={`ai-course-control ai-course-idea group relative min-w-0 rounded-2xl border p-3.5 text-left transition-colors ${selected ? "border-primary bg-primary/[0.035] shadow-[0_0_0_1px_hsl(var(--primary))]" : "border-border/80 bg-background hover:border-primary/40 hover:bg-primary/[0.02]"}`}>
+                      <button key={idea.title} type="button" aria-label={idea.title} aria-pressed={selected} onClick={() => toggleIdea(idea.id)} className={`ai-course-control ai-course-idea group relative min-w-0 rounded-2xl border p-3.5 text-left transition-colors ${selected ? "border-primary bg-primary/[0.035] shadow-[0_0_0_1px_hsl(var(--primary))]" : "border-border/80 bg-background hover:border-primary/40 hover:bg-primary/[0.02]"}`}>
                         <span className={`ai-course-idea-icon ai-course-scene-${idea.scene}`} aria-hidden="true"><Icon className="h-5 w-5" strokeWidth={1.6} /></span>
                         {selected && <span className="absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-white" aria-hidden="true"><Check className="h-3 w-3" /></span>}
                         <span className="mt-2.5 block text-[13px] font-bold leading-5">{idea.title}</span>
@@ -358,6 +413,45 @@ export default function AiCourseModal({ open, startDate, endDate, onClose, onApp
                     );
                   })}
                 </div>
+
+                {choices.length > 0 && (
+                  <section className="mt-4 overflow-hidden rounded-2xl border border-primary/15 bg-primary/[0.025]" aria-labelledby="ai-course-days-title">
+                    <div className="flex items-start gap-2.5 px-3.5 pb-3 pt-4">
+                      <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                      <div className="min-w-0 flex-1">
+                        <h4 id="ai-course-days-title" className="text-xs font-bold">날짜별로 이렇게 담을게요</h4>
+                        <p className="mt-1 text-[11px] leading-5 text-muted-foreground">각 날짜의 테마를 바꿀 수 있어요. 한 날에 여러 개도 가능해요.</p>
+                      </div>
+                      <span className="shrink-0 rounded-full bg-primary/10 px-2 py-1 text-[10px] font-semibold text-primary">{choices.length}개 선택</span>
+                    </div>
+                    <ol className="divide-y divide-primary/10 border-t border-primary/10">
+                      {dayThemes.map((day, index) => {
+                        const expanded = editingDay === day.dayNumber;
+                        const dayDate = new Date(Date.parse(startDate) + index * 86400000);
+                        const dateLabel = Number.isNaN(dayDate.getTime()) ? "" : dayDate.toISOString().slice(5, 10).replace("-", ".");
+                        return (
+                          <li key={day.dayNumber}>
+                            <button type="button" aria-label={`${day.dayNumber}일차 테마 변경`} aria-expanded={expanded} aria-controls={`ai-day-theme-${day.dayNumber}`} onClick={() => setEditingDay(expanded ? null : day.dayNumber)} className="ai-course-control flex w-full items-center gap-3 px-3.5 py-3 text-left transition-colors hover:bg-primary/[0.04]">
+                              <span className="flex w-11 shrink-0 flex-col gap-0.5"><span className="text-xs font-bold text-primary">{day.dayNumber}일차</span><span className="text-[10px] text-muted-foreground">{dateLabel}</span></span>
+                              <span className="min-w-0 flex-1 text-xs font-medium leading-5">{describeDayThemes(day)}</span>
+                              <ChevronDown className={`h-3.5 w-3.5 shrink-0 text-muted-foreground ${expanded ? "rotate-180" : ""}`} aria-hidden="true" />
+                            </button>
+                            {expanded && (
+                              <div id={`ai-day-theme-${day.dayNumber}`} role="group" aria-label={`${day.dayNumber}일차 테마`} className="flex flex-wrap gap-1.5 px-3.5 pb-3.5">
+                                <button type="button" aria-label={`${day.dayNumber}일차 AI 추천`} aria-pressed={dayChoiceKeys[index].length === 0} onClick={() => setDayOverrides((previous) => ({ ...previous, [day.dayNumber]: [] }))} className={`ai-course-control rounded-lg border px-2.5 py-2 text-[11px] ${dayChoiceKeys[index].length === 0 ? "border-primary/40 bg-primary/10 font-semibold text-primary" : "border-border bg-background text-muted-foreground"}`}>AI 추천</button>
+                                {choices.map((choice) => {
+                                  const selected = dayChoiceKeys[index].includes(choice.key);
+                                  return <button key={choice.key} type="button" aria-label={`${day.dayNumber}일차 ${choice.label}`} aria-pressed={selected} onClick={() => toggleDayChoice(day.dayNumber, choice.key)} className={`ai-course-control inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-2 text-[11px] ${selected ? "border-primary/40 bg-primary/10 font-semibold text-primary" : "border-border bg-background text-muted-foreground"}`}>{selected ? <Check className="h-3 w-3 shrink-0" aria-hidden="true" /> : <Plus className="h-3 w-3 shrink-0" aria-hidden="true" />}{choice.label}</button>;
+                                })}
+                              </div>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ol>
+                    <p className="border-t border-primary/10 px-3.5 py-2.5 text-[10px] leading-4 text-muted-foreground">위에서 테마를 추가하거나 빼면 선택한 순서로 다시 배치해요.</p>
+                  </section>
+                )}
 
                 <div role="group" aria-labelledby="ai-course-selected-themes" className="mt-4 rounded-xl bg-muted/40 p-3.5">
                   <div className="flex flex-wrap items-center justify-between gap-2 text-[11px]">
@@ -375,7 +469,7 @@ export default function AiCourseModal({ open, startDate, endDate, onClose, onApp
                     {THEME_OPTIONS.map(({ value, label, icon: Icon }) => {
                       const selected = themes.includes(value);
                       return (
-                        <button key={value} ref={(element) => { themeButtonRefs.current[value] = element; }} type="button" aria-label={label} aria-pressed={selected} onClick={() => setThemes((prev) => prev.includes(value) ? prev.filter((theme) => theme !== value) : [...prev, value])} className={`ai-course-control inline-flex min-h-9 items-center gap-1.5 rounded-xl border px-2.5 py-2 text-[11px] transition-colors ${selected ? "border-primary/30 bg-primary/[0.06] font-semibold text-primary" : "border-border bg-background text-muted-foreground hover:border-primary/30"}`}>
+                        <button key={value} ref={(element) => { themeButtonRefs.current[value] = element; }} type="button" aria-label={label} aria-pressed={selected} onClick={() => toggleTheme(value)} className={`ai-course-control inline-flex min-h-9 items-center gap-1.5 rounded-xl border px-2.5 py-2 text-[11px] transition-colors ${selected ? "border-primary/30 bg-primary/[0.06] font-semibold text-primary" : "border-border bg-background text-muted-foreground hover:border-primary/30"}`}>
                           <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />{label}
                         </button>
                       );

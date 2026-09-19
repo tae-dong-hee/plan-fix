@@ -112,6 +112,7 @@ describe("CourseDetailPage", () => {
     });
 
     expect(screen.queryByText("아직 계획이 없어요.")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("day-theme-1")).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("tab", { name: "Day 2" }));
     expect(screen.getByText("아직 계획이 없어요.")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "경포해변 지도에서 보기" })).not.toBeInTheDocument();
@@ -155,6 +156,27 @@ describe("CourseDetailPage", () => {
     expect(screen.getByText("AI로 만든 코스")).toBeInTheDocument();
     expect(screen.getByText("액티비티")).toBeInTheDocument();
     expect(screen.getByText("문화·역사")).toBeInTheDocument();
+  });
+
+  it("저장된 일차별 테마를 각 날짜 탭과 선택한 일정에 표시한다", async () => {
+    vi.mocked(courseService.fetchCourse).mockResolvedValue({
+      ...mockCourse,
+      generatedBy: "LLM",
+      themes: ["HEALING", "CAFE", "CULTURE", "FOOD"],
+      days: [
+        { ...mockCourse.days[0], themes: ["HEALING", "CAFE"], tripIdeas: ["COAST_CAFE"] },
+        { ...mockCourse.days[1], themes: ["CULTURE", "FOOD"], tripIdeas: ["CULTURE_LOCAL"] },
+      ],
+    });
+
+    renderComponent();
+
+    expect(await screen.findByRole("tab", { name: "Day 1" })).toHaveAccessibleDescription("바다와 카페");
+    expect(screen.getByRole("tab", { name: "Day 2" })).toHaveAccessibleDescription("문화와 골목 여행");
+    expect(screen.getByTestId("day-theme-1")).toHaveTextContent("바다와 카페");
+    fireEvent.click(screen.getByRole("tab", { name: "Day 2" }));
+    expect(screen.getByTestId("day-theme-2")).toHaveTextContent("문화와 골목 여행");
+    expect(screen.queryByTestId("day-theme-1")).not.toBeInTheDocument();
   });
 
   it("존재하지 않는 코스(null)일 경우 안내 문구를 표시한다", async () => {
