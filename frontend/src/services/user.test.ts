@@ -86,3 +86,48 @@ describe("signUp", () => {
     ).rejects.toThrow("loginId already exists. loginId=testuser1");
   });
 });
+
+describe("checkEmailAvailability", () => {
+  const originalApiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+  const originalFetch = global.fetch;
+
+  afterEach(() => {
+    setApiBaseUrl(originalApiBaseUrl);
+    global.fetch = originalFetch;
+    vi.resetModules();
+  });
+
+  test.each([true, false])("서버의 사용 가능 여부(%s)를 반환하고 이메일을 인코딩한다", async (available) => {
+    setApiBaseUrl("http://localhost:8080/api/v1/");
+    const result = { available, message: available ? "사용 가능한 이메일입니다." : "이미 가입된 이메일입니다." };
+    const fetchSpy = vi.fn().mockResolvedValue({ ok: true, json: async () => result });
+    global.fetch = fetchSpy as typeof fetch;
+    vi.resetModules();
+    const { checkEmailAvailability } = await import("./user");
+
+    await expect(checkEmailAvailability("traveler+trip@example.com")).resolves.toEqual(result);
+    expect(fetchSpy).toHaveBeenCalledWith(
+      "http://localhost:8080/api/v1/users/email-availability?email=traveler%2Btrip%40example.com",
+      { credentials: "include" },
+    );
+  });
+
+  test("API가 없으면 사용 가능으로 처리하지 않는다", async () => {
+    setApiBaseUrl(undefined);
+    global.fetch = vi.fn();
+    vi.resetModules();
+    const { checkEmailAvailability } = await import("./user");
+
+    await expect(checkEmailAvailability("new@example.com")).rejects.toThrow("VITE_API_BASE_URL이 설정되지 않았습니다.");
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  test("서버 오류를 사용 가능으로 처리하지 않는다", async () => {
+    setApiBaseUrl("http://localhost:8080/api/v1");
+    global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 503 }) as typeof fetch;
+    vi.resetModules();
+    const { checkEmailAvailability } = await import("./user");
+
+    await expect(checkEmailAvailability("new@example.com")).rejects.toThrow("이메일 중복 확인에 실패했습니다.");
+  });
+});

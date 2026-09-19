@@ -202,7 +202,7 @@ public class UserModel {
     /**
      * email 형식 및 길이 검증
      */
-    private void validateEmail(String email) {
+    public static void validateEmail(String email) {
         if (email == null) {
             return;
         }

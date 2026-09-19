@@ -2,14 +2,12 @@ import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 import SignupForm, {
-  type EmailAvailabilityResult,
   type SignupFormMessage,
   type SignupFormValues,
 } from "@/components/ui/signup-form";
 import { authPathWithReturnTo, getInviteReturnTo } from "@/lib/auth-return-to";
-import { checkUsernameAvailability, isUserApiConfigured, signUp } from "@/services/user";
+import { checkEmailAvailability, checkUsernameAvailability, isUserApiConfigured, signUp } from "@/services/user";
 
-const emailCheckDelay = 450;
 const redirectDelay = 1500;
 const demoDelay = 600;
 
@@ -54,31 +52,15 @@ export default function SignupPage() {
       await wait(redirectDelay);
       navigate(loginPath, { replace: true });
     } catch (error) {
+      const text = error instanceof Error ? error.message : "회원가입 중 오류가 발생했습니다.";
       setMessage({
         tone: "error",
-        text: error instanceof Error ? error.message : "회원가입 중 오류가 발생했습니다.",
+        text,
       });
+      if (text === "이미 가입된 이메일입니다.") return { emailError: text };
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const handleCheckEmailAvailability = async (
-    email: string,
-  ): Promise<EmailAvailabilityResult> => {
-    await wait(emailCheckDelay);
-
-    if (email.toLowerCase() === "demo@planfix.kr") {
-      return {
-        available: false,
-        message: "이미 사용 중인 이메일입니다.",
-      };
-    }
-
-    return {
-      available: true,
-      message: "사용 가능한 이메일입니다.",
-    };
   };
 
   return (
@@ -90,7 +72,7 @@ export default function SignupPage() {
           isSubmitting={isSubmitting}
           message={message}
           onSubmit={handleSubmit}
-          onCheckEmailAvailability={handleCheckEmailAvailability}
+          onCheckEmailAvailability={checkEmailAvailability}
           onCheckUsernameAvailability={async (username) => checkUsernameAvailability(username)}
           loginHref={loginPath}
           onBackToLogin={() => navigate(loginPath)}

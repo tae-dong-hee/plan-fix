@@ -37,6 +37,13 @@ export async function checkUsernameAvailability(username: string): Promise<{ ava
   return (await response.json()) as { available: boolean; message: string };
 }
 
+export async function checkEmailAvailability(email: string): Promise<{ available: boolean; message: string }> {
+  if (!apiBaseUrl) throw new Error("VITE_API_BASE_URL이 설정되지 않았습니다.");
+  const response = await fetch(`${apiBaseUrl}/users/email-availability?email=${encodeURIComponent(email)}`, { credentials: "include" });
+  if (!response.ok) throw new Error("이메일 중복 확인에 실패했습니다.");
+  return (await response.json()) as { available: boolean; message: string };
+}
+
 export async function signUp(payload: SignUpRequest): Promise<SignUpResponse> {
   if (!apiBaseUrl) {
     throw new Error("VITE_API_BASE_URL이 설정되지 않았습니다.");

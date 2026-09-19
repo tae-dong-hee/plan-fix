@@ -1,5 +1,5 @@
 import { CalendarDays, LockKeyhole, Mail, UserRound } from "lucide-react";
-import { FormEvent, useState } from "react";
+import { FormEvent, useRef, useState } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -22,11 +22,13 @@ export type EmailAvailabilityResult = {
   message: string;
 };
 
+type SignupSubmitResult = { emailError: string } | void;
+
 type SignupFormProps = {
   className?: string;
   isSubmitting?: boolean;
   message?: SignupFormMessage | null;
-  onSubmit?: (values: SignupFormValues) => void | Promise<void>;
+  onSubmit?: (values: SignupFormValues) => SignupSubmitResult | Promise<SignupSubmitResult>;
   onCheckEmailAvailability?: (email: string) => Promise<EmailAvailabilityResult>;
   onCheckUsernameAvailability?: (username: string) => Promise<EmailAvailabilityResult>;
   onBackToLogin?: () => void;
@@ -117,6 +119,7 @@ export default function SignupForm({
   const [passwordConfirmationError, setPasswordConfirmationError] = useState<string | null>(null);
   const [emailStatus, setEmailStatus] = useState<"idle" | "checking" | "available" | "unavailable" | "error">("idle");
   const [emailCheckMessage, setEmailCheckMessage] = useState<string | null>(null);
+  const emailCheckVersion = useRef(0);
   const [birthDateError, setBirthDateError] = useState<string | null>(null);
 
   const updateValue = (field: keyof SignupFormValues, value: string) => {
@@ -142,6 +145,7 @@ export default function SignupForm({
     }
 
     if (field === "email") {
+      emailCheckVersion.current += 1;
       setEmailStatus("idle");
       setEmailCheckMessage(null);
     }
@@ -161,6 +165,7 @@ export default function SignupForm({
   };
 
   const handleEmailAvailabilityCheck = async () => {
+    const checkVersion = ++emailCheckVersion.current;
     if (!emailPattern.test(values.email)) {
       setEmailStatus("error");
       setEmailCheckMessage(emailFormatErrorText);
@@ -178,9 +183,11 @@ export default function SignupForm({
 
     try {
       const result = await onCheckEmailAvailability(values.email);
+      if (checkVersion !== emailCheckVersion.current) return;
       setEmailStatus(result.available ? "available" : "unavailable");
       setEmailCheckMessage(result.message);
     } catch {
+      if (checkVersion !== emailCheckVersion.current) return;
       setEmailStatus("error");
       setEmailCheckMessage("중복 확인 중 오류가 발생했습니다. 다시 시도해 주세요.");
     }
@@ -291,11 +298,17 @@ export default function SignupForm({
 
     setPasswordFormatError(null);
     setPasswordConfirmationError(null);
-    await onSubmit?.({
+    const submitVersion = emailCheckVersion.current;
+    const result = await onSubmit?.({
       ...values,
       loginId: values.loginId.trim(),
       name: values.name.trim(),
     });
+    if (result?.emailError && submitVersion === emailCheckVersion.current) {
+      emailCheckVersion.current += 1;
+      setEmailStatus("unavailable");
+      setEmailCheckMessage(result.emailError);
+    }
   };
 
   return (
