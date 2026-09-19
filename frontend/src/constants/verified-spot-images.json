@@ -262,6 +262,48 @@
       "verifiedAt": "2026-09-19",
       "width": 760,
       "height": 507
+    },
+    {
+      "id": "verified-spot-534",
+      "spotId": 534,
+      "title": "강릉통일공원안보전시관",
+      "url": "https://tong.visitkorea.or.kr/cms/resource/52/3516852_image2_1.jpg",
+      "author": "한국관광공사 TourAPI 제공 (원본의 저작권 표시 유지)",
+      "license": "TourAPI 제공 사진 (공공누리 제1·3유형)",
+      "licenseUrl": "https://www.data.go.kr/data/15101578/openapi.do",
+      "sourceUrl": "https://tong.visitkorea.or.kr/cms/resource/52/3516852_image2_1.jpg",
+      "changes": "통일공원 전체 사진 중 통일안보전시관 건물이 식별되는 사진을 선택했습니다. 원본을 편집하지 않고 전체 비율과 저작권 표시를 유지합니다.",
+      "source": "TOUR_API",
+      "sourceContentId": 126898,
+      "verifiedAt": "2026-09-19"
+    },
+    {
+      "id": "verified-spot-544",
+      "spotId": 544,
+      "title": "보광리분청자요지",
+      "url": "https://planfix.cloud/images/verified-spots/544.jpg",
+      "author": "국가유산청 국가유산포털",
+      "license": "공공누리 제1유형",
+      "licenseUrl": "https://www.kogl.or.kr/info/licenseType1.do",
+      "sourceUrl": "https://www.heritage.go.kr/heri/cul/imgHeritage.do?ccimId=6951849&ccbaKdcd=23&ccbaAsno=0000690000000&ccbaCtcd=32",
+      "changes": "2016년에 촬영한 「강릉보광리분청자요지_정면 (촬영년도 : 2016년)」의 공식 공개 사진(4000×2670)를 편집하거나 축소하지 않고 사용했습니다. 사진 전체가 보이도록 표시하며 현재 현장 상태를 보장하지 않습니다.",
+      "source": "KOGL",
+      "verifiedAt": "2026-09-19",
+      "photographedAt": "2016"
+    },
+    {
+      "id": "verified-spot-527",
+      "spotId": 527,
+      "title": "산계리3층석탑",
+      "url": "https://planfix.cloud/images/verified-spots/527.jpg",
+      "author": "강원특별자치도, 한국문화정보원",
+      "license": "공공누리 제1유형",
+      "licenseUrl": "https://www.kogl.or.kr/info/licenseType1.do",
+      "sourceUrl": "https://www.kogl.or.kr/recommend/recommendDivView.do?division=img&recommendIdx=8334",
+      "changes": "2018년에 촬영한 「문화재자료제43호강릉 산계리 석탑1」의 공식 공개 미리보기(760×507)를 편집하거나 축소하지 않고 사용했습니다. 사진 전체가 보이도록 표시하며 현재 현장 상태를 보장하지 않습니다.",
+      "source": "KOGL",
+      "verifiedAt": "2026-09-19",
+      "photographedAt": "2018"
     }
   ]
 }

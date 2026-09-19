@@ -1,0 +1,104 @@
+{
+  "schema_version": 1,
+  "review_date": "2026-09-19",
+  "read_only_audit": true,
+  "decision": "APPROVED_ROOT_AND_AGENT_VISUAL_REVIEW",
+  "target": {
+    "spot_id": 534,
+    "tour_data_spot_id": 534,
+    "contentid": 3547638,
+    "title": "강릉통일공원안보전시관",
+    "address": "강원특별자치도 강릉시 강동면 율곡로 1715-38",
+    "latitude": 37.7204604,
+    "longitude": 128.9984085,
+    "category": "관광지",
+    "status": "ACTIVE",
+    "source_type": "TOUR_API",
+    "thumbnail": null
+  },
+  "source": {
+    "spot_id": 420,
+    "tour_data_spot_id": 420,
+    "contentid": 126898,
+    "title": "통일공원(강릉)",
+    "address": "강원특별자치도 강릉시 율곡로 1715-38 통일안보전시관",
+    "latitude": 37.7204054,
+    "longitude": 128.9983814,
+    "category": "관광지",
+    "status": "ACTIVE",
+    "source_type": "TOUR_API",
+    "thumbnail": "https://tong.visitkorea.or.kr/cms/resource/50/3516850_image2_1.jpg"
+  },
+  "target_info": {
+    "tel": "033-640-4469",
+    "lcnsno": null,
+    "firstmenu": null,
+    "park_info": "가능",
+    "rest_info": "연중무휴",
+    "time_info": "09:00~18:00",
+    "treatmenu": null
+  },
+  "source_info": {
+    "tel": "강릉통일공원 안보전시관 033-640-4469",
+    "lcnsno": null,
+    "firstmenu": null,
+    "park_info": "가능",
+    "rest_info": "연중무휴",
+    "time_info": "09:00~18:00",
+    "treatmenu": null
+  },
+  "target_guard": {
+    "spotId": 534,
+    "title": "강릉통일공원안보전시관",
+    "address": "강원특별자치도 강릉시 강동면 율곡로 1715-38",
+    "latitude": 37.7204604,
+    "longitude": 128.9984085,
+    "expected_thumbnail": null,
+    "expected_images_count": 0
+  },
+  "distance_m": 6.56,
+  "chosen_photo": {
+    "original_url": "https://tong.visitkorea.or.kr/cms/resource/52/3516852_image2_1.jpg",
+    "source_field": "images[1].original_image",
+    "source_image_metadata": {
+      "created_at": "2026-09-19T08:53:23.488709+09:00",
+      "small_image": "https://tong.visitkorea.or.kr/cms/resource/52/3516852_image2_1.jpg",
+      "original_image": "https://tong.visitkorea.or.kr/cms/resource/52/3516852_image2_1.jpg"
+    },
+    "local_file": "artifacts/remaining-492-photos-2026-09-19/source-previews/3516852_image2_1.jpg",
+    "bytes": 156440,
+    "sha256": "b74cc12d38a79e7cd4e6b4b1084aa735c849a80d64ff77350db80c270a523361"
+  },
+  "identity_evidence": [
+    "두 레코드 도로명 율곡로1715-38 일치; source 주소에 통일안보전시관 시설명도 명시",
+    "전화번호0336404469 일치",
+    "좌표6.6m 이내",
+    "직접 사진 확인: 전시관 건물 정면과 외벽의 통일안보전시관 표기",
+    "사진 하단 한국관광공사 워터마크 보존"
+  ],
+  "license": {
+    "source_content_cpyrhtDivCd": "Type1",
+    "source_content_modifiedtime": "20260806091646",
+    "evidence_file": "artifacts/spot-detail-api-2026-09-19/source-api/126898-detailCommon2.json",
+    "api_catalog": "https://www.data.go.kr/data/15101578/openapi.do",
+    "terms": "https://www.kogl.or.kr/info/licenseType1.do",
+    "attribution": "한국관광공사, TourAPI / 공공누리 제1유형",
+    "individual_photo_license_field_in_snapshot": null,
+    "scope_note": "Type1은 같은 contentid126898의 detailCommon2 메타데이터에서 확인. 기존 spots.images 스냅샷은 사진별 라이선스 필드를 보관하지 않는다. 공식 API 설명은 이미지정보로 공공누리1·3유형을 제공한다고 명시. 원본 바이트와 워터마크를 보존하고 출처표시를 유지하는 후보."
+  },
+  "visual_review": {
+    "reviewer": "free_photo_check",
+    "method": "view_image original downloaded from existing TourAPI gallery URL",
+    "result": "PASS",
+    "generic_parent_thumbnail_rejected": true,
+    "generic_thumbnail_reason": "3516850은 강릉지구6·25참전기념비이며 전시관 건물이 아니다. 따라서 갤러리의 실제 전시관 건물을 선택했다.",
+    "limitations": "현재 현장 상태와 촬영일은 확인하지 않았으며 과거 통일공원 내 다른 군사시설과 구분하여 이 건물 사진만 승인 후보로 삼았다."
+  },
+  "mutations": {
+    "database": false,
+    "repo_code": false,
+    "deployment": false
+  },
+  "new_authenticated_api_calls": 0,
+  "root_visual_review": "원본 사진에서 전시관 건물과 통일안보전시관 외벽 표기를 확인. 한국관광공사 워터마크 확인."
+}

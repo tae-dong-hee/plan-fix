@@ -939,9 +939,9 @@ describe("CourseCreatePage", () => {
     expect(screen.getByTestId("day-card-1")).toBeInTheDocument();
     expect(screen.queryByTestId("day-card-2")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /숙소 추가/ })).not.toBeInTheDocument();
-    expect(JSON.parse(sessionStorage.getItem("planfix:course-draft")!)).toMatchObject({
+    await waitFor(() => expect(JSON.parse(sessionStorage.getItem("planfix:course-draft")!)).toMatchObject({
       startDate: "2030-05-20", endDate: "2030-05-20", dayAccommodations: {},
-    });
+    }));
     fireEvent.click(screen.getByRole("button", { name: "코스 저장하기" }));
     await waitFor(() => expect(courseService.createCourse).toHaveBeenCalledWith(expect.objectContaining({
       startDate: "2030-05-20", endDate: "2030-05-20",
