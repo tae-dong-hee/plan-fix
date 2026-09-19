@@ -117,7 +117,7 @@ export default function BoardCreatePage() {
   // 게시글 발행
   const handleSubmit = async () => {
     if (!title.trim()) {
-      alert("여행기 제목을 입력해 주세요.");
+      alert("여행 후기 제목을 입력해 주세요.");
       return;
     }
 
@@ -127,7 +127,7 @@ export default function BoardCreatePage() {
     const extractedImages = extractImageUrls(currentHtml);
 
     if (!textOnly && extractedImages.length === 0) {
-      alert("여행기 내용을 작성해 주세요.");
+      alert("여행 후기 내용을 작성해 주세요.");
       return;
     }
 
@@ -176,9 +176,9 @@ export default function BoardCreatePage() {
               <ChevronLeft className="h-5 w-5" />
             </button>
             <div>
-              <h1 className="text-base font-bold text-foreground sm:text-lg">여행기 작성</h1>
+              <h1 className="text-base font-bold text-foreground sm:text-lg">여행 후기 작성</h1>
               <p className="text-xs text-muted-foreground hidden sm:block">
-                당신의 소중한 여행 이야기를 자유롭게 기록해 보세요
+                당신의 소중한 여행 후기를 자유롭게 기록해 보세요
               </p>
             </div>
           </div>
@@ -218,7 +218,7 @@ export default function BoardCreatePage() {
               <div className="relative aspect-[21/9] w-full overflow-hidden rounded-2xl border border-border bg-muted shadow-sm sm:aspect-[24/9]">
                 <img
                   src={coverImage}
-                  alt="여행기 커버 사진"
+                  alt="여행 후기 커버 사진"
                   className="h-full w-full object-cover"
                 />
                 <div className="absolute inset-0 bg-black/20 opacity-0 transition-opacity group-hover:opacity-100" />
@@ -281,7 +281,7 @@ export default function BoardCreatePage() {
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="여행기 제목을 입력하세요 (예: 2박 3일 낭만 제주 뚜벅이 여행기)"
+              placeholder="여행 후기 제목을 입력하세요 (예: 2박 3일 낭만 제주 뚜벅이 후기)"
               className="w-full border-b border-border/80 bg-transparent px-1 py-3 text-2xl font-extrabold text-foreground placeholder:text-muted-foreground/40 focus:border-primary focus:outline-none sm:text-3xl"
               maxLength={100}
             />

@@ -312,7 +312,7 @@ export default function MainPage() {
     setBoardLikesLoading(true);
     setBoardLikesError(false);
 
-    // 공개 이야기 목록에는 isLiked가 없으므로 계정의 이야기 위시리스트로 확인한다.
+    // 공개 후기 목록에는 isLiked가 없으므로 계정의 후기 위시리스트로 확인한다.
     fetchLikedBoards()
       .then((boards) => {
         if (!ignore) {
@@ -487,7 +487,7 @@ export default function MainPage() {
       if (error instanceof UnauthorizedError || (error instanceof Error && error.message === "로그인이 필요합니다.")) {
         navigate("/login");
       } else {
-        setBoardLikeError("이야기 좋아요를 변경하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+        setBoardLikeError("후기 좋아요를 변경하지 못했습니다. 잠시 후 다시 시도해 주세요.");
       }
     } finally {
       pendingBoardLikes.current.delete(boardId);
@@ -677,20 +677,20 @@ export default function MainPage() {
               <span className="travel-section-icon travel-section-icon-peach"><BookOpen aria-hidden="true" /></span>
               <div>
                 <p className="travel-eyebrow">MOMENTS WORTH SHARING</p>
-                <h2 id="travel-stories-title" className="text-xl font-bold tracking-tight sm:text-2xl">여행 이야기</h2>
+                <h2 id="travel-stories-title" className="text-xl font-bold tracking-tight sm:text-2xl">여행 후기</h2>
               </div>
             </div>
             <Link
               to="/boards/create"
               className="travel-story-write inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:text-sm"
             >
-              <span>이야기 올리기</span>
+              <span>후기 올리기</span>
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </Link>
           </div>
           <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-5">
-            <p className="text-[13px] leading-relaxed text-muted-foreground sm:text-sm">마음에 드는 이야기에 좋아요를 누르면 위시리스트의 여행 이야기에서 다시 볼 수 있어요.</p>
-            <div role="group" aria-label="여행 이야기 정렬" className="flex shrink-0 self-start rounded-full bg-muted p-1 sm:self-auto">
+            <p className="text-[13px] leading-relaxed text-muted-foreground sm:text-sm">마음에 드는 후기에 좋아요를 누르면 위시리스트의 여행 후기에서 다시 볼 수 있어요.</p>
+            <div role="group" aria-label="여행 후기 정렬" className="flex shrink-0 self-start rounded-full bg-muted p-1 sm:self-auto">
               {(["popular", "latest"] as const).map((sort) => (
                 <button
                   key={sort}
@@ -707,19 +707,19 @@ export default function MainPage() {
           {boardLikeError && <p role="alert" className="mt-4 text-sm text-destructive">{boardLikeError}</p>}
           {boardLikesError && !boardsError && !!boards?.length && (
             <div role="alert" className="mt-4 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-              <p>이야기 좋아요 상태를 불러오지 못했습니다.</p>
+              <p>후기 좋아요 상태를 불러오지 못했습니다.</p>
               <button type="button" onClick={() => setBoardLikesReload((value) => value + 1)} className="rounded-lg border border-border px-3 py-2 font-medium text-primary hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">좋아요 상태 다시 확인</button>
             </div>
           )}
           {boards === null && !boardsError ? (
             <div role="status" className="mt-6 flex h-44 items-center justify-center gap-2 text-sm text-muted-foreground sm:h-72">
               <Loader2 className="h-5 w-5 animate-spin text-primary motion-reduce:animate-none" aria-hidden="true" />
-              <span>여행 이야기를 불러오는 중...</span>
+              <span>여행 후기를 불러오는 중...</span>
             </div>
           ) : boardsError ? (
             <div role="alert" className="mt-6 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-              <p>여행 이야기를 불러오지 못했습니다. 다시 시도해 주세요.</p>
-              <button type="button" onClick={() => setBoardsReload((value) => value + 1)} className="rounded-lg border border-border px-3 py-2 font-medium text-primary hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">이야기 다시 불러오기</button>
+              <p>여행 후기를 불러오지 못했습니다. 다시 시도해 주세요.</p>
+              <button type="button" onClick={() => setBoardsReload((value) => value + 1)} className="rounded-lg border border-border px-3 py-2 font-medium text-primary hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">후기 다시 불러오기</button>
             </div>
           ) : boards?.length === 0 ? (
             <p className="mt-6 text-base text-muted-foreground">표시할 게시글이 없어요.</p>

@@ -15,7 +15,7 @@ vi.mock("@/services/course", () => ({
   fetchMyCourses: vi.fn(),
 }));
 
-describe("BoardCreatePage (블로그형 여행기 에디터)", () => {
+describe("BoardCreatePage (블로그형 여행 후기 에디터)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(courseService.fetchMyCourses).mockResolvedValue([]);
@@ -30,8 +30,8 @@ describe("BoardCreatePage (블로그형 여행기 에디터)", () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByText("여행기 작성")).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(/여행기 제목을 입력하세요/i)).toBeInTheDocument();
+    expect(screen.getByText("여행 후기 작성")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/여행 후기 제목을 입력하세요/i)).toBeInTheDocument();
     expect(screen.getByText(/대표 커버 사진 추가/i)).toBeInTheDocument();
     expect(screen.getByText("내 여행 코스 연결")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "발행하기" })).toBeInTheDocument();
@@ -102,7 +102,7 @@ describe("BoardCreatePage (블로그형 여행기 에디터)", () => {
     const submitBtn = screen.getByRole("button", { name: "발행하기" });
     fireEvent.click(submitBtn);
 
-    expect(alertMock).toHaveBeenCalledWith("여행기 제목을 입력해 주세요.");
+    expect(alertMock).toHaveBeenCalledWith("여행 후기 제목을 입력해 주세요.");
     expect(boardService.createBoard).not.toHaveBeenCalled();
 
     alertMock.mockRestore();

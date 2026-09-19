@@ -716,7 +716,7 @@ describe("MainPage travel story likes", () => {
     mockedFetch5DayWeather.mockResolvedValue(mockWeatherItems);
   });
 
-  test("같은 좋아요 버튼으로 이야기를 저장하고 다시 눌러 취소하며 서버의 개수로 갱신한다", async () => {
+  test("같은 좋아요 버튼으로 후기를 저장하고 다시 눌러 취소하며 서버의 개수로 갱신한다", async () => {
     render(
       <MemoryRouter initialEntries={["/"]} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <MainPage />
@@ -752,7 +752,7 @@ describe("MainPage travel story likes", () => {
     expect(mockedLikeSpot).not.toHaveBeenCalled();
   });
 
-  test("이미 좋아요한 이야기는 초기 선택 상태를 불러오고 첫 클릭으로 취소한다", async () => {
+  test("이미 좋아요한 후기는 초기 선택 상태를 불러오고 첫 클릭으로 취소한다", async () => {
     const request = deferred<BoardDetail[]>();
     mockedFetchLikedBoards.mockReturnValue(request.promise);
     renderMainPage();
@@ -771,10 +771,10 @@ describe("MainPage travel story likes", () => {
     expect(mockedLikeBoard).not.toHaveBeenCalled();
   });
 
-  test("이야기 좋아요 상태 조회 실패 시 재확인 전까지 버튼을 잠근다", async () => {
+  test("후기 좋아요 상태 조회 실패 시 재확인 전까지 버튼을 잠근다", async () => {
     mockedFetchLikedBoards.mockRejectedValueOnce(new Error("Network failed")).mockResolvedValueOnce([likedBoard]);
     renderMainPage();
-    expect(await screen.findByText("이야기 좋아요 상태를 불러오지 못했습니다.")).toBeInTheDocument();
+    expect(await screen.findByText("후기 좋아요 상태를 불러오지 못했습니다.")).toBeInTheDocument();
     const button = screen.getByRole("button", { name: `${publicBoard.title} 좋아요` });
     expect(button).toBeDisabled();
     fireEvent.click(button);
@@ -785,13 +785,13 @@ describe("MainPage travel story likes", () => {
     expect(button).toHaveAttribute("aria-pressed", "true");
     expect(mockedFetchLikedBoards).toHaveBeenCalledTimes(2);
     expect(mockedFetchBoards).toHaveBeenCalledTimes(1);
-    expect(screen.queryByText("이야기 좋아요 상태를 불러오지 못했습니다.")).not.toBeInTheDocument();
+    expect(screen.queryByText("후기 좋아요 상태를 불러오지 못했습니다.")).not.toBeInTheDocument();
     fireEvent.click(button);
     await waitFor(() => expect(button).toHaveAttribute("aria-pressed", "false"));
     expect(mockedUnlikeBoard).toHaveBeenCalledExactlyOnceWith(101);
   });
 
-  test("이야기 좋아요 요청 중 중복 클릭을 막는다", async () => {
+  test("후기 좋아요 요청 중 중복 클릭을 막는다", async () => {
     const request = deferred<BoardLikeState>();
     mockedLikeBoard.mockReturnValue(request.promise);
     renderMainPage();
@@ -806,13 +806,13 @@ describe("MainPage travel story likes", () => {
     expect(button).toHaveAttribute("aria-pressed", "true");
   });
 
-  test("이야기 좋아요 요청 실패는 상태와 개수를 유지하고 재시도할 수 있다", async () => {
+  test("후기 좋아요 요청 실패는 상태와 개수를 유지하고 재시도할 수 있다", async () => {
     mockedLikeBoard.mockRejectedValueOnce(new Error("Network failed"));
     renderMainPage();
     const button = await screen.findByRole("button", { name: `${publicBoard.title} 좋아요` });
     await waitFor(() => expect(button).toBeEnabled());
     fireEvent.click(button);
-    expect(await screen.findByRole("alert")).toHaveTextContent("이야기 좋아요를 변경하지 못했습니다.");
+    expect(await screen.findByRole("alert")).toHaveTextContent("후기 좋아요를 변경하지 못했습니다.");
     expect(button).toBeEnabled();
     expect(button).toHaveAttribute("aria-pressed", "false");
     expect(within(button).getByText("12")).toBeInTheDocument();
@@ -823,13 +823,13 @@ describe("MainPage travel story likes", () => {
     expect(mockedLikeBoard).toHaveBeenCalledTimes(2);
   });
 
-  test("비로그인 사용자는 이야기를 볼 수 있고 좋아요 클릭 시 로그인으로 이동한다", async () => {
+  test("비로그인 사용자는 후기를 볼 수 있고 좋아요 클릭 시 로그인으로 이동한다", async () => {
     mockedFetchLikedBoards.mockRejectedValue(new UnauthorizedError());
     mockedLikeBoard.mockRejectedValue(new Error("로그인이 필요합니다."));
     renderMainPage();
     const button = await screen.findByRole("button", { name: `${publicBoard.title} 좋아요` });
     await waitFor(() => expect(button).toBeEnabled());
-    expect(screen.queryByText("이야기 좋아요 상태를 불러오지 못했습니다.")).not.toBeInTheDocument();
+    expect(screen.queryByText("후기 좋아요 상태를 불러오지 못했습니다.")).not.toBeInTheDocument();
     expect(mockedNavigate).not.toHaveBeenCalled();
     fireEvent.click(button);
     await waitFor(() => expect(mockedNavigate).toHaveBeenCalledWith("/login"));
@@ -909,8 +909,8 @@ describe("MainPage travel story sorting and carousel", () => {
       .mockReturnValueOnce(latestRequest.promise)
       .mockResolvedValueOnce(publicBoardResult);
     renderMainPage();
-    const stories = screen.getByRole("region", { name: "여행 이야기" });
-    const sorting = within(stories).getByRole("group", { name: "여행 이야기 정렬" });
+    const stories = screen.getByRole("region", { name: "여행 후기" });
+    const sorting = within(stories).getByRole("group", { name: "여행 후기 정렬" });
     const popularButton = within(sorting).getByRole("button", { name: "인기순" });
     const latestButton = within(sorting).getByRole("button", { name: "최신순" });
     expect(popularButton).toHaveAttribute("aria-pressed", "true");
@@ -921,7 +921,7 @@ describe("MainPage travel story sorting and carousel", () => {
     expect(mockedFetchBoards).toHaveBeenNthCalledWith(2, { sort: "latest", size: 6 });
     expect(latestButton).toHaveAttribute("aria-pressed", "true");
     expect(popularButton).toHaveAttribute("aria-pressed", "false");
-    expect(within(stories).getByRole("status")).toHaveTextContent("여행 이야기를 불러오는 중...");
+    expect(within(stories).getByRole("status")).toHaveTextContent("여행 후기를 불러오는 중...");
     expect(within(stories).queryByRole("heading", { name: publicBoard.title })).not.toBeInTheDocument();
 
     await act(async () => latestRequest.resolve({ ...publicBoardResult, items: latestBoards, totalCount: 2 }));
@@ -947,7 +947,7 @@ describe("MainPage travel story sorting and carousel", () => {
       .mockReturnValueOnce(popularRequest.promise)
       .mockResolvedValueOnce({ ...publicBoardResult, items: [latestBoard] });
     renderMainPage();
-    const sorting = screen.getByRole("group", { name: "여행 이야기 정렬" });
+    const sorting = screen.getByRole("group", { name: "여행 후기 정렬" });
 
     fireEvent.click(within(sorting).getByRole("button", { name: "최신순" }));
     await screen.findByRole("heading", { name: latestBoard.title });
@@ -967,7 +967,7 @@ describe("MainPage travel story sorting and carousel", () => {
     await waitFor(() => expect(likeButton).toHaveAttribute("aria-pressed", "true"));
     await waitFor(() => expect(likeButton).toBeEnabled());
 
-    const sorting = screen.getByRole("group", { name: "여행 이야기 정렬" });
+    const sorting = screen.getByRole("group", { name: "여행 후기 정렬" });
     for (const sort of ["최신순", "인기순"]) {
       fireEvent.click(within(sorting).getByRole("button", { name: sort }));
       const button = await screen.findByRole("button", { name: `${publicBoard.title} 좋아요` });
@@ -990,14 +990,14 @@ describe("MainPage travel story sorting and carousel", () => {
       .mockResolvedValueOnce({ ...publicBoardResult, items: [latestBoard] });
     renderMainPage();
     await screen.findByRole("heading", { name: publicBoard.title });
-    const sorting = screen.getByRole("group", { name: "여행 이야기 정렬" });
+    const sorting = screen.getByRole("group", { name: "여행 후기 정렬" });
 
     fireEvent.click(within(sorting).getByRole("button", { name: "최신순" }));
-    expect(await screen.findByRole("alert")).toHaveTextContent("여행 이야기를 불러오지 못했습니다. 다시 시도해 주세요.");
+    expect(await screen.findByRole("alert")).toHaveTextContent("여행 후기를 불러오지 못했습니다. 다시 시도해 주세요.");
     expect(screen.queryByText("표시할 게시글이 없어요.")).not.toBeInTheDocument();
     expect(within(sorting).getByRole("button", { name: "최신순" })).toHaveAttribute("aria-pressed", "true");
 
-    fireEvent.click(screen.getByRole("button", { name: "이야기 다시 불러오기" }));
+    fireEvent.click(screen.getByRole("button", { name: "후기 다시 불러오기" }));
     expect(await screen.findByRole("heading", { name: latestBoard.title })).toBeInTheDocument();
     expect(mockedFetchBoards).toHaveBeenNthCalledWith(3, { sort: "latest", size: 6 });
     expect(mockedFetchLikedBoards).toHaveBeenCalledTimes(1);
@@ -1016,7 +1016,7 @@ describe("MainPage travel story sorting and carousel", () => {
     fireEvent.click(likeButton);
     expect(likeButton).toBeDisabled();
 
-    fireEvent.click(within(screen.getByRole("group", { name: "여행 이야기 정렬" })).getByRole("button", { name: "최신순" }));
+    fireEvent.click(within(screen.getByRole("group", { name: "여행 후기 정렬" })).getByRole("button", { name: "최신순" }));
     await act(async () => likeRequest.resolve({ liked: true, likeCount: 20 }));
     await act(async () => latestRequest.resolve(publicBoardResult));
 
@@ -1028,7 +1028,7 @@ describe("MainPage travel story sorting and carousel", () => {
     expect(mockedFetchLikedBoards).toHaveBeenCalledTimes(1);
   });
 
-  test("정렬을 바꾸면 새 이야기 목록을 캐러셀의 처음부터 보여준다", async () => {
+  test("정렬을 바꾸면 새 후기 목록을 캐러셀의 처음부터 보여준다", async () => {
     const latestRequest = deferred<Awaited<ReturnType<typeof fetchBoards>>>();
     const latestBoard = { ...publicBoard, boardId: 201, title: "새로운 강릉 여행 이야기" };
     mockedFetchBoards.mockResolvedValueOnce(publicBoardResult).mockReturnValueOnce(latestRequest.promise);
@@ -1043,7 +1043,7 @@ describe("MainPage travel story sorting and carousel", () => {
     fireEvent.scroll(carousel);
     expect(await screen.findByRole("button", { name: "이전 게시글 보기" })).toBeInTheDocument();
 
-    fireEvent.click(within(screen.getByRole("group", { name: "여행 이야기 정렬" })).getByRole("button", { name: "최신순" }));
+    fireEvent.click(within(screen.getByRole("group", { name: "여행 후기 정렬" })).getByRole("button", { name: "최신순" }));
     await act(async () => latestRequest.resolve({ ...publicBoardResult, items: [latestBoard] }));
     const nextCarousel = screen.getByRole("heading", { name: latestBoard.title }).closest(".overflow-x-auto") as HTMLElement;
     expect(nextCarousel.scrollLeft).toBe(0);

@@ -31,7 +31,7 @@ type TabType = "spots" | "courses" | "boards";
 const WISHLIST_CATEGORIES = [
   { id: "spots", label: "여행지", description: "가고 싶은 장소", icon: Compass },
   { id: "courses", label: "여행 코스", description: "따라가고 싶은 일정", icon: Route },
-  { id: "boards", label: "여행 이야기", description: "다시 읽고 싶은 순간", icon: BookOpen },
+  { id: "boards", label: "여행 후기", description: "다시 읽고 싶은 순간", icon: BookOpen },
 ] as const;
 
 export default function WishlistPage() {
@@ -134,7 +134,7 @@ export default function WishlistPage() {
       await unlikeBoard(boardId);
       setBoards((prev) => prev.filter((b) => b.boardId !== boardId));
     } catch {
-      setStoryLikeError("여행 이야기 좋아요를 취소하지 못했습니다. 다시 시도해 주세요.");
+      setStoryLikeError("여행 후기 좋아요를 취소하지 못했습니다. 다시 시도해 주세요.");
     } finally {
       setUnlikingBoardIds((prev) => prev.filter((id) => id !== boardId));
     }
@@ -169,7 +169,7 @@ export default function WishlistPage() {
               </h1>
             </div>
             <p className="mt-3 break-keep text-[13px] leading-6 text-muted-foreground sm:text-sm">
-              마음에 담은 여행지부터 이야기까지, 다음 여행의 설렘을 모아보세요.
+              마음에 담은 여행지부터 후기까지, 다음 여행의 설렘을 모아보세요.
             </p>
           </div>
           {!loading && !error && (
@@ -429,7 +429,7 @@ export default function WishlistPage() {
                 </div>
               )}
 
-              {/* 3. 여행 이야기 탭 */}
+              {/* 3. 여행 후기 탭 */}
               {activeTab === "boards" && (
                 <div>
                   {storyLikeError && (
@@ -443,17 +443,17 @@ export default function WishlistPage() {
                         <BookOpen className="h-7 w-7" />
                       </div>
                       <h3 className="mt-4 text-base font-semibold text-foreground">
-                        좋아요한 여행 이야기가 없습니다.
+                        좋아요한 여행 후기가 없습니다.
                       </h3>
                       <p className="mt-2 text-[13px] leading-6 text-muted-foreground">
-                        여행 이야기의 좋아요 버튼을 누르면 이곳에 따로 모아볼 수 있어요.
+                        여행 후기의 좋아요 버튼을 누르면 이곳에 따로 모아볼 수 있어요.
                       </p>
                       <div className="mt-6 flex justify-center">
                         <Link
                           to="/main"
                           className="inline-flex min-h-11 items-center rounded-full bg-primary px-5 py-2.5 text-[13px] font-semibold text-primary-foreground transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-4"
                         >
-                          여행 이야기 둘러보기
+                          여행 후기 둘러보기
                         </Link>
                       </div>
                     </div>
@@ -467,7 +467,7 @@ export default function WishlistPage() {
                         >
                           <Link
                             to={`/boards/${board.boardId}`}
-                            aria-label={`${board.title} 여행 이야기 읽기`}
+                            aria-label={`${board.title} 여행 후기 읽기`}
                             className="flex min-w-0 flex-1 flex-col rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-4"
                           >
                             <div className="relative aspect-square w-full overflow-hidden rounded-2xl bg-muted">
@@ -488,7 +488,7 @@ export default function WishlistPage() {
                               <div>
                                 <span className="mb-2 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary">
                                   <BookOpen aria-hidden="true" className="h-3 w-3" />
-                                  여행 이야기
+                                  여행 후기
                                 </span>
                                 <h3 className="line-clamp-2 text-[15px] font-semibold leading-snug tracking-tight text-foreground">
                                   {board.title}
@@ -522,10 +522,10 @@ export default function WishlistPage() {
                           <button
                             type="button"
                             onClick={(e) => handleUnlikeBoard(e, board.boardId)}
-                            aria-label={`${board.title} 여행 이야기 좋아요 취소`}
+                            aria-label={`${board.title} 여행 후기 좋아요 취소`}
                             aria-pressed="true"
                             disabled={unlikingBoardIds.includes(board.boardId)}
-                            title="여행 이야기 좋아요 취소"
+                            title="여행 후기 좋아요 취소"
                             className="absolute right-2 top-2 flex h-11 w-11 items-center justify-center rounded-full bg-white/95 text-primary shadow-sm transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:cursor-wait disabled:opacity-70"
                           >
                             {unlikingBoardIds.includes(board.boardId) ? (
