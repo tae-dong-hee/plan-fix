@@ -30,7 +30,7 @@ import {
   type BoardSortType,
 } from "@/services/board";
 import {
-  fetchPopularSpots,
+  fetchRecommendedSpots,
   likeSpot,
   unlikeSpot,
   UnauthorizedError,
@@ -206,7 +206,7 @@ export default function MainPage() {
     setPopularSpots(null);
     setPopularSpotsError(false);
 
-    fetchPopularSpots({
+    fetchRecommendedSpots({
       region: GANGWON_REGION_CODE,
       sigungu: selectedRegion ? sigunguCodeByRegion[selectedRegion] : undefined,
       size: 20,
@@ -247,7 +247,7 @@ export default function MainPage() {
     return () => {
       ignore = true;
     };
-  }, [selectedRegion, spotsReload]);
+  }, [selectedRegion, spotsReload, location.key]);
 
   useEffect(() => {
     let ignore = false;
@@ -609,7 +609,7 @@ export default function MainPage() {
             </button>
           </div>
           <div className="travel-section-description mt-3 flex items-center justify-between gap-4">
-            <p className="break-keep text-[13px] leading-relaxed text-muted-foreground sm:text-sm">여행자들이 많이 찾는 장소를 둘러보세요.</p>
+            <p className="break-keep text-[13px] leading-relaxed text-muted-foreground sm:text-sm">강원도의 대표 명소를 새롭게 만나 보세요.</p>
             {!!popularSpots?.length && !popularSpotsError && (
               <PlaceCarouselControls
                 label="인기 장소"
