@@ -29,6 +29,38 @@ function renderAt(spotId: string, { strict = false }: { strict?: boolean } = {})
   return render(strict ? <StrictMode>{tree}</StrictMode> : tree);
 }
 
+test("links to the current photo's credit and removes it for an unregistered gallery photo", async () => {
+  mockedFetchSpotDetail.mockResolvedValue({
+    spotId: 526,
+    title: "임당동 성당",
+    category: "관광지",
+    region: "51",
+    sigungu: "150",
+    address: "강원특별자치도 강릉시 임영로 148",
+    latitude: null,
+    longitude: null,
+    thumbnail: "https://planfix.cloud/images/verified-spots/526.jpg",
+    description: null,
+    viewCount: 0,
+    likeCount: 0,
+    commentCount: 0,
+    images: ["https://example.com/another-photo.jpg"],
+    info: null,
+    isLiked: false,
+  });
+
+  renderAt("526");
+  const credit = await screen.findByRole("link", { name: "사진 출처" });
+  expect(credit).toHaveAttribute("href", "/image-credits#verified-spot-526");
+  expect(credit.parentElement?.closest("a, button")).toBeNull();
+
+  fireEvent.click(screen.getByRole("button", { name: "다음 사진" }));
+  expect(screen.queryByRole("link", { name: "사진 출처" })).not.toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole("button", { name: "이전 사진" }));
+  expect(screen.getByRole("link", { name: "사진 출처" })).toHaveAttribute("href", "/image-credits#verified-spot-526");
+});
+
 afterEach(() => {
   mockedFetchSpotDetail.mockReset();
 });
@@ -98,6 +130,7 @@ test("renders the spot detail once it loads", async () => {
   expect(screen.getByText("동해안의 대표 해변")).toBeInTheDocument();
   expect(screen.getByText("좋아요 3")).toBeInTheDocument();
   expect(screen.getByText("조회수 11")).toBeInTheDocument();
+  expect(screen.queryByRole("status", { name: "현재 사진" })).not.toBeInTheDocument();
   expect(screen.queryByText("주소 정보가 등록되지 않은 장소예요.")).not.toBeInTheDocument();
   expect(screen.queryByText("위치 정보가 등록되지 않은 장소예요.")).not.toBeInTheDocument();
   expect(screen.queryByText("장소 정보가 등록되지 않은 장소예요.")).not.toBeInTheDocument();
@@ -163,6 +196,9 @@ test("renders extra photos as a gallery when images are present", async () => {
   await screen.findByRole("heading", { name: "국립대관령자연휴양림" });
   // 메인 사진 1장 + 대표 사진을 포함한 갤러리 3장
   expect(screen.getAllByRole("img")).toHaveLength(4);
+  const counter = screen.getByRole("status", { name: "현재 사진" });
+  expect(counter).toHaveTextContent("1 / 3");
+  expect(screen.getByRole("img", { name: "국립대관령자연휴양림" }).parentElement).not.toContainElement(counter);
   expect(screen.getByAltText("국립대관령자연휴양림 사진 2")).toHaveAttribute(
     "src",
     "https://example.com/1.jpg",

@@ -42,6 +42,7 @@ public class TourDataSpotCollectApplicationService {
 	private final TourApiProperties props;
 	private final SpotRepository spotRepository;
 	private final TourDataSpotRepository tourDataSpotRepository;
+	private final VerifiedSpotPhotoCatalog verifiedSpotPhotoCatalog;
 
 	@Transactional
 	public CollectResult collect(String lDongRegnCd, String lDongSignguCd) {
@@ -96,7 +97,10 @@ public class TourDataSpotCollectApplicationService {
 	 * 직접등록이나 다른 소스가 소유한 스팟은 저장소의 조건부 UPDATE가 건너뛴다.
 	 */
 	private void updateSpot(TourDataSpotModel tourDataSpot) {
-		spotRepository.updateTourApiListing(tourDataSpot.spotId(), toAttributes(tourDataSpot));
+		String thumbnail = verifiedSpotPhotoCatalog.thumbnailFor(tourDataSpot.spotId(),
+			tourDataSpot.title(), tourDataSpot.address(), toCoordinate(tourDataSpot.mapY()),
+			toCoordinate(tourDataSpot.mapX()), tourDataSpot.thumbnail());
+		spotRepository.updateTourApiListing(tourDataSpot.spotId(), toAttributes(tourDataSpot, thumbnail));
 	}
 
 	/**
@@ -104,6 +108,10 @@ public class TourDataSpotCollectApplicationService {
 	 * description은 areaBasedList2 응답에 없어 신규는 NULL로 두고 재수집 UPDATE에서 제외한다.
 	 */
 	private SpotModel.SourceAttributes toAttributes(TourDataSpotModel tourDataSpot) {
+		return toAttributes(tourDataSpot, tourDataSpot.thumbnail());
+	}
+
+	private SpotModel.SourceAttributes toAttributes(TourDataSpotModel tourDataSpot, String thumbnail) {
 		return new SpotModel.SourceAttributes(
 			tourDataSpot.title(),
 			TourCategory.displayNameOf(tourDataSpot.category(), tourDataSpot.lcls()),
@@ -112,7 +120,7 @@ public class TourDataSpotCollectApplicationService {
 			tourDataSpot.address(),
 			toCoordinate(tourDataSpot.mapY()),
 			toCoordinate(tourDataSpot.mapX()),
-			tourDataSpot.thumbnail(),
+			thumbnail,
 			null
 		);
 	}

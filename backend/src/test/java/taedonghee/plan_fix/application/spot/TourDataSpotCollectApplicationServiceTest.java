@@ -14,6 +14,7 @@ import taedonghee.plan_fix.domain.spot.TourDataSpotModel;
 import taedonghee.plan_fix.domain.spot.TourDataSpotRepository;
 import taedonghee.plan_fix.infrastructure.spot.AreaBasedListItem;
 import taedonghee.plan_fix.infrastructure.spot.TourApiClient;
+import taedonghee.plan_fix.infrastructure.spot.TourApiProperties;
 
 import java.util.List;
 
@@ -47,6 +48,9 @@ class TourDataSpotCollectApplicationServiceTest {
 
 	@Autowired
 	private TourDataSpotRepository tourDataSpotRepository;
+
+	@Autowired
+	private TourApiProperties props;
 
 	private long contentId;
 
@@ -189,6 +193,27 @@ class TourDataSpotCollectApplicationServiceTest {
 		service.collect(REGN, SIGNGU);
 
 		assertThat(collectedSpot().description()).isEmpty();
+	}
+
+	@Test
+	void 빈_원본사진을_재수집해도_검수된_대표사진은_spots에만_보존한다() {
+		AreaBasedListItem original = item("검수된 해변", "128.8987999", "37.8127061");
+		givenPage(original);
+		service.collect(REGN, SIGNGU);
+		SpotModel before = collectedSpot();
+		String verifiedUrl = "/images/verified-spots/test-beach.webp";
+		var catalog = new VerifiedSpotPhotoCatalog(List.of(new VerifiedSpotPhotoCatalog.Photo(
+			before.spotId(), before.title(), before.address(), before.latitude(), before.longitude(), verifiedUrl)));
+		var verifiedService = new TourDataSpotCollectApplicationService(tourApiClient, props,
+			spotRepository, tourDataSpotRepository, catalog);
+		givenPage(new AreaBasedListItem(original.contentid(), original.contenttypeid(), original.title(),
+			original.addr1(), original.mapx(), original.mapy(), null, original.createdtime(), original.zipcode(),
+			original.lDongRegnCd(), original.lDongSignguCd(), original.lclsSystm3()));
+
+		verifiedService.collect(REGN, SIGNGU);
+
+		assertThat(collectedSpot().thumbnail()).isEqualTo(verifiedUrl);
+		assertThat(tourDataSpotRepository.findByContentId(contentId).orElseThrow().thumbnail()).isNull();
 	}
 
 	private void givenPage(AreaBasedListItem item) {

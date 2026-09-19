@@ -21,6 +21,7 @@ import {
 import { LoaderFour } from "@/components/ui/unique-loader-components";
 import AppNav from "@/components/ui/app-nav";
 import SpotImage from "@/components/ui/spot-image";
+import { getVerifiedSpotImageCredit } from "@/lib/verified-spot-images";
 import {
   hasSpotCoordinates,
   MISSING_SPOT_ADDRESS,
@@ -136,6 +137,7 @@ export default function SpotDetailPage() {
     [spot?.info],
   );
   const activeImage = galleryImages[selectedImage];
+  const activeImageCredit = getVerifiedSpotImageCredit(activeImage);
 
   const goBack = () => navigate(-1);
 
@@ -268,12 +270,6 @@ export default function SpotDetailPage() {
                     src={activeImage}
                     alt={spot.title}
                   />
-                  {galleryImages.length > 0 ? (
-                    <div className="absolute bottom-4 right-4 flex items-center gap-1.5 rounded-full bg-black/50 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-md" role="status" aria-label="현재 사진">
-                      <Images className="h-3.5 w-3.5" aria-hidden="true" />
-                      {selectedImage + 1} / {galleryImages.length}
-                    </div>
-                  ) : null}
                   {galleryImages.length > 1 ? (
                     <>
                       <button type="button" aria-label="이전 사진" onClick={() => setSelectedImage((index) => (index - 1 + galleryImages.length) % galleryImages.length)} className={`absolute left-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-zinc-800 shadow-sm transition-colors hover:bg-white ${FOCUS_RING}`}>
@@ -285,6 +281,12 @@ export default function SpotDetailPage() {
                     </>
                   ) : null}
                 </div>
+                {galleryImages.length > 1 ? (
+                  <div className="flex items-center justify-end gap-1.5 px-2 pt-3 text-xs font-medium text-muted-foreground sm:px-3" role="status" aria-label="현재 사진">
+                    <Images className="h-3.5 w-3.5" aria-hidden="true" />
+                    {selectedImage + 1} / {galleryImages.length}
+                  </div>
+                ) : null}
                 {galleryImages.length > 1 ? (
                   <div className="mt-2 flex gap-2 overflow-x-auto p-1 sm:mt-3 sm:gap-3" aria-label="사진 선택">
                     {galleryImages.map((image, index) => (
@@ -305,6 +307,17 @@ export default function SpotDetailPage() {
                       </button>
                     ))}
                   </div>
+                ) : null}
+                {activeImageCredit ? (
+                  <p className="px-2 pb-1 pt-3 text-xs leading-5 text-muted-foreground sm:px-3">
+                    사진: {activeImageCredit.author} · {activeImageCredit.license}{" "}
+                    <Link
+                      to={`/image-credits#${activeImageCredit.id}`}
+                      className={`ml-1 rounded underline underline-offset-4 hover:text-primary ${FOCUS_RING}`}
+                    >
+                      사진 출처
+                    </Link>
+                  </p>
                 ) : null}
               </section>
 

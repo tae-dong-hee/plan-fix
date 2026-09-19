@@ -1,6 +1,10 @@
-import { useEffect, useState } from "react";
-import { Check, Loader2, MapPin, Search, X } from "lucide-react";
-import { MISSING_SPOT_LOCATION } from "@/lib/spot-display";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Loader2, MapPin, Search, X } from "lucide-react";
+import {
+  formatSpotRegion,
+  GANGWON_SEARCH_REGIONS,
+  type SpotSearchRegion,
+} from "@/lib/course-search-regions";
 import SpotImage from "@/components/ui/spot-image";
 import KakaoMap from "@/components/ui/kakao-map";
 import { SPOT_CATEGORY_OPTIONS } from "@/constants/spot-categories";
@@ -14,85 +18,180 @@ export interface SpotSearchModalProps {
   excludedSpotIds?: number[];
   /** 헤더에 "Day 2에 추가"로 표시 (선택) */
   dayNumber?: number;
+  /** 해당 Day 또는 코스에 포함된 검색 지역. 없으면 강원 지역을 선택할 수 있다. */
+  regions?: SpotSearchRegion[];
 }
 
-export default function SpotSearchModal({
-  open,
+const PAGE_SIZE = 20;
+const DEFAULT_REGIONS: SpotSearchRegion[] = [
+  { region: "51", label: "강원 전체" },
+  ...GANGWON_SEARCH_REGIONS,
+];
+
+export default function SpotSearchModal(props: SpotSearchModalProps) {
+  if (!props.open) return null;
+  // 닫았다가 열거나 Day의 지역이 바뀌면 검색과 페이지를 함께 초기화한다.
+  return <SpotSearchContent key={JSON.stringify([props.dayNumber, props.regions])} {...props} />;
+}
+
+function SpotSearchContent({
   onClose,
   onSelect,
   excludedSpotIds = [],
   dayNumber,
+  regions,
 }: SpotSearchModalProps) {
+  const regionOptions = regions?.length ? regions : DEFAULT_REGIONS;
+  const [regionIndex, setRegionIndex] = useState(0);
+  const selectedRegion = regionOptions[regionIndex];
   const [keyword, setKeyword] = useState("");
   const [debouncedKeyword, setDebouncedKeyword] = useState("");
   const [spots, setSpots] = useState<PopularSpot[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  /** 목록에서 마우스를 올린 장소. 지도 마커 강조에 쓴다. */
+  const [offset, setOffset] = useState(0);
+  const [nextOffset, setNextOffset] = useState<number | null>(null);
+  const [totalCount, setTotalCount] = useState(0);
+  const [retryCount, setRetryCount] = useState(0);
+  const listRef = useRef<HTMLDivElement>(null);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+  const pageRequestPendingRef = useRef(true);
+  const [visibleSpotIds, setVisibleSpotIds] = useState<number[] | null>(null);
   const [hoveredSpotId, setHoveredSpotId] = useState<number | null>(null);
+  const keywordPending = keyword.trim() !== debouncedKeyword;
 
-  // 모달 열릴 때 키워드 초기화
   useEffect(() => {
-    if (open) {
-      setKeyword("");
-      setDebouncedKeyword("");
-      setError(null);
-      setSelectedCategory(null);
-      setHoveredSpotId(null);
-    }
-  }, [open]);
-
-  // 300ms 디바운스
-  useEffect(() => {
-    if (!open) return undefined;
+    if (!keywordPending) return;
     const timer = setTimeout(() => {
-      setDebouncedKeyword(keyword);
+      setDebouncedKeyword(keyword.trim());
+      setOffset(0);
     }, 300);
     return () => clearTimeout(timer);
-  }, [keyword, open]);
+  }, [keyword, keywordPending]);
 
-  // 스팟 목록 검색
   useEffect(() => {
-    if (!open) return;
-
     let ignore = false;
+    pageRequestPendingRef.current = true;
     setLoading(true);
     setError(null);
+    if (offset === 0) {
+      setSpots([]);
+      setTotalCount(0);
+      setNextOffset(null);
+      setHoveredSpotId(null);
+      setVisibleSpotIds(null);
+      if (listRef.current) listRef.current.scrollTop = 0;
+    }
 
     const fetchSpots = async () => {
       try {
-        const trimmed = debouncedKeyword.trim();
         const res = await searchSpots({
-          ...(trimmed ? { keyword: trimmed } : { sort: "popular" as const }),
+          ...(debouncedKeyword ? { keyword: debouncedKeyword } : { sort: "popular" as const }),
+          region: selectedRegion.region,
+          sigungu: selectedRegion.sigungu,
           category: selectedCategory ?? undefined,
-          size: 20,
+          offset,
+          size: PAGE_SIZE,
         });
-        if (!ignore) {
-          setSpots(res.items || []);
-        }
+        if (ignore) return;
+        const items = res.items || [];
+        setSpots((previous) => {
+          const merged = offset === 0 ? items : [...previous, ...items];
+          return Array.from(new Map(merged.map((spot) => [spot.spotId, spot])).values());
+        });
+        setTotalCount(res.totalCount);
+        const followingOffset = res.offset + items.length;
+        setNextOffset(items.length > 0 && followingOffset < res.totalCount ? followingOffset : null);
       } catch (err) {
         if (!ignore) {
           setError(err instanceof Error ? err.message : "장소 검색에 실패했습니다.");
         }
       } finally {
         if (!ignore) {
+          pageRequestPendingRef.current = false;
           setLoading(false);
         }
       }
     };
+    void fetchSpots();
+    return () => { ignore = true; };
+  }, [debouncedKeyword, selectedCategory, selectedRegion.region, selectedRegion.sigungu, offset, retryCount]);
 
-    fetchSpots();
+  const requestNextPage = useCallback(() => {
+    if (pageRequestPendingRef.current || loading || error || keywordPending || nextOffset === null) return;
+    // 같은 스크롤 구간에서 observer와 scroll 이벤트가 겹쳐도 한 번만 요청한다.
+    pageRequestPendingRef.current = true;
+    setOffset(nextOffset);
+  }, [loading, error, keywordPending, nextOffset]);
 
-    return () => {
-      ignore = true;
+  useEffect(() => {
+    const root = listRef.current;
+    const sentinel = loadMoreRef.current;
+    if (!root || !sentinel || typeof IntersectionObserver === "undefined" || loading || error || keywordPending || nextOffset === null) return;
+    let active = true;
+    const observer = new IntersectionObserver((entries) => {
+      if (active && entries.some((entry) => entry.isIntersecting)) requestNextPage();
+    }, { root, rootMargin: "200px 0px", threshold: 0 });
+    observer.observe(sentinel);
+    return () => { active = false; observer.disconnect(); };
+  }, [requestNextPage, loading, error, keywordPending, nextOffset]);
+
+  useEffect(() => {
+    const root = listRef.current;
+    if (!root || spots.length === 0) return;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let active = true;
+    const visibleIds = new Set<number>();
+    const publishVisibleRows = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        if (!active) return;
+        const next = spots.filter((spot) => visibleIds.has(spot.spotId)).map((spot) => spot.spotId);
+        setVisibleSpotIds((previous) => previous?.length === next.length && previous.every((id, index) => id === next[index]) ? previous : next);
+      }, 150);
     };
-  }, [open, debouncedKeyword, selectedCategory]);
+    const rows = root.querySelectorAll<HTMLElement>("[data-spot-id]");
+    // 구형 브라우저에서도 목록의 현재 위치에 맞춰 지도를 갱신한다.
+    const measureVisibleRows = () => {
+      const bounds = root.getBoundingClientRect();
+      visibleIds.clear();
+      rows.forEach((row) => {
+        const rowBounds = row.getBoundingClientRect();
+        if (rowBounds.bottom > bounds.top && rowBounds.top < bounds.bottom) visibleIds.add(Number(row.dataset.spotId));
+      });
+      publishVisibleRows();
+    };
+    const observer = typeof IntersectionObserver === "undefined" ? null : new IntersectionObserver((entries) => {
+      if (!active) return;
+      entries.forEach((entry) => {
+        const id = Number((entry.target as HTMLElement).dataset.spotId);
+        if (entry.isIntersecting && entry.intersectionRatio >= 0.01) visibleIds.add(id);
+        else visibleIds.delete(id);
+      });
+      publishVisibleRows();
+    }, { root, threshold: 0.01 });
+    if (observer) rows.forEach((row) => observer.observe(row));
+    else {
+      measureVisibleRows();
+      root.addEventListener("scroll", measureVisibleRows);
+      window.addEventListener("resize", measureVisibleRows);
+    }
+    return () => {
+      active = false;
+      if (timer) clearTimeout(timer);
+      observer?.disconnect();
+      root.removeEventListener("scroll", measureVisibleRows);
+      window.removeEventListener("resize", measureVisibleRows);
+    };
+  }, [spots]);
+
+  const mapSpots = spots
+    .map((spot, index) => ({ ...spot, markerNumber: index + 1 }))
+    .filter((spot, index) => visibleSpotIds === null ? index < 5 : visibleSpotIds.includes(spot.spotId));
 
   // 스크롤 잠금 및 ESC 키 이벤트
   useEffect(() => {
-    if (!open) return undefined;
-
     const previousOverflow = document.body.style.overflow;
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -107,9 +206,7 @@ export default function SpotSearchModal({
       document.body.style.overflow = previousOverflow;
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [open, onClose]);
-
-  if (!open) return null;
+  }, [onClose]);
 
   return (
     <div
@@ -147,7 +244,7 @@ export default function SpotSearchModal({
               ) : null}
             </div>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              여행 일정에 추가할 강원도 명소 및 맛집을 검색하세요.
+              {selectedRegion.label}의 명소 및 맛집을 검색하세요.
             </p>
           </div>
           <button
@@ -162,6 +259,36 @@ export default function SpotSearchModal({
 
         {/* 검색 입력창 */}
         <div className="border-b border-border bg-card/50 p-4 sm:px-6">
+          <div className="mb-3 flex items-center justify-between gap-3 text-xs">
+            <div className="flex min-w-0 items-center gap-2">
+              <MapPin className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden="true" />
+              {regionOptions.length > 1 ? (
+                <label className="flex items-center gap-2 text-muted-foreground">
+                  검색 지역
+                  <select
+                    aria-label="검색 지역"
+                    value={regionIndex}
+                    onChange={(event) => {
+                      setRegionIndex(Number(event.target.value));
+                      setOffset(0);
+                    }}
+                    className="rounded-lg border border-input bg-background px-2 py-1.5 font-semibold text-foreground"
+                  >
+                    {regionOptions.map((region, index) => (
+                      <option key={`${region.region}:${region.sigungu ?? ""}`} value={index}>
+                        {region.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : (
+                <span className="font-semibold text-primary">{selectedRegion.label} 내 장소</span>
+              )}
+            </div>
+            <span role="status" className="shrink-0 text-muted-foreground">
+              {loading && offset === 0 ? "검색 중..." : `전체 ${totalCount.toLocaleString()}개`}
+            </span>
+          </div>
           <div className="relative">
             <Search
               className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
@@ -171,7 +298,8 @@ export default function SpotSearchModal({
               type="text"
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
-              placeholder="장소 이름, 지역으로 검색해보세요 (예: 경포해변, 속초)"
+              placeholder="장소 이름으로 검색해보세요"
+              aria-label="장소 검색어"
               className="w-full rounded-xl border border-input bg-background py-2.5 pl-10 pr-9 text-sm text-foreground shadow-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
               autoFocus
             />
@@ -191,7 +319,7 @@ export default function SpotSearchModal({
           <div role="group" aria-label="카테고리 필터" className="mt-3 flex gap-1.5 overflow-x-auto pb-1">
             <button
               type="button"
-              onClick={() => setSelectedCategory(null)}
+              onClick={() => { setSelectedCategory(null); setOffset(0); }}
               aria-pressed={selectedCategory === null}
               className={`shrink-0 rounded-full border px-3 py-1 text-xs font-semibold transition-colors ${
                 selectedCategory === null
@@ -205,7 +333,7 @@ export default function SpotSearchModal({
               <button
                 key={category}
                 type="button"
-                onClick={() => setSelectedCategory((prev) => (prev === category ? null : category))}
+                onClick={() => { setSelectedCategory((prev) => (prev === category ? null : category)); setOffset(0); }}
                 aria-pressed={selectedCategory === category}
                 className={`shrink-0 rounded-full border px-3 py-1 text-xs font-semibold transition-colors ${
                   selectedCategory === category
@@ -222,11 +350,14 @@ export default function SpotSearchModal({
         {/* 지도 + 목록: 목록에서 마우스를 올리면 지도에서 해당 위치가 강조된다 */}
         <div className="flex min-h-0 flex-1 flex-col sm:flex-row">
           {/* 지도 (모바일은 위, 데스크톱은 오른쪽) */}
-          <div className="shrink-0 border-b border-border p-3 sm:order-2 sm:flex sm:w-[45%] sm:border-b-0 sm:border-l sm:p-4">
+          <div className="flex shrink-0 flex-col border-b border-border p-3 sm:order-2 sm:w-[45%] sm:border-b-0 sm:border-l sm:p-4">
+            <p className="mb-2 text-xs text-muted-foreground">목록에 보이는 장소</p>
             <KakaoMap
-              className="w-full sm:flex sm:flex-col"
+              key={JSON.stringify([selectedRegion.region, selectedRegion.sigungu, debouncedKeyword, selectedCategory])}
+              className="w-full sm:flex sm:min-h-0 sm:flex-1 sm:flex-col"
               mapClassName="h-40 sm:h-full sm:min-h-0 sm:flex-1"
-              spots={spots}
+              spots={mapSpots}
+              viewportSpots={spots}
               showRoute={false}
               highlightedSpotId={hoveredSpotId}
               onSpotClick={(spot) => {
@@ -240,18 +371,27 @@ export default function SpotSearchModal({
           </div>
 
           {/* 장소 목록 */}
-          <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:order-1 sm:p-5">
-          {loading ? (
+          <div
+            ref={listRef}
+            aria-label="장소 검색 결과"
+            aria-busy={loading}
+            onScroll={(event) => {
+              const list = event.currentTarget;
+              if (list.scrollHeight - list.scrollTop - list.clientHeight < 200) requestNextPage();
+            }}
+            className="min-h-0 flex-1 overflow-y-auto p-4 sm:order-1 sm:p-5"
+          >
+          {loading && offset === 0 ? (
             <div className="flex h-48 flex-col items-center justify-center gap-2 text-muted-foreground">
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
               <span className="text-xs">장소를 검색하고 있습니다...</span>
             </div>
-          ) : error ? (
+          ) : error && spots.length === 0 ? (
             <div className="flex h-48 flex-col items-center justify-center text-center">
-              <p className="text-sm font-medium text-destructive">{error}</p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                잠시 후 다시 시도해주세요.
-              </p>
+              <p role="alert" className="text-sm font-medium text-destructive">{error}</p>
+              <button type="button" onClick={() => setRetryCount((count) => count + 1)} className="mt-3 rounded-lg border border-primary/30 px-4 py-2 text-xs font-semibold text-primary">
+                다시 시도
+              </button>
             </div>
           ) : spots.length === 0 ? (
             <div className="flex h-48 flex-col items-center justify-center text-center text-muted-foreground">
@@ -261,31 +401,35 @@ export default function SpotSearchModal({
             </div>
           ) : (
             <div className="grid gap-2.5">
-              {spots.map((spot) => {
+              {spots.map((spot, index) => {
                 const isExcluded = excludedSpotIds.includes(spot.spotId);
                 return (
                   <div
                     key={spot.spotId}
                     data-testid={`spot-search-item-${spot.spotId}`}
-                    onMouseEnter={() => setHoveredSpotId(spot.spotId)}
+                    data-spot-id={spot.spotId}
+                    onMouseEnter={() => setHoveredSpotId(isExcluded ? null : spot.spotId)}
                     onMouseLeave={() =>
                       setHoveredSpotId((prev) => (prev === spot.spotId ? null : prev))
                     }
-                    onFocus={() => setHoveredSpotId(spot.spotId)}
+                    onFocus={() => setHoveredSpotId(isExcluded ? null : spot.spotId)}
                     className={`flex items-center justify-between gap-3.5 rounded-xl border p-3 transition-colors ${
                       isExcluded
                         ? "border-border bg-muted/40 opacity-60"
                         : "border-border bg-card hover:border-primary/50 hover:bg-muted/30"
-                    } ${hoveredSpotId === spot.spotId ? "border-primary/60 bg-muted/40" : ""}`}
+                    } ${!isExcluded && hoveredSpotId === spot.spotId ? "border-primary/60 bg-muted/40" : ""}`}
                   >
                     {/* 썸네일 */}
-                    <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-muted">
+                    <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-muted">
                       <SpotImage
                         src={spot.thumbnail}
                         alt={spot.title}
                         className="h-full w-full object-cover"
                         loading="lazy"
                       />
+                      <span className="absolute left-0.5 top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground" aria-label={`장소 ${index + 1}번`}>
+                        {index + 1}
+                      </span>
                     </div>
 
                     {/* 장소 정보 */}
@@ -299,31 +443,51 @@ export default function SpotSearchModal({
                         </span>
                       </div>
                       <p className="mt-1 truncate text-xs text-muted-foreground">
-                        {[spot.region, spot.sigungu].map((value) => value?.trim()).filter(Boolean).join(" ") || MISSING_SPOT_LOCATION}
+                        {formatSpotRegion(spot)}
                       </p>
                     </div>
 
-                    {/* 선택 / 담김 버튼 */}
-                    {isExcluded ? (
-                      <span className="flex items-center gap-1 rounded-lg bg-muted px-3 py-1.5 text-xs font-medium text-muted-foreground">
-                        <Check className="h-3.5 w-3.5" />
-                        담김
-                      </span>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          onSelect(spot);
-                          onClose();
-                        }}
-                        className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-sm transition-transform active:scale-95 hover:bg-primary/90"
-                      >
-                        선택
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      disabled={isExcluded}
+                      onClick={() => {
+                        onSelect(spot);
+                        onClose();
+                      }}
+                      className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-sm transition-transform enabled:active:scale-95 enabled:hover:bg-primary/90 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground disabled:shadow-none"
+                    >
+                      선택
+                    </button>
                   </div>
                 );
               })}
+            </div>
+          )}
+          {spots.length > 0 && (
+            <div ref={loadMoreRef} data-testid="spot-search-load-more" className="mt-4 text-center">
+              {error ? (
+                <>
+                  <p role="alert" className="mb-2 text-xs text-destructive">{error}</p>
+                  <button
+                    type="button"
+                    disabled={loading || keywordPending}
+                    onClick={() => setRetryCount((count) => count + 1)}
+                    className="w-full rounded-xl border border-primary/30 bg-primary/5 py-3 text-sm font-semibold text-primary hover:bg-primary/10 disabled:opacity-50"
+                  >
+                    다시 시도
+                  </button>
+                </>
+              ) : loading ? (
+                <p role="status" className="flex items-center justify-center gap-2 py-2 text-xs text-primary">
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                  장소를 불러오는 중...
+                </p>
+              ) : nextOffset !== null ? (
+                <p className="py-2 text-xs text-muted-foreground">아래로 스크롤하면 장소를 더 불러옵니다.</p>
+              ) : null}
+              <p className="mt-2 text-xs text-muted-foreground">
+                {totalCount.toLocaleString()}개 중 {spots.length.toLocaleString()}개 표시
+              </p>
             </div>
           )}
           </div>

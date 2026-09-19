@@ -35,6 +35,7 @@ import { type AiCourseDraft, type AiCourseTheme, type AiCourseTripIdea } from "@
 import { PopularSpot, UnauthorizedError } from "@/services/spots";
 import { aiCourseNotice } from "@/lib/ai-course-notice";
 import { describeDayThemes } from "@/lib/ai-trip-themes";
+import { inferCourseSearchRegions } from "@/lib/course-search-regions";
 
 const DRAFT_STORAGE_KEY = "planfix:course-draft";
 const ACCOMMODATION_HINT_STORAGE_KEY = "planfix:accommodation-hint-dismissed";
@@ -804,7 +805,7 @@ export default function CourseCreatePage() {
         <div className="mt-8 space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-bold text-foreground">
-              상세 일정 ({days.length}일)
+              상세 일정 ({days.length === 1 ? "당일치기" : `${days.length}일`})
             </h2>
             <span className="text-xs text-muted-foreground">
               총 <span className="font-semibold text-primary">{totalSpotCount}</span>개 장소 선택됨
@@ -1114,6 +1115,7 @@ export default function CourseCreatePage() {
           onSelect={handleSelectSpot}
           excludedSpotIds={days[activeDayIndex]?.map((s) => s.spotId) || []}
           dayNumber={activeDayIndex + 1}
+          regions={inferCourseSearchRegions(days, activeDayIndex)}
         />
       )}
       {accommodationDayNumber !== null && (

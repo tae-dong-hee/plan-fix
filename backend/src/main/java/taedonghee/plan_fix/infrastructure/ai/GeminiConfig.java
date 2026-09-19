@@ -23,7 +23,7 @@ public class GeminiConfig {
                 .temperature(0.7)
                 .maxOutputTokens(2048)
                 .maxRetries(0)
-                .timeout(Duration.ofSeconds(60))
+                .timeout(StoryDraftModel.DEFAULT_RESPONSE_TIMEOUT)
                 .logRequestsAndResponses(false)
                 .build());
     }

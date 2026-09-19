@@ -22,9 +22,7 @@ type LoginFormProps = {
   message?: LoginFormMessage | null;
   onSubmit?: (values: LoginFormValues) => void | Promise<void>;
   onKakaoLogin?: () => void;
-  onSignUp?: () => void;
   forgotPasswordHref?: string;
-  signUpHref?: string;
 };
 
 const fieldClassName =
@@ -32,6 +30,12 @@ const fieldClassName =
 
 const loginIdPattern = /^[a-z0-9]{6,20}$/;
 const loginIdRequirementText = "영문 소문자와 숫자로 6~20자로 입력해 주세요.";
+
+// 카카오 공식 로그인 화면의 복구 경로. continue가 없으면 잘못된 요청으로 처리된다.
+const kakaoAccountRecoveryHref =
+  "https://accounts.kakao.com/weblogin/find_account?continue=https%3A%2F%2Faccounts.kakao.com%2Fweblogin%2Faccount&lang=ko&showHeader=false";
+const kakaoPasswordRecoveryHref =
+  "https://accounts.kakao.com/weblogin/find_password?continue=%2Flogin%3Fcontinue%3Dhttps%253A%252F%252Faccounts.kakao.com%252Fweblogin%252Faccount%26talk_login%3D&lang=ko&showHeader=false";
 
 type LoginFormErrors = Partial<Record<"loginId" | "password", string>>;
 
@@ -41,9 +45,7 @@ export default function LoginForm({
   message,
   onSubmit,
   onKakaoLogin,
-  onSignUp,
   forgotPasswordHref = "/forgot-password",
-  signUpHref = "/signup",
 }: LoginFormProps) {
   const [values, setValues] = useState<LoginFormValues>({
     loginId: "",
@@ -93,6 +95,25 @@ export default function LoginForm({
         <KakaoSymbol className="h-5 w-5 text-black" />
         <span>카카오 로그인</span>
       </button>
+
+      <nav className="mt-2 flex w-full flex-wrap items-center justify-center gap-x-4" aria-label="카카오 계정 도움말">
+        <a
+          className="rounded py-2 text-xs text-muted-foreground underline-offset-4 hover:text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          href={kakaoAccountRecoveryHref}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          카카오 계정 찾기{" "}<span className="sr-only">(새 창)</span>
+        </a>
+        <a
+          className="rounded py-2 text-xs text-muted-foreground underline-offset-4 hover:text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          href={kakaoPasswordRecoveryHref}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          카카오 비밀번호 찾기{" "}<span className="sr-only">(새 창)</span>
+        </a>
+      </nav>
 
       <div className="my-5 flex w-full items-center gap-4" aria-hidden="true">
         <div className="h-px flex-1 bg-border" />
@@ -222,24 +243,6 @@ export default function LoginForm({
         {isSubmitting ? <LoaderOne variant="inverse" /> : null}
         {isSubmitting ? "로그인 중..." : "로그인"}
       </button>
-
-      <p className="mt-4 text-sm text-muted-foreground">
-        아직 계정이 없으신가요?{" "}
-        <a
-          className="font-medium text-primary hover:underline"
-          href={signUpHref}
-          onClick={
-            onSignUp
-              ? (event) => {
-                  event.preventDefault();
-                  onSignUp();
-                }
-              : undefined
-          }
-        >
-          회원가입
-        </a>
-      </p>
     </form>
   );
 }
