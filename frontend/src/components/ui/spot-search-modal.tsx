@@ -9,6 +9,7 @@ import SpotImage from "@/components/ui/spot-image";
 import KakaoMap from "@/components/ui/kakao-map";
 import { SPOT_CATEGORY_OPTIONS } from "@/constants/spot-categories";
 import { PopularSpot, searchSpots } from "@/services/spots";
+import "./spot-search-modal.css";
 
 export interface SpotSearchModalProps {
   open: boolean;
@@ -222,13 +223,13 @@ function SpotSearchContent({
         role="dialog"
         aria-modal="true"
         aria-labelledby="spot-search-title"
-        className="relative flex h-[85vh] w-full max-w-xl flex-col overflow-hidden rounded-t-3xl border border-border bg-background shadow-2xl sm:h-[650px] sm:max-w-4xl sm:rounded-2xl"
+        className="spot-search-dialog relative flex w-full max-w-xl flex-col overflow-hidden rounded-t-3xl border border-border bg-background shadow-2xl sm:max-w-4xl sm:rounded-2xl"
       >
         {/* 모바일 상단 핸들 */}
         <div className="mx-auto -mt-2 mb-2 h-1.5 w-12 rounded-full bg-muted-foreground/20 sm:hidden" />
 
         {/* 헤더 */}
-        <header className="flex items-center justify-between border-b border-border px-5 py-4 sm:px-6">
+        <header className="spot-search-header flex shrink-0 items-center justify-between border-b border-border px-5 py-4 sm:px-6">
           <div>
             <div className="flex items-center gap-2">
               <h2
@@ -258,8 +259,8 @@ function SpotSearchContent({
         </header>
 
         {/* 검색 입력창 */}
-        <div className="border-b border-border bg-card/50 p-4 sm:px-6">
-          <div className="mb-3 flex items-center justify-between gap-3 text-xs">
+        <div className="spot-search-filters shrink-0 border-b border-border bg-card/50 p-4 sm:px-6">
+          <div className="spot-search-region mb-3 flex items-center justify-between gap-3 text-xs">
             <div className="flex min-w-0 items-center gap-2">
               <MapPin className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden="true" />
               {regionOptions.length > 1 ? (
@@ -316,7 +317,7 @@ function SpotSearchContent({
           </div>
 
           {/* 카테고리 필터 */}
-          <div role="group" aria-label="카테고리 필터" className="mt-3 flex gap-1.5 overflow-x-auto pb-1">
+          <div role="group" aria-label="카테고리 필터" className="spot-search-categories mt-3 flex gap-1.5 overflow-x-auto pb-1">
             <button
               type="button"
               onClick={() => { setSelectedCategory(null); setOffset(0); }}
@@ -379,7 +380,7 @@ function SpotSearchContent({
               const list = event.currentTarget;
               if (list.scrollHeight - list.scrollTop - list.clientHeight < 200) requestNextPage();
             }}
-            className="min-h-0 flex-1 overflow-y-auto p-4 sm:order-1 sm:p-5"
+            className="spot-search-results min-h-0 flex-1 overflow-y-auto p-4 sm:order-1 sm:p-5"
           >
           {loading && offset === 0 ? (
             <div className="flex h-48 flex-col items-center justify-center gap-2 text-muted-foreground">
@@ -400,7 +401,7 @@ function SpotSearchContent({
               <p className="text-xs text-muted-foreground">다른 검색어로 찾아보세요.</p>
             </div>
           ) : (
-            <div className="grid gap-2.5">
+            <div className="spot-search-list grid gap-2.5">
               {spots.map((spot, index) => {
                 const isExcluded = excludedSpotIds.includes(spot.spotId);
                 return (
@@ -413,14 +414,14 @@ function SpotSearchContent({
                       setHoveredSpotId((prev) => (prev === spot.spotId ? null : prev))
                     }
                     onFocus={() => setHoveredSpotId(isExcluded ? null : spot.spotId)}
-                    className={`flex items-center justify-between gap-3.5 rounded-xl border p-3 transition-colors ${
+                    className={`spot-search-row flex items-center justify-between gap-3.5 rounded-xl border p-3 transition-colors ${
                       isExcluded
                         ? "border-border bg-muted/40 opacity-60"
                         : "border-border bg-card hover:border-primary/50 hover:bg-muted/30"
                     } ${!isExcluded && hoveredSpotId === spot.spotId ? "border-primary/60 bg-muted/40" : ""}`}
                   >
                     {/* 썸네일 */}
-                    <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-muted">
+                    <div className="spot-search-thumbnail relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-muted">
                       <SpotImage
                         src={spot.thumbnail}
                         alt={spot.title}
