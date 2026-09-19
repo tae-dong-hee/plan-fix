@@ -531,7 +531,7 @@ export default function CourseCreatePage() {
   };
 
   return (
-    <div className="min-h-screen bg-muted/20 pb-20">
+    <div className="min-h-screen bg-muted/20 pb-20 md:pt-16">
       <AppNav />
 
       {loadingCourse ? (
@@ -556,13 +556,13 @@ export default function CourseCreatePage() {
             <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
               {isEditMode ? "여행 코스 수정하기" : "나만의 여행 코스 만들기"}
             </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <p className="mt-2 text-sm text-muted-foreground">
               {isEditMode
                 ? "일정과 장소를 수정하여 나만의 여행 코스를 업데이트하세요."
                 : "여행 일정과 방문할 명소들을 Day별로 자유롭게 계획해보세요."}
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3 sm:gap-6">
             {/* 빈 화면에서 장소를 하나씩 담는 게 부담스러운 사용자를 위한 진입점 */}
             {!isEditMode && (
               <button
@@ -574,27 +574,29 @@ export default function CourseCreatePage() {
                 AI에게 맡기기
               </button>
             )}
-            <button
-              type="button"
-              onClick={() => navigate(-1)}
-              className="rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted"
-            >
-              취소
-            </button>
-            <button
-              type="button"
-              disabled={!isValid || submitting}
-              onClick={handleSaveCourse}
-              className="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow transition-transform active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {submitting
-                ? isEditMode
-                  ? "수정 중..."
-                  : "저장 중..."
-                : isEditMode
-                  ? "수정 완료"
-                  : "코스 저장하기"}
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                disabled={!isValid || submitting}
+                onClick={handleSaveCourse}
+                className="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow transition-transform active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {submitting
+                  ? isEditMode
+                    ? "수정 중..."
+                    : "저장 중..."
+                  : isEditMode
+                    ? "수정 완료"
+                    : "코스 저장하기"}
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate(-1)}
+                className="rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted"
+              >
+                취소
+              </button>
+            </div>
           </div>
         </div>
 
