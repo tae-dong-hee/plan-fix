@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ArrowRight, CalendarDays, Check, ChevronDown, Coffee, Heart, Landmark,
   Loader2, MapPin, Mountain, Plus, Route, Search, SlidersHorizontal,
-  Sparkles, Trees, UserRound, UsersRound, Utensils, Waves, X,
+  Sparkles, Sun, Trees, UserRound, UsersRound, Utensils, Waves, X,
 } from "lucide-react";
 
 import { sigunguCodeByRegion, type GangwonRegion } from "@/components/ui/gangwon-region-map";
@@ -56,8 +56,9 @@ type AiCourseModalProps = {
   open: boolean;
   startDate: string;
   endDate: string;
+  initialTripType?: "daytrip" | "overnight";
   onClose: () => void;
-  onApply: (draft: AiCourseDraft, themes: AiCourseTheme[]) => void;
+  onApply: (draft: AiCourseDraft, themes: AiCourseTheme[], dates: { startDate: string; endDate: string }) => void;
 };
 
 function describeDuration(startDate: string, endDate: string) {
@@ -65,7 +66,22 @@ function describeDuration(startDate: string, endDate: string) {
   return nights > 0 ? `${nights}박 ${nights + 1}일` : "당일치기";
 }
 
-export default function AiCourseModal({ open, startDate, endDate, onClose, onApply }: AiCourseModalProps) {
+function isValidDate(value: string) {
+  const timestamp = Date.parse(value);
+  return /^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isFinite(timestamp) && new Date(timestamp).toISOString().slice(0, 10) === value;
+}
+
+function shiftDate(value: string, days: number) {
+  return new Date(Date.parse(value) + days * 86400000).toISOString().slice(0, 10);
+}
+
+export default function AiCourseModal({ open, startDate: initialStartDate, endDate: initialEndDate, initialTripType, onClose, onApply }: AiCourseModalProps) {
+  const [startDate, setStartDate] = useState(initialStartDate);
+  const [endDate, setEndDate] = useState(initialTripType === "daytrip" ? initialStartDate : initialEndDate);
+  const [tripType, setTripType] = useState<"daytrip" | "overnight">(initialTripType ?? (initialStartDate === initialEndDate ? "daytrip" : "overnight"));
+  const overnightNights = useRef(2);
+  const [themesOpen, setThemesOpen] = useState(false);
+  const [fineThemesOpen, setFineThemesOpen] = useState(false);
   const [region, setRegion] = useState<GangwonRegion | null>(null);
   const [companion, setCompanion] = useState<AiCourseCompanion>("COUPLE");
   const [manualThemes, setManualThemes] = useState<AiCourseTheme[]>([]);
@@ -85,7 +101,6 @@ export default function AiCourseModal({ open, startDate, endDate, onClose, onApp
   const dialogRef = useRef<HTMLElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const anchorInputRef = useRef<HTMLInputElement>(null);
-  const themeButtonRefs = useRef<Partial<Record<AiCourseTheme, HTMLButtonElement | null>>>({});
   const callbacksRef = useRef({ onClose, onApply });
   const requestVersion = useRef(0);
   const requestPending = useRef(false);
@@ -109,6 +124,8 @@ export default function AiCourseModal({ open, startDate, endDate, onClose, onApp
     setEditingDay(null);
     setAnchors([]);
     setDetailsOpen(false);
+    setThemesOpen(false);
+    setFineThemesOpen(false);
     setAnchorKeyword("");
     setAnchorResults([]);
     setAnchorSearching(false);
@@ -151,6 +168,16 @@ export default function AiCourseModal({ open, startDate, endDate, onClose, onApp
       if (previousFocus?.isConnected) previousFocus.focus();
     };
   }, [open, closeModal]);
+
+  useEffect(() => {
+    if (!open) return;
+    const nextType = initialTripType ?? (initialStartDate === initialEndDate ? "daytrip" : "overnight");
+    const nights = Math.round((Date.parse(initialEndDate) - Date.parse(initialStartDate)) / 86400000);
+    overnightNights.current = nights > 0 && nights < 30 ? nights : 2;
+    setTripType(nextType);
+    setStartDate(initialStartDate);
+    setEndDate(nextType === "daytrip" ? initialStartDate : nights > 0 ? initialEndDate : isValidDate(initialStartDate) ? shiftDate(initialStartDate, overnightNights.current) : initialEndDate);
+  }, [open, initialStartDate, initialEndDate, initialTripType]);
 
   useEffect(() => {
     if (!submitting) {
@@ -207,7 +234,13 @@ export default function AiCourseModal({ open, startDate, endDate, onClose, onApp
   const companionSummary = COMPANION_OPTIONS.find((option) => option.value === companion)?.summary;
   const selectedThemeOptions = THEME_OPTIONS.filter((option) => themes.includes(option.value));
   const selectedThemeLabels = selectedThemeOptions.map((option) => option.label);
-  const duration = describeDuration(startDate, endDate);
+  const dateSpan = Math.round((Date.parse(endDate) - Date.parse(startDate)) / 86400000);
+  const dateError = !isValidDate(startDate) || !isValidDate(endDate)
+    ? "여행 날짜를 선택해 주세요."
+    : tripType === "overnight" && dateSpan < 1
+      ? "마지막 날은 출발일 다음 날부터 선택해 주세요."
+      : dateSpan > 29 ? "여행 기간은 최대 30일까지 선택할 수 있어요." : null;
+  const duration = dateError ? "날짜 선택" : describeDuration(startDate, endDate);
   const preferenceSummary = selectedThemeLabels.length ? selectedThemeLabels.join(" · ") : "취향은 AI 추천으로";
 
   const resetDayAssignments = () => {
@@ -238,11 +271,6 @@ export default function AiCourseModal({ open, startDate, endDate, onClose, onApp
     resetDayAssignments();
   };
 
-  const removeTheme = (value: AiCourseTheme) => {
-    toggleTheme(value);
-    themeButtonRefs.current[value]?.focus();
-  };
-
   const toggleDayChoice = (dayNumber: number, key: string) => {
     const current = dayChoiceKeys[dayNumber - 1];
     setDayOverrides((previous) => ({ ...previous, [dayNumber]: current.includes(key) ? current.filter((value) => value !== key) : [...current, key] }));
@@ -254,8 +282,25 @@ export default function AiCourseModal({ open, startDate, endDate, onClose, onApp
     anchorInputRef.current?.focus();
   };
 
+  const changeTripType = (nextType: "daytrip" | "overnight") => {
+    if (nextType === tripType) return;
+    setTripType(nextType);
+    if (isValidDate(startDate)) {
+      setEndDate(nextType === "daytrip" ? startDate : shiftDate(startDate, overnightNights.current));
+    }
+    resetDayAssignments();
+    setError(null);
+  };
+
+  const changeStartDate = (nextDate: string) => {
+    setStartDate(nextDate);
+    if (tripType === "daytrip") setEndDate(nextDate);
+    else if (isValidDate(nextDate)) setEndDate(shiftDate(nextDate, overnightNights.current));
+    setError(null);
+  };
+
   const handleSubmit = async () => {
-    if (requestPending.current) return;
+    if (requestPending.current || dateError) return;
     requestPending.current = true;
     const version = ++requestVersion.current;
     setSubmitting(true);
@@ -271,7 +316,7 @@ export default function AiCourseModal({ open, startDate, endDate, onClose, onApp
         companion,
         anchorSpotIds: anchors.map((anchor) => anchor.spotId),
       });
-      if (version === requestVersion.current) callbacksRef.current.onApply(draft, requestThemes);
+      if (version === requestVersion.current) callbacksRef.current.onApply(draft, requestThemes, { startDate, endDate });
     } catch (err) {
       if (version !== requestVersion.current) return;
       setError(err instanceof UnauthorizedError
@@ -298,13 +343,12 @@ export default function AiCourseModal({ open, startDate, endDate, onClose, onApp
         aria-modal="true"
         aria-labelledby="ai-course-title"
         aria-describedby="ai-course-description"
-        className="ai-course-dialog relative flex max-h-[94dvh] w-full max-w-[640px] flex-col overflow-hidden rounded-t-[28px] border border-background/60 bg-background text-foreground shadow-[0_32px_100px_-24px_rgba(34,20,65,0.4)] sm:max-h-[92dvh] sm:rounded-[28px]"
+        className="ai-course-dialog relative flex max-h-[94dvh] w-full max-w-[560px] flex-col overflow-hidden rounded-t-[28px] border border-background/60 bg-background text-foreground shadow-[0_32px_100px_-24px_rgba(34,20,65,0.4)] sm:max-h-[92dvh] sm:rounded-[28px]"
       >
         <header className="relative z-10 flex shrink-0 items-center justify-between px-5 pb-2 pt-5 sm:px-8 sm:pt-6">
           <div className="flex items-center gap-2 text-primary">
             <Sparkles className="h-4 w-4" aria-hidden="true" />
             <h2 id="ai-course-title" className="text-xs font-bold tracking-wide">AI에게 코스 맡기기</h2>
-            <span className="rounded-full border border-primary/15 bg-primary/[0.06] px-1.5 py-0.5 text-[9px] font-bold tracking-wider">AI PLANNER</span>
           </div>
           <button ref={closeButtonRef} type="button" onClick={closeModal} aria-label="창 닫기" className="ai-course-control flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-primary/10 hover:text-foreground">
             <X className="h-5 w-5" aria-hidden="true" />
@@ -337,67 +381,64 @@ export default function AiCourseModal({ open, startDate, endDate, onClose, onApp
             </div>
           ) : (
             <div className="ai-course-enter">
-              <div className="relative pb-6 pt-5 sm:pt-6">
-                <div className="ai-course-hero-glow" aria-hidden="true" />
-                <div className="relative flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-[25px] font-bold leading-[1.45] tracking-[-0.045em] sm:text-[30px]">
-                      여행의 설렘만 남겨두세요.<br />
-                      <span className="text-primary">코스는 AI가 짜드릴게요.</span>
-                    </p>
-                    <p id="ai-course-description" className="mt-3 text-xs leading-5 text-muted-foreground sm:text-sm">장소 찾기부터 동선까지, 가볍게 시작하는 나만의 여행.</p>
-                  </div>
-                  <div className="ai-course-hero-icon hidden shrink-0 min-[420px]:flex" aria-hidden="true">
-                    <Sparkles className="h-8 w-8" strokeWidth={1.5} />
-                    <span className="absolute -right-1 top-0 rounded-full border border-primary/10 bg-background p-1.5 text-primary"><Plus className="h-3 w-3" /></span>
-                  </div>
-                </div>
+              <div className="pb-6 pt-4 sm:pt-5">
+                <h3 className="text-[25px] font-bold leading-snug tracking-tight sm:text-[28px]">{tripType === "daytrip" ? "가볍게 떠나는 하루 여행" : "어디로, 언제 떠날까요?"}</h3>
+                <p id="ai-course-description" className="mt-2 text-sm leading-6 text-muted-foreground">지역과 날짜만 골라주세요. 코스는 AI가 짜드릴게요.</p>
               </div>
 
-              <section className="relative rounded-[20px] border border-primary/20 bg-gradient-to-br from-primary/[0.055] via-background to-primary/[0.025] p-4 sm:p-5">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <h3 className="text-xs font-semibold text-muted-foreground">어디로 떠나시나요?</h3>
-                  <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                    <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />
-                    {startDate.replace(/-/g, ".")} ~ {endDate.replace(/-/g, ".")}
-                    <span className="font-semibold text-primary">{duration}</span>
-                  </span>
-                </div>
-                <div className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-2 text-lg font-semibold tracking-tight sm:text-xl">
-                  <div className="relative inline-flex items-center">
-                    <MapPin className="pointer-events-none absolute left-3 h-4 w-4 text-primary" aria-hidden="true" />
-                    <select aria-label="여행 지역" value={region ?? ""} onChange={(event) => setRegion((event.target.value || null) as GangwonRegion | null)} className="ai-course-control max-w-full appearance-none rounded-xl border border-primary/20 bg-background py-2 pl-9 pr-8 text-base font-bold text-primary shadow-sm">
+              <div className="ai-course-trip-toggle" role="group" aria-label="여행 유형">
+                <button type="button" aria-pressed={tripType === "daytrip"} onClick={() => changeTripType("daytrip")} className="ai-course-control"><Sun className="h-4 w-4" aria-hidden="true" />당일치기</button>
+                <button type="button" aria-pressed={tripType === "overnight"} onClick={() => changeTripType("overnight")} className="ai-course-control"><CalendarDays className="h-4 w-4" aria-hidden="true" />숙박 여행</button>
+              </div>
+
+              <section className="space-y-5 py-6" aria-label="여행 지역과 날짜">
+                <div>
+                  <label htmlFor="ai-course-region" className="mb-2 block text-xs font-semibold">어디로 떠나시나요?</label>
+                  <div className="relative">
+                    <MapPin className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-primary" aria-hidden="true" />
+                    <select id="ai-course-region" aria-label="여행 지역" value={region ?? ""} onChange={(event) => setRegion((event.target.value || null) as GangwonRegion | null)} className="ai-course-control w-full appearance-none rounded-xl border border-input bg-background py-3 pl-10 pr-9 text-sm font-medium">
                       <option value="">강원 어디든</option>
                       {REGION_OPTIONS.map((name) => <option key={name} value={name}>{name}</option>)}
                     </select>
-                    <ChevronDown className="pointer-events-none absolute right-2.5 h-3.5 w-3.5 text-primary" aria-hidden="true" />
+                    <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
                   </div>
-                  <span>{region ? "에서" : "좋아요,"}</span>
-                  <span>{companionSummary} 떠날래요.</span>
                 </div>
-                <div className="mt-4 flex items-start gap-2 border-t border-primary/10 pt-3 text-xs leading-5 text-muted-foreground" aria-live="polite">
-                  <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" aria-hidden="true" />
-                  <p>{selectedThemeLabels.length ? `${choices.map((choice) => choice.label).join(" · ")} 취향을 날짜별로 나눠 담을게요. 각 날의 테마에 맞춰 장소와 동선을 구성해 드려요.` : `${region ?? "강원"}에서 ${duration} 동안 즐길 장소와 동선을 AI가 골라드릴게요.`}{anchors.length > 0 && ` 꼭 갈 장소 ${anchors.length}곳도 함께 담을게요.`}</p>
+                <div>
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <span className="text-xs font-semibold">언제 떠나시나요?</span>
+                    <span className="text-xs font-medium text-primary" aria-live="polite">{duration}</span>
+                  </div>
+                  <div className={`ai-course-date-fields ${tripType === "daytrip" ? "ai-course-date-single" : ""}`}>
+                    <div>
+                      <label htmlFor="ai-course-start-date" className={tripType === "daytrip" ? "sr-only" : "mb-1.5 block text-[11px] text-muted-foreground"}>{tripType === "daytrip" ? "여행 날짜" : "출발일"}</label>
+                      <input id="ai-course-start-date" className="ai-course-control ai-course-date-input" type="date" value={startDate} onChange={(event) => changeStartDate(event.target.value)} aria-invalid={Boolean(dateError)} aria-describedby={dateError ? "ai-course-date-error" : undefined} />
+                    </div>
+                    {tripType === "overnight" && <div>
+                      <label htmlFor="ai-course-end-date" className="mb-1.5 block text-[11px] text-muted-foreground">마지막 날</label>
+                      <input id="ai-course-end-date" className="ai-course-control ai-course-date-input" type="date" value={endDate} min={isValidDate(startDate) ? shiftDate(startDate, 1) : undefined} max={isValidDate(startDate) ? shiftDate(startDate, 29) : undefined} onChange={(event) => {
+                        const nextEnd = event.target.value;
+                        setEndDate(nextEnd);
+                        const nights = Math.round((Date.parse(nextEnd) - Date.parse(startDate)) / 86400000);
+                        if (nights > 0 && nights < 30) overnightNights.current = nights;
+                        setError(null);
+                      }} aria-invalid={Boolean(dateError)} aria-describedby={dateError ? "ai-course-date-error" : undefined} />
+                    </div>}
+                  </div>
+                  {dateError && <p id="ai-course-date-error" role="alert" className="mt-2 text-xs text-destructive">{dateError}</p>}
                 </div>
               </section>
 
-              <section className="mt-6" aria-labelledby="ai-course-themes-title" aria-describedby="ai-course-themes-description">
-                <div className="mb-3">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h3 id="ai-course-themes-title" className="text-sm font-semibold">이번 여행, 이렇게 시작해볼까요?</h3>
-                    <span className="rounded-full bg-primary/[0.07] px-2 py-1 text-[10px] font-semibold text-primary">AI 여행 제안</span>
-                  </div>
-                  <p id="ai-course-themes-description" className="mt-1.5 text-xs leading-5 text-muted-foreground">마음에 드는 테마를 여러 개 골라주세요. 날짜별로 나눠 담아드려요.</p>
-                </div>
-
-                <button type="button" aria-label="AI에게 테마 맡기기" aria-pressed={themes.length === 0} onClick={resetThemes} className={`ai-course-control ai-course-auto flex w-full items-center gap-3 rounded-2xl border p-3.5 text-left transition-colors ${themes.length === 0 ? "border-primary/40 bg-primary/[0.06]" : "border-border/80 bg-background hover:border-primary/30"}`}>
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary"><Sparkles className="h-5 w-5" aria-hidden="true" /></span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-semibold">테마도 AI에게 맡길게요</span>
-                    <span className="mt-1 block text-[11px] leading-5 text-muted-foreground">지역과 일정에 맞춰 어울리는 장소를 골라드려요.</span>
-                  </span>
-                  <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${themes.length === 0 ? "border-primary bg-primary text-white" : "border-border"}`} aria-hidden="true">{themes.length === 0 && <Check className="h-3 w-3" />}</span>
+              <section className="rounded-2xl border border-border/80">
+                <button type="button" aria-label="테마 직접 고르기" aria-expanded={themesOpen} aria-controls="ai-course-theme-options" onClick={() => setThemesOpen((previous) => !previous)} className="ai-course-control flex w-full items-center gap-3 rounded-2xl p-4 text-left transition-colors hover:bg-muted/50">
+                  <Sparkles className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                  <span className="min-w-0 flex-1"><span className="block text-sm font-semibold">테마 직접 고르기</span><span className="mt-1 block text-xs leading-5 text-muted-foreground">{selectedThemeLabels.length ? preferenceSummary : "AI 추천 · 지역과 일정에 맞춰 골라드려요"}</span></span>
+                  <ChevronDown className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${themesOpen ? "rotate-180" : ""}`} aria-hidden="true" />
                 </button>
+                {themesOpen && <div id="ai-course-theme-options" className="ai-course-enter border-t border-border/70 p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-xs leading-5 text-muted-foreground">마음에 드는 테마를 함께 골라도 좋아요.</p>
+                    <button type="button" aria-label="AI에게 테마 맡기기" aria-pressed={themes.length === 0} onClick={resetThemes} className={`ai-course-control flex min-h-10 shrink-0 items-center gap-1.5 rounded-full px-3 text-xs font-semibold ${themes.length === 0 ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}><Sparkles className="h-3.5 w-3.5" aria-hidden="true" />AI 추천</button>
+                  </div>
 
                 <div className="ai-course-ideas-grid mt-3" role="group" aria-label="여행 분위기 제안">
                   {TRIP_IDEAS.map((idea) => {
@@ -453,36 +494,22 @@ export default function AiCourseModal({ open, startDate, endDate, onClose, onApp
                   </section>
                 )}
 
-                <div role="group" aria-labelledby="ai-course-selected-themes" className="mt-4 rounded-xl bg-muted/40 p-3.5">
-                  <div className="flex flex-wrap items-center justify-between gap-2 text-[11px]">
-                    <span className="font-semibold"><span id="ai-course-selected-themes">선택한 테마</span> <span className="ml-1 text-primary">{selectedThemeOptions.length}개</span></span>
-                    <span className="text-muted-foreground">취향을 더하거나 빼도 좋아요</span>
+                  <div className="mt-4 border-t border-border/70 pt-2">
+                    <button type="button" aria-expanded={fineThemesOpen} aria-controls="ai-course-fine-themes" onClick={() => setFineThemesOpen((previous) => !previous)} className="ai-course-control flex min-h-10 w-full items-center justify-between gap-2 text-xs text-muted-foreground">취향 세부 조정<ChevronDown className={`h-3.5 w-3.5 ${fineThemesOpen ? "rotate-180" : ""}`} aria-hidden="true" /></button>
+                    {fineThemesOpen && <div id="ai-course-fine-themes" role="group" aria-label="세부 취향" className="flex flex-wrap gap-2 pt-2">
+                      {THEME_OPTIONS.map(({ value, label, icon: Icon }) => (
+                        <button key={value} type="button" aria-pressed={themes.includes(value)} onClick={() => toggleTheme(value)} className={`ai-course-control inline-flex min-h-10 items-center gap-1.5 rounded-xl border px-3 py-2 text-xs ${themes.includes(value) ? "border-primary/30 bg-primary/[0.06] font-semibold text-primary" : "border-border text-muted-foreground"}`}><Icon className="h-3.5 w-3.5" aria-hidden="true" />{label}</button>
+                      ))}
+                    </div>}
                   </div>
-                  <div className="mt-2 flex min-h-7 flex-wrap items-center gap-1.5" aria-live="polite">
-                    {selectedThemeOptions.length ? selectedThemeOptions.map(({ value, label }) => (
-                      <button key={value} type="button" aria-label={`${label} 선택 해제`} onClick={() => removeTheme(value)} className="ai-course-control inline-flex min-h-8 items-center gap-1.5 rounded-full border border-primary/20 bg-background px-2.5 py-1 text-[11px] font-semibold text-primary transition-colors hover:bg-primary/10">
-                        {label}<X className="h-3 w-3 shrink-0" aria-hidden="true" />
-                      </button>
-                    )) : <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground"><Sparkles className="h-3 w-3 text-primary" aria-hidden="true" />테마도 AI에게 맡겼어요.</p>}
-                  </div>
-                  <div className="mt-3 flex flex-wrap gap-1.5 border-t border-border/60 pt-3">
-                    {THEME_OPTIONS.map(({ value, label, icon: Icon }) => {
-                      const selected = themes.includes(value);
-                      return (
-                        <button key={value} ref={(element) => { themeButtonRefs.current[value] = element; }} type="button" aria-label={label} aria-pressed={selected} onClick={() => toggleTheme(value)} className={`ai-course-control inline-flex min-h-9 items-center gap-1.5 rounded-xl border px-2.5 py-2 text-[11px] transition-colors ${selected ? "border-primary/30 bg-primary/[0.06] font-semibold text-primary" : "border-border bg-background text-muted-foreground hover:border-primary/30"}`}>
-                          <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />{label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
+                </div>}
               </section>
 
-              <section className="mt-5 rounded-2xl border border-border/80">
+              <section className="mt-3 rounded-2xl border border-border/80">
                 <button type="button" aria-expanded={detailsOpen} aria-controls="ai-course-preferences" onClick={() => setDetailsOpen((prev) => !prev)} className="ai-course-control flex w-full items-center gap-2.5 rounded-2xl px-4 py-3.5 text-left transition-colors hover:bg-muted/50">
                   <SlidersHorizontal className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
-                  <span className="text-xs font-semibold">취향 더 알려주기</span>
-                  <span className="min-w-0 flex-1 truncate text-[11px] text-muted-foreground">{detailsOpen ? "선택한 만큼 더 나답게" : `${companionSummary} · ${preferenceSummary}`}</span>
+                  <span className="text-xs font-semibold">추가 설정</span>
+                  <span className="min-w-0 flex-1 truncate text-[11px] text-muted-foreground">{detailsOpen ? "선택한 만큼 더 나답게" : `${companionSummary}${anchors.length ? ` · 꼭 갈 장소 ${anchors.length}곳` : " · 꼭 갈 장소"}`}</span>
                   <ChevronDown className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${detailsOpen ? "rotate-180" : ""}`} aria-hidden="true" />
                 </button>
                 {detailsOpen && (
@@ -543,7 +570,7 @@ export default function AiCourseModal({ open, startDate, endDate, onClose, onApp
         </div>
 
         <footer className="relative shrink-0 border-t border-border/70 bg-background px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-4 sm:px-8 sm:pb-5">
-          <button type="button" onClick={handleSubmit} disabled={submitting} className="ai-course-control ai-course-submit flex w-full items-center justify-center gap-2 rounded-2xl px-5 py-3.5 text-sm font-bold text-white transition duration-200 hover:brightness-105 active:scale-[0.99] disabled:pointer-events-none disabled:opacity-70 motion-reduce:transform-none">
+          <button type="button" onClick={handleSubmit} disabled={submitting || Boolean(dateError)} className="ai-course-control ai-course-submit flex w-full items-center justify-center gap-2 rounded-2xl px-5 py-3.5 text-sm font-bold text-white transition duration-200 hover:brightness-105 active:scale-[0.99] disabled:pointer-events-none disabled:opacity-70 motion-reduce:transform-none">
             {submitting ? <><Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />코스 짜는 중...</> : <><Sparkles className="h-4 w-4" aria-hidden="true" />AI로 코스 만들기<ArrowRight className="ml-1 h-4 w-4" aria-hidden="true" /></>}
           </button>
           <p className="mt-2.5 text-center text-[11px] text-muted-foreground">{submitting ? "창을 닫으면 이번 코스는 적용되지 않아요." : "완성된 코스는 자유롭게 수정할 수 있어요."}</p>
