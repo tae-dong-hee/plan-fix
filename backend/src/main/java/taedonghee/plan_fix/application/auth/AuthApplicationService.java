@@ -30,15 +30,15 @@ public class AuthApplicationService {
      */
     @Transactional
     public AuthResult login(AuthCommand.Login command) {
-        UserCredentialModel credential = userCredentialRepository.findByLoginId(command.loginId())
-                .orElseThrow(() -> new CoreException(ErrorType.UNAUTHORIZED, "Invalid login credentials."));
+        UserCredentialModel credential = userCredentialRepository.findByLoginIdForUpdate(command.loginId())
+                .orElseThrow(() -> new CoreException(ErrorType.UNAUTHORIZED, "아이디 또는 비밀번호가 일치하지 않습니다."));
 
         if (!passwordEncryptor.matches(command.password(), credential.getPassword())) {
-            throw new CoreException(ErrorType.UNAUTHORIZED, "Invalid login credentials.");
+            throw new CoreException(ErrorType.UNAUTHORIZED, "아이디 또는 비밀번호가 일치하지 않습니다.");
         }
 
         UserModel user = userRepository.findByUserId(credential.getUserId())
-                .orElseThrow(() -> new CoreException(ErrorType.UNAUTHORIZED, "Invalid login credentials."));
+                .orElseThrow(() -> new CoreException(ErrorType.UNAUTHORIZED, "아이디 또는 비밀번호가 일치하지 않습니다."));
 
         if (user.getStatus() != UserStatus.ACTIVE) {
             throw new CoreException(ErrorType.FORBIDDEN, "Inactive user cannot login. userId=" + user.getUserId());

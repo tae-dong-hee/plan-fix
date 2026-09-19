@@ -35,6 +35,11 @@ public class UserCredentialRepositoryImpl implements UserCredentialRepository {
         return userCredentialJpaRepository.findByLoginId(loginId).map(this::toDomain);
     }
 
+    @Override
+    public Optional<UserCredentialModel> findByLoginIdForUpdate(String loginId) {
+        return userCredentialJpaRepository.findByLoginIdForUpdate(loginId).map(this::toDomain);
+    }
+
     /**
      * login_id 존재 여부 조회 처리
      */

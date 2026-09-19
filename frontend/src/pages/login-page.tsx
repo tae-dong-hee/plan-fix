@@ -160,6 +160,7 @@ export default function LoginPage() {
             message={message}
             onSubmit={handleSubmit}
             onKakaoLogin={handleKakaoLogin}
+            forgotPasswordHref={authPathWithReturnTo("/forgot-password", returnTo)}
             signUpHref={signupPath}
             onSignUp={() => navigate(signupPath)}
           />

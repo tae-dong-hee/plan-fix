@@ -55,6 +55,11 @@ public class UserCredentialJpaEntity {
     @Column(nullable = false)
     private OffsetDateTime updatedAt;
 
+    public void changePassword(String encryptedPassword) {
+        this.password = encryptedPassword;
+        this.updatedAt = OffsetDateTime.now();
+    }
+
     /**
      * JPA 엔티티 생성
      */

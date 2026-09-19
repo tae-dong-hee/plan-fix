@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { Mock } from "vitest";
-import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import CourseCreatePage from "./course-create-page";
 import * as courseService from "@/services/course";
 import * as spotService from "@/services/spots";
@@ -21,6 +21,11 @@ vi.mock("react-router-dom", async () => {
     useNavigate: () => mockNavigate,
   };
 });
+
+function RouteSearch() {
+  const { search } = useLocation();
+  return <output data-testid="route-search">{search}</output>;
+}
 
 describe("CourseCreatePage", () => {
   beforeEach(() => {
@@ -49,12 +54,13 @@ describe("CourseCreatePage", () => {
   const renderPage = (initialEntries = ["/"]) => {
     return render(
       <MemoryRouter initialEntries={initialEntries}>
+        <RouteSearch />
         <CourseCreatePage />
       </MemoryRouter>
     );
   };
 
-  const renderAccommodationEditPage = () => {
+  const renderAccommodationEditPage = (initialEntry = "/courses/99/edit", daytrip = false) => {
     vi.mocked(courseService.fetchCourse).mockResolvedValue({
       courseId: 99,
       userId: 1,
@@ -66,13 +72,13 @@ describe("CourseCreatePage", () => {
       viewCount: 0,
       likeCount: 0,
       startDate: "2026-09-10",
-      endDate: "2026-09-11",
-      days: [{ dayNumber: 1, spots: [] }, { dayNumber: 2, spots: [] }],
+      endDate: daytrip ? "2026-09-10" : "2026-09-11",
+      days: daytrip ? [{ dayNumber: 1, spots: [] }] : [{ dayNumber: 1, spots: [] }, { dayNumber: 2, spots: [] }],
       createdAt: "2026-09-01T00:00:00Z",
       updatedAt: "2026-09-01T00:00:00Z",
     });
     return render(
-      <MemoryRouter initialEntries={["/courses/99/edit"]}>
+      <MemoryRouter initialEntries={[initialEntry]}>
         <Routes><Route path="/courses/:courseId/edit" element={<CourseCreatePage />} /></Routes>
       </MemoryRouter>,
     );
@@ -135,6 +141,21 @@ describe("CourseCreatePage", () => {
     renderAccommodationEditPage();
     await screen.findByDisplayValue("숙소를 추가할 여행");
     expect(screen.queryByRole("complementary")).not.toBeInTheDocument();
+  });
+
+  it("당일치기 수정 화면에서는 숙소 추가 안내를 숨긴다", async () => {
+    renderAccommodationEditPage("/courses/99/edit", true);
+    await screen.findByDisplayValue("숙소를 추가할 여행");
+    expect(screen.queryByRole("button", { name: /숙소 추가/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("complementary")).not.toBeInTheDocument();
+  });
+
+  it("기존 당일치기 코스에 등록된 숙소는 계속 확인하고 변경할 수 있다", async () => {
+    vi.mocked(courseService.fetchDayAccommodations).mockResolvedValue([{ dayNumber: 1, name: "기존 숙소" }]);
+    renderAccommodationEditPage("/courses/99/edit", true);
+    await screen.findByText("기존 숙소");
+    fireEvent.click(screen.getByRole("button", { name: /숙소 변경/ }));
+    expect(screen.getByRole("dialog", { name: "Day 1 숙소 추가" })).toBeVisible();
   });
 
   it("초기 렌더링 시 기본 날짜 범위에 맞춰 Day 카드가 렌더링된다", () => {
@@ -449,6 +470,8 @@ describe("CourseCreatePage", () => {
     vi.mocked(courseService.createCourse).mockResolvedValue({ courseId: 123 } as courseService.CourseResponse);
     const page = renderPage();
     fireEvent.click(screen.getByRole("button", { name: "AI에게 맡기기" }));
+    fireEvent.click(screen.getByRole("button", { name: "테마 직접 고르기" }));
+    fireEvent.click(screen.getByRole("button", { name: "취향 세부 조정" }));
     fireEvent.click(screen.getByRole("button", { name: "힐링·자연" }));
     fireEvent.click(screen.getByRole("button", { name: "카페 투어" }));
     fireEvent.click(screen.getByRole("button", { name: "AI로 코스 만들기" }));
@@ -534,6 +557,7 @@ describe("CourseCreatePage", () => {
     vi.mocked(courseService.createCourse).mockResolvedValue({ courseId: 123 } as courseService.CourseResponse);
     const page = renderPage();
     fireEvent.click(screen.getByRole("button", { name: "AI에게 맡기기" }));
+    fireEvent.click(screen.getByRole("button", { name: "테마 직접 고르기" }));
     fireEvent.click(screen.getByRole("button", { name: "신나는 액티비티" }));
     fireEvent.click(screen.getByRole("button", { name: "AI로 코스 만들기" }));
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
@@ -599,5 +623,91 @@ describe("CourseCreatePage", () => {
       expect(screen.getByText("AI에게 코스 맡기기")).toBeInTheDocument();
       expect(screen.getByText(/어디로 떠나시나요\?/i)).toBeInTheDocument();
     });
+    expect(screen.getByLabelText("출발일")).toBeInTheDocument();
+    expect(screen.getByLabelText("마지막 날")).toBeInTheDocument();
+    expect(screen.getByTestId("route-search")).toBeEmptyDOMElement();
+  });
+
+  it("당일치기 바로가기는 복원된 일정과 별도로 날짜를 선택하고 1일 코스로 저장한다", async () => {
+    sessionStorage.setItem("planfix:course-draft", JSON.stringify({
+      title: "기존 여행", description: "", startDate: "2030-05-10", endDate: "2030-05-12",
+      days: [[], [], []],
+      dayAccommodations: { 3: { dayNumber: 3, name: "셋째 날 숙소" } },
+    }));
+    vi.mocked(fetchAiCourseDraft).mockImplementation(async (request) => ({
+      title: "당일치기 여행", startDate: request.startDate, endDate: request.endDate, generatedBy: "LLM",
+      days: [{ dayNumber: 1, spots: [{
+        spotId: 101, title: "경포해변", category: "관광지", region: "51", sigungu: "150",
+        address: null, thumbnail: null, latitude: null, longitude: null, reason: "바다 산책",
+      }] }],
+    }));
+    vi.mocked(courseService.createCourse).mockResolvedValue({ courseId: 123 } as courseService.CourseResponse);
+    renderPage(["/courses/create?mode=ai&trip=daytrip&source=home"]);
+
+    const travelDate = await screen.findByLabelText("여행 날짜");
+    expect(travelDate).toHaveValue("2030-05-10");
+    expect(screen.getByTestId("route-search")).toHaveTextContent("?source=home");
+    fireEvent.change(travelDate, { target: { value: "2030-05-20" } });
+    expect(JSON.parse(sessionStorage.getItem("planfix:course-draft")!)).toMatchObject({
+      startDate: "2030-05-10", endDate: "2030-05-12", days: [[], [], []],
+    });
+    fireEvent.click(screen.getByRole("button", { name: "AI로 코스 만들기" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+
+    expect(fetchAiCourseDraft).toHaveBeenCalledWith(expect.objectContaining({
+      startDate: "2030-05-20", endDate: "2030-05-20",
+    }));
+    expect(screen.getByTestId("day-card-1")).toBeInTheDocument();
+    expect(screen.queryByTestId("day-card-2")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /숙소 추가/ })).not.toBeInTheDocument();
+    expect(JSON.parse(sessionStorage.getItem("planfix:course-draft")!)).toMatchObject({
+      startDate: "2030-05-20", endDate: "2030-05-20", dayAccommodations: {},
+    });
+    fireEvent.click(screen.getByRole("button", { name: "코스 저장하기" }));
+    await waitFor(() => expect(courseService.createCourse).toHaveBeenCalledWith(expect.objectContaining({
+      startDate: "2030-05-20", endDate: "2030-05-20",
+      days: [{ dayNumber: 1, spots: [{ spotId: 101, memo: "바다 산책" }] }],
+    })));
+    expect(courseService.saveDayAccommodations).toHaveBeenCalledWith(123, []);
+  });
+
+  it("당일치기 모달을 취소하면 복원한 숙박 일정과 날짜를 유지하고 다시 열 때 숙박 모드로 연다", async () => {
+    sessionStorage.setItem("planfix:course-draft", JSON.stringify({
+      title: "보존할 여행", description: "", startDate: "2030-05-10", endDate: "2030-05-12",
+      days: [[], [], []],
+    }));
+    renderPage(["/courses/create?mode=ai&trip=daytrip"]);
+    fireEvent.change(await screen.findByLabelText("여행 날짜"), { target: { value: "2030-05-20" } });
+    fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.getByTestId("day-card-3")).toBeInTheDocument();
+    expect(JSON.parse(sessionStorage.getItem("planfix:course-draft")!)).toMatchObject({
+      title: "보존할 여행", startDate: "2030-05-10", endDate: "2030-05-12", days: [[], [], []],
+    });
+    fireEvent.click(screen.getByRole("button", { name: "AI에게 맡기기" }));
+    expect(screen.getByLabelText("출발일")).toHaveValue("2030-05-10");
+    expect(screen.getByLabelText("마지막 날")).toHaveValue("2030-05-12");
+    expect(screen.queryByLabelText("여행 날짜")).not.toBeInTheDocument();
+  });
+
+  it("일반 AI 진입은 임시저장된 날짜 복원 후 모달을 연다", async () => {
+    sessionStorage.setItem("planfix:course-draft", JSON.stringify({
+      title: "다음 달 여행", description: "", startDate: "2030-06-01", endDate: "2030-06-02",
+      days: [[], []],
+    }));
+    renderPage(["/courses/create?mode=ai"]);
+    expect(await screen.findByLabelText("출발일")).toHaveValue("2030-06-01");
+    expect(screen.getByLabelText("마지막 날")).toHaveValue("2030-06-02");
+    expect(screen.getByTestId("day-card-2")).toBeInTheDocument();
+    expect(screen.queryByTestId("day-card-3")).not.toBeInTheDocument();
+  });
+
+  it("수정 모드에서는 AI 진입 파라미터가 있어도 원래 코스를 유지한다", async () => {
+    renderAccommodationEditPage("/courses/99/edit?mode=ai&trip=daytrip");
+    await screen.findByDisplayValue("숙소를 추가할 여행");
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.getByTestId("day-card-2")).toBeInTheDocument();
+    expect(sessionStorage.getItem("planfix:course-draft")).toBeNull();
   });
 });
