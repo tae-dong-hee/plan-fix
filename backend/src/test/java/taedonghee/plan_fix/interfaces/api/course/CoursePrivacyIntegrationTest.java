@@ -524,7 +524,7 @@ class CoursePrivacyIntegrationTest {
                 .andExpect(status().isOk()).andExpect(jsonPath("$.canEdit").value(true))
                 .andExpect(jsonPath("$.isOwner").value(false));
         as(stranger, put(path() + "/day-accommodations").contentType(MediaType.APPLICATION_JSON).content("[]"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isOk());
     }
 
     private void assertPrivateBoardLinkRejected(ResultActions response) throws Exception {

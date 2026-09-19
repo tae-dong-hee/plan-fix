@@ -37,6 +37,7 @@ import { CourseAccessError, CourseConflictError } from "@/lib/course-errors";
 import { aiCourseNotice } from "@/lib/ai-course-notice";
 import { describeDayThemes } from "@/lib/ai-trip-themes";
 import { inferCourseSearchRegions } from "@/lib/course-search-regions";
+import { formatCourseDuration } from "@/lib/course-duration";
 
 const DRAFT_STORAGE_KEY = "planfix:course-draft";
 const ACCOMMODATION_HINT_STORAGE_KEY = "planfix:accommodation-hint-dismissed";
@@ -226,12 +227,13 @@ export default function CourseCreatePage() {
     setErrorMessage(null);
     setNeedsReload(false);
     setCanEdit(false);
+    setCanChangeVisibility(false);
 
     fetchCourse(courseId)
       .then(async (data) => {
         if (ignore) return;
         if (!data) throw new CourseAccessError("코스를 찾을 수 없습니다.");
-        if (!(data.canEdit ?? data.isOwner !== false)) throw new CourseAccessError("이 코스를 수정할 권한이 없습니다.");
+        if (!(data.canEdit ?? data.isOwner === true)) throw new CourseAccessError("이 코스를 수정할 권한이 없습니다.");
         setCanEdit(true);
         setExpectedUpdatedAt(data.updatedAt);
         setTitle(data.title);
@@ -243,7 +245,7 @@ export default function CourseCreatePage() {
           setVisibility(data.visibility);
           setOriginalVisibility(data.visibility);
         }
-        setCanChangeVisibility(data.isOwner !== false);
+        setCanChangeVisibility(data.isOwner === true);
         if (data.startDate) setStartDate(data.startDate);
         if (data.endDate) setEndDate(data.endDate);
 
@@ -265,13 +267,9 @@ export default function CourseCreatePage() {
           setDayThemes(collectDayThemes(data.days));
         }
         setLoadingCourse(false);
-        if (data.isOwner !== false) {
-          const values = await fetchDayAccommodations(courseId);
-          if (ignore) return;
-          setDayAccommodations(Object.fromEntries(values.map((value) => [value.dayNumber, value])));
-        } else {
-          setDayAccommodations({});
-        }
+        const values = await fetchDayAccommodations(courseId);
+        if (ignore) return;
+        setDayAccommodations(Object.fromEntries(values.map((value) => [value.dayNumber, value])));
         setAccommodationsLoaded(true);
       })
       .catch((err) => {
@@ -612,9 +610,7 @@ export default function CourseCreatePage() {
       }
       setExpectedUpdatedAt(result.updatedAt);
       setOriginalVisibility(result.visibility);
-      if (canChangeVisibility) {
-        await saveDayAccommodations(result.courseId, Object.values(dayAccommodations).filter((value) => value.name.trim()));
-      }
+      await saveDayAccommodations(result.courseId, Object.values(dayAccommodations).filter((value) => value.name.trim()));
       if (!isEditMode) sessionStorage.removeItem(DRAFT_STORAGE_KEY);
       navigate(`/courses/${result.courseId}`, { replace: true });
     } catch (err) {
@@ -797,7 +793,7 @@ export default function CourseCreatePage() {
             {/* 일정 선택 - 시작일/종료일을 캘린더 하나에서 함께 고른다 */}
             <div className="sm:col-span-2">
               <label className="block text-xs font-semibold text-muted-foreground">
-                여행 기간 ({days.length}일 일정)
+                여행 기간 ({formatCourseDuration(days.length)})
               </label>
               <button
                 type="button"
@@ -920,7 +916,7 @@ export default function CourseCreatePage() {
         <div className="mt-8 space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-bold text-foreground">
-              상세 일정 ({days.length === 1 ? "당일치기" : `${days.length}일`})
+              상세 일정 ({formatCourseDuration(days.length)})
             </h2>
             <span className="text-xs text-muted-foreground">
               총 <span className="font-semibold text-primary">{totalSpotCount}</span>개 장소 선택됨
@@ -931,7 +927,7 @@ export default function CourseCreatePage() {
             const dayNumber = dayIndex + 1;
             const assignedThemes = dayThemes[dayNumber];
             const endAccommodation = dayAccommodations[dayNumber];
-            const showAccommodationControls = canChangeVisibility && (!isEditMode || accommodationsLoaded) && (startDate !== endDate || Boolean(endAccommodation));
+            const showAccommodationControls = canEdit && (!isEditMode || accommodationsLoaded) && (startDate !== endDate || Boolean(endAccommodation));
             const showAccommodationHint = showAccommodationControls && isEditMode && accommodationsLoaded
               && accommodationHintVisible && dayIndex === accommodationHintDayIndex;
             const startAccommodation = dayIndex === 0 ? endAccommodation : dayAccommodations[dayNumber - 1];

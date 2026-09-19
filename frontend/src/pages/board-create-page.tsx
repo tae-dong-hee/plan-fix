@@ -18,6 +18,7 @@ import { createBoard, type CreateBoardPayload } from "@/services/board";
 import { fetchMyCourses, type CourseResponse, type CourseSpotSummary } from "@/services/course";
 import { uploadImageFile } from "@/services/image";
 import { type PopularSpot } from "@/services/spots";
+import { formatCourseDuration } from "@/lib/course-duration";
 import "./main-page.css";
 
 const privateCourseNotice = "나만 보기 코스는 연결할 수 없어요. 코스 수정에서 전체 공개로 변경한 뒤 다시 연결해 주세요.";
@@ -283,7 +284,7 @@ export default function BoardCreatePage() {
                 <option value="">코스 선택 안 함</option>
                 {myCourses.map((c) => (
                   <option key={c.courseId} value={c.courseId} disabled={c.visibility !== "PUBLIC"}>
-                    {c.title} ({c.days.length}일 코스){c.visibility !== "PUBLIC" ? " · 나만 보기 (연결 불가)" : ""}
+                    {c.title} ({formatCourseDuration(c.days.length)}){c.visibility !== "PUBLIC" ? " · 나만 보기 (연결 불가)" : ""}
                   </option>
                 ))}
               </select>
@@ -301,7 +302,7 @@ export default function BoardCreatePage() {
                 <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                   <span className="min-w-0 break-words font-semibold text-primary">{selectedCourse.title}</span>
                   <span>·</span>
-                  <span>총 {selectedCourse.days.length}일 여정</span>
+                  <span>{formatCourseDuration(selectedCourse.days.length)}</span>
                   <span>·</span>
                   <span>장소 {courseSpots.length}곳</span>
                 </div>

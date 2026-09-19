@@ -183,6 +183,7 @@ describe("CourseCreatePage", () => {
       courseId: 99,
       userId: 1,
       title: "숙소를 추가할 여행",
+      isOwner: true,
       description: null,
       thumbnail: null,
       visibility: "PRIVATE",
@@ -507,6 +508,7 @@ describe("CourseCreatePage", () => {
       courseId: 99,
       userId: 1,
       title: "원래 코스 제목",
+      isOwner: true,
       description: "원래 코스 설명",
       generatedBy,
       themes,
@@ -634,25 +636,53 @@ describe("CourseCreatePage", () => {
     <Routes><Route path="/courses/:courseId/edit" element={<CourseCreatePage />} /></Routes>
   </MemoryRouter>);
 
-  it("편집자는 숙소 요청 없이 일정만 저장하고 공개 범위를 덮어쓰지 않는다", async () => {
+  it("편집자는 일정과 메모를 수정하고 기존 숙소를 보존하며 공개 범위를 덮어쓰지 않는다", async () => {
+    const accommodation = { dayNumber: 1, name: "함께 묵는 숙소", address: "강릉시 해안로" };
     vi.mocked(courseService.fetchCourse).mockResolvedValue({ ...editableCourse, isOwner: false });
     vi.mocked(courseService.updateCourse).mockResolvedValue({ ...editableCourse, isOwner: false });
+    vi.mocked(courseService.fetchDayAccommodations).mockResolvedValue([accommodation]);
     renderEditableCourse();
-    fireEvent.click(await screen.findByRole("button", { name: "수정 완료" }));
+    await screen.findByText(accommodation.name);
+    fireEvent.change(screen.getByDisplayValue(editableCourse.title), { target: { value: "친구와 수정한 여행" } });
+    fireEvent.change(within(screen.getByTestId("day-card-1")).getByRole("textbox"), { target: { value: "함께 오전 11시 도착" } });
+    fireEvent.click(screen.getByRole("button", { name: "수정 완료" }));
     await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith("/courses/99", { replace: true }));
     expect(courseService.updateCourse).toHaveBeenCalledWith("99", expect.objectContaining({
+      title: "친구와 수정한 여행",
       expectedUpdatedAt: editableCourse.updatedAt, visibility: undefined,
+      days: [{ dayNumber: 1, spots: [{ spotId: 101, memo: "함께 오전 11시 도착" }] }, { dayNumber: 2, spots: [] }],
     }));
-    expect(courseService.fetchDayAccommodations).not.toHaveBeenCalled();
-    expect(courseService.saveDayAccommodations).not.toHaveBeenCalled();
-    expect(screen.queryByRole("button", { name: /숙소 추가/ })).not.toBeInTheDocument();
+    expect(courseService.fetchDayAccommodations).toHaveBeenCalledWith("99");
+    expect(courseService.saveDayAccommodations).toHaveBeenCalledWith(99, [accommodation]);
+    expect(screen.getByRole("button", { name: /숙소 변경/ })).toBeEnabled();
+    expect(screen.getByTestId("visibility-private-button")).toBeDisabled();
   });
 
-  it("읽기 멤버는 수정 화면에서 코스를 저장할 수 없다", async () => {
-    vi.mocked(courseService.fetchCourse).mockResolvedValue({ ...editableCourse, isOwner: false, canEdit: false });
+  it("편집자는 숙소를 삭제해 저장할 수 있다", async () => {
+    vi.mocked(courseService.fetchCourse).mockResolvedValue({ ...editableCourse, isOwner: false });
+    vi.mocked(courseService.updateCourse).mockResolvedValue({ ...editableCourse, isOwner: false });
+    vi.mocked(courseService.fetchDayAccommodations).mockResolvedValue([{ dayNumber: 1, name: "바꿀 숙소" }]);
+    renderEditableCourse();
+    fireEvent.click(await screen.findByRole("button", { name: "Day 1 숙소 삭제" }));
+    fireEvent.click(screen.getByRole("button", { name: "수정 완료" }));
+
+    await waitFor(() => expect(courseService.saveDayAccommodations).toHaveBeenCalledWith(99, []));
+    expect(mockNavigate).toHaveBeenCalledWith("/courses/99", { replace: true });
+  });
+
+  it.each([
+    { label: "읽기 멤버", isOwner: false, canEdit: false },
+    { label: "권한 정보가 없는 사용자", isOwner: undefined, canEdit: undefined },
+    { label: "편집 권한이 누락된 방문자", isOwner: false, canEdit: undefined },
+  ])("$label 는 수정 URL로 접근해도 코스를 저장하거나 숙소를 조회할 수 없다", async ({ isOwner, canEdit }) => {
+    vi.mocked(courseService.fetchCourse).mockResolvedValue({ ...editableCourse, isOwner, canEdit });
     renderEditableCourse();
     expect(await screen.findByText("이 코스를 수정할 권한이 없습니다.")).toBeInTheDocument();
+    expect(screen.queryByDisplayValue(editableCourse.title)).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "수정 완료" })).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: "수정 완료" }));
+    expect(courseService.updateCourse).not.toHaveBeenCalled();
+    expect(courseService.saveDayAccommodations).not.toHaveBeenCalled();
     expect(courseService.fetchDayAccommodations).not.toHaveBeenCalled();
   });
 
@@ -670,8 +700,8 @@ describe("CourseCreatePage", () => {
     await waitFor(() => expect(screen.getByRole("button", { name: "수정 완료" })).toBeEnabled());
   });
 
-  it("숙소 조회 실패 시 빈 숙소 목록으로 기존 값을 덮어쓰지 않는다", async () => {
-    vi.mocked(courseService.fetchCourse).mockResolvedValue(editableCourse);
+  it.each([true, false])("작성자 여부(%s)와 관계없이 숙소 조회 실패 시 빈 숙소 목록으로 기존 값을 덮어쓰지 않는다", async (isOwner) => {
+    vi.mocked(courseService.fetchCourse).mockResolvedValue({ ...editableCourse, isOwner });
     vi.mocked(courseService.fetchDayAccommodations).mockRejectedValueOnce(new Error("숙소 조회 실패"));
     renderEditableCourse();
     expect(await screen.findByText("숙소 조회 실패")).toBeInTheDocument();
@@ -865,7 +895,7 @@ describe("CourseCreatePage", () => {
     { dayThemes: {}, label: null },
   ])("저장된 코스를 수정할 때 일차별 테마의 값과 누락 여부를 보존한다 ($label)", async ({ dayThemes, label }) => {
     vi.mocked(courseService.fetchCourse).mockResolvedValue({
-      courseId: 99, title: "날짜별 테마 여행", startDate: "2026-09-10", endDate: "2026-09-11",
+      courseId: 99, title: "날짜별 테마 여행", isOwner: true, startDate: "2026-09-10", endDate: "2026-09-11",
       generatedBy: "LLM", themes: ["ACTIVITY", "CAFE"],
       days: [
         { dayNumber: 1, themes: ["ACTIVITY"], tripIdeas: ["ACTIVITY"], spots: [{

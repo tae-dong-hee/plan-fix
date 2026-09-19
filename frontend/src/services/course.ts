@@ -42,6 +42,7 @@ export type CourseResponse = {
   updatedAt: string;
   isOwner?: boolean;
   canEdit?: boolean;
+  canViewAccommodations?: boolean;
   generatedBy?: CourseGenerationSource | null;
   themes?: AiCourseTheme[];
 };

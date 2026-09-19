@@ -233,6 +233,12 @@ public class CourseApplicationService {
                     && courseMemberJpaRepository.existsByCourseIdAndUserIdAndRole(course.courseId(), requesterId, CourseMemberRole.EDITOR)));
     }
 
+    public boolean canViewAccommodations(Long requesterId, CourseResult course) {
+        return requesterId != null && (requesterId.equals(course.userId())
+                || (course.visibility() == CourseVisibility.PUBLIC && courseMemberJpaRepository != null
+                    && courseMemberJpaRepository.existsByCourseIdAndUserId(course.courseId(), requesterId)));
+    }
+
     /**
      * 로그인 사용자의 코스 단건 조회 처리 (하위 호환용)
      */

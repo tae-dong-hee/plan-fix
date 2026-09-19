@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { formatCourseDuration } from "@/lib/course-duration";
 
 type DateRangeModalProps = {
   open: boolean;
@@ -47,7 +48,7 @@ function describeDuration(startStr: string, endStr: string): string {
   const diffDays = Math.round(
     (parseISODate(endStr).getTime() - parseISODate(startStr).getTime()) / 86400000,
   );
-  return diffDays <= 0 ? "당일치기" : `${diffDays}박 ${diffDays + 1}일`;
+  return formatCourseDuration(diffDays + 1);
 }
 
 /**

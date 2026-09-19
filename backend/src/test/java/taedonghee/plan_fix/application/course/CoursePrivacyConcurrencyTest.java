@@ -3,6 +3,8 @@ package taedonghee.plan_fix.application.course;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -16,12 +18,15 @@ import taedonghee.plan_fix.domain.spot.SpotSourceType;
 import taedonghee.plan_fix.domain.spot.SpotStatus;
 import taedonghee.plan_fix.domain.user.UserModel;
 import taedonghee.plan_fix.domain.user.UserRepository;
+import taedonghee.plan_fix.domain.user.UserRole;
 import taedonghee.plan_fix.infrastructure.course.CourseInviteJpaRepository;
 import taedonghee.plan_fix.infrastructure.course.CourseJpaRepository;
 import taedonghee.plan_fix.infrastructure.course.CourseMemberJpaRepository;
 import taedonghee.plan_fix.infrastructure.course.CourseMemberRole;
 import taedonghee.plan_fix.infrastructure.spot.SpotJpaEntity;
 import taedonghee.plan_fix.infrastructure.spot.SpotJpaRepository;
+import taedonghee.plan_fix.infrastructure.security.AuthenticatedUser;
+import taedonghee.plan_fix.interfaces.api.course.CourseDayAccommodationController;
 import taedonghee.plan_fix.support.error.CoreException;
 import taedonghee.plan_fix.support.error.ErrorType;
 
@@ -58,6 +63,7 @@ class CoursePrivacyConcurrencyTest {
     @Autowired SpotJpaRepository spots;
     @Autowired JdbcTemplate jdbc;
     @Autowired PlatformTransactionManager transactions;
+    @Autowired CourseDayAccommodationController accommodations;
 
     private ExecutorService workers;
     private Long ownerId;
@@ -96,6 +102,7 @@ class CoursePrivacyConcurrencyTest {
                 jdbc.update("DELETE FROM course_invites WHERE course_id = ?", courseId);
                 jdbc.update("DELETE FROM course_likes WHERE course_id = ?", courseId);
                 jdbc.update("DELETE FROM course_spots WHERE course_id = ?", courseId);
+                jdbc.update("DELETE FROM course_day_accommodations WHERE course_id = ?", courseId);
                 jdbc.update("DELETE FROM courses WHERE course_id = ?", courseId);
             }
             if (spotId != null) jdbc.update("DELETE FROM spots WHERE spot_id = ?", spotId);
@@ -166,6 +173,42 @@ class CoursePrivacyConcurrencyTest {
             assertPrivateWithoutSharing();
         } finally {
             commitAcceptance.countDown();
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void accommodationEditWaitsForPermissionChangeAndIsRejectedAfterCommit(boolean makePrivate) throws Exception {
+        inviteService.accept(inviteeId, inviteToken);
+        CountDownLatch permissionChanged = new CountDownLatch(1);
+        CountDownLatch commitPermission = new CountDownLatch(1);
+        CompletableFuture<Integer> permissionPid = new CompletableFuture<>();
+        CompletableFuture<Integer> editPid = new CompletableFuture<>();
+
+        Future<Boolean> permission = transactionWorker(permissionPid, () -> {
+            if (makePrivate) makePrivate();
+            else inviteService.updateMemberRole(ownerId, courseId, inviteeId, CourseMemberRole.VIEWER);
+            permissionChanged.countDown();
+            awaitRelease(commitPermission);
+            return true;
+        });
+        try {
+            assertThat(permissionChanged.await(10, TimeUnit.SECONDS)).isTrue();
+            Future<?> edit = transactionWorker(editPid, () -> accommodations.put(
+                    new AuthenticatedUser(inviteeId, "invitee", UserRole.USER), courseId,
+                    List.of(new CourseDayAccommodationController.Request(1, "Blocked hotel", null, null, null, null))));
+
+            assertBlockedBy(editPid.get(10, TimeUnit.SECONDS), permissionPid.get(10, TimeUnit.SECONDS), edit);
+            commitPermission.countDown();
+            assertThat(permission.get(10, TimeUnit.SECONDS)).isTrue();
+            assertThatThrownBy(() -> edit.get(10, TimeUnit.SECONDS))
+                    .isInstanceOf(ExecutionException.class).hasCauseInstanceOf(CoreException.class)
+                    .satisfies(error -> assertThat(((CoreException) error.getCause()).getErrorType())
+                            .isEqualTo(ErrorType.FORBIDDEN));
+            assertThat(jdbc.queryForObject("SELECT count(*) FROM course_day_accommodations WHERE course_id = ?",
+                    Long.class, courseId)).isZero();
+        } finally {
+            commitPermission.countDown();
         }
     }
 

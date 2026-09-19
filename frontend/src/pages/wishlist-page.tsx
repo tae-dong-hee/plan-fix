@@ -1,4 +1,5 @@
 import { CourseAccessError } from "@/lib/course-errors";
+import { formatCourseDuration } from "@/lib/course-duration";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
@@ -388,7 +389,7 @@ export default function WishlistPage() {
                             <div>
                               <div className="flex items-center justify-between gap-2">
                                 <span className="rounded-full bg-muted px-2.5 py-1 text-[11px] font-medium text-foreground">
-                                  여행 코스 · {course.days.length}일 일정
+                                  여행 코스 · {formatCourseDuration(course.days.length)}
                                 </span>
                                 <button
                                   type="button"

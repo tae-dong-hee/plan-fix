@@ -20,6 +20,7 @@ import { LoaderFour } from "@/components/ui/unique-loader-components";
 import { createBoardComment, deleteBoardComment, fetchBoardComments, fetchBoardDetail, likeBoard, unlikeBoard, updateBoardComment, type BoardComment, type BoardDetail } from "@/services/board";
 import { fetchCourse, type CourseResponse } from "@/services/course";
 import { fetchMyProfile } from "@/services/user";
+import { formatCourseDuration } from "@/lib/course-duration";
 
 const FALLBACK_BOARD_IMAGE =
   "https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=1200&q=85";
@@ -377,7 +378,7 @@ export default function BoardDetailPage() {
                         추천 여행 코스
                       </span>
                       <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-                        {linkedCourse.days.length}일 코스
+                        {formatCourseDuration(linkedCourse.days.length)}
                       </span>
                     </div>
                     <h2 className="text-lg font-bold text-foreground sm:text-xl">

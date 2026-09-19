@@ -88,7 +88,7 @@ describe("WishlistPage", () => {
     expect(screen.queryByTestId("wishlist-board-1")).not.toBeInTheDocument();
 
     fireEvent.click(categories.getByRole("button", { name: "여행 코스 1개" }));
-    expect(screen.getByTestId("wishlist-course-1")).toHaveTextContent("여행 코스 · 1일 일정");
+    expect(screen.getByTestId("wishlist-course-1")).toHaveTextContent("여행 코스 · 당일치기 여행");
     expect(screen.queryByTestId("wishlist-spot-1")).not.toBeInTheDocument();
     expect(screen.getByLabelText("현재 주소")).toHaveTextContent("/wishlist?tab=courses");
 

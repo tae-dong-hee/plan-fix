@@ -15,6 +15,10 @@ import taedonghee.plan_fix.support.error.ErrorType;
 import taedonghee.plan_fix.infrastructure.course.CourseDayAccommodationJpaEntity;
 import taedonghee.plan_fix.infrastructure.course.CourseDayAccommodationJpaRepository;
 import taedonghee.plan_fix.infrastructure.course.CourseJpaRepository;
+import taedonghee.plan_fix.infrastructure.course.CourseMemberJpaRepository;
+import taedonghee.plan_fix.infrastructure.course.CourseMemberRole;
+import taedonghee.plan_fix.domain.course.CourseStatus;
+import taedonghee.plan_fix.domain.course.CourseVisibility;
 import taedonghee.plan_fix.infrastructure.security.AuthenticatedUser;
 
 import java.math.BigDecimal;
@@ -29,13 +33,14 @@ public class CourseDayAccommodationController {
 
     private final CourseJpaRepository courses;
     private final CourseDayAccommodationJpaRepository accommodations;
+    private final CourseMemberJpaRepository members;
 
     @GetMapping
     public ResponseEntity<List<Response>> get(
             @AuthenticationPrincipal AuthenticatedUser user,
             @PathVariable Long courseId
     ) {
-        requireOwner(user, courseId);
+        requireAccess(user, courseId, false);
         List<Response> response = accommodations.findByCourseIdOrderByDayNumber(courseId).stream()
                 .map(Response::from)
                 .toList();
@@ -49,12 +54,14 @@ public class CourseDayAccommodationController {
             @PathVariable Long courseId,
             @RequestBody List<Request> values
     ) {
-        requireOwner(user, courseId);
+        requireAccess(user, courseId, true);
         if (!isValid(values)) {
             return ResponseEntity.badRequest().build();
         }
 
         accommodations.deleteByCourseId(courseId);
+        // Release the (course_id, day_number) unique keys before inserting replacements.
+        accommodations.flush();
         OffsetDateTime updatedAt = OffsetDateTime.now();
         List<CourseDayAccommodationJpaEntity> entities = values.stream()
                 .map(value -> toEntity(courseId, value, updatedAt))
@@ -94,13 +101,21 @@ public class CourseDayAccommodationController {
                 .build();
     }
 
-    private void requireOwner(AuthenticatedUser user, Long courseId) {
-        boolean isOwner = user != null && courses.findById(courseId)
-                .filter(course -> user.id().equals(course.getUserId()))
-                .isPresent();
-        if (!isOwner) {
-            throw new CoreException(ErrorType.FORBIDDEN, "숙소 정보는 코스 작성자만 확인할 수 있습니다.");
+    private void requireAccess(AuthenticatedUser user, Long courseId, boolean write) {
+        // Serialize edits with role changes, removals and visibility changes on the course row.
+        var course = (write ? courses.findByIdForUpdate(courseId) : courses.findById(courseId))
+                .filter(value -> value.getStatus() == CourseStatus.ACTIVE)
+                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "코스를 찾을 수 없습니다."));
+        if (user != null && user.id().equals(course.getUserId())) return;
+        if (user != null && course.getVisibility() == CourseVisibility.PUBLIC) {
+            boolean allowed = write
+                    ? members.existsByCourseIdAndUserIdAndRole(courseId, user.id(), CourseMemberRole.EDITOR)
+                    : members.existsByCourseIdAndUserId(courseId, user.id());
+            if (allowed) return;
         }
+        throw new CoreException(ErrorType.FORBIDDEN, write
+                ? "숙소 정보는 코스 작성자 또는 편집 권한이 있는 멤버만 수정할 수 있습니다."
+                : "숙소 정보는 코스 작성자와 초대된 멤버만 확인할 수 있습니다.");
     }
 
     public record Request(
