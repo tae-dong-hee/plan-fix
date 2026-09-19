@@ -247,7 +247,7 @@ describe("BoardDetailPage", () => {
     expect(heroImg).toHaveAttribute("src", "https://example.com/thumb.jpg");
   });
 
-  test("눈에 보이는 좋아요 버튼으로 저장하고 취소하며 서버의 좋아요 수를 표시한다", async () => {
+  test("같은 좋아요 버튼으로 저장하고 다시 눌러 취소하며 서버의 좋아요 수를 표시한다", async () => {
     mockedFetchBoardDetail.mockResolvedValue(boardFixture({ isLiked: false }));
     vi.mocked(likeBoard).mockResolvedValue({ liked: true, likeCount: 25 });
     vi.mocked(unlikeBoard).mockResolvedValue({ liked: false, likeCount: 24 });
@@ -261,24 +261,27 @@ describe("BoardDetailPage", () => {
     await waitFor(() => expect(likeButton).toBeEnabled());
     expect(likeBoard).toHaveBeenCalledWith(1);
     expect(likeButton).toHaveAttribute("aria-pressed", "true");
-    expect(likeButton).toHaveTextContent("좋아요 취소25");
+    expect(likeButton).toHaveAccessibleName("강릉 1박 2일 힐링 코스 좋아요");
+    expect(likeButton).toHaveTextContent("좋아요25");
+    expect(likeButton).not.toHaveTextContent("취소");
     expect(screen.getByRole("link", { name: "위시리스트 · 여행 이야기" })).toHaveAttribute("href", "/wishlist?tab=boards");
 
     fireEvent.click(likeButton);
 
     await waitFor(() => expect(likeButton).toHaveAttribute("aria-pressed", "false"));
     expect(unlikeBoard).toHaveBeenCalledWith(1);
+    expect(likeButton).toHaveAccessibleName("강릉 1박 2일 힐링 코스 좋아요");
     expect(likeButton).toHaveTextContent("좋아요24");
   });
 
-  test("이미 좋아요한 이야기는 취소 상태로 표시하고 처리 중 중복 요청을 막는다", async () => {
+  test("이미 좋아요한 이야기는 선택 상태로 표시하고 처리 중 중복 요청을 막는다", async () => {
     mockedFetchBoardDetail.mockResolvedValue(boardFixture({ isLiked: true }));
     let finish!: (value: BoardLikeState) => void;
     vi.mocked(unlikeBoard).mockReturnValue(new Promise((resolve) => { finish = resolve; }));
 
     renderAt("1");
 
-    const likeButton = await screen.findByRole("button", { name: "강릉 1박 2일 힐링 코스 좋아요 취소" });
+    const likeButton = await screen.findByRole("button", { name: "강릉 1박 2일 힐링 코스 좋아요" });
     expect(likeButton).toHaveAttribute("aria-pressed", "true");
     fireEvent.click(likeButton);
     fireEvent.click(likeButton);
