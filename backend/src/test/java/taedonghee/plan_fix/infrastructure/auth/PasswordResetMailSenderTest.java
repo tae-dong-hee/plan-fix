@@ -32,6 +32,48 @@ class PasswordResetMailSenderTest {
     }
 
     @Test
+    void missingMailProviderReturnsServiceUnavailable() {
+        when(provider.getIfAvailable()).thenReturn(null);
+
+        assertThatThrownBy(sender(true, "smtp.example.com", "noreply@example.com")::requireAvailable)
+                .isInstanceOfSatisfying(CoreException.class,
+                        e -> assertThat(e.getErrorType()).isEqualTo(ErrorType.SERVICE_UNAVAILABLE));
+        verify(provider, never()).getObject();
+    }
+
+    @Test
+    void unsafeFrontendUrlsCannotProduceResetMail() {
+        var mail = mock(JavaMailSender.class);
+        when(provider.getIfAvailable()).thenReturn(mail);
+        for (String frontendUrl : java.util.List.of(
+                "http://planfix.test", "https://user:password@planfix.test",
+                "https://planfix.test?redirect=elsewhere", "https://planfix.test#fragment",
+                "//planfix.test", "javascript:alert(1)", "https://", "not a URL")) {
+            var sender = new PasswordResetMailSender(provider, true, "smtp.example.com",
+                    "noreply@example.com", frontendUrl);
+            assertThatThrownBy(sender::requireAvailable).as(frontendUrl)
+                    .isInstanceOfSatisfying(CoreException.class,
+                            e -> assertThat(e.getErrorType()).isEqualTo(ErrorType.SERVICE_UNAVAILABLE));
+        }
+        verifyNoInteractions(mail);
+    }
+
+    @Test
+    void senderHeaderInjectionReturnsServiceUnavailable() {
+        var mail = mock(JavaMailSender.class);
+        when(provider.getIfAvailable()).thenReturn(mail);
+        for (String from : java.util.List.of(
+                "noreply@example.com\r\nBcc: other@example.com",
+                "noreply@example.com\nBcc: other@example.com",
+                "noreply@example.com\rBcc: other@example.com")) {
+            assertThatThrownBy(sender(true, "smtp.example.com", from)::requireAvailable)
+                    .isInstanceOfSatisfying(CoreException.class,
+                            e -> assertThat(e.getErrorType()).isEqualTo(ErrorType.SERVICE_UNAVAILABLE));
+        }
+        verifyNoInteractions(mail);
+    }
+
+    @Test
     void deliveryFailuresNeverEscapeToRequest() {
         var mail = mock(JavaMailSender.class);
         when(provider.getObject()).thenReturn(mail);
