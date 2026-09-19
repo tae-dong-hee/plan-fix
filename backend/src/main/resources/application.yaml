@@ -18,6 +18,19 @@ spring:
   jpa:
     open-in-view: false
 
+  mail:
+    host: ${MAIL_HOST:}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail.smtp.auth: ${MAIL_SMTP_AUTH:true}
+      mail.smtp.starttls.enable: ${MAIL_SMTP_STARTTLS_ENABLE:true}
+      mail.smtp.starttls.required: ${MAIL_SMTP_STARTTLS_REQUIRED:true}
+      mail.smtp.connectiontimeout: 5000
+      mail.smtp.timeout: 5000
+      mail.smtp.writetimeout: 5000
+
 
 server:
   tomcat:
@@ -30,6 +43,9 @@ security:
 
 app:
   frontend-base-url: ${FRONTEND_BASE_URL:http://localhost:3000}
+  password-reset:
+    enabled: ${PASSWORD_RESET_ENABLED:false}
+    from: ${PASSWORD_RESET_FROM:}
   cookie:
     secure: ${COOKIE_SECURE:false}
     same-site: ${COOKIE_SAME_SITE:Lax}

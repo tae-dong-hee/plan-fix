@@ -17,6 +17,10 @@ public interface UserCredentialRepository {
      */
     Optional<UserCredentialModel> findByLoginId(String loginId);
 
+    default Optional<UserCredentialModel> findByLoginIdForUpdate(String loginId) {
+        return findByLoginId(loginId);
+    }
+
     /**
      * login_id 존재 여부 조회
      */

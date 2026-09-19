@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 import taedonghee.plan_fix.application.auth.AuthToken;
 import taedonghee.plan_fix.application.auth.AuthTokenProvider;
 import taedonghee.plan_fix.domain.user.UserModel;
+import taedonghee.plan_fix.infrastructure.auth.PasswordResetJpaRepository;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -30,15 +31,18 @@ public class JwtTokenProvider implements AuthTokenProvider {
     private final ObjectMapper objectMapper;
     private final String secret;
     private final long accessTokenValiditySeconds;
+    private final PasswordResetJpaRepository passwordResets;
 
     public JwtTokenProvider(
             ObjectMapper objectMapper,
             @Value("${security.jwt.secret}") String secret,
-            @Value("${security.jwt.access-token-validity-seconds}") long accessTokenValiditySeconds
+            @Value("${security.jwt.access-token-validity-seconds}") long accessTokenValiditySeconds,
+            PasswordResetJpaRepository passwordResets
     ) {
         this.objectMapper = objectMapper;
         this.secret = secret;
         this.accessTokenValiditySeconds = accessTokenValiditySeconds;
+        this.passwordResets = passwordResets;
     }
 
     /**
@@ -72,6 +76,10 @@ public class JwtTokenProvider implements AuthTokenProvider {
             }
 
             Long userId = Long.valueOf(payload.get("sub").toString());
+            long sessionVersion = ((Number) payload.getOrDefault("sv", 0L)).longValue();
+            if (sessionVersion != passwordResets.findSessionVersion(userId).orElse(0L)) {
+                return Optional.empty();
+            }
             String username = payload.get("username").toString();
             String role = payload.get("role").toString();
             return Optional.of(new JwtClaims(userId, username, role));
@@ -90,6 +98,7 @@ public class JwtTokenProvider implements AuthTokenProvider {
             payload.put("sub", user.getUserId().toString());
             payload.put("username", user.getUsername());
             payload.put("role", user.getRole().name());
+            payload.put("sv", passwordResets.findSessionVersion(user.getUserId()).orElse(0L));
             payload.put("exp", Instant.now().plusSeconds(accessTokenValiditySeconds).getEpochSecond());
 
             String encodedHeader = base64UrlEncode(objectMapper.writeValueAsBytes(header));
