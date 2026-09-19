@@ -29,6 +29,38 @@ function renderAt(spotId: string, { strict = false }: { strict?: boolean } = {})
   return render(strict ? <StrictMode>{tree}</StrictMode> : tree);
 }
 
+test("links to the current photo's credit and removes it for an unregistered gallery photo", async () => {
+  mockedFetchSpotDetail.mockResolvedValue({
+    spotId: 526,
+    title: "임당동 성당",
+    category: "관광지",
+    region: "51",
+    sigungu: "150",
+    address: "강원특별자치도 강릉시 임영로 148",
+    latitude: null,
+    longitude: null,
+    thumbnail: "https://planfix.cloud/images/verified-spots/526.jpg",
+    description: null,
+    viewCount: 0,
+    likeCount: 0,
+    commentCount: 0,
+    images: ["https://example.com/another-photo.jpg"],
+    info: null,
+    isLiked: false,
+  });
+
+  renderAt("526");
+  const credit = await screen.findByRole("link", { name: "사진 출처" });
+  expect(credit).toHaveAttribute("href", "/image-credits#verified-spot-526");
+  expect(credit.parentElement?.closest("a, button")).toBeNull();
+
+  fireEvent.click(screen.getByRole("button", { name: "다음 사진" }));
+  expect(screen.queryByRole("link", { name: "사진 출처" })).not.toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole("button", { name: "이전 사진" }));
+  expect(screen.getByRole("link", { name: "사진 출처" })).toHaveAttribute("href", "/image-credits#verified-spot-526");
+});
+
 afterEach(() => {
   mockedFetchSpotDetail.mockReset();
 });

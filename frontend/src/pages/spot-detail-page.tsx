@@ -21,6 +21,7 @@ import {
 import { LoaderFour } from "@/components/ui/unique-loader-components";
 import AppNav from "@/components/ui/app-nav";
 import SpotImage from "@/components/ui/spot-image";
+import { getVerifiedSpotImageCredit } from "@/lib/verified-spot-images";
 import {
   hasSpotCoordinates,
   MISSING_SPOT_ADDRESS,
@@ -136,6 +137,7 @@ export default function SpotDetailPage() {
     [spot?.info],
   );
   const activeImage = galleryImages[selectedImage];
+  const activeImageCredit = getVerifiedSpotImageCredit(activeImage);
 
   const goBack = () => navigate(-1);
 
@@ -305,6 +307,17 @@ export default function SpotDetailPage() {
                       </button>
                     ))}
                   </div>
+                ) : null}
+                {activeImageCredit ? (
+                  <p className="px-2 pb-1 pt-3 text-xs leading-5 text-muted-foreground sm:px-3">
+                    사진: {activeImageCredit.author} · {activeImageCredit.license}{" "}
+                    <Link
+                      to={`/image-credits#${activeImageCredit.id}`}
+                      className={`ml-1 rounded underline underline-offset-4 hover:text-primary ${FOCUS_RING}`}
+                    >
+                      사진 출처
+                    </Link>
+                  </p>
                 ) : null}
               </section>
 

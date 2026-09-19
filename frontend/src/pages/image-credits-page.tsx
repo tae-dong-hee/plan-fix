@@ -4,6 +4,7 @@ import { Link, useLocation } from "react-router-dom";
 
 import AppNav from "@/components/ui/app-nav";
 import catalog from "@/constants/course-cover-images.json";
+import { verifiedSpotImages } from "@/lib/verified-spot-images";
 
 type ImageCredit = {
   id: string;
@@ -16,7 +17,7 @@ type ImageCredit = {
   changes?: string;
 };
 
-const images: ImageCredit[] = catalog.images;
+const images: ImageCredit[] = [...catalog.images, ...verifiedSpotImages];
 
 const externalLinkClassName = "inline-flex items-center gap-1 rounded text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background";
 
@@ -41,7 +42,7 @@ export default function ImageCreditsPage() {
         <header className="mt-6 border-b border-border pb-6 sm:mt-8 sm:pb-8">
           <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">사진 출처</h1>
           <p className="mt-3 break-keep text-sm leading-6 text-muted-foreground sm:text-base">
-            여행 코스 기본 이미지의 원본과 이용 조건을 확인할 수 있어요.
+            여행 코스 기본 이미지와 장소 사진의 저작자, 원본, 이용 조건을 확인할 수 있어요.
           </p>
         </header>
 

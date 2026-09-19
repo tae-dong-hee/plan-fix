@@ -1,0 +1,109 @@
+{
+  "version": 1,
+  "images": [
+    {
+      "spotId": 469,
+      "title": "BTS 버스정류장",
+      "address": "강원특별자치도 강릉시 주문진읍 주문북로 222-30",
+      "latitude": 37.911392,
+      "longitude": 128.8178558,
+      "url": "https://tong.visitkorea.or.kr/cms/resource/90/3383890_image2_1.JPG"
+    },
+    {
+      "spotId": 526,
+      "title": "임당동 성당",
+      "address": "강원특별자치도 강릉시 임영로 148 (임당동)",
+      "latitude": 37.7544433,
+      "longitude": 128.8920643,
+      "url": "https://planfix.cloud/images/verified-spots/526.jpg"
+    },
+    {
+      "spotId": 528,
+      "title": "굴산사지당간지주",
+      "address": "강원특별자치도 강릉시 구정면 금평로 92-50",
+      "latitude": 37.7079986,
+      "longitude": 128.8875745,
+      "url": "https://planfix.cloud/images/verified-spots/528.jpg"
+    },
+    {
+      "spotId": 706,
+      "title": "경포비치호텔",
+      "address": "강원특별자치도 강릉시 해안로406번길 17 (강문동)",
+      "latitude": 37.7990608,
+      "longitude": 128.9136387,
+      "url": "https://tong.visitkorea.or.kr/cms/resource/21/1584021_image2_1.jpg"
+    },
+    {
+      "spotId": 796,
+      "title": "루소호텔",
+      "address": "강원특별자치도 강릉시 교동광장로100번길 12 (교동)",
+      "latitude": 37.7659694,
+      "longitude": 128.8764709,
+      "url": "https://tong.visitkorea.or.kr/cms/resource/73/2581973_image2_1.jpg"
+    },
+    {
+      "spotId": 923,
+      "title": "삼성스토어 강릉옥천점 (구 삼성전자서비스 강릉센터)",
+      "address": "강원특별자치도 강릉시 율곡로 2849 (옥천동)",
+      "latitude": 37.7581263,
+      "longitude": 128.8965971,
+      "url": "https://tong.visitkorea.or.kr/cms/resource/21/4024721_image2_1.jpeg"
+    },
+    {
+      "spotId": 1057,
+      "title": "고씨네 동해막국수 강문본점",
+      "address": "강원특별자치도 강릉시 창해로350번길 25 (강문동)",
+      "latitude": 37.7963861,
+      "longitude": 128.9172913,
+      "url": "https://tong.visitkorea.or.kr/cms/resource/77/3468977_image2_1.jpg"
+    },
+    {
+      "spotId": 1112,
+      "title": "도깨비젤라또",
+      "address": "강원특별자치도 강릉시 주문진읍 해안로 1605",
+      "latitude": 37.8795082,
+      "longitude": 128.8337851,
+      "url": "https://tong.visitkorea.or.kr/cms/resource/41/3586741_image2_1.jpg"
+    },
+    {
+      "spotId": 1137,
+      "title": "보헤미안커피 본점",
+      "address": "강원특별자치도 강릉시 연곡면 홍질목길 55-11",
+      "latitude": 37.8646712,
+      "longitude": 128.8424431,
+      "url": "https://tong.visitkorea.or.kr/cms/resource/98/2892098_image2_1.jpg"
+    },
+    {
+      "spotId": 1224,
+      "title": "원인숙고성생선찜",
+      "address": "강원특별자치도 강릉시 성덕포남로 56 (입암동)",
+      "latitude": 37.7601515,
+      "longitude": 128.9191644,
+      "url": "https://tong.visitkorea.or.kr/cms/resource/42/2871142_image2_1.jpg"
+    },
+    {
+      "spotId": 1340,
+      "title": "카페툇마루",
+      "address": "강원특별자치도 강릉시 난설헌로 232 (초당동)",
+      "latitude": 37.7929448,
+      "longitude": 128.9145027,
+      "url": "https://tong.visitkorea.or.kr/cms/resource/03/2844103_image2_1.jpeg"
+    },
+    {
+      "spotId": 3618,
+      "title": "다래",
+      "address": "강원특별자치도 평창군 봉평면 태기로 120",
+      "latitude": 37.5860724,
+      "longitude": 128.3237347,
+      "url": "https://tong.visitkorea.or.kr/cms/resource/57/2789757_image2_1.jpg"
+    },
+    {
+      "spotId": 4945,
+      "title": "등불가든",
+      "address": "강원특별자치도 양양군 양양읍 포월나들길 23",
+      "latitude": 38.1037421,
+      "longitude": 128.6306493,
+      "url": "https://tong.visitkorea.or.kr/cms/resource/82/3071582_image2_1.jpg"
+    }
+  ]
+}
