@@ -10,7 +10,7 @@ ARG VITE_KAKAO_JS_KEY
 ARG DEPLOY_SHA=development
 ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
 ENV VITE_KAKAO_JS_KEY=${VITE_KAKAO_JS_KEY}
-RUN test -n "$VITE_KAKAO_JS_KEY" \
+RUN node -e 'if (!process.env.VITE_KAKAO_JS_KEY?.trim()) { console.error("Set a non-blank VITE_KAKAO_JS_KEY build argument to enable Kakao Maps."); process.exit(1); }' \
     && npm run build \
     && node -e 'require("fs").writeFileSync("build/deploy-version.json", JSON.stringify({commit: process.argv[1]}))' "$DEPLOY_SHA"
 
