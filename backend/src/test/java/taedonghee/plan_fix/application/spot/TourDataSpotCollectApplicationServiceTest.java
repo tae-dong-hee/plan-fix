@@ -118,6 +118,31 @@ class TourDataSpotCollectApplicationServiceTest {
 		assertThat(collectedSpot().title()).isEqualTo("원래 제목");
 	}
 
+	@Test
+	void 목록을_재수집해도_공통정보_API에서_수집한_소개는_보존한다() {
+		givenPage(item("경포해수욕장", "128.8987999", "37.8127061"));
+		service.collect(REGN, SIGNGU);
+		SpotModel before = collectedSpot();
+		spotRepository.fillTourApiDescriptionIfMissing(before.spotId(), "바다를 따라 산책할 수 있는 해변입니다.");
+
+		givenPage(item("변경된 제목", "128.8987999", "37.8127061"));
+		service.collect(REGN, SIGNGU);
+
+		assertThat(collectedSpot().title()).isEqualTo("변경된 제목");
+		assertThat(collectedSpot().description()).isEqualTo("바다를 따라 산책할 수 있는 해변입니다.");
+	}
+
+	@Test
+	void 목록을_재수집해도_소개가_없다는_정상_수집_결과를_보존한다() {
+		givenPage(item("경포해수욕장", "128.8987999", "37.8127061"));
+		service.collect(REGN, SIGNGU);
+		spotRepository.fillTourApiDescriptionIfMissing(collectedSpot().spotId(), "");
+
+		service.collect(REGN, SIGNGU);
+
+		assertThat(collectedSpot().description()).isEmpty();
+	}
+
 	private void givenPage(AreaBasedListItem item) {
 		when(tourApiClient.fetchPage(anyString(), anyString(), eq(ATTRACTION), anyInt()))
 			.thenReturn(List.of(item));

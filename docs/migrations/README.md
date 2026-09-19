@@ -85,3 +85,11 @@ docker exec -i docker-postgres-1 psql -U planfix -d planfix -v ON_ERROR_STOP=1 \
 검증하고 세 형식 모두 디코딩까지 확인한다. WebP 디코딩에는 TwelveMonkeys ImageIO를 사용한다.
 최대 가로·세로 8,192px, 2,000만 화소까지 허용한다. 기존 게시글 업로드를 유지하기 위해 전역
 multipart 제한은 파일 15MB, 요청 16MB이며 프로필 서비스에서 별도 5MB 제한을 적용한다.
+
+## 장소 추가 이용 안내 (2026-09-19)
+
+`2026-09-19-add-tour-data-additional-info.sql`은 `tour_data_info.additional_info` TEXT 컬럼을 추가한다.
+새 백엔드 배포 전에 트랜잭션으로 적용한다. 기존 필드와 데이터를 변경하지 않으며 재실행할 수 있다.
+`NULL`은 미수집, 빈 문자열은 원본 API에 추가 안내가 없는 정상 조회 결과다.
+한국관광공사 `detailInfo2`의 제목·내용을 줄바꿈으로 보존하며, 기본 이용 안내가 없는 장소도 저장할 수 있다.
+수집 API와 데이터 출처는 [장소 소개·이용 안내 가이드](../spot-detail-tour-api.md)를 참고한다.

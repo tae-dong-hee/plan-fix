@@ -14,9 +14,10 @@ import tools.jackson.databind.type.LogicalType;
 
 import java.net.URI;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 
-/** [infrastructure] 한국관광공사 TourAPI(areaBasedList2/detailImage2) 호출 클라이언트. */
+/** [infrastructure] 한국관광공사 TourAPI 목록·공통정보·이용안내·사진 호출 클라이언트. */
 @Component
 public class TourApiClient {
 
@@ -111,9 +112,80 @@ public class TourApiClient {
 		return response.firstItem();
 	}
 
+	/** 장소 소개(overview)를 조회한다. 정상적인 빈 응답만 null로 반환한다. */
+	public DetailCommonItem fetchDetailCommon(Long contentId) {
+		URI uri = URI.create(props.baseUrl() + "/detailCommon2"
+			+ "?serviceKey=" + props.serviceKey()
+			+ "&MobileOS=" + props.mobileOs()
+			+ "&MobileApp=" + props.mobileApp()
+			+ "&_type=json"
+			+ "&contentId=" + contentId
+			+ "&numOfRows=1"
+			+ "&pageNo=1");
+
+		DetailCommonResponse response = exchange(uri, DetailCommonResponse.class);
+		if (response == null || !response.isSuccess()) {
+			throw responseFailure("detailCommon2", response == null ? null : response.resultCode(),
+				response == null ? null : response.resultMessage());
+		}
+		DetailCommonItem item = response.firstItem();
+		if (item == null && response.totalCount() > 0) {
+			throw responseFailure("detailCommon2", "INCOMPLETE_RESPONSE", "전체 건수와 공통정보 응답 불일치");
+		}
+		if (item != null && !String.valueOf(contentId).equals(item.contentid())) {
+			throw responseFailure("detailCommon2", "UNEXPECTED_CONTENT_ID", "응답 콘텐츠 ID 불일치");
+		}
+		return item;
+	}
+
+	/** 시설·요금 등 반복 상세정보를 조회한다. 숙박/여행코스는 별도 형식이므로 호출부에서 제외한다. */
+	public List<DetailInfoItem> fetchDetailInfo(Long contentId, String contentTypeId) {
+		List<DetailInfoItem> items = new ArrayList<>();
+		for (int pageNo = 1; ; pageNo++) {
+			if (pageNo > 1) {
+				try {
+					Thread.sleep(props.callIntervalMs());
+				} catch (InterruptedException e) {
+					Thread.currentThread().interrupt();
+					throw new IllegalStateException("추가 이용안내 조회 중단됨", e);
+				}
+			}
+			URI uri = URI.create(props.baseUrl() + "/detailInfo2"
+				+ "?serviceKey=" + props.serviceKey()
+				+ "&MobileOS=" + props.mobileOs()
+				+ "&MobileApp=" + props.mobileApp()
+				+ "&_type=json"
+				+ "&contentId=" + contentId
+				+ "&contentTypeId=" + contentTypeId
+				+ "&numOfRows=" + props.pageSize()
+				+ "&pageNo=" + pageNo);
+
+			DetailInfoResponse response = exchange(uri, DetailInfoResponse.class);
+			if (response == null || !response.isSuccess()) {
+				throw responseFailure("detailInfo2", response == null ? null : response.resultCode(),
+					response == null ? null : response.resultMessage());
+			}
+			List<DetailInfoItem> page = response.items();
+			for (DetailInfoItem item : page) {
+				if (item == null || !String.valueOf(contentId).equals(item.contentid())
+					|| !contentTypeId.equals(item.contenttypeid())) {
+					throw responseFailure("detailInfo2", "UNEXPECTED_CONTENT_ID", "응답 콘텐츠 ID 또는 타입 불일치");
+				}
+			}
+			items.addAll(page);
+			if (items.size() >= response.totalCount()) {
+				return List.copyOf(items);
+			}
+			if (page.isEmpty()) {
+				throw responseFailure("detailInfo2", "INCOMPLETE_RESPONSE", "전체 건수보다 적은 반복정보 응답");
+			}
+		}
+	}
+
 	private RuntimeException responseFailure(String operation, String resultCode, String resultMessage) {
 		// 일부 TourAPI 오류는 HTTP 429 대신 HTTP 200 + 본문 오류 코드로 온다.
-		if (resultMessage != null && resultMessage.contains("LIMITED_NUMBER_OF_SERVICE_REQUESTS_EXCEEDS_ERROR")) {
+		if ("22".equals(resultCode)
+			|| (resultMessage != null && resultMessage.contains("LIMITED_NUMBER_OF_SERVICE_REQUESTS_EXCEEDS_ERROR"))) {
 			return new TourApiQuotaExceededException("TourAPI 일일 요청 한도 초과: " + resultMessage);
 		}
 		return new TourApiResponseException(operation, resultCode, resultMessage);

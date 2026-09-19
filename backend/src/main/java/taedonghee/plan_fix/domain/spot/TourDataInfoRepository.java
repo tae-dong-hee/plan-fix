@@ -12,5 +12,8 @@ public interface TourDataInfoRepository {
 	/** 재수집 시 이미 있는 건인지 판단하는 기준. */
 	Optional<TourDataInfoModel> findByContentId(Long contentId);
 
+	/** 활성 TourAPI 장소의 추가 안내만 원자적으로 채운다. 기존 기본정보와 수집된 추가 안내는 보존한다. */
+	boolean fillAdditionalInfoIfMissing(Long tourDataSpotId, String additionalInfo);
+
 	long countAll();
 }

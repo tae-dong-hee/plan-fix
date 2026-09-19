@@ -39,7 +39,7 @@ export type SearchSpotsParams = {
   size?: number;
 };
 
-/** detailIntro2 결과. 음식점이 아니면 firstMenu/treatMenu/lcnsno는 null이다. */
+/** detailIntro2와 detailInfo2 결과. 음식점이 아니면 firstMenu/treatMenu/lcnsno는 null이다. */
 export type SpotTourInfo = {
   tel: string | null;
   parkInfo: string | null;
@@ -48,6 +48,8 @@ export type SpotTourInfo = {
   firstMenu: string | null;
   treatMenu: string | null;
   lcnsno: string | null;
+  /** detailInfo2의 이용요금, 부대시설 등 반복 안내 정보. */
+  additionalInfo?: string | null;
 };
 
 export type SpotDetail = {

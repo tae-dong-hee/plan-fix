@@ -300,6 +300,55 @@ test("renders tour markup as readable plain text with line breaks and decoded en
   );
 });
 
+test("renders usage details when only additional TourAPI information is available", async () => {
+  mockedFetchSpotDetail.mockResolvedValue(spotFixture({
+    info: {
+      tel: null,
+      parkInfo: null,
+      timeInfo: null,
+      restInfo: null,
+      firstMenu: null,
+      treatMenu: null,
+      lcnsno: null,
+      additionalInfo: "이용요금\n펜션 60,000원\n캠핑 35,000원\n\n부대시설\n샤워실",
+    },
+  }));
+
+  renderAt("1");
+  await screen.findByRole("heading", { name: "정동진" });
+
+  expect(screen.getByText("추가 안내", { selector: "dt" })).toBeInTheDocument();
+  const details = screen.getByText(/이용요금/, { selector: "dd" });
+  expect(details.textContent).toBe("이용요금\n펜션 60,000원\n캠핑 35,000원\n\n부대시설\n샤워실");
+  expect(details).toHaveClass("whitespace-pre-line");
+  expect(screen.queryByText("이용 정보가 등록되지 않은 장소예요.")).not.toBeInTheDocument();
+  expect(screen.queryByText("이용시간")).not.toBeInTheDocument();
+});
+
+test("renders additional TourAPI markup as safe text while preserving its source labels", async () => {
+  mockedFetchSpotDetail.mockResolvedValue(spotFixture({
+    info: {
+      tel: null,
+      parkInfo: null,
+      timeInfo: null,
+      restInfo: null,
+      firstMenu: null,
+      treatMenu: null,
+      lcnsno: null,
+      additionalInfo: '이용요금\n펜션&nbsp;60,000원<br>캠핑 35,000원\n\n부대시설\n샤워실 &amp; 화장실<script>alert("untrusted")</script><img src="https://example.com/untrusted" onerror="alert(1)">',
+    },
+  }));
+
+  renderAt("1");
+  await screen.findByRole("heading", { name: "정동진" });
+
+  const details = screen.getByText(/이용요금/, { selector: "dd" });
+  expect(details.textContent).toBe("이용요금\n펜션 60,000원\n캠핑 35,000원\n\n부대시설\n샤워실 & 화장실");
+  expect(details.querySelector("script, img, br")).toBeNull();
+  expect(screen.queryByText(/untrusted/)).not.toBeInTheDocument();
+  expect(screen.getAllByRole("img")).toHaveLength(1);
+});
+
 test("treats empty markup, whitespace and null gallery entries as missing data", async () => {
   mockedFetchSpotDetail.mockResolvedValue(spotFixture({
     address: "&nbsp;",
@@ -314,6 +363,7 @@ test("treats empty markup, whitespace and null gallery entries as missing data",
       firstMenu: "<span> </span>",
       treatMenu: null,
       lcnsno: "\n\t",
+      additionalInfo: "<p><br>&nbsp;</p>",
     },
   }));
 

@@ -6,6 +6,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.async.WebAsyncTask;
+import taedonghee.plan_fix.application.spot.TourDataDescriptionCollectApplicationService;
+import taedonghee.plan_fix.application.spot.TourDataAdditionalInfoCollectApplicationService;
 import taedonghee.plan_fix.application.spot.TourDataImageCollectApplicationService;
 import taedonghee.plan_fix.application.spot.TourDataInfoCollectApplicationService;
 import taedonghee.plan_fix.application.spot.TourDataSpotCollectApplicationService;
@@ -24,6 +26,8 @@ public class SpotAdminController {
 	private final TourDataSpotCollectApplicationService tourDataSpotCollectApplicationService;
 	private final TourDataImageCollectApplicationService tourDataImageCollectApplicationService;
 	private final TourDataInfoCollectApplicationService tourDataInfoCollectApplicationService;
+	private final TourDataDescriptionCollectApplicationService tourDataDescriptionCollectApplicationService;
+	private final TourDataAdditionalInfoCollectApplicationService tourDataAdditionalInfoCollectApplicationService;
 
 	/** 예: POST /api/v1/admin/spots/collect?lDongRegnCd=51&lDongSignguCd=150 (강원 강릉) */
 	@PostMapping("/collect")
@@ -67,6 +71,30 @@ public class SpotAdminController {
 		return new WebAsyncTask<>(
 			COLLECT_TIMEOUT_MS,
 			() -> tourDataInfoCollectApplicationService.collect(lDongRegnCd, lDongSignguCd)
+		);
+	}
+
+	/** detailCommon2로 아직 수집하지 않은 장소 소개를 채운다. 정상적인 빈 결과도 재수집하지 않는다. */
+	@PostMapping("/collect-descriptions")
+	public WebAsyncTask<TourDataDescriptionCollectApplicationService.CollectDescriptionResult> collectDescriptions(
+		@RequestParam String lDongRegnCd,
+		@RequestParam String lDongSignguCd
+	) {
+		return new WebAsyncTask<>(
+			COLLECT_TIMEOUT_MS,
+			() -> tourDataDescriptionCollectApplicationService.collect(lDongRegnCd, lDongSignguCd)
+		);
+	}
+
+	/** detailInfo2로 시설·요금 등 아직 수집하지 않은 추가 이용안내를 채운다. */
+	@PostMapping("/collect-additional-info")
+	public WebAsyncTask<TourDataAdditionalInfoCollectApplicationService.CollectAdditionalInfoResult> collectAdditionalInfo(
+		@RequestParam String lDongRegnCd,
+		@RequestParam String lDongSignguCd
+	) {
+		return new WebAsyncTask<>(
+			COLLECT_TIMEOUT_MS,
+			() -> tourDataAdditionalInfoCollectApplicationService.collect(lDongRegnCd, lDongSignguCd)
 		);
 	}
 }

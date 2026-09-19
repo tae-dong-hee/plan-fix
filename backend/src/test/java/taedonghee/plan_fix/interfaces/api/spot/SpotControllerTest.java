@@ -13,6 +13,7 @@ import taedonghee.plan_fix.domain.user.UserRole;
 import taedonghee.plan_fix.infrastructure.security.AuthenticatedUser;
 import taedonghee.plan_fix.support.error.CoreException;
 import taedonghee.plan_fix.support.error.ErrorType;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -108,7 +109,7 @@ class SpotControllerTest {
     @Test
     void 상세_조회_결과를_응답_DTO로_변환한다() {
         SpotDetailResult.TourInfo tourInfo = new SpotDetailResult.TourInfo(
-                "033-000-0000", "가능", "09:00~18:00", "연중무휴", null, null, null);
+                "033-000-0000", "가능", "09:00~18:00", "연중무휴", null, null, null, null);
         SpotDetailResult result = new SpotDetailResult(1L, "정동진", "관광지", "51", "150",
                 "강원특별자치도 강릉시", new BigDecimal("37.1"), new BigDecimal("129.0"), "thumb.jpg",
                 "동해안의 대표 해변", 11, 3, 1,
@@ -152,6 +153,24 @@ class SpotControllerTest {
         assertThat(body.images()).isEmpty();
         assertThat(body.info()).isNull();
         assertThat(body.isLiked()).isFalse();
+    }
+
+    @Test
+    void 기본안내가_없는_캠핑장도_반복정보를_additionalInfo_JSON으로_전달한다() {
+        String additionalInfo = "이용요금\n캠핑 35,000원~45,000원\n\n부대시설\n샤워실";
+        SpotDetailResult.TourInfo tourInfo = new SpotDetailResult.TourInfo(
+                null, null, null, null, null, null, null, additionalInfo);
+        when(spotDetailApplicationService.get(3L, null)).thenReturn(new SpotDetailResult(
+                3L, "하늘빛계곡 캠핑장", "레포츠", "51", "830", null, null, null, null,
+                "계곡 옆 캠핑장", 0, 0, 0, List.of(), tourInfo, false));
+
+        SpotDetailResponse body = controller.get(3L, null).getBody();
+        JsonMapper mapper = JsonMapper.builder().build();
+        var json = mapper.readTree(mapper.writeValueAsString(body));
+
+        assertThat(json.path("info").path("additionalInfo").asText()).isEqualTo(additionalInfo);
+        assertThat(json.path("info").path("timeInfo").isNull()).isTrue();
+        assertThat(json.path("info").path("tel").isNull()).isTrue();
     }
 
     @Test
