@@ -6,18 +6,19 @@ import {
   ImageIcon,
   Loader2,
   Route as RouteIcon,
-  UploadCloud,
   X,
 } from "lucide-react";
 import { type Editor } from "@tiptap/react";
 
 import AppNav from "@/components/ui/app-nav";
 import BlogEditor from "@/components/editor/blog-editor";
+import StoryWritingAssistant from "@/components/editor/story-writing-assistant";
 import SpotSearchModal from "@/components/ui/spot-search-modal";
 import { createBoard, type CreateBoardPayload } from "@/services/board";
 import { fetchMyCourses, type CourseResponse, type CourseSpotSummary } from "@/services/course";
 import { uploadImageFile } from "@/services/image";
 import { type PopularSpot } from "@/services/spots";
+import "./main-page.css";
 
 export default function BoardCreatePage() {
   const navigate = useNavigate();
@@ -35,6 +36,10 @@ export default function BoardCreatePage() {
   // 본문 HTML 및 TipTap 에디터 인스턴스
   const [contentHtml, setContentHtml] = useState("");
   const editorRef = useRef<Editor | null>(null);
+  const [storyPhotos, setStoryPhotos] = useState<File[]>([]);
+  const [isAiWriting, setIsAiWriting] = useState(false);
+  const uploadedStoryPhotos = useRef(new Map<File, string>());
+  const publishingRef = useRef(false);
 
   // 장소 검색 모달
   const [isSpotSearchOpen, setIsSpotSearchOpen] = useState(false);
@@ -42,6 +47,10 @@ export default function BoardCreatePage() {
   // 발행 상태
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  useEffect(() => {
+    editorRef.current?.setEditable(!isSubmitting);
+  }, [isSubmitting]);
 
   // 내 코스 목록 불러오기
   useEffect(() => {
@@ -88,6 +97,7 @@ export default function BoardCreatePage() {
 
   // 장소 검색 모달에서 장소 선택 시 에디터에 카드 삽입
   const handleSelectSpot = (spot: PopularSpot) => {
+    if (publishingRef.current) return;
     if (editorRef.current) {
       const address = [spot.region, spot.sigungu].filter(Boolean).join(" ");
       editorRef.current.chain().focus().insertSpotCard({
@@ -116,6 +126,7 @@ export default function BoardCreatePage() {
 
   // 게시글 발행
   const handleSubmit = async () => {
+    if (publishingRef.current || isAiWriting || isCoverUploading) return;
     if (!title.trim()) {
       alert("여행기 제목을 입력해 주세요.");
       return;
@@ -126,7 +137,7 @@ export default function BoardCreatePage() {
     const textOnly = currentEditor ? currentEditor.getText().trim() : "";
     const extractedImages = extractImageUrls(currentHtml);
 
-    if (!textOnly && extractedImages.length === 0) {
+    if (!textOnly && extractedImages.length === 0 && storyPhotos.length === 0) {
       alert("여행기 내용을 작성해 주세요.");
       return;
     }
@@ -137,17 +148,26 @@ export default function BoardCreatePage() {
       allImages.unshift(coverImage);
     }
 
-    const payload: CreateBoardPayload = {
-      title: title.trim(),
-      content: currentHtml,
-      thumbnail: coverImage || (extractedImages.length > 0 ? extractedImages[0] : null),
-      courseId: selectedCourseId,
-      images: allImages.map((url) => ({ imageUrl: url })),
-    };
-
     try {
+      publishingRef.current = true;
       setIsSubmitting(true);
       setSubmitError(null);
+      // Save the selected photos only when publishing; retry reuses successful uploads.
+      for (const photo of storyPhotos) {
+        let imageUrl = uploadedStoryPhotos.current.get(photo);
+        if (!imageUrl) {
+          imageUrl = (await uploadImageFile(photo)).imageUrl;
+          uploadedStoryPhotos.current.set(photo, imageUrl);
+        }
+        if (!allImages.includes(imageUrl)) allImages.push(imageUrl);
+      }
+      const payload: CreateBoardPayload = {
+        title: title.trim(),
+        content: currentHtml,
+        thumbnail: coverImage || uploadedStoryPhotos.current.get(storyPhotos[0]) || allImages[0] || null,
+        courseId: selectedCourseId,
+        images: allImages.map((url) => ({ imageUrl: url })),
+      };
       const res = await createBoard(payload);
       navigate(`/boards/${res.boardId}`);
     } catch (err: unknown) {
@@ -155,12 +175,13 @@ export default function BoardCreatePage() {
       setSubmitError(msg);
       alert(msg);
     } finally {
+      publishingRef.current = false;
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-background pb-32 text-foreground md:pb-20 md:pt-16">
+    <div className="travel-home min-h-screen bg-background pb-32 text-foreground md:pb-20 md:pt-16">
       <AppNav />
 
       {/* 상단 액션바 */}
@@ -187,7 +208,7 @@ export default function BoardCreatePage() {
             <button
               type="button"
               onClick={handleSubmit}
-              disabled={isSubmitting}
+              disabled={isSubmitting || isAiWriting || isCoverUploading}
               className="flex items-center gap-1.5 rounded-full bg-primary px-5 py-2 text-sm font-bold text-primary-foreground shadow-sm transition-all hover:opacity-90 hover:shadow-md disabled:opacity-50"
             >
               {isSubmitting ? (
@@ -212,8 +233,16 @@ export default function BoardCreatePage() {
         )}
 
         <div className="space-y-6">
+          <StoryWritingAssistant
+            title={title}
+            files={storyPhotos}
+            onFilesChange={setStoryPhotos}
+            onBusyChange={setIsAiWriting}
+            editorRef={editorRef}
+            disabled={isSubmitting}
+          />
           {/* 1. 대표 커버 사진 */}
-          <div className="group relative">
+          <fieldset disabled={isSubmitting || isCoverUploading} className="group relative">
             {coverImage ? (
               <div className="relative aspect-[21/9] w-full overflow-hidden rounded-2xl border border-border bg-muted shadow-sm sm:aspect-[24/9]">
                 <img
@@ -242,9 +271,10 @@ export default function BoardCreatePage() {
                 </div>
               </div>
             ) : (
-              <div
+              <button
+                type="button"
                 onClick={() => coverFileInputRef.current?.click()}
-                className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-border/80 bg-muted/30 py-8 px-4 text-center transition-all hover:border-primary/50 hover:bg-muted/50"
+                className="flex w-full cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-border/80 bg-muted/30 py-6 px-4 text-center transition-all hover:border-primary/50 hover:bg-muted/50"
               >
                 {isCoverUploading ? (
                   <div className="flex flex-col items-center gap-2 text-primary">
@@ -256,15 +286,15 @@ export default function BoardCreatePage() {
                     <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
                       <ImageIcon className="h-5 w-5" />
                     </div>
-                    <p className="mt-2 text-sm font-semibold text-foreground">
+                    <span className="mt-2 text-sm font-semibold text-foreground">
                       대표 커버 사진 추가 <span className="text-xs font-normal text-muted-foreground">(선택)</span>
-                    </p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      클릭하여 사진을 업로드하세요 (JPG, PNG, WebP 지원)
-                    </p>
+                    </span>
+                    <span className="mt-1 text-xs text-muted-foreground">
+                      {storyPhotos.length ? "선택하지 않으면 첫 번째 여행 사진을 커버로 사용해요" : "클릭하여 사진을 업로드하세요 (JPG, PNG, WebP 지원)"}
+                    </span>
                   </>
                 )}
-              </div>
+              </button>
             )}
             <input
               ref={coverFileInputRef}
@@ -273,12 +303,14 @@ export default function BoardCreatePage() {
               className="hidden"
               onChange={handleCoverUpload}
             />
-          </div>
+          </fieldset>
 
           {/* 2. 제목 입력 */}
           <div>
             <input
               type="text"
+              aria-label="여행기 제목"
+              disabled={isSubmitting}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="여행기 제목을 입력하세요 (예: 2박 3일 낭만 제주 뚜벅이 여행기)"
@@ -297,6 +329,8 @@ export default function BoardCreatePage() {
               </div>
 
               <select
+                aria-label="내 여행 코스 연결"
+                disabled={isSubmitting}
                 value={selectedCourseId ?? ""}
                 onChange={(e) => {
                   const val = e.target.value;
@@ -330,7 +364,7 @@ export default function BoardCreatePage() {
           </div>
 
           {/* 4. 블로그형 리치 텍스트 에디터 */}
-          <div>
+          <fieldset disabled={isSubmitting}>
             <BlogEditor
               initialContent={contentHtml}
               onChange={setContentHtml}
@@ -338,7 +372,7 @@ export default function BoardCreatePage() {
               courseSpots={courseSpots}
               editorInstanceRef={editorRef}
             />
-          </div>
+          </fieldset>
         </div>
       </main>
 

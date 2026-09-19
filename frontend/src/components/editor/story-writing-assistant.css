@@ -1,0 +1,55 @@
+.story-assistant { --card: var(--background); min-width: 0; margin: 0; padding: 24px; border: 1px solid hsl(var(--primary) / .17); border-radius: 22px; background: linear-gradient(135deg, hsl(var(--primary) / .055), hsl(var(--card)) 70%); }
+.story-assistant button, .story-assistant input { transition: background .15s, border-color .15s, box-shadow .15s; }
+.story-assistant button:focus-visible, .story-assistant input:focus-visible { outline: 2px solid hsl(var(--primary)); outline-offset: 3px; }
+.story-assistant button:disabled { cursor: default; opacity: .5; }
+.story-assistant-heading { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.story-assistant-eyebrow { display: flex; align-items: center; gap: 5px; margin-bottom: 7px; color: hsl(var(--primary)); font-size: 11px; font-weight: 650; }
+.story-assistant-heading h2 { font-size: 18px; font-weight: 750; letter-spacing: -.5px; }
+.story-writing-modes { display: flex; flex-shrink: 0; gap: 4px; padding: 5px; border-radius: 14px; background: hsl(var(--primary) / .07); border: 1px solid hsl(var(--primary) / .09); }
+.story-writing-modes button { display: flex; align-items: center; justify-content: center; gap: 7px; min-height: 39px; padding: 8px 15px; border-radius: 10px; font-size: 13px; font-weight: 650; color: hsl(var(--muted-foreground)); }
+.story-writing-modes button[aria-pressed="true"] { color: hsl(var(--primary)); background: hsl(var(--card)); box-shadow: 0 2px 7px hsl(var(--primary) / .1); }
+.story-writing-modes button:hover { color: hsl(var(--primary)); }
+.story-ai-intro { margin-top: 24px; }
+.story-ai-intro strong { font-size: 14px; font-weight: 650; }
+.story-ai-intro p, .story-manual-intro { margin-top: 6px; font-size: 12px; line-height: 1.8; color: hsl(var(--muted-foreground)); }
+.story-manual-intro { margin-top: 17px; }
+.story-ai-note { display: block; margin: 18px 0; }
+.story-ai-note > span { display: block; margin-bottom: 8px; font-size: 12px; font-weight: 600; }
+.story-ai-note small { margin-left: 5px; color: hsl(var(--muted-foreground)); font-weight: 400; }
+.story-ai-note input { width: 100%; padding: 11px 13px; border: 1px solid hsl(var(--border)); border-radius: 10px; background: hsl(var(--background) / .8); font-size: 12px; }
+.story-ai-note input::placeholder { color: hsl(var(--muted-foreground) / .75); }
+.story-photo-label { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 5px; margin: 18px 0 9px; font-size: 12px; font-weight: 600; }
+.story-photo-label b { margin-left: 5px; color: hsl(var(--primary)); font-size: 11px; }
+.story-photo-label small { font-size: 10px; color: hsl(var(--muted-foreground)); font-weight: 400; }
+.story-photo-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 9px; }
+.story-photo { position: relative; aspect-ratio: 1; overflow: hidden; border: 1px solid hsl(var(--border)); border-radius: 12px; background: hsl(var(--muted)); }
+.story-photo img { width: 100%; height: 100%; object-fit: cover; }
+.story-photo button { position: absolute; top: 5px; right: 5px; display: grid; place-items: center; width: 27px; height: 27px; border-radius: 50%; background: rgb(0 0 0 / .55); color: white; }
+.story-photo-number { position: absolute; bottom: 6px; left: 7px; display: grid; place-items: center; width: 21px; height: 21px; border-radius: 7px; background: rgb(0 0 0 / .4); color: white; font-size: 10px; }
+.story-photo-add { display: flex; width: 100%; min-height: 95px; flex-direction: column; align-items: center; justify-content: center; gap: 7px; padding: 13px 7px; border: 1px dashed hsl(var(--primary) / .3); border-radius: 13px; background: hsl(var(--primary) / .025); color: hsl(var(--primary)); }
+.story-photo-add:hover { background: hsl(var(--primary) / .07); border-color: hsl(var(--primary) / .65); }
+.story-photo-add strong { font-size: 11px; font-weight: 650; }
+.story-photo-add > span:last-child { font-size: 11px; color: hsl(var(--muted-foreground)); }
+.story-photo-empty .story-photo-add { min-height: 156px; }
+.story-photo-empty .story-photo-add strong { font-size: 13px; }
+.story-photo-add-icon { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 13px; background: hsl(var(--primary) / .08); }
+.story-photo-hint { margin-top: 9px; color: hsl(var(--muted-foreground)); font-size: 10px; line-height: 1.7; }
+.story-ai-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 17px; }
+.story-ai-actions > p { display: flex; align-items: center; gap: 6px; color: hsl(var(--primary)); font-size: 11px; line-height: 1.7; }
+.story-ai-actions svg { flex-shrink: 0; }
+.story-ai-generate { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; gap: 6px; padding: 9px 12px; border: 1px solid hsl(var(--primary) / .17); border-radius: 10px; background: hsl(var(--primary) / .09); color: hsl(var(--primary)); font-size: 11px; font-weight: 650; }
+.story-ai-generate:hover { background: hsl(var(--primary) / .15); }
+.story-ai-error { margin-top: 12px; padding: 11px 13px; border-radius: 10px; background: hsl(var(--destructive) / .06); color: hsl(var(--destructive)); font-size: 12px; line-height: 1.7; }
+.story-draft-preview { margin-top: 18px; padding: 18px; border: 1px solid hsl(var(--primary) / .18); border-radius: 13px; background: hsl(var(--card)); }
+.story-draft-preview > strong { display: flex; align-items: center; gap: 7px; color: hsl(var(--primary)); font-size: 12px; }
+.story-draft-preview > p { max-height: 330px; overflow-y: auto; margin: 13px 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 13px; line-height: 1.9; }
+.story-draft-buttons { display: flex; flex-wrap: wrap; align-items: center; gap: 13px; font-size: 11px; color: hsl(var(--muted-foreground)); }
+@media (max-width: 640px) {
+  .story-assistant { padding: 18px 16px; border-radius: 18px; }
+  .story-assistant-heading { flex-direction: column; align-items: stretch; gap: 17px; }
+  .story-assistant-heading h2 { font-size: 17px; }
+  .story-writing-modes button { flex: 1; }
+  .story-ai-intro { margin-top: 20px; }
+  .story-photo-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .story-ai-actions { align-items: flex-start; }
+}
