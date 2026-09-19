@@ -1,0 +1,6 @@
+__pycache__/
+tests/__pycache__/
+credentials.json
+manifest.json
+*.sqlite3*
+venv/
