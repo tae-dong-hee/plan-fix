@@ -183,6 +183,59 @@ describe("CourseCreatePage", () => {
     expect(saveButton).not.toBeDisabled();
   });
 
+  it("여러 지역의 코스를 복원해도 선택한 일차의 지역 안에서 장소를 검색한다", async () => {
+    sessionStorage.setItem("planfix:course-draft", JSON.stringify({
+      title: "강릉과 속초 여행",
+      days: [
+        [{ spotId: 1, title: "강릉 장소", category: "관광지", region: "51", sigungu: "150", memo: "" }],
+        [{ spotId: 2, title: "속초 장소", category: "관광지", region: "강원도", sigungu: "속초시", memo: "" }],
+      ],
+    }));
+    renderPage();
+
+    fireEvent.click(within(screen.getByTestId("day-card-2")).getByRole("button", { name: /장소 추가/ }));
+
+    await waitFor(() => expect(spotService.searchSpots).toHaveBeenLastCalledWith(expect.objectContaining({
+      region: "51", sigungu: "210",
+    })));
+  });
+
+  it("빈 일차에서는 다른 일차에 담긴 여러 지역을 모두 선택해 검색할 수 있다", async () => {
+    sessionStorage.setItem("planfix:course-draft", JSON.stringify({
+      title: "강릉과 속초 여행",
+      days: [
+        [{ spotId: 1, title: "강릉 장소", category: "관광지", region: "51", sigungu: "150", memo: "" }],
+        [{ spotId: 2, title: "속초 장소", category: "관광지", region: "51", sigungu: "210", memo: "" }],
+        [],
+      ],
+    }));
+    renderPage();
+
+    fireEvent.click(within(screen.getByTestId("day-card-3")).getByRole("button", { name: /장소 추가/ }));
+
+    await waitFor(() => expect(spotService.searchSpots).toHaveBeenLastCalledWith(expect.objectContaining({
+      region: "51", sigungu: "150",
+    })));
+    const regionSelect = screen.getByRole("combobox", { name: "검색 지역" });
+    const options = within(regionSelect).getAllByRole("option") as HTMLOptionElement[];
+    expect(options.map((option) => option.textContent)).toEqual(["강원 강릉", "강원 속초"]);
+    fireEvent.change(regionSelect, { target: { value: options[1].value } });
+    await waitFor(() => expect(spotService.searchSpots).toHaveBeenLastCalledWith(expect.objectContaining({
+      region: "51", sigungu: "210",
+    })));
+  });
+
+  it("빈 코스의 장소 검색은 강원으로 제한하고 지역을 선택할 수 있다", async () => {
+    renderPage();
+    fireEvent.click(within(screen.getByTestId("day-card-1")).getByRole("button", { name: /장소 추가/ }));
+
+    await waitFor(() => expect(spotService.searchSpots).toHaveBeenLastCalledWith(expect.objectContaining({
+      region: "51",
+    })));
+    const regionSelect = screen.getByRole("combobox", { name: "검색 지역" });
+    expect(within(regionSelect).getAllByRole("option")).toHaveLength(19);
+  });
+
   it("새 코스 저장 시 대표사진은 null로 전송하고 상세 화면으로 이동한다", async () => {
     (courseService.createCourse as Mock).mockResolvedValue({
       courseId: 123,
