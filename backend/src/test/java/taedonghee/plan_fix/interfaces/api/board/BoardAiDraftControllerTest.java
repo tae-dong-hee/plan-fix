@@ -64,21 +64,51 @@ class BoardAiDraftControllerTest {
         authenticate();
         var photo = photo();
         var second = new MockMultipartFile("files", "two.jpg", "image/jpeg", new byte[]{2});
-        when(service.generate(7L, List.of(photo, second), "여행", "바닷가"))
+        when(service.generate(7L, List.of(photo, second), "여행", "바닷가", null, null))
                 .thenReturn("사진에 담긴 바다예요.\n\n푸른빛이 펼쳐져요.");
 
         mvc.perform(multipart(PATH).file(photo).file(second).param("title", "여행").param("note", "바닷가")
                         .header("Authorization", "Bearer valid-token"))
                 .andExpect(status().isOk()).andExpect(header().string("Cache-Control", "no-store"))
                 .andExpect(jsonPath("$.content").value("사진에 담긴 바다예요.\n\n푸른빛이 펼쳐져요."));
-        verify(service).generate(7L, List.of(photo, second), "여행", "바닷가");
+        verify(service).generate(7L, List.of(photo, second), "여행", "바닷가", null, null);
+    }
+
+    @Test void authenticatedMultipartBindsCourseAndEveryRepeatedVisitedSpotId() throws Exception {
+        authenticate();
+        var photo = photo();
+        when(service.generate(7L, List.of(photo), "춘천여행 2박3일", "레일바이크를 탔어요", 42L, List.of(11L, 22L, 33L)))
+                .thenReturn("춘천에서 레일바이크를 탔다.");
+
+        mvc.perform(multipart(PATH).file(photo)
+                        .param("title", "춘천여행 2박3일").param("note", "레일바이크를 탔어요")
+                        .param("courseId", "42").param("visitedSpotIds", "11", "22", "33")
+                        .header("Authorization", "Bearer valid-token"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").value("춘천에서 레일바이크를 탔다."));
+
+        verify(service).generate(7L, List.of(photo), "춘천여행 2박3일", "레일바이크를 탔어요", 42L, List.of(11L, 22L, 33L));
+    }
+
+    @Test void malformedNumericCourseContextIsRejectedBeforeCallingService() throws Exception {
+        authenticate();
+        for (var value : List.of("not-a-number", "9223372036854775808")) {
+            mvc.perform(multipart(PATH).file(photo()).param("courseId", value)
+                            .header("Authorization", "Bearer valid-token"))
+                    .andExpect(status().isBadRequest());
+            mvc.perform(multipart(PATH).file(photo()).param("courseId", "42")
+                            .param("visitedSpotIds", "11", value, "33")
+                            .header("Authorization", "Bearer valid-token"))
+                    .andExpect(status().isBadRequest());
+        }
+        verifyNoInteractions(service);
     }
 
     @Test void filesAreRequiredButContextIsOptional() throws Exception {
         authenticate();
         mvc.perform(multipart(PATH).header("Authorization", "Bearer valid-token"))
                 .andExpect(status().isBadRequest()).andExpect(jsonPath("$.message").isNotEmpty());
-        when(service.generate(eq(7L), anyList(), isNull(), isNull())).thenReturn("사진으로 남긴 여행이에요.");
+        when(service.generate(eq(7L), anyList(), isNull(), isNull(), isNull(), isNull())).thenReturn("사진으로 남긴 여행이에요.");
         mvc.perform(multipart(PATH).file(photo()).header("Authorization", "Bearer valid-token"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.content").value("사진으로 남긴 여행이에요."));
     }
@@ -86,10 +116,24 @@ class BoardAiDraftControllerTest {
     @Test void exposesFriendlyValidationQuotaAndUnavailableErrors() throws Exception {
         authenticate();
         for (var type : List.of(ErrorType.BAD_REQUEST, ErrorType.PAYLOAD_TOO_LARGE, ErrorType.TOO_MANY_REQUESTS, ErrorType.SERVICE_UNAVAILABLE)) {
-            when(service.generate(eq(7L), anyList(), isNull(), isNull())).thenThrow(new CoreException(type, "다시 시도해 주세요."));
+            doThrow(new CoreException(type, "다시 시도해 주세요."))
+                    .when(service).generate(eq(7L), anyList(), isNull(), isNull(), isNull(), isNull());
             mvc.perform(multipart(PATH).file(photo()).header("Authorization", "Bearer valid-token"))
                     .andExpect(status().is(type.getStatus().value()))
                     .andExpect(jsonPath("$.message").value("다시 시도해 주세요."));
+        }
+    }
+
+    @Test void exposesForbiddenAndMissingCourseErrors() throws Exception {
+        authenticate();
+        for (var type : List.of(ErrorType.FORBIDDEN, ErrorType.NOT_FOUND)) {
+            doThrow(new CoreException(type, "여행 코스를 확인해 주세요."))
+                    .when(service).generate(eq(7L), anyList(), isNull(), isNull(), eq(42L), eq(List.of(11L, 22L)));
+            mvc.perform(multipart(PATH).file(photo()).param("courseId", "42")
+                            .param("visitedSpotIds", "11", "22")
+                            .header("Authorization", "Bearer valid-token"))
+                    .andExpect(status().is(type.getStatus().value()))
+                    .andExpect(jsonPath("$.message").value("여행 코스를 확인해 주세요."));
         }
     }
 

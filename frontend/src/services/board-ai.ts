@@ -11,6 +11,8 @@ export type BoardDraftRequest = {
   files: File[];
   title?: string;
   note?: string;
+  courseId?: number;
+  visitedSpotIds?: number[];
 };
 
 export type BoardDraft = {
@@ -32,12 +34,26 @@ export function validateStoryPhotos(files: File[]): string | null {
 export async function generateBoardDraft(request: BoardDraftRequest, signal?: AbortSignal): Promise<BoardDraft> {
   const validationError = validateStoryPhotos(request.files);
   if (validationError) throw new Error(validationError);
+  if (request.courseId !== undefined && !isPositiveId(request.courseId)) {
+    throw new Error("여행 코스를 다시 선택해 주세요.");
+  }
+  const visitedSpotIds = request.visitedSpotIds === undefined ? [] : request.visitedSpotIds;
+  if (!Array.isArray(visitedSpotIds) || visitedSpotIds.length > 20
+    || visitedSpotIds.some((id) => !isPositiveId(id))
+    || new Set(visitedSpotIds).size !== visitedSpotIds.length) {
+    throw new Error("다녀온 장소는 중복 없이 최대 20곳까지 선택해 주세요.");
+  }
+  if (visitedSpotIds.length > 0 && request.courseId === undefined) {
+    throw new Error("다녀온 장소를 선택하려면 여행 코스를 먼저 선택해 주세요.");
+  }
   if (!apiBaseUrl) throw new Error(AI_UNAVAILABLE_MESSAGE);
 
   const body = new FormData();
   request.files.forEach((file) => body.append("files", file));
   if (request.title?.trim()) body.append("title", request.title.trim());
   if (request.note?.trim()) body.append("note", request.note.trim());
+  if (request.courseId !== undefined) body.append("courseId", String(request.courseId));
+  visitedSpotIds.forEach((id) => body.append("visitedSpotIds", String(id)));
 
   let response: Response;
   try {
@@ -75,6 +91,10 @@ export async function generateBoardDraft(request: BoardDraftRequest, signal?: Ab
     throw new Error(INVALID_DRAFT_MESSAGE);
   }
   return { content: result.content.trim() };
+}
+
+function isPositiveId(value: number): boolean {
+  return Number.isSafeInteger(value) && value > 0;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

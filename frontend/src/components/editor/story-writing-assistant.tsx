@@ -2,7 +2,10 @@ import { useEffect, useRef, useState, type MutableRefObject } from "react";
 import { type Editor } from "@tiptap/react";
 import { Check, ImagePlus, Loader2, PenLine, RefreshCw, Sparkles, X } from "lucide-react";
 import { generateBoardDraft, MAX_STORY_PHOTOS, validateStoryPhotos } from "@/services/board-ai";
+import type { CourseResponse } from "@/services/course";
 import "./story-writing-assistant.css";
+
+const TITLE_CHANGED_MESSAGE = "제목이 바뀌었어요. 다시 써주기를 눌러 새 제목에 맞게 작성해 주세요.";
 
 interface Props {
   title: string;
@@ -11,6 +14,7 @@ interface Props {
   onBusyChange: (busy: boolean) => void;
   editorRef: MutableRefObject<Editor | null>;
   disabled?: boolean;
+  course?: Pick<CourseResponse, "courseId" | "title" | "days"> | null;
 }
 
 // Text nodes keep any model-produced markup as text, never executable HTML.
@@ -21,7 +25,7 @@ function draftParagraphs(content: string) {
   }));
 }
 
-export default function StoryWritingAssistant({ title, files, onFilesChange, onBusyChange, editorRef, disabled = false }: Props) {
+export default function StoryWritingAssistant({ title, files, onFilesChange, onBusyChange, editorRef, disabled = false, course }: Props) {
   const [mode, setMode] = useState<"ai" | "manual">("ai");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
@@ -29,10 +33,33 @@ export default function StoryWritingAssistant({ title, files, onFilesChange, onB
   const [message, setMessage] = useState("");
   const [draft, setDraft] = useState("");
   const [previews, setPreviews] = useState<string[]>([]);
+  const [confirmedPlaces, setConfirmedPlaces] = useState<{ courseId: number | null; ids: number[] }>({ courseId: null, ids: [] });
+  const coursePlaces = Array.from(new Map((course?.days.flatMap((day) => day.spots) ?? [])
+    .filter((spot) => spot.title?.trim()).map((spot) => [spot.spotId, spot])).values());
+  const visitedSpotIds = confirmedPlaces.courseId === course?.courseId
+    ? confirmedPlaces.ids.filter((id) => coursePlaces.some((spot) => spot.spotId === id)) : [];
+  const factsKey = `${course?.courseId ?? ""}:${visitedSpotIds.join(",")}`;
+  const currentFacts = useRef(factsKey);
+  currentFacts.current = factsKey;
   const inputRef = useRef<HTMLInputElement>(null);
   const requestRef = useRef<{ id: number; controller?: AbortController }>({ id: 0 });
   const currentTitle = useRef(title);
   currentTitle.current = title;
+  const previousTitle = useRef(title);
+
+  useEffect(() => {
+    if (previousTitle.current === title) return;
+    previousTitle.current = title;
+    setDraft("");
+    setError("");
+    setMessage(files.length ? TITLE_CHANGED_MESSAGE : "");
+  }, [title, files.length]);
+
+  useEffect(() => {
+    setConfirmedPlaces({ courseId: course?.courseId ?? null, ids: [] });
+    setDraft("");
+    setMessage("");
+  }, [course?.courseId]);
 
   useEffect(() => {
     const urls = files.map((file) => URL.createObjectURL(file));
@@ -68,10 +95,20 @@ export default function StoryWritingAssistant({ title, files, onFilesChange, onB
     // Leave room for the server's model timeout, but always provide a way out.
     const timeout = window.setTimeout(() => controller.abort(), 90_000);
     try {
-      const result = await generateBoardDraft({ files: photos, title, note }, controller.signal);
+      const result = await generateBoardDraft({ files: photos, title, note,
+        ...(course ? { courseId: course.courseId, visitedSpotIds } : {}),
+      }, controller.signal);
       if (requestId !== requestRef.current.id) return;
+      if (currentTitle.current !== title) {
+        setMessage(TITLE_CHANGED_MESSAGE);
+        return;
+      }
+      if (currentFacts.current !== factsKey) {
+        setMessage("코스나 다녀온 장소가 바뀌었어요. 다시 써주기를 눌러 새 정보로 작성해 주세요.");
+        return;
+      }
       const editor = editorRef.current;
-      if (editor && editor.isEmpty && editor.getHTML() === initialHtml && currentTitle.current === title) {
+      if (editor && editor.isEmpty && editor.getHTML() === initialHtml) {
         editor.commands.setContent({ type: "doc", content: draftParagraphs(result.content) });
         setMessage("본문을 채웠어요. 여행의 기억에 맞게 자유롭게 다듬어 보세요.");
       } else {
@@ -80,6 +117,10 @@ export default function StoryWritingAssistant({ title, files, onFilesChange, onB
       }
     } catch (err) {
       if (requestId !== requestRef.current.id) return;
+      if (currentTitle.current !== title) {
+        setMessage(TITLE_CHANGED_MESSAGE);
+        return;
+      }
       setError(controller.signal.aborted
         ? "작성 시간이 길어지고 있어요. 다시 시도하거나 직접 작성해 주세요."
         : err instanceof Error ? err.message : "AI 본문을 작성하지 못했어요. 다시 시도해 주세요.");
@@ -140,15 +181,38 @@ export default function StoryWritingAssistant({ title, files, onFilesChange, onB
 
       {mode === "ai" ? (
         <div className="story-ai-intro">
-          <strong>사진 몇 장이면, 여행 이야기가 완성돼요</strong>
-          <p>사진을 고르면 AI가 장면에 맞춰 본문을 써드려요. 완성된 글은 마음껏 수정할 수 있어요.</p>
+          <strong>내가 다녀온 여행, 짧고 담백하게</strong>
+          <p>장소와 기억을 먼저 알려주세요. 사진을 고르면 짧고 자연스러운 후기 초안을 써드려요.</p>
         </div>
       ) : <p className="story-manual-intro">나만의 말로 여행을 기록해 보세요. 언제든 AI의 도움을 받을 수 있어요.</p>}
 
       {(mode === "ai" || files.length > 0) && <>
+        {mode === "ai" && <div className="story-visited-places">
+          <div className="story-visited-heading"><strong>다녀온 장소만 담기</strong><span>선택</span></div>
+          {course && coursePlaces.length > 0 ? <>
+            <p>연결한 코스에서 실제로 다녀온 곳을 골라주세요. 선택하지 않은 장소는 본문에 넣지 않아요.</p>
+            <div className="story-visited-chips" role="group" aria-label="다녀온 장소 선택">
+              {coursePlaces.map((spot) => {
+                const selected = visitedSpotIds.includes(spot.spotId);
+                return <button key={spot.spotId} type="button" aria-pressed={selected}
+                  disabled={busy || (!selected && visitedSpotIds.length >= 20)}
+                  onClick={() => {
+                    setConfirmedPlaces({ courseId: course.courseId, ids: selected
+                      ? visitedSpotIds.filter((id) => id !== spot.spotId) : [...visitedSpotIds, spot.spotId] });
+                    setDraft("");
+                    setMessage(files.length ? "다녀온 장소를 바꿨어요. 다시 써주기를 누르면 반영돼요." : "");
+                  }}>
+                  {selected && <Check size={12} aria-hidden="true" />}{spot.title}
+                </button>;
+              })}
+            </div>
+            <small>{visitedSpotIds.length ? `${visitedSpotIds.length}곳 선택 · 최대 20곳` : "아직 선택한 장소가 없어요"}</small>
+          </> : <p>{course ? "이 코스에는 선택할 장소가 없어요. 다녀온 곳을 아래에 직접 적어주세요." : "위에서 내 코스를 연결하거나, 다녀온 곳을 아래에 직접 적어주세요."}</p>}
+          <p className="story-place-policy">장소명은 선택한 곳이나 직접 적은 정보만 사용해요. 사진만 보고 장소를 단정하지 않아요.</p>
+        </div>}
         {mode === "ai" && <label className="story-ai-note">
-          <span>함께 담고 싶은 기억 <small>선택</small></span>
-          <input value={note} disabled={busy} maxLength={500} placeholder="예: 강릉 안목해변, 친구와 보낸 느긋한 오후"
+          <span>직접 겪은 일이나 기억 <small>선택</small></span>
+          <textarea value={note} rows={2} disabled={busy} maxLength={500} placeholder="예: 춘천 2박 3일, 레일바이크를 탔고 카누는 구경만 했어요"
             onChange={(event) => { cancelRequest(); setDraft(""); setMessage(""); setNote(event.target.value); }} />
         </label>}
 

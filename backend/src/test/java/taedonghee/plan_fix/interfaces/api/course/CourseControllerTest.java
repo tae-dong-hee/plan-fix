@@ -54,12 +54,17 @@ class CourseControllerTest {
 
     @Test
     void list_mine_uses_principal_id() {
-        when(courseApplicationService.listMine(10L)).thenReturn(List.of(result()));
+        CourseResult own = result();
+        CourseResult shared = new CourseResult(2L, 20L, "초대받은 코스", own.description(), own.thumbnail(),
+                own.visibility(), own.status(), 0, 0, own.startDate(), own.endDate(), own.days(),
+                own.createdAt(), own.updatedAt());
+        when(courseApplicationService.listMine(10L)).thenReturn(List.of(own, shared));
 
         ResponseEntity<List<CourseResponse>> response = controller.listMine(principal);
 
         assertThat(response.getStatusCode().value()).isEqualTo(200);
-        assertThat(response.getBody()).hasSize(1);
+        assertThat(response.getBody()).hasSize(2);
+        assertThat(response.getBody()).extracting(CourseResponse::isOwner).containsExactly(true, false);
         verify(courseApplicationService).listMine(10L);
     }
 

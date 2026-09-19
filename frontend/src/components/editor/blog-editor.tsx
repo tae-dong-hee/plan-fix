@@ -26,6 +26,7 @@ import { type PopularSpot } from "@/services/spots";
 export interface BlogEditorProps {
   initialContent?: string;
   onChange?: (html: string) => void;
+  onImageUploadingChange?: (uploading: boolean) => void;
   onOpenSpotSearch?: () => void;
   courseSpots?: CourseSpotSummary[];
   editorInstanceRef?: React.MutableRefObject<Editor | null>;
@@ -34,29 +35,43 @@ export interface BlogEditorProps {
 export default function BlogEditor({
   initialContent = "",
   onChange,
+  onImageUploadingChange,
   onOpenSpotSearch,
   courseSpots = [],
   editorInstanceRef,
 }: BlogEditorProps) {
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const activeImageUploads = useRef(0);
+  const onImageUploadingChangeRef = useRef(onImageUploadingChange);
+  onImageUploadingChangeRef.current = onImageUploadingChange;
 
   // 이미지 업로드 공통 처리
   const handleUploadAndInsert = useCallback(
     async (file: File, editor: Editor) => {
-      try {
+      if (!editor.isEditable || editor.isDestroyed) return;
+      activeImageUploads.current += 1;
+      if (activeImageUploads.current === 1) {
         setIsUploadingImage(true);
+        onImageUploadingChangeRef.current?.(true);
+      }
+      try {
         const result = await uploadImageFile(file);
-        editor
+        if (!editor.isDestroyed) editor
           .chain()
           .focus()
           .setImage({ src: result.imageUrl, alt: file.name.replace(/\.[^/.]+$/, "") })
+          .createParagraphNear()
           .run();
       } catch (err: unknown) {
         const errorMsg = err instanceof Error ? err.message : "이미지 업로드에 실패했습니다.";
         alert(errorMsg);
       } finally {
-        setIsUploadingImage(false);
+        activeImageUploads.current -= 1;
+        if (activeImageUploads.current === 0) {
+          setIsUploadingImage(false);
+          onImageUploadingChangeRef.current?.(false);
+        }
       }
     },
     []
@@ -333,6 +348,7 @@ export default function BlogEditor({
 
           <input
             ref={fileInputRef}
+            aria-label="본문 사진 선택"
             type="file"
             accept="image/jpeg,image/png,image/webp,image/gif"
             multiple

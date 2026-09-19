@@ -1,6 +1,6 @@
 .story-assistant { --card: var(--background); min-width: 0; margin: 0; padding: 24px; border: 1px solid hsl(var(--primary) / .17); border-radius: 22px; background: linear-gradient(135deg, hsl(var(--primary) / .055), hsl(var(--card)) 70%); }
-.story-assistant button, .story-assistant input { transition: background .15s, border-color .15s, box-shadow .15s; }
-.story-assistant button:focus-visible, .story-assistant input:focus-visible { outline: 2px solid hsl(var(--primary)); outline-offset: 3px; }
+.story-assistant button, .story-assistant input, .story-assistant textarea { transition: background .15s, border-color .15s, box-shadow .15s; }
+.story-assistant button:focus-visible, .story-assistant input:focus-visible, .story-assistant textarea:focus-visible { outline: 2px solid hsl(var(--primary)); outline-offset: 3px; }
 .story-assistant button:disabled { cursor: default; opacity: .5; }
 .story-assistant-heading { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
 .story-assistant-eyebrow { display: flex; align-items: center; gap: 5px; margin-bottom: 7px; color: hsl(var(--primary)); font-size: 11px; font-weight: 650; }
@@ -13,11 +13,21 @@
 .story-ai-intro strong { font-size: 14px; font-weight: 650; }
 .story-ai-intro p, .story-manual-intro { margin-top: 6px; font-size: 12px; line-height: 1.8; color: hsl(var(--muted-foreground)); }
 .story-manual-intro { margin-top: 17px; }
+.story-visited-places { margin-top: 18px; padding: 14px; border: 1px solid hsl(var(--primary) / .12); border-radius: 12px; background: hsl(var(--background) / .6); }
+.story-visited-heading { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+.story-visited-heading strong { font-weight: 650; }
+.story-visited-heading > span { font-size: 10px; color: hsl(var(--muted-foreground)); }
+.story-visited-places p { margin-top: 6px; font-size: 11px; line-height: 1.75; color: hsl(var(--muted-foreground)); }
+.story-visited-places .story-place-policy { color: hsl(var(--primary)); font-size: 10px; }
+.story-visited-chips { display: flex; flex-wrap: wrap; gap: 7px; margin: 12px 0 8px; }
+.story-visited-chips button { display: inline-flex; align-items: center; gap: 5px; min-height: 34px; max-width: 100%; padding: 7px 11px; border: 1px solid hsl(var(--border)); border-radius: 18px; background: hsl(var(--background)); font-size: 11px; overflow-wrap: anywhere; }
+.story-visited-chips button[aria-pressed="true"] { border-color: hsl(var(--primary) / .4); background: hsl(var(--primary) / .1); color: hsl(var(--primary)); font-weight: 600; }
+.story-visited-places small { font-size: 10px; color: hsl(var(--muted-foreground)); }
 .story-ai-note { display: block; margin: 18px 0; }
 .story-ai-note > span { display: block; margin-bottom: 8px; font-size: 12px; font-weight: 600; }
 .story-ai-note small { margin-left: 5px; color: hsl(var(--muted-foreground)); font-weight: 400; }
-.story-ai-note input { width: 100%; padding: 11px 13px; border: 1px solid hsl(var(--border)); border-radius: 10px; background: hsl(var(--background) / .8); font-size: 12px; }
-.story-ai-note input::placeholder { color: hsl(var(--muted-foreground) / .75); }
+.story-ai-note textarea { display: block; resize: vertical; width: 100%; padding: 11px 13px; border: 1px solid hsl(var(--border)); border-radius: 10px; background: hsl(var(--background) / .8); font-size: 12px; line-height: 1.8; }
+.story-ai-note textarea::placeholder { color: hsl(var(--muted-foreground) / .75); }
 .story-photo-label { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 5px; margin: 18px 0 9px; font-size: 12px; font-weight: 600; }
 .story-photo-label b { margin-left: 5px; color: hsl(var(--primary)); font-size: 11px; }
 .story-photo-label small { font-size: 10px; color: hsl(var(--muted-foreground)); font-weight: 400; }
