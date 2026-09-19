@@ -50,8 +50,11 @@ test("확인 후 회원가입에서 발생한 이메일 충돌도 한글로 표�
   await screen.findByText("사용 가능한 이메일입니다.");
   fireEvent.submit(screen.getByRole("form", { name: "회원가입 정보" }));
 
-  expect(await screen.findByText("이미 가입된 이메일입니다.")).toBeInTheDocument();
+  expect(await screen.findByRole("alert")).toHaveTextContent("이미 가입된 이메일입니다.");
+  expect(screen.queryByText("사용 가능한 이메일입니다.")).not.toBeInTheDocument();
   expect(signUp).toHaveBeenCalledWith(expect.objectContaining({ email: "new@example.com" }));
+  fireEvent.submit(screen.getByRole("form", { name: "회원가입 정보" }));
+  expect(signUp).toHaveBeenCalledTimes(1);
 });
 
 test("중복 확인 실패 시 사용 가능 표시나 회원가입을 허용하지 않는다", async () => {

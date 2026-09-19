@@ -52,10 +52,12 @@ export default function SignupPage() {
       await wait(redirectDelay);
       navigate(loginPath, { replace: true });
     } catch (error) {
+      const text = error instanceof Error ? error.message : "회원가입 중 오류가 발생했습니다.";
       setMessage({
         tone: "error",
-        text: error instanceof Error ? error.message : "회원가입 중 오류가 발생했습니다.",
+        text,
       });
+      if (text === "이미 가입된 이메일입니다.") return { emailError: text };
     } finally {
       setIsSubmitting(false);
     }

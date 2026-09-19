@@ -22,11 +22,13 @@ export type EmailAvailabilityResult = {
   message: string;
 };
 
+type SignupSubmitResult = { emailError: string } | void;
+
 type SignupFormProps = {
   className?: string;
   isSubmitting?: boolean;
   message?: SignupFormMessage | null;
-  onSubmit?: (values: SignupFormValues) => void | Promise<void>;
+  onSubmit?: (values: SignupFormValues) => SignupSubmitResult | Promise<SignupSubmitResult>;
   onCheckEmailAvailability?: (email: string) => Promise<EmailAvailabilityResult>;
   onCheckUsernameAvailability?: (username: string) => Promise<EmailAvailabilityResult>;
   onBackToLogin?: () => void;
@@ -296,11 +298,17 @@ export default function SignupForm({
 
     setPasswordFormatError(null);
     setPasswordConfirmationError(null);
-    await onSubmit?.({
+    const submitVersion = emailCheckVersion.current;
+    const result = await onSubmit?.({
       ...values,
       loginId: values.loginId.trim(),
       name: values.name.trim(),
     });
+    if (result?.emailError && submitVersion === emailCheckVersion.current) {
+      emailCheckVersion.current += 1;
+      setEmailStatus("unavailable");
+      setEmailCheckMessage(result.emailError);
+    }
   };
 
   return (
