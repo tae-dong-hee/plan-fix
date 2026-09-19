@@ -75,4 +75,8 @@ gcloud run services update-traffic planfix-backend \
 
 ## 프런트엔드 범위
 
+비밀번호 재설정 기능은 별도의 SMTP 설정이 필요합니다. Cloud Run 환경변수와 Secret Manager에
+추가할 값은 [비밀번호 재설정 가이드](password-reset.md)를 참고하세요. SMTP가 설정되지 않으면
+비밀번호 재설정 요청은 이용 불가 안내를 반환하며 기존 로그인과 카카오 로그인은 계속 사용할 수 있습니다.
+
 프런트엔드는 별도의 [`Deploy frontend to VM`](../.github/workflows/deploy-frontend.yml) 워크플로로 기존 VM `34.64.203.44`에 자동 배포됩니다. `main`의 `frontend/**` 변경이 배포를 시작하며, 백엔드와 프런트엔드를 함께 변경하면 두 워크플로가 각각 실행됩니다. 실행 조건과 VM 운영 절차는 [프런트엔드 배포 가이드](frontend-deployment.md)를 참고하세요.

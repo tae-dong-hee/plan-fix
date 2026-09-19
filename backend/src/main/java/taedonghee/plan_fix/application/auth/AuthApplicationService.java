@@ -30,7 +30,7 @@ public class AuthApplicationService {
      */
     @Transactional
     public AuthResult login(AuthCommand.Login command) {
-        UserCredentialModel credential = userCredentialRepository.findByLoginId(command.loginId())
+        UserCredentialModel credential = userCredentialRepository.findByLoginIdForUpdate(command.loginId())
                 .orElseThrow(() -> new CoreException(ErrorType.UNAUTHORIZED, "Invalid login credentials."));
 
         if (!passwordEncryptor.matches(command.password(), credential.getPassword())) {

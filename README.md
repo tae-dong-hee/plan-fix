@@ -22,3 +22,6 @@ GitHub `main`에 코드를 push하거나 PR을 병합하면 변경한 서비스�
 
 - 백엔드 → 기존 Cloud Run 서비스: [백엔드 배포 가이드](docs/cloud-run-deployment.md)
 - 프런트엔드 → 기존 VM의 `https://planfix.cloud`: [프런트엔드 배포 가이드](docs/frontend-deployment.md)
+
+비밀번호 찾기는 가입 이메일로 재설정 링크를 발송합니다. 운영 사용에 필요한 SMTP 설정과
+확인 절차는 [비밀번호 재설정 가이드](docs/password-reset.md)를 참고하세요.

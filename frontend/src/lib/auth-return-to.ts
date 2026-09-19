@@ -7,7 +7,7 @@ export function getInviteReturnTo(value: string | null | undefined): string | nu
   return /^\/course-invites\/[A-Za-z0-9_-]+/.exec(value)?.[0] === value ? value : null;
 }
 
-export function authPathWithReturnTo(path: "/login" | "/signup", returnTo: string | null) {
+export function authPathWithReturnTo(path: "/login" | "/signup" | "/forgot-password", returnTo: string | null) {
   const safeReturnTo = getInviteReturnTo(returnTo);
   return safeReturnTo ? `${path}?${new URLSearchParams({ returnTo: safeReturnTo })}` : path;
 }
