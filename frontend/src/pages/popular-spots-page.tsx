@@ -144,6 +144,20 @@ export default function PopularSpotsPage({ mode = "popular" }: PopularSpotsPageP
     })
       .then((response) => {
         if (!ignore) {
+          const lastPage = Math.max(1, Math.ceil(response.totalCount / PAGE_SIZE));
+          if (currentPage > lastPage) {
+            // 오래된 페이지 주소도 실제 장소가 있는 마지막 페이지로 복구한다.
+            setSearchParams((prev) => {
+              const next = new URLSearchParams(prev);
+              if (lastPage === 1) {
+                next.delete("page");
+              } else {
+                next.set("page", String(lastPage));
+              }
+              return next;
+            }, { replace: true });
+            return;
+          }
           setPopularSpots(response.items);
           setTotalCount(response.totalCount);
           const nextLiked: Record<number, boolean> = {};
@@ -179,7 +193,7 @@ export default function PopularSpotsPage({ mode = "popular" }: PopularSpotsPageP
     return () => {
       ignore = true;
     };
-  }, [selectedRegion, selectedCategory, currentPage, isDiscoverMode, spotsReload]);
+  }, [selectedRegion, selectedCategory, currentPage, isDiscoverMode, spotsReload, setSearchParams]);
 
   const handleToggleLike = async (event: React.MouseEvent, spotId: number) => {
     event.preventDefault();

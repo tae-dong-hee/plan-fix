@@ -44,6 +44,17 @@ JSON은 `[{"dayNumber":1,"themes":["HEALING","CAFE"],"tripIdeas":["COAST_CAFE"]}
 적용 전 관련 `spots`, `tour_data_spots`, `course_spots`, `spot_likes` 행을 백업해야 한다.
 확인한 fixture와 다르거나 ‘원래 제목’에 사용자 연결이 생겼다면 자동 적용을 중단한다.
 
+`2026-09-19-backfill-tour-cafe-categories.sql`은 과거에 음식점으로 저장된 TourAPI 카페를
+`카페/음료`로 보정한다. 신규 수집의 `TourCategory.displayNameOf(contentTypeId, lcls)` 규칙과
+동일하게 `source_type = 'TOUR_API'`, 현재 분류 `음식점`, 원본 `category = '39'`,
+`lcls LIKE 'FD05%'`를 모두 만족해야 한다. 이름에 카페가 들어간다는 이유로 분류하지 않는다.
+특정 지역/ID로 제한하지 않아 같은 문제를 가진 기존 장소를 함께 보정한다.
+`HIDDEN`도 분류는 보정하지만 상태는 그대로 유지한다. `category` 외의 모든 컬럼(수정 시각,
+인기도 포함), 원본 데이터, 코스·좋아요 연결은 변경하지 않는다. 재실행 시 변경은 없다.
+적용 전 위 조건에 해당하는 `spots`와 연결된 `tour_data_spots` 행을 백업한다.
+후보에 여러 원본 행이 연결되어 있으면 전체 트랜잭션을 중단하므로 원본 연결부터 확인한다.
+실행 결과는 상태별 보정 건수이며, 짧은 테이블 쓰기 잠금 동안 일반 조회는 계속 가능하다.
+
 ## 적용 원칙
 
 - 운영·공유 DB에는 `ddl-auto: validate`를 사용한다. Hibernate가 스키마를 변경하지 않게 한다.

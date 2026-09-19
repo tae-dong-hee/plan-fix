@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { MockedFunction } from "vitest";
-import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { MemoryRouter, Route, Routes, useLocation, useNavigationType } from "react-router-dom";
 
 import PopularSpotsPage from "@/pages/popular-spots-page";
 import { searchSpots, likeSpot, unlikeSpot, UnauthorizedError } from "@/services/spots";
@@ -46,9 +46,29 @@ function renderDiscoverSpotsPage(initialUrl = "/spots") {
   );
 }
 
+function RouterState() {
+  const location = useLocation();
+  const navigationType = useNavigationType();
+  return <div data-testid="router-state">{navigationType}:{location.search}</div>;
+}
+
+function renderStalePage(mode: "popular" | "discover") {
+  const path = mode === "popular" ? "/spots/popular" : "/spots";
+  return render(
+    <MemoryRouter
+      initialEntries={[`${path}?region=강릉&category=카페%2F음료&page=9`]}
+      future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+    >
+      <RouterState />
+      <PopularSpotsPage mode={mode} />
+    </MemoryRouter>,
+  );
+}
+
 describe("PopularSpotsPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockedSearchSpots.mockReset();
   });
 
   test("fetches only Gangwon popular spots with size 20 when no city is specified", async () => {
@@ -310,6 +330,73 @@ describe("PopularSpotsPage", () => {
     expect(await screen.findByRole("heading", { name: "정동진 모래시계공원" })).toBeInTheDocument();
     const page2Button = screen.getByRole("button", { name: "2" });
     expect(page2Button).toHaveAttribute("aria-current", "page");
+  });
+
+  test.each([
+    ["popular", 45, 3],
+    ["discover", 3, 1],
+  ] as const)("%s replaces an out-of-range page with the final page while preserving cafe and region filters", async (mode, totalCount, lastPage) => {
+    let resolveFinalPage!: (response: Awaited<ReturnType<typeof searchSpots>>) => void;
+    const finalPage = new Promise<Awaited<ReturnType<typeof searchSpots>>>((resolve) => {
+      resolveFinalPage = resolve;
+    });
+    mockedSearchSpots
+      .mockResolvedValueOnce({ items: [], offset: 160, size: 20, totalCount })
+      .mockReturnValueOnce(finalPage);
+
+    renderStalePage(mode);
+
+    await waitFor(() => expect(mockedSearchSpots).toHaveBeenCalledTimes(2));
+    expect(mockedSearchSpots).toHaveBeenLastCalledWith({
+      category: "카페/음료",
+      region: "51",
+      sigungu: "150",
+      sort: mode === "popular" ? "popular" : "latest",
+      size: 20,
+      offset: (lastPage - 1) * 20,
+    });
+    const routerState = screen.getByTestId("router-state").textContent!;
+    expect(routerState).toMatch(/^REPLACE:/);
+    const params = new URLSearchParams(routerState.substring("REPLACE:".length));
+    expect(params.get("region")).toBe("강릉");
+    expect(params.get("category")).toBe("카페/음료");
+    expect(params.get("page")).toBe(lastPage === 1 ? null : String(lastPage));
+    expect(screen.queryByText("표시할 인기 장소가 없어요.")).not.toBeInTheDocument();
+    expect(screen.queryByText("추천할 여행 장소가 없어요.")).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).toBeInTheDocument();
+
+    await act(async () => resolveFinalPage({
+      items: [{ spotId: 30, title: "강릉 커피", category: "카페/음료", region: "51", sigungu: "150", thumbnail: null }],
+      offset: (lastPage - 1) * 20,
+      size: 20,
+      totalCount,
+    }));
+
+    expect(screen.getByRole("heading", { name: "강릉 커피" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "카페/음료" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(mockedSearchSpots).toHaveBeenCalledTimes(2);
+    if (lastPage > 1) {
+      expect(screen.getByRole("button", { name: String(lastPage) })).toHaveAttribute("aria-current", "page");
+    }
+  });
+
+  test("an out-of-range page with no matching spots recovers once and shows the empty state", async () => {
+    mockedSearchSpots.mockResolvedValue({ items: [], offset: 0, size: 20, totalCount: 0 });
+
+    renderStalePage("popular");
+
+    expect(await screen.findByText("표시할 인기 장소가 없어요.")).toBeInTheDocument();
+    expect(mockedSearchSpots).toHaveBeenCalledTimes(2);
+    expect(mockedSearchSpots).toHaveBeenLastCalledWith(expect.objectContaining({
+      category: "카페/음료",
+      region: "51",
+      sigungu: "150",
+      offset: 0,
+    }));
+    expect(screen.getByTestId("router-state").textContent).toMatch(/^REPLACE:/);
+    expect(screen.getByTestId("router-state").textContent).not.toContain("page=");
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
   });
 
   test("renders pagination buttons and handles page navigation with scrolling", async () => {
