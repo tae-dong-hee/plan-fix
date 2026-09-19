@@ -183,7 +183,8 @@ public class TourDataInfoCollectApplicationService {
 		return switch (category) {
 			case ATTRACTION -> item.usetime();
 			case CULTURAL_FACILITY -> item.usetimeculture();
-			case FESTIVAL -> item.usetimefestival() != null ? item.usetimefestival() : item.playtime();
+			// usetimefestival은 이름과 달리 이용요금이며, 공연시간은 playtime이다.
+			case FESTIVAL -> item.playtime();
 			case TRAVEL_COURSE -> item.taketime();
 			case LEPORTS -> item.usetimeleports();
 			case LODGING -> item.checkintime();

@@ -56,14 +56,14 @@ describe("WishlistPage", () => {
     vi.mocked(unlikeBoard).mockResolvedValue({ likeCount: 1, liked: false });
   });
 
-  test("같은 ID의 여행지, 코스, 이야기도 각각의 분류와 개수로 보여준다", async () => {
+  test("같은 ID의 여행지, 코스, 후기도 각각의 분류와 개수로 보여준다", async () => {
     renderPage();
 
     await screen.findByTestId("wishlist-spot-1");
     const categories = within(screen.getByRole("group", { name: "좋아요 종류" }));
     expect(categories.getByRole("button", { name: "여행지 1개" })).toHaveAttribute("aria-pressed", "true");
     expect(categories.getByRole("button", { name: "여행 코스 1개" })).toHaveAttribute("aria-pressed", "false");
-    expect(categories.getByRole("button", { name: "여행 이야기 1개" })).toHaveAttribute("aria-pressed", "false");
+    expect(categories.getByRole("button", { name: "여행 후기 1개" })).toHaveAttribute("aria-pressed", "false");
     expect(screen.queryByTestId("wishlist-course-1")).not.toBeInTheDocument();
     expect(screen.queryByTestId("wishlist-board-1")).not.toBeInTheDocument();
 
@@ -72,9 +72,9 @@ describe("WishlistPage", () => {
     expect(screen.queryByTestId("wishlist-spot-1")).not.toBeInTheDocument();
     expect(screen.getByLabelText("현재 주소")).toHaveTextContent("/wishlist?tab=courses");
 
-    fireEvent.click(categories.getByRole("button", { name: "여행 이야기 1개" }));
-    expect(screen.getByTestId("wishlist-board-1")).toHaveTextContent("여행 이야기");
-    expect(screen.getByRole("link", { name: `${board.title} 여행 이야기 읽기` })).toHaveAttribute("href", "/boards/1");
+    fireEvent.click(categories.getByRole("button", { name: "여행 후기 1개" }));
+    expect(screen.getByTestId("wishlist-board-1")).toHaveTextContent("여행 후기");
+    expect(screen.getByRole("link", { name: `${board.title} 여행 후기 읽기` })).toHaveAttribute("href", "/boards/1");
     expect(screen.queryByTestId("wishlist-course-1")).not.toBeInTheDocument();
     expect(screen.getByLabelText("현재 주소")).toHaveTextContent("/wishlist?tab=boards");
 
@@ -83,12 +83,12 @@ describe("WishlistPage", () => {
     expect(categories.getByRole("button", { name: "여행 코스 1개" })).toHaveAttribute("aria-pressed", "true");
   });
 
-  test("이야기 좋아요를 취소하면 이야기 개수만 줄고 다른 좋아요는 유지된다", async () => {
+  test("후기 좋아요를 취소하면 후기 개수만 줄고 다른 좋아요는 유지된다", async () => {
     let finishUnlike!: (state: BoardLikeState) => void;
     vi.mocked(unlikeBoard).mockReturnValue(new Promise<BoardLikeState>((resolve) => { finishUnlike = resolve; }));
     renderPage("/wishlist?tab=boards");
 
-    const unlike = await screen.findByRole("button", { name: `${board.title} 여행 이야기 좋아요 취소` });
+    const unlike = await screen.findByRole("button", { name: `${board.title} 여행 후기 좋아요 취소` });
     expect(unlike.closest("a")).toBeNull();
     fireEvent.click(unlike);
     expect(unlike).toBeDisabled();
@@ -99,8 +99,8 @@ describe("WishlistPage", () => {
 
     await act(async () => finishUnlike({ likeCount: 1, liked: false }));
     expect(screen.queryByTestId("wishlist-board-1")).not.toBeInTheDocument();
-    expect(screen.getByText("좋아요한 여행 이야기가 없습니다.")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "여행 이야기 0개" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByText("좋아요한 여행 후기가 없습니다.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "여행 후기 0개" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("button", { name: "여행지 1개" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "여행 코스 1개" })).toBeInTheDocument();
     expect(unlikeSpot).not.toHaveBeenCalled();
@@ -108,15 +108,15 @@ describe("WishlistPage", () => {
     expect(screen.getByLabelText("현재 주소")).toHaveTextContent("/wishlist?tab=boards");
   });
 
-  test("좋아요 취소가 실패하면 이야기와 개수를 유지하고 다시 시도할 수 있다", async () => {
+  test("좋아요 취소가 실패하면 후기와 개수를 유지하고 다시 시도할 수 있다", async () => {
     vi.mocked(unlikeBoard).mockRejectedValueOnce(new Error("Network error"));
     renderPage("/wishlist?tab=boards");
 
-    const unlike = await screen.findByRole("button", { name: `${board.title} 여행 이야기 좋아요 취소` });
+    const unlike = await screen.findByRole("button", { name: `${board.title} 여행 후기 좋아요 취소` });
     fireEvent.click(unlike);
-    expect(await screen.findByRole("alert")).toHaveTextContent("여행 이야기 좋아요를 취소하지 못했습니다.");
+    expect(await screen.findByRole("alert")).toHaveTextContent("여행 후기 좋아요를 취소하지 못했습니다.");
     expect(screen.getByTestId("wishlist-board-1")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "여행 이야기 1개" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "여행 후기 1개" })).toBeInTheDocument();
     expect(unlike).toBeEnabled();
 
     fireEvent.click(unlike);

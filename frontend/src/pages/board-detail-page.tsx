@@ -315,7 +315,7 @@ export default function BoardDetailPage() {
             {/* 헤더 메타데이터 영역 */}
             <div className="mt-6 sm:mt-8">
               <span className="inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary sm:text-sm">
-                여행 이야기
+                여행 후기
               </span>
 
               <h1 className="mt-3 text-2xl font-bold tracking-tight text-foreground sm:text-3xl lg:text-4xl">
@@ -357,7 +357,7 @@ export default function BoardDetailPage() {
                 to="/wishlist?tab=boards"
                 className="inline-flex min-h-8 items-center gap-1 rounded-md text-xs text-muted-foreground transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               >
-                위시리스트 · 여행 이야기
+                위시리스트 · 여행 후기
                 <ArrowRight className="h-3 w-3" aria-hidden="true" />
               </Link>
             </div>

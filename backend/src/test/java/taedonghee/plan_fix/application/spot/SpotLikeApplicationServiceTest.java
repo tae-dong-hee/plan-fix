@@ -132,6 +132,16 @@ class SpotLikeApplicationServiceTest {
 
         /** 위시리스트 조회는 이 테스트에서 쓰지 않는다. 조용히 빈 값을 주기보다 호출되면 바로 드러나게 둔다. */
         @Override
+        public boolean updateTourApiListing(Long spotId, SpotModel.SourceAttributes attributes) {
+            throw new UnsupportedOperationException("Listing collection is outside this test");
+        }
+
+        @Override
+        public boolean fillTourApiDescriptionIfMissing(Long spotId, String description) {
+            throw new UnsupportedOperationException("Description collection is outside this test");
+        }
+
+        @Override
         public java.util.List<SpotModel> findLikedByUserId(Long userId) {
             throw new UnsupportedOperationException();
         }

@@ -92,22 +92,16 @@ public class TourDataSpotCollectApplicationService {
 
 	/**
 	 * canonical 스팟의 소스 유래 필드를 갱신한다.
-	 * 조회수·좋아요 수·노출 상태는 서비스 소유라 SpotModel이 갱신 경로에서 막아 준다.
-	 * 직접등록이나 다른 소스가 소유한 스팟이면 SpotModel이 false를 돌려주고, 여기서는 건너뛴다.
+	 * description과 서비스 카운터/상태는 UPDATE에서 제외하므로 동시 수집이나 조회 결과도 보존한다.
+	 * 직접등록이나 다른 소스가 소유한 스팟은 저장소의 조건부 UPDATE가 건너뛴다.
 	 */
 	private void updateSpot(TourDataSpotModel tourDataSpot) {
-		spotRepository.findById(tourDataSpot.spotId()).ifPresent(spot -> {
-			if (spot.updateFromSource(SpotSourceType.TOUR_API, toAttributes(tourDataSpot))) {
-				spotRepository.save(spot);
-			} else {
-				log.debug("  spotId={} 는 {} 소유라 TourAPI 갱신을 건너뜁니다.", spot.spotId(), spot.sourceType());
-			}
-		});
+		spotRepository.updateTourApiListing(tourDataSpot.spotId(), toAttributes(tourDataSpot));
 	}
 
 	/**
 	 * TourAPI의 mapx는 경도, mapy는 위도다. 이름이 교차하므로 매핑에 주의한다.
-	 * description은 areaBasedList2 응답에 없어 지금은 채우지 않는다.
+	 * description은 areaBasedList2 응답에 없어 신규는 NULL로 두고 재수집 UPDATE에서 제외한다.
 	 */
 	private SpotModel.SourceAttributes toAttributes(TourDataSpotModel tourDataSpot) {
 		return new SpotModel.SourceAttributes(

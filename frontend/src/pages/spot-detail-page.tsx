@@ -45,6 +45,7 @@ const TOUR_INFO_FIELDS: { label: string; key: keyof SpotTourInfo; icon: LucideIc
   { label: "대표메뉴", key: "firstMenu", icon: UtensilsCrossed },
   { label: "취급메뉴", key: "treatMenu", icon: Utensils },
   { label: "인허가번호", key: "lcnsno", icon: ReceiptText },
+  { label: "추가 안내", key: "additionalInfo", icon: Info },
 ];
 
 // 관광 API의 HTML은 실행하지 않고, 줄바꿈과 엔티티만 읽기 쉬운 텍스트로 변환한다.

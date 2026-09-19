@@ -7,6 +7,8 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.Collection;
 import java.util.List;
+import java.time.OffsetDateTime;
+import java.math.BigDecimal;
 
 /** [infrastructure] Spring Data JPA 저장소. infrastructure 내부에서만 사용된다. */
 public interface SpotJpaRepository extends JpaRepository<SpotJpaEntity, Long> {
@@ -27,6 +29,31 @@ public interface SpotJpaRepository extends JpaRepository<SpotJpaEntity, Long> {
 			@Param("region") String region,
 			@Param("sigungu") String sigungu
 	);
+
+	/** 빈 문자열도 정상적인 수집 결과다. NULL에만 기록하여 동시 수집/수정 결과를 덮어쓰지 않는다. */
+	@Modifying(clearAutomatically = true, flushAutomatically = true)
+	@Query("""
+		UPDATE SpotJpaEntity s SET s.description = :description, s.updatedAt = :updatedAt
+		WHERE s.spotId = :spotId AND s.description IS NULL
+		  AND s.sourceType = taedonghee.plan_fix.domain.spot.SpotSourceType.TOUR_API
+		  AND s.status = taedonghee.plan_fix.domain.spot.SpotStatus.ACTIVE
+		""")
+	int fillTourApiDescriptionIfMissing(@Param("spotId") Long spotId, @Param("description") String description,
+		@Param("updatedAt") OffsetDateTime updatedAt);
+
+	/** areaBasedList2가 제공하지 않는 description과 서비스 필드는 UPDATE 대상에서 제외한다. */
+	@Modifying(clearAutomatically = true, flushAutomatically = true)
+	@Query("""
+		UPDATE SpotJpaEntity s
+		SET s.title = :title, s.category = :category, s.region = :region, s.sigungu = :sigungu,
+		    s.address = :address, s.latitude = :latitude, s.longitude = :longitude,
+		    s.thumbnail = :thumbnail, s.updatedAt = :updatedAt
+		WHERE s.spotId = :spotId AND s.sourceType = taedonghee.plan_fix.domain.spot.SpotSourceType.TOUR_API
+		""")
+	int updateTourApiListing(@Param("spotId") Long spotId, @Param("title") String title,
+		@Param("category") String category, @Param("region") String region, @Param("sigungu") String sigungu,
+		@Param("address") String address, @Param("latitude") BigDecimal latitude, @Param("longitude") BigDecimal longitude,
+		@Param("thumbnail") String thumbnail, @Param("updatedAt") OffsetDateTime updatedAt);
 
 	/**
 	 * 공개 목록 조회(최신순). status는 ACTIVE로 고정하고, 나머지 조건은 null이면 걸지 않는다.

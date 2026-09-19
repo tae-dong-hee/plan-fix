@@ -2,6 +2,7 @@ package taedonghee.plan_fix.infrastructure.spot;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 import taedonghee.plan_fix.domain.spot.TourDataInfoModel;
 import taedonghee.plan_fix.domain.spot.TourDataInfoRepository;
 
@@ -18,8 +19,17 @@ public class TourDataInfoRepositoryImpl implements TourDataInfoRepository {
 	private final TourDataInfoJpaRepository tourDataInfoJpaRepository;
 
 	@Override
+	@Transactional
 	public TourDataInfoModel save(TourDataInfoModel info) {
-		return toDomain(tourDataInfoJpaRepository.save(toEntity(info)));
+		// 기본정보와 추가정보 수집이 동시에 처음 저장하더라도 contentid 중복/덮어쓰기를 피한다.
+		tourDataInfoJpaRepository.upsertIntro(toEntity(info));
+		return findByContentId(info.contentId()).orElseThrow();
+	}
+
+	@Override
+	@Transactional
+	public boolean fillAdditionalInfoIfMissing(Long tourDataSpotId, String additionalInfo) {
+		return tourDataInfoJpaRepository.fillAdditionalInfoIfMissing(tourDataSpotId, additionalInfo) > 0;
 	}
 
 	@Override
@@ -45,6 +55,7 @@ public class TourDataInfoRepositoryImpl implements TourDataInfoRepository {
 			.timeInfo(model.timeInfo())
 			.restInfo(model.restInfo())
 			.lcnsno(model.lcnsno())
+			.additionalInfo(model.additionalInfo())
 			.createdAt(model.createdAt())
 			.updatedAt(model.updatedAt())
 			.build();
@@ -63,6 +74,7 @@ public class TourDataInfoRepositoryImpl implements TourDataInfoRepository {
 			.timeInfo(entity.getTimeInfo())
 			.restInfo(entity.getRestInfo())
 			.lcnsno(entity.getLcnsno())
+			.additionalInfo(entity.getAdditionalInfo())
 			.createdAt(entity.getCreatedAt())
 			.updatedAt(entity.getUpdatedAt())
 			.build();

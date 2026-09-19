@@ -28,5 +28,8 @@ public interface TourDataSpotRepository {
 	/** 아직 detailIntro2를 시도하지 않은 건. */
 	List<TourDataSpotModel> findByRegionAndSigunguAndInfoNotCollected(String reg, String sigungu);
 
+	/** 활성 TourAPI 스팟 중 소개를 아직 수집하지 않은 건(description IS NULL). 빈 문자열은 수집 완료다. */
+	List<TourDataSpotModel> findByRegionAndSigunguAndDescriptionNotCollected(String reg, String sigungu);
+
 	long countAll();
 }

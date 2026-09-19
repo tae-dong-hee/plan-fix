@@ -1,0 +1,4 @@
+application-secret.yml
+.env*
+build/
+.gradle/

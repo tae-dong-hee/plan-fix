@@ -278,7 +278,7 @@ describe("BoardDetailPage", () => {
     renderAt("1");
 
     expect(await screen.findByRole("heading", { name: "강릉 1박 2일 힐링 코스" })).toBeInTheDocument();
-    expect(screen.getByText("여행 이야기")).toBeInTheDocument();
+    expect(screen.getByText("여행 후기")).toBeInTheDocument();
     expect(screen.getByText("2026.09.01")).toBeInTheDocument();
     expect(screen.getByText("조회 152")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "강릉 1박 2일 힐링 코스 좋아요" })).toHaveTextContent("좋아요23");
@@ -306,7 +306,7 @@ describe("BoardDetailPage", () => {
     expect(likeButton).toHaveAccessibleName("강릉 1박 2일 힐링 코스 좋아요");
     expect(likeButton).toHaveTextContent("좋아요25");
     expect(likeButton).not.toHaveTextContent("취소");
-    expect(screen.getByRole("link", { name: "위시리스트 · 여행 이야기" })).toHaveAttribute("href", "/wishlist?tab=boards");
+    expect(screen.getByRole("link", { name: "위시리스트 · 여행 후기" })).toHaveAttribute("href", "/wishlist?tab=boards");
 
     fireEvent.click(likeButton);
 
@@ -316,7 +316,7 @@ describe("BoardDetailPage", () => {
     expect(likeButton).toHaveTextContent("좋아요24");
   });
 
-  test("이미 좋아요한 이야기는 선택 상태로 표시하고 처리 중 중복 요청을 막는다", async () => {
+  test("이미 좋아요한 후기는 선택 상태로 표시하고 처리 중 중복 요청을 막는다", async () => {
     mockedFetchBoardDetail.mockResolvedValue(boardFixture({ isLiked: true }));
     let finish!: (value: BoardLikeState) => void;
     vi.mocked(unlikeBoard).mockReturnValue(new Promise((resolve) => { finish = resolve; }));

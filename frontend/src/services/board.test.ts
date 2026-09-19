@@ -1,5 +1,104 @@
 import { setApiBaseUrl } from "@/test-utils/env";
 
+type BoardService = typeof import("./board");
+
+describe.each([
+  {
+    action: "등록",
+    method: "POST",
+    path: "/boards/1/comments",
+    body: { content: "댓글", parentCommentId: null },
+    call: (service: BoardService) => service.createBoardComment(1, "댓글"),
+  },
+  {
+    action: "수정",
+    method: "PATCH",
+    path: "/boards/1/comments/2",
+    body: { content: "수정한 댓글" },
+    call: (service: BoardService) => service.updateBoardComment(1, 2, "수정한 댓글"),
+  },
+  {
+    action: "삭제",
+    method: "DELETE",
+    path: "/boards/1/comments/2",
+    body: undefined,
+    call: (service: BoardService) => service.deleteBoardComment(1, 2),
+  },
+])("댓글 $action", ({ action, method, path, body, call }) => {
+  const originalApiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+  const originalFetch = global.fetch;
+
+  beforeEach(() => {
+    setApiBaseUrl("http://localhost:8080/api/v1/");
+    vi.resetModules();
+  });
+
+  afterEach(() => {
+    setApiBaseUrl(originalApiBaseUrl);
+    global.fetch = originalFetch;
+    vi.resetModules();
+  });
+
+  test("인증 쿠키와 요청 본문을 보내고 성공 응답을 처리한다", async () => {
+    const comment = { commentId: 2, content: body?.content };
+    const json = vi.fn().mockResolvedValue(comment);
+    const fetchSpy = vi.fn().mockResolvedValue({ ok: true, status: method === "DELETE" ? 204 : 200, json });
+    global.fetch = fetchSpy as unknown as typeof fetch;
+    const service = await import("./board");
+
+    expect(await call(service)).toEqual(method === "DELETE" ? undefined : comment);
+    expect(fetchSpy).toHaveBeenCalledWith(`http://localhost:8080/api/v1${path}`, {
+      method,
+      credentials: "include",
+      ...(body ? { headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) } : {}),
+    });
+    expect(json).toHaveBeenCalledTimes(method === "DELETE" ? 0 : 1);
+  });
+
+  test.each([
+    { status: 401, text: "", message: "로그인이 필요합니다. 다시 로그인해주세요." },
+    { status: 403, text: "Forbidden", message: `댓글을 ${action}할 권한이 없습니다.` },
+    { status: 403, text: "Invalid CORS request\n", message: "접속 주소가 변경되었습니다. 페이지를 새로고침한 뒤 다시 로그인해주세요." },
+    { status: 500, text: "Internal Server Error", message: `댓글을 ${action}하지 못했습니다.` },
+  ])("$status 응답 $text에 맞는 안내를 반환한다", async ({ status, text, message }) => {
+    global.fetch = vi.fn().mockResolvedValue({ ok: false, status, text: async () => text }) as unknown as typeof fetch;
+    const service = await import("./board");
+
+    await expect(call(service)).rejects.toThrow(message);
+  });
+
+  test("403 응답 본문을 읽지 못해도 권한 안내를 반환한다", async () => {
+    global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 403, text: vi.fn().mockRejectedValue(new Error("read failed")) }) as unknown as typeof fetch;
+    const service = await import("./board");
+
+    await expect(call(service)).rejects.toThrow(`댓글을 ${action}할 권한이 없습니다.`);
+  });
+
+  test("API 주소가 없으면 잘못된 주소로 요청하지 않는다", async () => {
+    setApiBaseUrl(undefined);
+    const fetchSpy = vi.fn();
+    global.fetch = fetchSpy as unknown as typeof fetch;
+    const service = await import("./board");
+
+    await expect(call(service)).rejects.toThrow("API URL이 설정되지 않았습니다.");
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  if (method === "POST") {
+    test("대댓글은 부모 댓글 ID를 본문에 포함한다", async () => {
+      const fetchSpy = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ commentId: 3, parentCommentId: 2 }) });
+      global.fetch = fetchSpy as unknown as typeof fetch;
+      const { createBoardComment } = await import("./board");
+
+      await createBoardComment(1, "대댓글", 2);
+
+      expect(fetchSpy).toHaveBeenCalledWith("http://localhost:8080/api/v1/boards/1/comments", expect.objectContaining({
+        body: JSON.stringify({ content: "대댓글", parentCommentId: 2 }),
+      }));
+    });
+  }
+});
+
 describe("fetchBoards", () => {
   const originalApiBaseUrl = import.meta.env.VITE_API_BASE_URL;
   const originalFetch = global.fetch;

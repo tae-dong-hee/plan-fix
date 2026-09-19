@@ -34,6 +34,7 @@ class TourDataSpotCollectApplicationServiceTest {
 	private static final String REGN = "51";
 	private static final String SIGNGU = "150";
 	private static final int ATTRACTION = 12;
+	private static final int RESTAURANT = 39;
 
 	@MockitoBean
 	private TourApiClient tourApiClient;
@@ -52,9 +53,8 @@ class TourDataSpotCollectApplicationServiceTest {
 	@BeforeEach
 	void setUp() {
 		contentId = System.nanoTime();
-		// 관광지(12)만 1건 응답하고 나머지 타입은 0건으로 둔다
+		// 테스트에서 지정한 타입 외에는 응답을 비워 외부 API 호출 없이 수집한다.
 		when(tourApiClient.fetchTotalCount(anyString(), anyString(), anyInt())).thenReturn(0);
-		when(tourApiClient.fetchTotalCount(anyString(), anyString(), eq(ATTRACTION))).thenReturn(1);
 	}
 
 	@Test
@@ -71,6 +71,54 @@ class TourDataSpotCollectApplicationServiceTest {
 		// TourAPI는 mapx=경도, mapy=위도라 뒤집어 담아야 한다
 		assertThat(spot.latitude()).isEqualByComparingTo("37.8127061");
 		assertThat(spot.longitude()).isEqualByComparingTo("128.8987999");
+	}
+
+	@Test
+	void 카페를_신규_수집하면_원본_분류는_보존하고_spots는_카페_음료로_저장한다() {
+		givenPage(item(RESTAURANT, "FD050100", "강릉 카페", "128.8987999", "37.8127061"));
+
+		TourDataSpotCollectApplicationService.CollectResult result = service.collect(REGN, SIGNGU);
+
+		TourDataSpotModel source = tourDataSpotRepository.findByContentId(contentId).orElseThrow();
+		SpotModel spot = collectedSpot();
+		assertThat(result.createdCount()).isEqualTo(1);
+		assertThat(result.updatedCount()).isZero();
+		assertThat(source.category()).isEqualTo("39");
+		assertThat(source.lcls()).isEqualTo("FD050100");
+		assertThat(spot.category()).isEqualTo("카페/음료");
+		assertThat(spot.sourceType()).isEqualTo(SpotSourceType.TOUR_API);
+		assertThat(spot.status()).isEqualTo(SpotStatus.ACTIVE);
+	}
+
+	@Test
+	void 음식점으로_남은_카페를_재수집하면_기존_ID와_좋아요_노출_상태를_보존하며_분류를_수정한다() {
+		givenPage(item(RESTAURANT, "FD050100", "강릉 카페", "128.8987999", "37.8127061"));
+		service.collect(REGN, SIGNGU);
+
+		SpotModel before = collectedSpot();
+		// 소분류는 수집됐지만 canonical 카테고리는 음식점으로 남아 있는 과거 데이터를 재현한다.
+		spotRepository.save(SpotModel.builder()
+			.spotId(before.spotId())
+			.sourceType(before.sourceType())
+			.attributes(attributesOf(before, "음식점"))
+			.likeCount(99L)
+			.viewCount(500L)
+			.status(SpotStatus.HIDDEN)
+			.createdAt(before.createdAt())
+			.build());
+		assertThat(collectedSpot().category()).isEqualTo("음식점");
+
+		TourDataSpotCollectApplicationService.CollectResult result = service.collect(REGN, SIGNGU);
+
+		SpotModel after = collectedSpot();
+		assertThat(result.createdCount()).isZero();
+		assertThat(result.updatedCount()).isEqualTo(1);
+		assertThat(after.spotId()).isEqualTo(before.spotId());
+		assertThat(after.category()).isEqualTo("카페/음료");
+		assertThat(after.likeCount()).isEqualTo(99L);
+		assertThat(after.viewCount()).isEqualTo(500L);
+		assertThat(after.status()).isEqualTo(SpotStatus.HIDDEN);
+		assertThat(after.createdAt()).isEqualTo(before.createdAt());
 	}
 
 	@Test
@@ -118,8 +166,35 @@ class TourDataSpotCollectApplicationServiceTest {
 		assertThat(collectedSpot().title()).isEqualTo("원래 제목");
 	}
 
+	@Test
+	void 목록을_재수집해도_공통정보_API에서_수집한_소개는_보존한다() {
+		givenPage(item("경포해수욕장", "128.8987999", "37.8127061"));
+		service.collect(REGN, SIGNGU);
+		SpotModel before = collectedSpot();
+		spotRepository.fillTourApiDescriptionIfMissing(before.spotId(), "바다를 따라 산책할 수 있는 해변입니다.");
+
+		givenPage(item("변경된 제목", "128.8987999", "37.8127061"));
+		service.collect(REGN, SIGNGU);
+
+		assertThat(collectedSpot().title()).isEqualTo("변경된 제목");
+		assertThat(collectedSpot().description()).isEqualTo("바다를 따라 산책할 수 있는 해변입니다.");
+	}
+
+	@Test
+	void 목록을_재수집해도_소개가_없다는_정상_수집_결과를_보존한다() {
+		givenPage(item("경포해수욕장", "128.8987999", "37.8127061"));
+		service.collect(REGN, SIGNGU);
+		spotRepository.fillTourApiDescriptionIfMissing(collectedSpot().spotId(), "");
+
+		service.collect(REGN, SIGNGU);
+
+		assertThat(collectedSpot().description()).isEmpty();
+	}
+
 	private void givenPage(AreaBasedListItem item) {
-		when(tourApiClient.fetchPage(anyString(), anyString(), eq(ATTRACTION), anyInt()))
+		int contentTypeId = Integer.parseInt(item.contenttypeid());
+		when(tourApiClient.fetchTotalCount(anyString(), anyString(), eq(contentTypeId))).thenReturn(1);
+		when(tourApiClient.fetchPage(anyString(), anyString(), eq(contentTypeId), anyInt()))
 			.thenReturn(List.of(item));
 	}
 
@@ -129,12 +204,20 @@ class TourDataSpotCollectApplicationServiceTest {
 	}
 
 	private SpotModel.SourceAttributes attributesOf(SpotModel spot) {
-		return new SpotModel.SourceAttributes(spot.title(), spot.category(), spot.region(), spot.sigungu(),
+		return attributesOf(spot, spot.category());
+	}
+
+	private SpotModel.SourceAttributes attributesOf(SpotModel spot, String category) {
+		return new SpotModel.SourceAttributes(spot.title(), category, spot.region(), spot.sigungu(),
 			spot.address(), spot.latitude(), spot.longitude(), spot.thumbnail(), spot.description());
 	}
 
 	private AreaBasedListItem item(String title, String mapx, String mapy) {
-		return new AreaBasedListItem(String.valueOf(contentId), String.valueOf(ATTRACTION), title,
-			"강원특별자치도 강릉시", mapx, mapy, "thumb.jpg", "20240101000000", "25400", REGN, SIGNGU, "AC01");
+		return item(ATTRACTION, "AC01", title, mapx, mapy);
+	}
+
+	private AreaBasedListItem item(int contentTypeId, String lcls, String title, String mapx, String mapy) {
+		return new AreaBasedListItem(String.valueOf(contentId), String.valueOf(contentTypeId), title,
+			"강원특별자치도 강릉시", mapx, mapy, "thumb.jpg", "20240101000000", "25400", REGN, SIGNGU, lcls);
 	}
 }

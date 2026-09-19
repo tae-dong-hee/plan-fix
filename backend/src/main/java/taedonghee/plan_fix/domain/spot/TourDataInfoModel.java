@@ -6,7 +6,7 @@ import taedonghee.plan_fix.support.error.ErrorType;
 import java.time.OffsetDateTime;
 
 /**
- * [domain] 관광 데이터 스팟(TourDataSpotModel)의 상세 정보(detailIntro2 결과).
+ * [domain] 관광 데이터 스팟(TourDataSpotModel)의 상세 정보(detailIntro2/detailInfo2 결과).
  * 하나의 TourDataSpotModel당 하나 (tourDataSpotId로 참조).
  *
  * detailIntro2는 contentTypeId(category)마다 응답 필드명이 전부 달라서(예: 관광지=usetime, 음식점=opentimefood),
@@ -29,6 +29,8 @@ public class TourDataInfoModel {
 	private String timeInfo;
 	private String restInfo;
 	private String lcnsno;
+	/** detailInfo2 반복정보. null은 미수집이며 빈 문자열도 정상 수집 결과다. */
+	private String additionalInfo;
 	private OffsetDateTime updatedAt;
 
 	private TourDataInfoModel(Builder builder) {
@@ -50,6 +52,7 @@ public class TourDataInfoModel {
 		this.timeInfo = builder.timeInfo;
 		this.restInfo = builder.restInfo;
 		this.lcnsno = builder.lcnsno;
+		this.additionalInfo = builder.additionalInfo;
 		this.createdAt = builder.createdAt;
 		this.updatedAt = builder.updatedAt;
 	}
@@ -83,6 +86,7 @@ public class TourDataInfoModel {
 	public String timeInfo() { return timeInfo; }
 	public String restInfo() { return restInfo; }
 	public String lcnsno() { return lcnsno; }
+	public String additionalInfo() { return additionalInfo; }
 	public OffsetDateTime createdAt() { return createdAt; }
 	public OffsetDateTime updatedAt() { return updatedAt; }
 
@@ -103,6 +107,7 @@ public class TourDataInfoModel {
 		private String timeInfo;
 		private String restInfo;
 		private String lcnsno;
+		private String additionalInfo;
 		private OffsetDateTime createdAt = OffsetDateTime.now();
 		private OffsetDateTime updatedAt = OffsetDateTime.now();
 
@@ -120,6 +125,7 @@ public class TourDataInfoModel {
 		public Builder timeInfo(String timeInfo) { this.timeInfo = timeInfo; return this; }
 		public Builder restInfo(String restInfo) { this.restInfo = restInfo; return this; }
 		public Builder lcnsno(String lcnsno) { this.lcnsno = lcnsno; return this; }
+		public Builder additionalInfo(String additionalInfo) { this.additionalInfo = additionalInfo; return this; }
 		public Builder createdAt(OffsetDateTime createdAt) { this.createdAt = createdAt; return this; }
 		public Builder updatedAt(OffsetDateTime updatedAt) { this.updatedAt = updatedAt; return this; }
 

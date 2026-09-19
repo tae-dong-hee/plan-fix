@@ -15,6 +15,21 @@ public class GeminiConfig {
 
     @Bean
     @ConditionalOnProperty(name = "gemini.api-key")
+    public StoryDraftModel storyDraftModel(GeminiProperties properties) {
+        if (properties.apiKey() == null || properties.apiKey().isBlank()) return null;
+        return new StoryDraftModel(GoogleAiGeminiChatModel.builder()
+                .apiKey(properties.apiKey())
+                .modelName(properties.modelName())
+                .temperature(0.7)
+                .maxOutputTokens(2048)
+                .maxRetries(0)
+                .timeout(Duration.ofSeconds(60))
+                .logRequestsAndResponses(false)
+                .build());
+    }
+
+    @Bean
+    @ConditionalOnProperty(name = "gemini.api-key")
     public ChatLanguageModel geminiChatModel(GeminiProperties properties) {
         if (properties.apiKey() == null || properties.apiKey().isBlank()) {
             return null;
@@ -24,7 +39,8 @@ public class GeminiConfig {
                 .modelName(properties.modelName())
                 .temperature(0.7)
                 .timeout(Duration.ofSeconds(60))
-                .logRequestsAndResponses(true)
+                // Multimodal requests contain private photos and notes.
+                .logRequestsAndResponses(false)
                 .build();
     }
 }

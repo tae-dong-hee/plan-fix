@@ -39,6 +39,12 @@ public interface SpotRepository {
 	/** like_count를 DB에서 직접 -1 한다. 0 밑으로는 내려가지 않는다. */
 	void decrementLikeCount(Long spotId);
 
+	/** 소개만 조건부 갱신한다. 기존 소개·다른 소스·비활성 스팟은 보존하며 서비스 카운터는 건드리지 않는다. */
+	boolean fillTourApiDescriptionIfMissing(Long spotId, String description);
+
+	/** 목록 API 필드만 갱신한다. description과 서비스 카운터/상태는 DB의 현재 값을 보존한다. */
+	boolean updateTourApiListing(Long spotId, SpotModel.SourceAttributes attributes);
+
 	/** 사용자가 좋아요 누른 활성 스팟 목록 조회 */
 	List<SpotModel> findLikedByUserId(Long userId);
 }

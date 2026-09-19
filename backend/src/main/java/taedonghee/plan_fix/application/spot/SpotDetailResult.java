@@ -60,7 +60,7 @@ public record SpotDetailResult(
     }
 
     /**
-     * detailIntro2 결과. contentTypeId마다 실제 값이 들어오는 필드가 달라
+     * detailIntro2 기본안내와 detailInfo2 추가안내. contentTypeId마다 실제 값이 들어오는 필드가 달라
      * (예: firstMenu/treatMenu/lcnsno는 음식점만) 값이 없는 필드는 null로 내려간다.
      */
     public record TourInfo(
@@ -70,7 +70,8 @@ public record SpotDetailResult(
             String restInfo,
             String firstMenu,
             String treatMenu,
-            String lcnsno
+            String lcnsno,
+            String additionalInfo
     ) {
 
         public static TourInfo from(TourDataInfoModel info) {
@@ -81,7 +82,8 @@ public record SpotDetailResult(
                     info.restInfo(),
                     info.firstMenu(),
                     info.treatMenu(),
-                    info.lcnsno()
+                    info.lcnsno(),
+                    info.additionalInfo()
             );
         }
     }

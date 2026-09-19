@@ -24,7 +24,7 @@ concurrency:
 
 env:
   IMAGE_REPOSITORY: asia-northeast3-docker.pkg.dev/planfix-01/planfix-frontend/frontend
-  FRONTEND_URL: http://34.64.203.44
+  FRONTEND_URL: https://planfix.cloud
 
 jobs:
   test:
