@@ -270,12 +270,6 @@ export default function SpotDetailPage() {
                     src={activeImage}
                     alt={spot.title}
                   />
-                  {galleryImages.length > 0 ? (
-                    <div className="absolute bottom-4 right-4 flex items-center gap-1.5 rounded-full bg-black/50 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-md" role="status" aria-label="현재 사진">
-                      <Images className="h-3.5 w-3.5" aria-hidden="true" />
-                      {selectedImage + 1} / {galleryImages.length}
-                    </div>
-                  ) : null}
                   {galleryImages.length > 1 ? (
                     <>
                       <button type="button" aria-label="이전 사진" onClick={() => setSelectedImage((index) => (index - 1 + galleryImages.length) % galleryImages.length)} className={`absolute left-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-zinc-800 shadow-sm transition-colors hover:bg-white ${FOCUS_RING}`}>
@@ -287,6 +281,12 @@ export default function SpotDetailPage() {
                     </>
                   ) : null}
                 </div>
+                {galleryImages.length > 1 ? (
+                  <div className="flex items-center justify-end gap-1.5 px-2 pt-3 text-xs font-medium text-muted-foreground sm:px-3" role="status" aria-label="현재 사진">
+                    <Images className="h-3.5 w-3.5" aria-hidden="true" />
+                    {selectedImage + 1} / {galleryImages.length}
+                  </div>
+                ) : null}
                 {galleryImages.length > 1 ? (
                   <div className="mt-2 flex gap-2 overflow-x-auto p-1 sm:mt-3 sm:gap-3" aria-label="사진 선택">
                     {galleryImages.map((image, index) => (
