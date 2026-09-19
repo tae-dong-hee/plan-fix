@@ -172,6 +172,14 @@
         {
           "title": "한국관광공사 나전역카페",
           "url": "https://korean.visitkorea.or.kr/detail/rem_detail.do?cotid=73b0f094-9bdc-4588-8d1d-ec0bbac69027"
+        },
+        {
+          "title": "한국관광공사 국립 가리왕산자연휴양림",
+          "url": "https://korean.visitkorea.or.kr/detail/ms_detail.do?cotid=c883c62f-c6c9-4ac2-b22c-2a9ce9a787f8"
+        },
+        {
+          "title": "한국관광공사 오장폭포",
+          "url": "https://korean.visitkorea.or.kr/detail/ms_detail.do?cotid=3c888db0-33c7-4352-8cf4-4906fc60b629"
         }
       ]
     },
@@ -3199,17 +3207,18 @@
       "apiUrl": "https://planfix.cloud/api/v1/spots/3883"
     },
     {
-      "title": "삼탄아트마인",
+      "title": "국립 가리왕산자연휴양림",
       "region": "51",
       "sigungu": "770",
       "category": "관광지",
-      "contentId": 2470392,
-      "auditSpotId": 3884,
-      "address": "강원특별자치도 정선군 고한읍 함백산로 1445-44",
-      "latitude": 37.1850515,
-      "longitude": 128.8835217,
-      "thumbnail": "https://tong.visitkorea.or.kr/cms/resource/15/3364115_image2_1.jpg",
-      "apiUrl": "https://planfix.cloud/api/v1/spots/3884"
+      "address": "강원특별자치도 정선군 정선읍 가리왕산로 707",
+      "latitude": 37.4267937,
+      "longitude": 128.5700129,
+      "thumbnail": "https://tong.visitkorea.or.kr/cms/resource/19/3497919_image2_1.jpg",
+      "contentId": 125413,
+      "auditSpotId": 3902,
+      "apiUrl": "https://planfix.cloud/api/v1/spots/3902",
+      "sourceUrl": "https://korean.visitkorea.or.kr/detail/ms_detail.do?cotid=c883c62f-c6c9-4ac2-b22c-2a9ce9a787f8"
     },
     {
       "title": "정암사 수마노탑",
@@ -3264,17 +3273,18 @@
       "apiUrl": "https://planfix.cloud/api/v1/spots/3914"
     },
     {
-      "title": "가리왕산케이블카",
+      "title": "오장폭포",
       "region": "51",
       "sigungu": "770",
       "category": "관광지",
-      "contentId": 3068424,
-      "auditSpotId": 3918,
-      "address": "강원특별자치도 정선군 북평면 중봉길 41-35",
-      "latitude": 37.4742535,
-      "longitude": 128.6097538,
-      "thumbnail": "http://tong.visitkorea.or.kr/cms/resource/30/3533330_image2_1.jpg",
-      "apiUrl": "https://planfix.cloud/api/v1/spots/3918"
+      "address": "강원특별자치도 정선군 여량면 구절리 277",
+      "latitude": 37.5294,
+      "longitude": 128.7397,
+      "thumbnail": "https://tong.visitkorea.or.kr/cms/resource/28/3505528_image2_1.jpg",
+      "contentId": 2785719,
+      "auditSpotId": 3892,
+      "apiUrl": "https://planfix.cloud/api/v1/spots/3892",
+      "sourceUrl": "https://korean.visitkorea.or.kr/detail/ms_detail.do?cotid=3c888db0-33c7-4352-8cf4-4906fc60b629"
     },
     {
       "title": "아리랑박물관",
@@ -4952,6 +4962,19 @@
       "longitude": 128.6232286,
       "thumbnail": "http://tong.visitkorea.or.kr/cms/resource/19/2837919_image2_1.jpg",
       "apiUrl": "https://planfix.cloud/api/v1/spots/4943"
+    }
+  ],
+  "revision": "2026-09-19-v2",
+  "excludedAsOfReview": [
+    {
+      "title": "삼탄아트마인",
+      "reason": "2025-11-01부터 리뉴얼 완료 시까지 임시휴관 공지",
+      "sourceUrl": "https://www.jeongseon.go.kr/tour/travelguide/travel_news?articleSeq=301338"
+    },
+    {
+      "title": "가리왕산케이블카",
+      "reason": "2026-08-01부터 전기 설비 이상으로 임시휴장 안내",
+      "sourceUrl": "https://www.jeongseon.go.kr/tour/jeongseontour/attractions?contentSeq=254812&mode=read"
     }
   ]
 }

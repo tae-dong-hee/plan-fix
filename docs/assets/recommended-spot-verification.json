@@ -6,7 +6,7 @@
   "districtCount": 18,
   "placesPerDistrict": 20,
   "backendTests": {
-    "tests": 632,
+    "tests": 633,
     "failures": 0,
     "errors": 0,
     "skipped": 0
@@ -84,14 +84,14 @@
   },
   "s3": {
     "bucket": "planfix-bucket-975050156432-ap-northeast-2-an",
-    "prefix": "catalogs/recommended-spots/2026-09-19-v1/",
+    "prefix": "catalogs/recommended-spots/2026-09-19-v2/",
     "placeCount": 360,
     "objectCount": 362,
     "allDownloadsVerified": true
   },
-  "catalogSha256": "6a89581f02663d2643e57e86a438e7ee2579b88bf5b37cb104c73b8ded35df56",
-  "sourcesSha256": "ad8158b87bfb3e7e66f94e8f6cc3e62d30a36ba7736d511bdd065778bc748f07",
-  "validatedBaseCommit": "ebb191469845527f9eeb9eb754a226138dbc834f",
+  "catalogSha256": "ca7cab6c14583c3afce8b7c56503c4fba7aa9047a85399332d3909b5b455707b",
+  "sourcesSha256": "c6f09a091c7aa8b3174615885f7ce364853d0bee66f5659008cca4f2bc773da6",
+  "validatedBaseCommit": "316a2177e34867583c56cd233c111aae2ce34a7f",
   "mutationChecks": [
     {
       "mutation": "old-100-place-limit",
@@ -103,5 +103,10 @@
       "mutantRejected": true,
       "restoredPassed": true
     }
+  ],
+  "revision": "2026-09-19-v2",
+  "replacedTemporarilyClosedPlaces": [
+    "삼탄아트마인",
+    "가리왕산케이블카"
   ]
 }

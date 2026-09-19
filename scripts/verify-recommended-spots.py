@@ -83,7 +83,8 @@ def main():
         else:
             raise ValueError("Invalid size was accepted")
     report = {"checkedAt": datetime.datetime.now(datetime.timezone.utc).isoformat(), "baseUrl": args.base_url,
-              "reviewedAt": catalog["reviewedAt"], "districtCounts": dict(counts), "uniquePlaces": len(items),
+              "reviewedAt": catalog["reviewedAt"], "revision": catalog.get("revision"),
+              "districtCounts": dict(counts), "uniquePlaces": len(items),
               "detailsVerified": len(checked_details), "forwardAndReverseMatch": True,
               "negativeChecksPassed": True, "globalSampleSizes": [20, 100]}
     output = json.dumps(report, ensure_ascii=False, indent=2) + "\n"

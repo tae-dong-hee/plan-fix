@@ -30,6 +30,9 @@ class RecommendedSpotCatalogTest {
                     .contains("경포해수욕장", "강릉 오죽헌·시립박물관", "정동진해변",
                             "테라로사 커피공장", "강릉짬뽕순두부 동화가든 본점", "강릉 중앙시장");
             assertThat(catalog.titles("999")).isEmpty();
+            assertThat(catalog.titles("770")).hasSize(20)
+                    .contains("국립 가리왕산자연휴양림", "오장폭포")
+                    .doesNotContain("삼탄아트마인", "가리왕산케이블카");
         }
     }
 

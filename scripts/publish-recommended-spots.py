@@ -12,7 +12,7 @@ import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-PREFIX = "catalogs/recommended-spots/2026-09-19-v1/"
+PREFIX = "catalogs/recommended-spots/2026-09-19-v2/"
 DISTRICTS = {"110", "130", "150", "170", "190", "210", "230", "720", "730", "750", "760", "770", "780", "790", "800", "810", "820", "830"}
 
 
