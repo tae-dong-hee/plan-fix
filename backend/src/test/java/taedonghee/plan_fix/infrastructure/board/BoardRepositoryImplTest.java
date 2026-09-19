@@ -2,6 +2,8 @@ package taedonghee.plan_fix.infrastructure.board;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
@@ -58,25 +60,25 @@ class BoardRepositoryImplTest {
     }
 
     @Test
-    void LATEST_정렬은_boardId_내림차순이다() {
-        BoardModel first = saveBoard(BoardStatus.ACTIVE, 0, 0, List.of());
-        BoardModel second = saveBoard(BoardStatus.ACTIVE, 0, 0, List.of());
+    void LATEST_정렬은_좋아요와_ID보다_등록시각을_우선한다() {
+        OffsetDateTime now = OffsetDateTime.now();
+        BoardModel newer = saveBoard(BoardStatus.ACTIVE, 0, 0, List.of(), now);
+        BoardModel older = saveBoard(BoardStatus.ACTIVE, 100, 0, List.of(), now.minusDays(1));
 
         List<BoardModel> result = boardRepository.searchActive(BoardSortType.LATEST, 0, 100);
 
         List<Long> ids = result.stream()
                 .map(BoardModel::boardId)
-                .filter(id -> id.equals(first.boardId()) || id.equals(second.boardId()))
+                .filter(id -> id.equals(newer.boardId()) || id.equals(older.boardId()))
                 .toList();
 
-        assertThat(ids).containsExactly(second.boardId(), first.boardId());
+        assertThat(ids).containsExactly(newer.boardId(), older.boardId());
     }
 
     @Test
-    void POPULAR_정렬은_좋아요_0_9_조회수_0_1_가중합_내림차순이다() {
-        // 점수: low=1*0.9+0*0.1=0.9, mid=0*0.9+50*0.1=5.0, high=10*0.9+0*0.1=9.0
-        BoardModel low = saveBoard(BoardStatus.ACTIVE, 1, 0, List.of());
-        BoardModel mid = saveBoard(BoardStatus.ACTIVE, 0, 50, List.of());
+    void POPULAR_정렬은_조회수와_무관하게_좋아요_많은_순이다() {
+        BoardModel low = saveBoard(BoardStatus.ACTIVE, 0, 1_000_000, List.of());
+        BoardModel mid = saveBoard(BoardStatus.ACTIVE, 1, 50, List.of());
         BoardModel high = saveBoard(BoardStatus.ACTIVE, 10, 0, List.of());
 
         List<BoardModel> result = boardRepository.searchActive(BoardSortType.POPULAR, 0, 100);
@@ -90,32 +92,35 @@ class BoardRepositoryImplTest {
     }
 
     @Test
-    void POPULAR_정렬에서_점수가_같으면_boardId_내림차순이다() {
-        BoardModel first = saveBoard(BoardStatus.ACTIVE, 10, 0, List.of());
-        BoardModel second = saveBoard(BoardStatus.ACTIVE, 10, 0, List.of());
+    void POPULAR_정렬에서_좋아요가_같으면_조회수와_ID보다_등록시각을_우선한다() {
+        OffsetDateTime now = OffsetDateTime.now();
+        BoardModel newer = saveBoard(BoardStatus.ACTIVE, 10, 0, List.of(), now);
+        BoardModel older = saveBoard(BoardStatus.ACTIVE, 10, 1_000_000, List.of(), now.minusDays(1));
 
         List<BoardModel> result = boardRepository.searchActive(BoardSortType.POPULAR, 0, 100);
 
         List<Long> ids = result.stream()
                 .map(BoardModel::boardId)
-                .filter(id -> id.equals(first.boardId()) || id.equals(second.boardId()))
+                .filter(id -> id.equals(newer.boardId()) || id.equals(older.boardId()))
                 .toList();
 
-        assertThat(ids).containsExactly(second.boardId(), first.boardId());
+        assertThat(ids).containsExactly(newer.boardId(), older.boardId());
     }
 
-    @Test
-    void offset과_limit으로_구간을_잘라낸다() {
-        saveBoard(BoardStatus.ACTIVE, 0, 0, List.of());
-        saveBoard(BoardStatus.ACTIVE, 0, 0, List.of());
-        saveBoard(BoardStatus.ACTIVE, 0, 0, List.of());
+    @ParameterizedTest
+    @EnumSource(BoardSortType.class)
+    void 좋아요와_등록시각이_같아도_페이지마다_ID_내림차순으로_중복없이_반환한다(BoardSortType sort) {
+        OffsetDateTime sameCreatedAt = OffsetDateTime.now();
+        BoardModel first = saveBoard(BoardStatus.ACTIVE, 10, 100, List.of(), sameCreatedAt);
+        BoardModel second = saveBoard(BoardStatus.ACTIVE, 10, 10, List.of(), sameCreatedAt);
+        BoardModel third = saveBoard(BoardStatus.ACTIVE, 10, 0, List.of(), sameCreatedAt);
+        saveBoard(BoardStatus.DELETED, 100, 0, List.of(), sameCreatedAt.plusDays(1));
 
-        List<BoardModel> page1 = boardRepository.searchActive(BoardSortType.LATEST, 0, 2);
-        List<BoardModel> page2 = boardRepository.searchActive(BoardSortType.LATEST, 2, 2);
+        List<BoardModel> page1 = boardRepository.searchActive(sort, 0, 2);
+        List<BoardModel> page2 = boardRepository.searchActive(sort, 2, 2);
 
-        assertThat(page1).hasSize(2);
-        assertThat(page2).isNotEmpty();
-        assertThat(page1).doesNotContainAnyElementsOf(page2);
+        assertThat(page1).extracting(BoardModel::boardId).containsExactly(third.boardId(), second.boardId());
+        assertThat(page2).extracting(BoardModel::boardId).containsExactly(first.boardId());
     }
 
     @Test
@@ -179,6 +184,11 @@ class BoardRepositoryImplTest {
     }
 
     private BoardModel saveBoard(BoardStatus status, long likeCount, long viewCount, List<BoardImageModel> images) {
+        return saveBoard(status, likeCount, viewCount, images, OffsetDateTime.now());
+    }
+
+    private BoardModel saveBoard(BoardStatus status, long likeCount, long viewCount, List<BoardImageModel> images,
+                                 OffsetDateTime createdAt) {
         BoardModel board = BoardModel.reconstruct(
                 null,
                 null,
@@ -191,7 +201,7 @@ class BoardRepositoryImplTest {
                 likeCount,
                 0L,
                 images == null ? List.of() : images,
-                OffsetDateTime.now(),
+                createdAt,
                 OffsetDateTime.now()
         );
         return boardRepository.save(board);

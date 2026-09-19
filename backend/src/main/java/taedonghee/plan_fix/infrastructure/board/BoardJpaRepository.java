@@ -29,7 +29,7 @@ public interface BoardJpaRepository extends JpaRepository<BoardJpaEntity, Long> 
     @Query("""
             SELECT b FROM BoardJpaEntity b
             WHERE b.status = taedonghee.plan_fix.domain.board.BoardStatus.ACTIVE
-            ORDER BY b.boardId DESC
+            ORDER BY b.createdAt DESC, b.boardId DESC
             LIMIT :limit OFFSET :offset
             """)
     List<BoardJpaEntity> searchActiveByLatest(
@@ -38,12 +38,12 @@ public interface BoardJpaRepository extends JpaRepository<BoardJpaEntity, Long> 
     );
 
     /**
-     * 공개 목록 조회(인기순). 인기 점수 = like_count*0.9 + view_count*0.1, 동점이면 boardId 내림차순.
+     * 공개 목록 조회(인기순). 좋아요 수 내림차순이며, 동점이면 최신순으로 정렬한다.
      */
     @Query("""
             SELECT b FROM BoardJpaEntity b
             WHERE b.status = taedonghee.plan_fix.domain.board.BoardStatus.ACTIVE
-            ORDER BY (b.likeCount * 0.9 + b.viewCount * 0.1) DESC, b.boardId DESC
+            ORDER BY b.likeCount DESC, b.createdAt DESC, b.boardId DESC
             LIMIT :limit OFFSET :offset
             """)
     List<BoardJpaEntity> searchActiveByPopular(

@@ -5,9 +5,9 @@ package taedonghee.plan_fix.domain.board;
  */
 public enum BoardSortType {
 
-    /** 최근 등록된 순 (boardId 내림차순) */
+    /** 최근 등록된 순 (createdAt 내림차순, 등록 시각이 같으면 boardId 내림차순) */
     LATEST,
 
-    /** 인기순: like_count*0.9 + view_count*0.1 내림차순, 동점이면 boardId 내림차순 */
+    /** 좋아요 많은 순 (likeCount 내림차순, 동점이면 최신순) */
     POPULAR
 }
