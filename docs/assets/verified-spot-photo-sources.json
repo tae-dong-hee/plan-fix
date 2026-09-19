@@ -257,6 +257,152 @@
       "verification": "등불 간판과671-1500전화. 동일 상호·주소·전화.",
       "source": "TOUR_API",
       "sourceField": "thumbnail"
+    },
+    {
+      "spotId": 453,
+      "title": "경포호(철새도래지)",
+      "address": "강원특별자치도 강릉시 저동",
+      "latitude": 37.7967,
+      "longitude": 128.9021,
+      "url": "https://planfix.cloud/images/verified-spots/453.jpg",
+      "contentId": 127975,
+      "originalUrl": "https://www.kogl.or.kr/upload_recommend/thumb_V/2018/%ED%95%AD%EA%B3%B5%EC%B4%AC%EC%98%81/thumb_B009-C001-0020-01_L.jpg",
+      "sourceUrl": "https://www.kogl.or.kr/recommend/recommendDivView.do?division=img&recommendIdx=8245",
+      "sourceTitle": "명승제108호강릉 경포대와 경포호1",
+      "sha256": "c6601b13b95e6ce825ae4eba09e4da6abaf4181e94a87c4064237b98d84886d1",
+      "verification": "개별 공식 작품명에 경포대와 경포호 명시. 항공사진에서 경포호 수면·호안·주변 건물을 확인했다. 한국학중앙연구원 경포호 항목의 저동 소재지와 DB가 일치한다. 철새 자체가 등장하는 사진은 아니다.",
+      "source": "KOGL",
+      "author": "강원특별자치도, 한국문화정보원",
+      "rightsHolder": "강원특별자치도",
+      "license": "공공누리 제1유형",
+      "licenseUrl": "https://www.kogl.or.kr/info/licenseType1.do",
+      "photographedAt": "2018",
+      "width": 760,
+      "height": 507,
+      "fileVariant": "공개 페이지 미리보기 파일. 고해상도 원본 아님. 원본 바이트를 편집·축소 없이 보존.",
+      "licenseEvidence": "개별 작품 페이지의 공공누리 제1유형 표시와 보유기관을 확인했다. https://www.kogl.or.kr/info/licenseType1.do 의 출처 표시 및 가능한 출처 하이퍼링크 제공 조건에 따라 상업적 이용·공유를 허용한다.",
+      "addressEvidence": [
+        {
+          "url": "https://encykorea.aks.ac.kr/Article/E0002983",
+          "name": "경포호",
+          "address": "강원특별자치도 강릉시 저동·강문동·초당동·운정동·안현동",
+          "match": "same named lake; DB 저동 is one of lake boundary districts"
+        },
+        {
+          "url": "https://encykorea.aks.ac.kr/Article/E0076930",
+          "name": "강릉 경포대와 경포호",
+          "address": "강원도 강릉시 저동 94",
+          "match": "same official heritage landscape"
+        }
+      ]
+    },
+    {
+      "spotId": 470,
+      "title": "최선평 가옥",
+      "address": "강원특별자치도 강릉시 주문진읍 신리천로 342",
+      "latitude": 37.8783041,
+      "longitude": 128.7959595,
+      "url": "https://planfix.cloud/images/verified-spots/470.jpg",
+      "contentId": 3531662,
+      "originalUrl": "https://www.kogl.or.kr/upload_recommend/thumb_V/2018/%ED%95%AD%EA%B3%B5%EC%B4%AC%EC%98%81/thumb_B009-C001-0037-01_L.jpg",
+      "sourceUrl": "https://www.kogl.or.kr/recommend/recommendDivView.do?division=img&recommendIdx=8263",
+      "sourceTitle": "문화재자료제81호강릉 최선평가옥1",
+      "sha256": "fd23687c9f61e605068aa3a369567a7ae06fc9496a8b1c5010361199bf914e2b",
+      "verification": "개별 공식 작품명에 최선평가옥 명시. 항공사진의 전통 가옥군과 ㅁ자형 배치를 확인했다. 강릉시 국가유산 정보의 주문진읍 신리천로342가 DB와 일치한다.",
+      "source": "KOGL",
+      "author": "강원특별자치도, 한국문화정보원",
+      "rightsHolder": "강원특별자치도",
+      "license": "공공누리 제1유형",
+      "licenseUrl": "https://www.kogl.or.kr/info/licenseType1.do",
+      "photographedAt": "2018",
+      "width": 760,
+      "height": 507,
+      "fileVariant": "공개 페이지 미리보기 파일. 고해상도 원본 아님. 원본 바이트를 편집·축소 없이 보존.",
+      "licenseEvidence": "개별 작품 페이지의 공공누리 제1유형 표시와 보유기관을 확인했다. https://www.kogl.or.kr/info/licenseType1.do 의 출처 표시 및 가능한 출처 하이퍼링크 제공 조건에 따라 상업적 이용·공유를 허용한다.",
+      "addressEvidence": [
+        {
+          "url": "https://www.gn.go.kr/www/selectBbsNttView.do?bbsNo=85&integrDeptCode=&key=1722&nttNo=1147&pageIndex=10&searchCnd=all&searchCtgry=&searchKrwd=",
+          "name": "강릉 최선평가옥",
+          "address": "강릉시 주문진읍 신리천로 342",
+          "match": "exact road address"
+        }
+      ]
+    },
+    {
+      "spotId": 497,
+      "title": "강릉 수리골 고택",
+      "address": "강원특별자치도 강릉시 운정길 125",
+      "latitude": 37.7861536,
+      "longitude": 128.891107,
+      "url": "https://planfix.cloud/images/verified-spots/497.jpg",
+      "contentId": 128759,
+      "originalUrl": "https://www.kogl.or.kr/upload_recommend/thumb_V/2018/%EA%B0%95%EC%9B%90%EB%8F%84/thumb_B001-C001-0097-01_L.jpg",
+      "sourceUrl": "https://www.kogl.or.kr/recommend/recommendDivView.do?division=img&recommendIdx=8358",
+      "sourceTitle": "유형문화재제79호강릉 수리골 고택1",
+      "sha256": "d7de1dbad777e17211982d3b736e05a147a602a57fa9c9ed1ea7e9dcde7f960f",
+      "verification": "개별 공식 작품명에 수리골 고택 명시. 고택 정면·기와지붕·부속 초가를 확인했다. 관광공사 contentid128759와 강원도2023문화재 시행계획의 운정길125가 DB와 일치한다. 국가유산 연계자료 일부는 운정길123으로 기재되어 주소차이를 함께 기록한다.",
+      "source": "KOGL",
+      "author": "강원특별자치도, 한국문화정보원",
+      "rightsHolder": "강원특별자치도",
+      "license": "공공누리 제1유형",
+      "licenseUrl": "https://www.kogl.or.kr/info/licenseType1.do",
+      "photographedAt": "2018",
+      "width": 760,
+      "height": 507,
+      "fileVariant": "공개 페이지 미리보기 파일. 고해상도 원본 아님. 원본 바이트를 편집·축소 없이 보존.",
+      "licenseEvidence": "개별 작품 페이지의 공공누리 제1유형 표시와 보유기관을 확인했다. https://www.kogl.or.kr/info/licenseType1.do 의 출처 표시 및 가능한 출처 하이퍼링크 제공 조건에 따라 상업적 이용·공유를 허용한다.",
+      "addressEvidence": [
+        {
+          "url": "https://data.visitkorea.or.kr/page/128759",
+          "name": "강릉 수리골 고택",
+          "address": "강원특별자치도 강릉시 운정길 125",
+          "match": "exact contentid128759 and road address"
+        },
+        {
+          "url": "https://state.gwd.go.kr/upload/board/BDAADD02/board_BDAADD02_20230222_1.pdf",
+          "name": "강릉 수리골 고택",
+          "address": "운정길125",
+          "match": "exact road address in official provincial 2023 heritage plan"
+        },
+        {
+          "url": "https://encykorea.aks.ac.kr/Article/E0001107",
+          "name": "강릉 수리골 고택",
+          "address": "강원 강릉시 운정길123 (운정동)",
+          "match": "same named house, road-number discrepancy with KTO/DB; retained explicitly"
+        }
+      ]
+    },
+    {
+      "spotId": 543,
+      "title": "보광리석조여래좌상",
+      "address": "강원특별자치도 강릉시 성산면 삼왕길 139-98",
+      "latitude": 37.7522165,
+      "longitude": 128.7859934,
+      "url": "https://planfix.cloud/images/verified-spots/543.jpg",
+      "contentId": 3532451,
+      "originalUrl": "https://www.kogl.or.kr/upload_recommend/thumb_V/2018/%EA%B0%95%EC%9B%90%EB%8F%84/thumb_B001-C001-0103-01_L.jpg",
+      "sourceUrl": "https://www.kogl.or.kr/recommend/recommendDivView.do?division=img&recommendIdx=8360",
+      "sourceTitle": "유형문화재제111호강릉 보광리 석조여래좌상1",
+      "sha256": "96dc6b7d5bb8875796fcebc562cba3547710d28fee65fd5a947232692d76d018",
+      "verification": "개별 공식 작품명에 보광리 석조여래좌상 명시. 파손된 광배·연꽃 대좌·철제 보호울타리와 불상 전경을 확인했다. 한국학중앙연구원 항목의 성산면 삼왕길139-98이 DB와 일치한다.",
+      "source": "KOGL",
+      "author": "강원특별자치도, 한국문화정보원",
+      "rightsHolder": "강원특별자치도",
+      "license": "공공누리 제1유형",
+      "licenseUrl": "https://www.kogl.or.kr/info/licenseType1.do",
+      "photographedAt": "2018",
+      "width": 760,
+      "height": 507,
+      "fileVariant": "공개 페이지 미리보기 파일. 고해상도 원본 아님. 원본 바이트를 편집·축소 없이 보존.",
+      "licenseEvidence": "개별 작품 페이지의 공공누리 제1유형 표시와 보유기관을 확인했다. https://www.kogl.or.kr/info/licenseType1.do 의 출처 표시 및 가능한 출처 하이퍼링크 제공 조건에 따라 상업적 이용·공유를 허용한다.",
+      "addressEvidence": [
+        {
+          "url": "https://encykorea.aks.ac.kr/Article/E0001096",
+          "name": "강릉 보광리 석조 여래 좌상",
+          "address": "강원 강릉시 성산면 삼왕길 139-98 (보광리)",
+          "match": "exact road address"
+        }
+      ]
     }
   ],
   "rejectedControls": [

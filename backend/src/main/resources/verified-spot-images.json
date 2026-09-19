@@ -104,6 +104,38 @@
       "latitude": 38.1037421,
       "longitude": 128.6306493,
       "url": "https://tong.visitkorea.or.kr/cms/resource/82/3071582_image2_1.jpg"
+    },
+    {
+      "spotId": 453,
+      "title": "경포호(철새도래지)",
+      "address": "강원특별자치도 강릉시 저동",
+      "latitude": 37.7967,
+      "longitude": 128.9021,
+      "url": "https://planfix.cloud/images/verified-spots/453.jpg"
+    },
+    {
+      "spotId": 470,
+      "title": "최선평 가옥",
+      "address": "강원특별자치도 강릉시 주문진읍 신리천로 342",
+      "latitude": 37.8783041,
+      "longitude": 128.7959595,
+      "url": "https://planfix.cloud/images/verified-spots/470.jpg"
+    },
+    {
+      "spotId": 497,
+      "title": "강릉 수리골 고택",
+      "address": "강원특별자치도 강릉시 운정길 125",
+      "latitude": 37.7861536,
+      "longitude": 128.891107,
+      "url": "https://planfix.cloud/images/verified-spots/497.jpg"
+    },
+    {
+      "spotId": 543,
+      "title": "보광리석조여래좌상",
+      "address": "강원특별자치도 강릉시 성산면 삼왕길 139-98",
+      "latitude": 37.7522165,
+      "longitude": 128.7859934,
+      "url": "https://planfix.cloud/images/verified-spots/543.jpg"
     }
   ]
 }
