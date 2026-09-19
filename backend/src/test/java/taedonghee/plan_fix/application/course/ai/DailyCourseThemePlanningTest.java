@@ -31,6 +31,27 @@ class DailyCourseThemePlanningTest {
     }
 
     @Test
+    void sparse_matching_activity_determines_the_day_neighborhood_before_rich_distant_generic_places() {
+        SpotModel sparseActivity = SpotModel.builder().spotId(1L).sourceType(SpotSourceType.TOUR_API)
+                .title("래프팅").category("레포츠").latitude(new BigDecimal("37.8"))
+                .longitude(new BigDecimal("127.7")).build();
+        var result = plan(List.of(sparseActivity, spot(2, "전망대", "관광지", 128.9)),
+                List.of(day(1, CourseTripIdea.ACTIVITY)));
+        assertThat(result.getFirst()).extracting(SpotModel::spotId).containsExactly(1L);
+    }
+
+    @Test
+    void a_rich_distant_meal_does_not_choose_the_neighborhood_over_a_sparse_selected_activity() {
+        SpotModel sparseActivity = SpotModel.builder().spotId(1L).sourceType(SpotSourceType.TOUR_API)
+                .title("래프팅").category("레포츠").latitude(new BigDecimal("37.8"))
+                .longitude(new BigDecimal("127.7")).build();
+        var assignments = List.of(new CourseDayTheme(1, List.of(CourseTravelTheme.FOOD), List.of(CourseTripIdea.ACTIVITY)));
+        var result = plan(List.of(sparseActivity, spot(2, "유명 식당", "음식점", 128.9),
+                spot(3, "가까운 식당", "음식점", 127.701)), assignments);
+        assertThat(result.getFirst()).extracting(SpotModel::spotId).containsExactlyInAnyOrder(1L, 3L);
+    }
+
+    @Test
     void combined_coast_and_activity_preferences_include_sea_cafe_and_sport_when_nearby() {
         var combined = new CourseDayTheme(1, List.of(), List.of(CourseTripIdea.COAST_CAFE, CourseTripIdea.ACTIVITY));
         var result = plan(List.of(spot(1, "박물관", "관광지", 128.90),

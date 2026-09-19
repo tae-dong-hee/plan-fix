@@ -66,7 +66,15 @@ public class CoursePlanner {
 			Map<Long, Double> scores = scoreAll(available, preference, likedCategoryCounts);
 			List<SpotModel> ranked = available.stream().sorted(Comparator
 				.comparingDouble((SpotModel spot) -> scores.getOrDefault(spot.spotId(), 0.0)).reversed()).toList();
-			SpotModel seed = fixed.isEmpty() ? ranked.stream().findFirst().orElse(null) : fixed.get(0);
+			// Pick the neighborhood from the requested intent before comparing metadata quality.
+			// A complete generic listing (or a meal) must not displace a sparse activity/nature match.
+			SpotModel seed = fixed.isEmpty() ? ranked.stream()
+				.filter(spot -> required.stream().anyMatch(requirement -> requirement.matches(spot)))
+				.max(Comparator.comparingLong((SpotModel spot) -> required.stream()
+					.filter(requirement -> !CATEGORY_RESTAURANT.equals(requirement.key()) && requirement.matches(spot)).count())
+					.thenComparingLong(spot -> required.stream().filter(requirement -> requirement.matches(spot)).count())
+					.thenComparingDouble(spot -> scores.getOrDefault(spot.spotId(), 0.0)))
+				.orElseGet(() -> ranked.stream().findFirst().orElse(null)) : fixed.get(0);
 			List<SpotModel> local = seed == null ? List.of() : ranked.stream()
 				.filter(spot -> distanceKm(seed, spot) <= MAX_DAILY_DISTANCE_KM)
 				.filter(spot -> fitsNearby(spot, fixed)).toList();
