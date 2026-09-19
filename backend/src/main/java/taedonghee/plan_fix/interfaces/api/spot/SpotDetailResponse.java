@@ -50,7 +50,7 @@ public record SpotDetailResponse(
         );
     }
 
-    /** detailIntro2 결과. 값이 없는 필드는 null로 내려간다(예: firstMenu/treatMenu/lcnsno는 음식점만). */
+    /** detailIntro2/detailInfo2 결과. additionalInfo는 정상 빈 결과일 때 빈 문자열이다. */
     public record TourInfo(
             String tel,
             String parkInfo,
@@ -58,7 +58,8 @@ public record SpotDetailResponse(
             String restInfo,
             String firstMenu,
             String treatMenu,
-            String lcnsno
+            String lcnsno,
+            String additionalInfo
     ) {
 
         public static TourInfo from(SpotDetailResult.TourInfo info) {
@@ -69,7 +70,8 @@ public record SpotDetailResponse(
                     info.restInfo(),
                     info.firstMenu(),
                     info.treatMenu(),
-                    info.lcnsno()
+                    info.lcnsno(),
+                    info.additionalInfo()
             );
         }
     }

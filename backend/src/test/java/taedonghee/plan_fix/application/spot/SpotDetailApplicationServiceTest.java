@@ -249,6 +249,16 @@ class SpotDetailApplicationServiceTest {
 
         /** 위시리스트 조회는 이 테스트에서 쓰지 않는다. 조용히 빈 값을 주기보다 호출되면 바로 드러나게 둔다. */
         @Override
+        public boolean updateTourApiListing(Long spotId, SpotModel.SourceAttributes attributes) {
+            throw new UnsupportedOperationException("Listing collection is outside this test");
+        }
+
+        @Override
+        public boolean fillTourApiDescriptionIfMissing(Long spotId, String description) {
+            throw new UnsupportedOperationException("Description collection is outside this test");
+        }
+
+        @Override
         public java.util.List<SpotModel> findLikedByUserId(Long userId) {
             throw new UnsupportedOperationException();
         }
@@ -330,6 +340,11 @@ class SpotDetailApplicationServiceTest {
     }
 
     static class InMemoryTourDataSpotRepository implements TourDataSpotRepository {
+        @Override
+        public java.util.List<TourDataSpotModel> findByRegionAndSigunguAndDescriptionNotCollected(String reg, String sigungu) {
+            throw new UnsupportedOperationException("Description collection is outside this test");
+        }
+
         private final List<TourDataSpotModel> saved = new ArrayList<>();
         private long sequence = 0;
 
@@ -394,6 +409,7 @@ class SpotDetailApplicationServiceTest {
                     .timeInfo(info.timeInfo())
                     .restInfo(info.restInfo())
                     .lcnsno(info.lcnsno())
+                    .additionalInfo(info.additionalInfo())
                     .build();
             saved.add(stored);
             return stored;
@@ -402,6 +418,11 @@ class SpotDetailApplicationServiceTest {
         @Override
         public Optional<TourDataInfoModel> findByContentId(Long contentId) {
             return saved.stream().filter(i -> i.contentId().equals(contentId)).findFirst();
+        }
+
+        @Override
+        public boolean fillAdditionalInfoIfMissing(Long tourDataSpotId, String additionalInfo) {
+            throw new AssertionError("상세 조회는 수집 데이터를 변경하면 안 된다");
         }
 
         @Override

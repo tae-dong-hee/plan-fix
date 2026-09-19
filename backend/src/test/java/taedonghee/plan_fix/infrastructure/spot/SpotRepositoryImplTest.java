@@ -13,6 +13,7 @@ import taedonghee.plan_fix.domain.spot.SpotSourceType;
 import taedonghee.plan_fix.domain.spot.SpotStatus;
 
 import java.util.List;
+import java.time.OffsetDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -190,6 +191,77 @@ class SpotRepositoryImplTest {
 
         SpotModel reloaded = spotRepository.findById(saved.spotId()).orElseThrow();
         assertThat(reloaded.likeCount()).isEqualTo(0);
+    }
+
+    @Test
+    void 소개만_갱신하고_서비스_카운터와_원본_필드를_보존한다() {
+        OffsetDateTime before = OffsetDateTime.now().minusDays(1);
+        SpotModel saved = spotRepository.save(SpotModel.builder()
+                .sourceType(SpotSourceType.TOUR_API).title("기존 제목").category("레포츠")
+                .description(null).address("기존 주소").thumbnail("existing.jpg")
+                .likeCount(7).viewCount(11).commentCount(3).createdAt(before).updatedAt(before).build());
+        // 조회수가 수집 대상 조회 후 변경되어도 소개 UPDATE가 이를 덮어쓰면 안 된다.
+        spotRepository.incrementViewCount(saved.spotId());
+
+        assertThat(spotRepository.fillTourApiDescriptionIfMissing(saved.spotId(), "새 소개")).isTrue();
+
+        SpotModel reloaded = spotRepository.findById(saved.spotId()).orElseThrow();
+        assertThat(reloaded.description()).isEqualTo("새 소개");
+        assertThat(reloaded.title()).isEqualTo("기존 제목");
+        assertThat(reloaded.address()).isEqualTo("기존 주소");
+        assertThat(reloaded.thumbnail()).isEqualTo("existing.jpg");
+        assertThat(reloaded.likeCount()).isEqualTo(7);
+        assertThat(reloaded.viewCount()).isEqualTo(12);
+        assertThat(reloaded.commentCount()).isEqualTo(3);
+        assertThat(reloaded.status()).isEqualTo(SpotStatus.ACTIVE);
+        assertThat(reloaded.updatedAt()).isAfter(before);
+    }
+
+    @Test
+    void 기존_소개와_정상적인_빈_소개는_재수집이_덮어쓰지_않는다() {
+        SpotModel existing = save(tag(), "소개 있음", "51", "830", SpotStatus.ACTIVE, 0, 0);
+        SpotModel empty = save(tag(), "소개 없음", "51", "830", SpotStatus.ACTIVE, 0, 0);
+        spotRepository.fillTourApiDescriptionIfMissing(existing.spotId(), "기존 소개");
+        spotRepository.fillTourApiDescriptionIfMissing(empty.spotId(), "");
+
+        assertThat(spotRepository.fillTourApiDescriptionIfMissing(existing.spotId(), "다른 소개")).isFalse();
+        assertThat(spotRepository.fillTourApiDescriptionIfMissing(empty.spotId(), "다른 소개")).isFalse();
+        assertThat(spotRepository.findById(existing.spotId()).orElseThrow().description()).isEqualTo("기존 소개");
+        assertThat(spotRepository.findById(empty.spotId()).orElseThrow().description()).isEmpty();
+    }
+
+    @Test
+    void 비공개_스팟과_다른_소스에는_소개를_채우지_않는다() {
+        SpotModel hidden = save(tag(), "숨긴 장소", "51", "830", SpotStatus.HIDDEN, 0, 0);
+        SpotModel nativeSpot = spotRepository.save(SpotModel.builder().sourceType(SpotSourceType.NATIVE)
+                .title("직접 등록").category(tag()).build());
+
+        assertThat(spotRepository.fillTourApiDescriptionIfMissing(hidden.spotId(), "소개")).isFalse();
+        assertThat(spotRepository.fillTourApiDescriptionIfMissing(nativeSpot.spotId(), "소개")).isFalse();
+        assertThat(spotRepository.findById(hidden.spotId()).orElseThrow().description()).isNull();
+        assertThat(spotRepository.findById(nativeSpot.spotId()).orElseThrow().description()).isNull();
+    }
+
+    @Test
+    void 목록_조회_후_소개와_조회수가_변경되어도_재수집은_최신값을_보존한다() {
+        SpotModel stale = save(tag(), "이전 제목", "51", "830", SpotStatus.ACTIVE, 7, 11);
+        SpotModel.SourceAttributes listing = new SpotModel.SourceAttributes("갱신된 제목", stale.category(),
+                stale.region(), stale.sigungu(), "새 주소", stale.latitude(), stale.longitude(), "new.jpg", stale.description());
+
+        // 목록 수집이 읽은 description=NULL, viewCount=11 뒤에 별도 작업이 값을 갱신하는 순서.
+        spotRepository.fillTourApiDescriptionIfMissing(stale.spotId(), "동시에 수집된 소개");
+        spotRepository.incrementViewCount(stale.spotId());
+        spotRepository.incrementLikeCount(stale.spotId());
+
+        assertThat(spotRepository.updateTourApiListing(stale.spotId(), listing)).isTrue();
+
+        SpotModel reloaded = spotRepository.findById(stale.spotId()).orElseThrow();
+        assertThat(reloaded.title()).isEqualTo("갱신된 제목");
+        assertThat(reloaded.address()).isEqualTo("새 주소");
+        assertThat(reloaded.thumbnail()).isEqualTo("new.jpg");
+        assertThat(reloaded.description()).isEqualTo("동시에 수집된 소개");
+        assertThat(reloaded.viewCount()).isEqualTo(12);
+        assertThat(reloaded.likeCount()).isEqualTo(8);
     }
 
     private SpotSearchCondition condition(String keyword, String category, String region, String sigungu) {

@@ -56,6 +56,13 @@ public class TourDataSpotRepositoryImpl implements TourDataSpotRepository {
 	}
 
 	@Override
+	public List<TourDataSpotModel> findByRegionAndSigunguAndDescriptionNotCollected(String reg, String sigungu) {
+		return tourDataSpotJpaRepository.findDescriptionsNotCollected(reg, sigungu).stream()
+			.map(this::toDomain)
+			.toList();
+	}
+
+	@Override
 	public long countAll() {
 		return tourDataSpotJpaRepository.count();
 	}

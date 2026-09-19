@@ -2,6 +2,7 @@ package taedonghee.plan_fix.infrastructure.spot;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 import taedonghee.plan_fix.domain.spot.SpotModel;
 import taedonghee.plan_fix.domain.spot.SpotRepository;
 import taedonghee.plan_fix.domain.spot.SpotSearchCondition;
@@ -10,6 +11,8 @@ import taedonghee.plan_fix.domain.spot.SpotSortType;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.time.OffsetDateTime;
+import java.util.Objects;
 
 /**
  * [infrastructure] domain.SpotRepository 포트의 JPA 구현체(어댑터).
@@ -74,6 +77,21 @@ public class SpotRepositoryImpl implements SpotRepository {
 	@Override
 	public void decrementLikeCount(Long spotId) {
 		spotJpaRepository.decrementLikeCount(spotId);
+	}
+
+	@Override
+	@Transactional
+	public boolean fillTourApiDescriptionIfMissing(Long spotId, String description) {
+		Objects.requireNonNull(description, "description must record either an overview or a successful empty result");
+		return spotJpaRepository.fillTourApiDescriptionIfMissing(spotId, description, OffsetDateTime.now()) > 0;
+	}
+
+	@Override
+	@Transactional
+	public boolean updateTourApiListing(Long spotId, SpotModel.SourceAttributes attributes) {
+		return spotJpaRepository.updateTourApiListing(spotId, attributes.title(), attributes.category(), attributes.region(),
+			attributes.sigungu(), attributes.address(), attributes.latitude(), attributes.longitude(), attributes.thumbnail(),
+			OffsetDateTime.now()) > 0;
 	}
 
 	@Override

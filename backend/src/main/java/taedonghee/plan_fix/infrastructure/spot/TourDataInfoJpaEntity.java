@@ -65,6 +65,10 @@ public class TourDataInfoJpaEntity {
 	@Column(name = "lcnsno", length = 100)
 	private String lcnsno;
 
+	/** detailInfo2 반복정보. null은 미수집, 빈 문자열은 정상 응답에 정보가 없었던 경우다. */
+	@Column(name = "additional_info", columnDefinition = "text")
+	private String additionalInfo;
+
 	@Column(name = "created_at", nullable = false, columnDefinition = "timestamptz")
 	private OffsetDateTime createdAt;
 
@@ -74,7 +78,7 @@ public class TourDataInfoJpaEntity {
 	@Builder
 	private TourDataInfoJpaEntity(Long tourDataInfoId, Long tourDataSpotId, Long contentId, String category,
 		String firstMenu, String treatMenu, String tel, String parkInfo, String timeInfo, String restInfo,
-		String lcnsno, OffsetDateTime createdAt, OffsetDateTime updatedAt) {
+		String lcnsno, String additionalInfo, OffsetDateTime createdAt, OffsetDateTime updatedAt) {
 		this.tourDataInfoId = tourDataInfoId;
 		this.tourDataSpotId = tourDataSpotId;
 		this.contentId = contentId;
@@ -86,6 +90,7 @@ public class TourDataInfoJpaEntity {
 		this.timeInfo = timeInfo;
 		this.restInfo = restInfo;
 		this.lcnsno = lcnsno;
+		this.additionalInfo = additionalInfo;
 		this.createdAt = createdAt;
 		this.updatedAt = updatedAt;
 	}
