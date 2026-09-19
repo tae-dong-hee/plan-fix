@@ -318,11 +318,16 @@ describe("SpotSearchModal", () => {
     expect(defaultProps.onClose).toHaveBeenCalled();
   });
 
-  it("excludedSpotIds에 포함된 항목은 '담김'으로 표시되고 선택할 수 없다", async () => {
+  it("이미 추가한 장소는 선택 버튼이 비활성화되어 다시 선택할 수 없다", async () => {
     render(<SpotSearchModal {...defaultProps} excludedSpotIds={[1]} />);
     await screen.findByText("경포해변");
-    expect(screen.getByText("담김")).toBeInTheDocument();
-    expect(screen.getAllByRole("button", { name: "선택" })).toHaveLength(1);
+    expect(screen.queryByText("담김")).not.toBeInTheDocument();
+    const selectedButton = within(screen.getByTestId("spot-search-item-1")).getByRole("button", { name: "선택" });
+    expect(selectedButton).toBeDisabled();
+    expect(within(screen.getByTestId("spot-search-item-2")).getByRole("button", { name: "선택" })).toBeEnabled();
+    fireEvent.click(selectedButton);
+    expect(defaultProps.onSelect).not.toHaveBeenCalled();
+    expect(defaultProps.onClose).not.toHaveBeenCalled();
   });
 
   it("Escape 키나 배경 클릭 시 onClose가 호출된다", () => {

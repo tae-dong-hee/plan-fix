@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Check, Loader2, MapPin, Search, X } from "lucide-react";
+import { Loader2, MapPin, Search, X } from "lucide-react";
 import {
   formatSpotRegion,
   GANGWON_SEARCH_REGIONS,
@@ -315,16 +315,16 @@ function SpotSearchContent({
                   <div
                     key={spot.spotId}
                     data-testid={`spot-search-item-${spot.spotId}`}
-                    onMouseEnter={() => setHoveredSpotId(spot.spotId)}
+                    onMouseEnter={() => setHoveredSpotId(isExcluded ? null : spot.spotId)}
                     onMouseLeave={() =>
                       setHoveredSpotId((prev) => (prev === spot.spotId ? null : prev))
                     }
-                    onFocus={() => setHoveredSpotId(spot.spotId)}
+                    onFocus={() => setHoveredSpotId(isExcluded ? null : spot.spotId)}
                     className={`flex items-center justify-between gap-3.5 rounded-xl border p-3 transition-colors ${
                       isExcluded
                         ? "border-border bg-muted/40 opacity-60"
                         : "border-border bg-card hover:border-primary/50 hover:bg-muted/30"
-                    } ${hoveredSpotId === spot.spotId ? "border-primary/60 bg-muted/40" : ""}`}
+                    } ${!isExcluded && hoveredSpotId === spot.spotId ? "border-primary/60 bg-muted/40" : ""}`}
                   >
                     {/* 썸네일 */}
                     <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-muted">
@@ -351,24 +351,17 @@ function SpotSearchContent({
                       </p>
                     </div>
 
-                    {/* 선택 / 담김 버튼 */}
-                    {isExcluded ? (
-                      <span className="flex items-center gap-1 rounded-lg bg-muted px-3 py-1.5 text-xs font-medium text-muted-foreground">
-                        <Check className="h-3.5 w-3.5" />
-                        담김
-                      </span>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          onSelect(spot);
-                          onClose();
-                        }}
-                        className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-sm transition-transform active:scale-95 hover:bg-primary/90"
-                      >
-                        선택
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      disabled={isExcluded}
+                      onClick={() => {
+                        onSelect(spot);
+                        onClose();
+                      }}
+                      className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-sm transition-transform enabled:active:scale-95 enabled:hover:bg-primary/90 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground disabled:shadow-none"
+                    >
+                      선택
+                    </button>
                   </div>
                 );
               })}
