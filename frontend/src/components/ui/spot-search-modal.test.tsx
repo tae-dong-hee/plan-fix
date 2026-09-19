@@ -40,11 +40,11 @@ class MockIntersectionObserver {
   disconnect() { this.targets.clear(); }
   takeRecords() { return []; }
 
-  emit(entries: Array<{ target: Element; isIntersecting: boolean }>) {
-    this.callback(entries.map(({ target, isIntersecting }) => ({
+  emit(entries: Array<{ target: Element; isIntersecting: boolean; intersectionRatio?: number }>) {
+    this.callback(entries.map(({ target, isIntersecting, intersectionRatio }) => ({
       target,
       isIntersecting,
-      intersectionRatio: isIntersecting ? 1 : 0,
+      intersectionRatio: intersectionRatio ?? (isIntersecting ? 1 : 0),
       time: 0,
       boundingClientRect: target.getBoundingClientRect(),
       intersectionRect: target.getBoundingClientRect(),
@@ -333,6 +333,13 @@ describe("SpotSearchModal", () => {
     await act(async () => { await vi.advanceTimersByTimeAsync(1); });
     expect(map).toHaveAttribute("data-spot-ids", "6,7,8,9,10");
     expect(map).toHaveAttribute("data-marker-numbers", "6,7,8,9,10");
+
+    const edgeRow = screen.getByTestId("spot-search-item-5");
+    const rowObserver = observerFor(edgeRow);
+    expect(rowObserver.thresholds).toEqual([0.01]);
+    act(() => rowObserver.emit([{ target: edgeRow, isIntersecting: true, intersectionRatio: 0 }]));
+    await act(async () => { await vi.advanceTimersByTimeAsync(150); });
+    expect(map).toHaveAttribute("data-spot-ids", "6,7,8,9,10");
 
     showRows([8, 9, 10, 11, 12]);
     await act(async () => { await vi.advanceTimersByTimeAsync(150); });

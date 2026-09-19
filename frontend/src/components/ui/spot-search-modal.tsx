@@ -166,11 +166,11 @@ function SpotSearchContent({
       if (!active) return;
       entries.forEach((entry) => {
         const id = Number((entry.target as HTMLElement).dataset.spotId);
-        if (entry.isIntersecting) visibleIds.add(id);
+        if (entry.isIntersecting && entry.intersectionRatio >= 0.01) visibleIds.add(id);
         else visibleIds.delete(id);
       });
       publishVisibleRows();
-    }, { root, threshold: 0 });
+    }, { root, threshold: 0.01 });
     if (observer) rows.forEach((row) => observer.observe(row));
     else {
       measureVisibleRows();
