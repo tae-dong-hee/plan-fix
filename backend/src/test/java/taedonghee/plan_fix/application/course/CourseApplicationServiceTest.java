@@ -265,6 +265,11 @@ class CourseApplicationServiceTest {
         }
 
         @Override
+        public Optional<CourseModel> findByIdForUpdate(Long courseId) {
+            return findById(courseId);
+        }
+
+        @Override
         public List<CourseModel> findActiveByUserId(Long userId) {
             return saved.stream()
                     .filter(course -> course.userId().equals(userId))

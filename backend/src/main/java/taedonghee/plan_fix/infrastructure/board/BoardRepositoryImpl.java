@@ -114,6 +114,11 @@ public class BoardRepositoryImpl implements BoardRepository {
         return boardJpaRepository.existsByCourseIdAndStatus(courseId, taedonghee.plan_fix.domain.board.BoardStatus.ACTIVE);
     }
 
+    @Override
+    public void unlinkCourse(Long courseId) {
+        boardJpaRepository.unlinkCourse(courseId);
+    }
+
     /**
      * 도메인 모델을 JPA 엔티티로 변환
      */

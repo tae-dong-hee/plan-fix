@@ -222,6 +222,21 @@ describe("CourseDetailPage", () => {
     expect(writeClipboard).toHaveBeenCalledExactlyOnceWith(mockInvite.inviteUrl);
   });
 
+  it("나만 보기 코스는 작성자에게도 초대와 멤버 관리 대신 공개 전환 안내를 표시한다", async () => {
+    vi.mocked(courseService.fetchCourse).mockResolvedValue({ ...mockCourse, visibility: "PRIVATE", isOwner: true });
+    vi.mocked(courseService.fetchDayAccommodations).mockResolvedValue([]);
+    renderComponent();
+
+    expect(await screen.findByText("나만 보기")).toBeInTheDocument();
+    expect(screen.getByText("작성자만 볼 수 있는 코스예요. 친구를 초대하려면 코스 수정에서 전체 공개로 변경해 주세요.")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "친구 초대" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "멤버 관리" })).not.toBeInTheDocument();
+    expect(screen.queryByText("참여 멤버")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "코스 수정" })).toHaveAttribute("href", "/courses/10/edit");
+    expect(courseService.createCourseInvite).not.toHaveBeenCalled();
+    expect(courseService.fetchCourseMembers).not.toHaveBeenCalled();
+  });
+
   it("읽기 권한을 선택하면 VIEWER 권한으로 링크를 생성한다", async () => {
     renderComponent();
     const createButton = await openInviteDialog();

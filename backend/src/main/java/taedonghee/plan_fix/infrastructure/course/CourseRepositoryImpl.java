@@ -68,6 +68,11 @@ public class CourseRepositoryImpl implements CourseRepository {
         return courseJpaRepository.findById(courseId).map(this::toDomain);
     }
 
+    @Override
+    public Optional<CourseModel> findByIdForUpdate(Long courseId) {
+        return courseJpaRepository.findByIdForUpdate(courseId).map(this::toDomain);
+    }
+
     /**
      * user_id 기반 활성 코스 목록 조회 처리
      */

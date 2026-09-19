@@ -622,6 +622,35 @@ describe("CourseCreatePage", () => {
     });
   });
 
+  it.each([true, false])("공개 코스를 수정할 때 작성자 여부(%s)에 따라 나만 보기 변경과 권한 해제 안내를 제공한다", async (isOwner) => {
+    vi.mocked(courseService.fetchCourse).mockResolvedValue({
+      courseId: 99, userId: 1, title: "공개 여행 코스", description: null, thumbnail: null,
+      visibility: "PUBLIC", status: "ACTIVE", isOwner, viewCount: 0, likeCount: 0,
+      startDate: "2026-09-10", endDate: "2026-09-10", days: [{ dayNumber: 1, spots: [] }],
+      createdAt: "2026-09-01T00:00:00Z", updatedAt: "2026-09-01T00:00:00Z",
+    });
+    render(<MemoryRouter initialEntries={["/courses/99/edit"]}>
+      <Routes><Route path="/courses/:courseId/edit" element={<CourseCreatePage />} /></Routes>
+    </MemoryRouter>);
+    await screen.findByDisplayValue("공개 여행 코스");
+
+    const privateButton = screen.getByTestId("visibility-private-button");
+    const notice = "나만 보기로 저장하면 기존 멤버의 접근 권한과 초대 링크가 해제되고, 다른 사람의 위시리스트에서 이 코스가 제거돼요. 연결된 여행 이야기의 코스 연결도 해제돼요.";
+    expect(screen.queryByText(notice)).not.toBeInTheDocument();
+    if (isOwner) {
+      expect(privateButton).toBeEnabled();
+      fireEvent.click(privateButton);
+      expect(screen.getByText(notice)).toBeInTheDocument();
+      fireEvent.click(screen.getByTestId("visibility-public-button"));
+      expect(screen.queryByText(notice)).not.toBeInTheDocument();
+    } else {
+      expect(privateButton).toBeDisabled();
+      expect(screen.getByTestId("visibility-public-button")).toBeDisabled();
+      expect(screen.getByText("공개 범위는 코스 작성자만 변경할 수 있어요.")).toBeInTheDocument();
+    }
+    expect(courseService.updateCourse).not.toHaveBeenCalled();
+  });
+
   it.each(["LLM", "RULE_BASED"] as const)("%s 초안의 생성 방식과 선택 테마를 임시저장 복원 후에도 코스에 저장한다", async (generatedBy) => {
     vi.mocked(fetchAiCourseDraft).mockImplementation(async (request) => ({
       title: "취향을 담은 여행",

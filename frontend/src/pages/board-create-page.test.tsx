@@ -25,7 +25,7 @@ vi.mock("@/services/course", () => ({
 
 const mockCourse: courseService.CourseResponse = {
   courseId: 101, userId: 1, title: "제주 동쪽 감성 코스", description: "동쪽 힐링 코스",
-  thumbnail: "https://example.com/jeju.jpg", visibility: "PRIVATE", status: "ACTIVE", isOwner: true,
+  thumbnail: "https://example.com/jeju.jpg", visibility: "PUBLIC", status: "ACTIVE", isOwner: true,
   viewCount: 0, likeCount: 0, startDate: null, endDate: null,
   days: [{ dayNumber: 1, spots: [
     { spotId: 10, title: "성산일출봉", address: "제주 서귀포시 성산읍", sequence: 1, category: "여행지",
@@ -96,6 +96,44 @@ describe("BoardCreatePage (블로그형 여행 후기 에디터)", () => {
     expect(screen.queryByRole("option", { name: /친구가 공유한 여행/ })).not.toBeInTheDocument();
     expect(screen.queryByRole("option", { name: /소유권을 확인하지 못한 여행/ })).not.toBeInTheDocument();
     expect(screen.getByText("(선택 · 직접 만든 코스)")).toBeInTheDocument();
+  });
+
+  it("나만 보기 코스는 선택할 수 없고 공개로 변경하는 방법을 안내한다", async () => {
+    vi.mocked(courseService.fetchMyCourses).mockResolvedValue([{ ...mockCourse, visibility: "PRIVATE" }]);
+    render(<MemoryRouter><BoardCreatePage /></MemoryRouter>);
+
+    const option = await screen.findByRole("option", { name: /제주 동쪽 감성 코스.*나만 보기/ });
+    expect(option).toBeDisabled();
+    const select = screen.getByRole("combobox", { name: "내 여행 코스 연결" });
+    expect(select).toHaveAccessibleDescription("나만 보기 코스는 연결할 수 없어요. 코스 수정에서 전체 공개로 변경한 뒤 다시 연결해 주세요.");
+
+    // A stale or programmatically changed selection must not supply private spots to the editor or AI.
+    fireEvent.change(select, { target: { value: "101" } });
+    expect(select).toHaveValue("");
+    expect(screen.queryByText("+ 성산일출봉")).not.toBeInTheDocument();
+    expect(screen.queryByRole("group", { name: "다녀온 장소 선택" })).not.toBeInTheDocument();
+    expect(boardService.createBoard).not.toHaveBeenCalled();
+  });
+
+  it("선택 후 비공개로 바뀐 코스의 서버 거절 안내를 발행 화면에 표시한다", async () => {
+    const message = "나만 보기 코스는 여행 이야기에 연결할 수 없습니다. 코스를 전체 공개로 변경한 뒤 다시 연결해 주세요.";
+    const alertMock = vi.spyOn(window, "alert").mockImplementation(() => {});
+    vi.mocked(courseService.fetchMyCourses).mockResolvedValue([mockCourse]);
+    vi.mocked(draftService.generateBoardDraft).mockResolvedValue({ content: "여행 사진을 남겼어요." });
+    vi.mocked(imageService.uploadImageFile).mockResolvedValue({ imageUrl: "https://example.com/trip.jpg" });
+    vi.mocked(boardService.createBoard).mockRejectedValue(new Error(message));
+    render(<MemoryRouter><BoardCreatePage /></MemoryRouter>);
+    await screen.findByRole("option", { name: "제주 동쪽 감성 코스 (1일 코스)" });
+    fireEvent.change(screen.getByRole("combobox", { name: "내 여행 코스 연결" }), { target: { value: "101" } });
+    fireEvent.change(screen.getByLabelText("여행 후기 제목"), { target: { value: "제주 여행" } });
+    fireEvent.change(screen.getByLabelText("AI 여행 사진 선택"), { target: { files: [new File(["trip"], "trip.jpg", { type: "image/jpeg" })] } });
+    await screen.findByText("여행 사진을 남겼어요.");
+    fireEvent.click(screen.getByRole("button", { name: "발행하기" }));
+
+    expect(await screen.findByText(message)).toBeInTheDocument();
+    expect(alertMock).toHaveBeenCalledWith(message);
+    expect(screen.getByRole("button", { name: "발행하기" })).toBeEnabled();
+    alertMock.mockRestore();
   });
 
   it("코스만 연결하면 방문을 가정하지 않고 직접 고른 장소만 AI에 전달한다", async () => {

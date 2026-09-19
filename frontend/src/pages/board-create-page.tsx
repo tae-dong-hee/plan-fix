@@ -20,6 +20,8 @@ import { uploadImageFile } from "@/services/image";
 import { type PopularSpot } from "@/services/spots";
 import "./main-page.css";
 
+const privateCourseNotice = "나만 보기 코스는 연결할 수 없어요. 코스 수정에서 전체 공개로 변경한 뒤 다시 연결해 주세요.";
+
 export default function BoardCreatePage() {
   const navigate = useNavigate();
 
@@ -129,6 +131,10 @@ export default function BoardCreatePage() {
   // 게시글 발행
   const handleSubmit = async () => {
     if (publishingRef.current || isAiWriting || isCoverUploading || editorImageUploadingRef.current) return;
+    if (selectedCourseId !== null && (!selectedCourse || selectedCourse.visibility !== "PUBLIC")) {
+      setSubmitError(privateCourseNotice);
+      return;
+    }
     if (!title.trim()) {
       alert("여행 후기 제목을 입력해 주세요.");
       return;
@@ -260,22 +266,32 @@ export default function BoardCreatePage() {
 
               <select
                 aria-label="내 여행 코스 연결"
+                aria-describedby="course-visibility-notice"
                 disabled={isSubmitting || isAiWriting}
                 value={selectedCourseId ?? ""}
                 onChange={(e) => {
                   const val = e.target.value;
+                  if (val && !myCourses.some((course) => course.courseId === Number(val) && course.visibility === "PUBLIC")) {
+                    setSubmitError(privateCourseNotice);
+                    return;
+                  }
                   setSelectedCourseId(val ? Number(val) : null);
+                  setSubmitError(null);
                 }}
                 className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs text-foreground focus:border-primary focus:outline-none"
               >
                 <option value="">코스 선택 안 함</option>
                 {myCourses.map((c) => (
-                  <option key={c.courseId} value={c.courseId}>
-                    {c.title} ({c.days.length}일 코스)
+                  <option key={c.courseId} value={c.courseId} disabled={c.visibility !== "PUBLIC"}>
+                    {c.title} ({c.days.length}일 코스){c.visibility !== "PUBLIC" ? " · 나만 보기 (연결 불가)" : ""}
                   </option>
                 ))}
               </select>
             </div>
+
+            <p id="course-visibility-notice" className="mt-3 text-xs leading-5 text-muted-foreground">
+              {privateCourseNotice}
+            </p>
 
             {selectedCourse && (
               <div className="mt-3 border-t border-border/50 pt-3">

@@ -104,7 +104,7 @@ export default function CourseDetailPage() {
   };
 
   const handleInvite = async () => {
-    if (!courseId || inviteCreationInFlight.current) return;
+    if (!courseId || course?.visibility !== "PUBLIC" || inviteCreationInFlight.current) return;
     inviteCreationInFlight.current = true;
     setCreatingInvite(true);
     setInviteToast(null);
@@ -128,7 +128,7 @@ export default function CourseDetailPage() {
   };
 
   const openMembers = async () => {
-    if (!courseId || membersLoading) return;
+    if (!courseId || course?.visibility !== "PUBLIC" || membersLoading) return;
     setInviteDialogOpen(false);
     setMembersDialogOpen(false); setShowMembersTable(true); setMembersLoading(true);
     try {
@@ -182,9 +182,9 @@ export default function CourseDetailPage() {
   }, [courseId, navigate]);
 
   useEffect(() => {
-    if (!courseId || course?.isOwner === false) return;
+    if (!courseId || course?.visibility !== "PUBLIC" || course.isOwner === false) return;
     fetchCourseMembers(courseId).then(setMembers).catch(() => undefined);
-  }, [courseId, course?.isOwner]);
+  }, [courseId, course?.isOwner, course?.visibility]);
 
   return (
     <div className="min-h-screen bg-muted/20 pb-28 md:pb-16">
@@ -264,7 +264,7 @@ export default function CourseDetailPage() {
                     ) : (
                       <>
                         <Lock className="h-3 w-3" />
-                        <span>비공개</span>
+                        <span>나만 보기</span>
                       </>
                     )}
                   </span>
@@ -272,10 +272,14 @@ export default function CourseDetailPage() {
 
                 {course.isOwner !== false && (
                   <div className="flex flex-wrap items-center gap-2">
-                    <button type="button" onClick={() => { setInviteToast(null); setInviteDialogOpen(true); }} className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground transition-colors hover:opacity-90">
-                      <UserPlus className="h-3.5 w-3.5" /> <span>친구 초대</span>
-                    </button>
-                    <button type="button" onClick={() => void openMembers()} className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-background px-3 py-1.5 text-xs font-medium hover:bg-muted"><Users className="h-3.5 w-3.5" />멤버 관리</button>
+                    {course.visibility === "PUBLIC" && (
+                      <>
+                        <button type="button" onClick={() => { setInviteToast(null); setInviteDialogOpen(true); }} className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground transition-colors hover:opacity-90">
+                          <UserPlus className="h-3.5 w-3.5" /> <span>친구 초대</span>
+                        </button>
+                        <button type="button" onClick={() => void openMembers()} className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-background px-3 py-1.5 text-xs font-medium hover:bg-muted"><Users className="h-3.5 w-3.5" />멤버 관리</button>
+                      </>
+                    )}
                     <Link
                       to={`/courses/${course.courseId}/edit`}
                       className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-muted"
@@ -296,6 +300,12 @@ export default function CourseDetailPage() {
                 )}
               </div>
 
+              {course.visibility === "PRIVATE" && (
+                <p className="mt-4 text-xs leading-5 text-muted-foreground">
+                  작성자만 볼 수 있는 코스예요. 친구를 초대하려면 코스 수정에서 전체 공개로 변경해 주세요.
+                </p>
+              )}
+
               <h1 className="mt-3 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
                 {course.title}
               </h1>
@@ -307,7 +317,7 @@ export default function CourseDetailPage() {
                 </p>
               )}
 
-              {course.isOwner !== false && <div className="mt-5 flex items-center justify-between rounded-xl border border-border bg-muted/20 px-4 py-3"><div className="flex min-w-0 items-center gap-2"><Users className="h-4 w-4 shrink-0 text-primary" /><span className="text-sm font-semibold">참여 멤버</span><div className="flex -space-x-2">{members.filter((member) => member.role !== "OWNER").slice(0, 4).map((member) => <span key={member.userId} title={member.username} className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-background bg-primary/15 text-[10px] font-bold text-primary">{(member.username || "?").slice(0, 1)}</span>)}{members.filter((member) => member.role !== "OWNER").length > 4 && <span className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-background bg-muted text-[10px] font-bold">+{members.filter((member) => member.role !== "OWNER").length - 4}</span>}</div><span className="text-xs text-muted-foreground">{members.filter((member) => member.role !== "OWNER").length}명</span></div><button type="button" onClick={() => void openMembers()} className="shrink-0 text-xs font-semibold text-primary hover:underline">전체 보기</button></div>}
+              {course.isOwner !== false && course.visibility === "PUBLIC" && <div className="mt-5 flex items-center justify-between rounded-xl border border-border bg-muted/20 px-4 py-3"><div className="flex min-w-0 items-center gap-2"><Users className="h-4 w-4 shrink-0 text-primary" /><span className="text-sm font-semibold">참여 멤버</span><div className="flex -space-x-2">{members.filter((member) => member.role !== "OWNER").slice(0, 4).map((member) => <span key={member.userId} title={member.username} className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-background bg-primary/15 text-[10px] font-bold text-primary">{(member.username || "?").slice(0, 1)}</span>)}{members.filter((member) => member.role !== "OWNER").length > 4 && <span className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-background bg-muted text-[10px] font-bold">+{members.filter((member) => member.role !== "OWNER").length - 4}</span>}</div><span className="text-xs text-muted-foreground">{members.filter((member) => member.role !== "OWNER").length}명</span></div><button type="button" onClick={() => void openMembers()} className="shrink-0 text-xs font-semibold text-primary hover:underline">전체 보기</button></div>}
 
               <div className="mt-6 flex flex-wrap items-center gap-y-2 gap-x-6 border-t border-border pt-4 text-xs text-muted-foreground">
                 {course.startDate && course.endDate && (

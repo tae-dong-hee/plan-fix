@@ -28,7 +28,6 @@ class BoardApplicationServiceTest {
     @Test
     void create_validates_linked_course_owner_and_saves_board() {
         Fixture fixture = new Fixture();
-        when(fixture.courses.getActiveOwnedCourseOrThrow(10L, 1L)).thenReturn(course(10L, 1L));
 
         BoardResult result = fixture.service().create(10L, new BoardCommand.Create(
                 1L,
@@ -43,7 +42,7 @@ class BoardApplicationServiceTest {
         assertThat(result.courseId()).isEqualTo(1L);
         assertThat(result.images()).extracting(BoardResult.Image::sequence).containsExactly(0);
         assertThat(result.thumbnail()).isEqualTo("https://example.com/one.jpg");
-        verify(fixture.courses).getActiveOwnedCourseOrThrow(10L, 1L);
+        verify(fixture.courses).validatePublicCourseForBoard(10L, 1L);
     }
 
     @Test
@@ -59,7 +58,7 @@ class BoardApplicationServiceTest {
         ));
 
         assertThat(result.courseId()).isNull();
-        verify(fixture.courses, never()).getActiveOwnedCourseOrThrow(10L, null);
+        verify(fixture.courses, never()).validatePublicCourseForBoard(10L, null);
     }
 
     @Test
@@ -291,6 +290,15 @@ class BoardApplicationServiceTest {
             if (courseId == null) return false;
             return saved.stream()
                     .anyMatch(b -> courseId.equals(b.courseId()) && b.status() == BoardStatus.ACTIVE);
+        }
+
+        @Override
+        public void unlinkCourse(Long courseId) {
+            saved.replaceAll(b -> courseId.equals(b.courseId())
+                    ? BoardModel.reconstruct(b.boardId(), null, b.userId(), b.title(), b.content(),
+                        b.thumbnail(), b.status(), b.viewCount(), b.likeCount(), b.commentCount(),
+                        b.images(), b.createdAt(), b.updatedAt())
+                    : b);
         }
     }
 }

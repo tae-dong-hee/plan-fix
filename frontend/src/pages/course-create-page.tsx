@@ -132,6 +132,8 @@ export default function CourseCreatePage() {
   const [generatedBy, setGeneratedBy] = useState<CourseGenerationSource | null>("MANUAL");
   const [themes, setThemes] = useState<AiCourseTheme[]>([]);
   const [visibility, setVisibility] = useState<"PUBLIC" | "PRIVATE">("PUBLIC");
+  const [originalVisibility, setOriginalVisibility] = useState<"PUBLIC" | "PRIVATE" | null>(null);
+  const [canChangeVisibility, setCanChangeVisibility] = useState(true);
   const [startDate, setStartDate] = useState(todayStr);
   const [endDate, setEndDate] = useState(defaultEndStr);
   const [days, setDays] = useState<DraftSpot[][]>(() => {
@@ -220,7 +222,11 @@ export default function CourseCreatePage() {
         setThumbnail(data.thumbnail ?? null);
         setGeneratedBy(data.generatedBy ?? null);
         setThemes(data.themes ?? []);
-        if (data.visibility) setVisibility(data.visibility);
+        if (data.visibility) {
+          setVisibility(data.visibility);
+          setOriginalVisibility(data.visibility);
+        }
+        setCanChangeVisibility(data.isOwner !== false);
         if (data.startDate) setStartDate(data.startDate);
         if (data.endDate) setEndDate(data.endDate);
 
@@ -755,6 +761,7 @@ export default function CourseCreatePage() {
                 <button
                   type="button"
                   data-testid="visibility-public-button"
+                  disabled={!canChangeVisibility}
                   onClick={() => setVisibility("PUBLIC")}
                   className={`flex items-start gap-3 rounded-xl border p-3.5 text-left transition-all ${
                     visibility === "PUBLIC"
@@ -789,6 +796,7 @@ export default function CourseCreatePage() {
                 <button
                   type="button"
                   data-testid="visibility-private-button"
+                  disabled={!canChangeVisibility}
                   onClick={() => setVisibility("PRIVATE")}
                   className={`flex items-start gap-3 rounded-xl border p-3.5 text-left transition-all ${
                     visibility === "PRIVATE"
@@ -815,11 +823,19 @@ export default function CourseCreatePage() {
                       )}
                     </div>
                     <p className="mt-0.5 text-xs text-muted-foreground">
-                      오직 나만 확인할 수 있는 비밀 일정으로 보관해요.
+                      작성자만 볼 수 있어요. 친구 초대와 여행 이야기 연결은 사용할 수 없어요.
                     </p>
                   </div>
                 </button>
               </div>
+              {!canChangeVisibility && (
+                <p className="mt-3 text-xs leading-5 text-muted-foreground">공개 범위는 코스 작성자만 변경할 수 있어요.</p>
+              )}
+              {isEditMode && originalVisibility === "PUBLIC" && visibility === "PRIVATE" && (
+                <p className="mt-3 rounded-xl bg-muted/50 p-3 text-xs leading-5 text-muted-foreground" role="status">
+                  나만 보기로 저장하면 기존 멤버의 접근 권한과 초대 링크가 해제되고, 다른 사람의 위시리스트에서 이 코스가 제거돼요. 연결된 여행 이야기의 코스 연결도 해제돼요.
+                </p>
+              )}
             </div>
           </div>
         </div>
