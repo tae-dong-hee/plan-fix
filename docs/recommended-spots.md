@@ -26,6 +26,12 @@
 - 역검증: 카탈로그 상한을 100으로 되돌리거나 카드를 3개로 자르면 새 회귀 테스트가 실패하고, 원복 후 통과하는 것을 확인했다.
 - [기계 판독 검증 결과](assets/recommended-spot-verification.json)
 
+### 배포 후 양방향 재검증
+
+`python3 scripts/verify-recommended-spots.py --base-url https://planfix.cloud --output /tmp/recommended-spots-live.json`
+
+이 읽기 전용 검사는 18개 시군의 추천 API를 조회해 각각 20곳인지 확인한 뒤, 응답의 합집합을 실행 카탈로그와 역대조한다. 전체 360곳의 상세 API에서 이름·지역·분류·주소·좌표도 다시 대조한다. 전체 표본 20/100개, 중복 ID, 미지원 지역, 잘못된 size, `no-store` 헤더까지 검사하며 하나라도 다르면 실패한다. `RecommendedSpotIntegrationTest`는 같은 경로를 임시 PostgreSQL과 MockMvc로 검증한다.
+
 ## API 동작
 
 `GET /api/v1/spots/recommended?region=51&sigungu=150&size=20`
