@@ -9,7 +9,11 @@
 
 ## API와 설정
 
-인증된 `POST /api/v1/boards/ai-draft` 요청에 multipart `files`를 반복해 전달하고, 선택적으로 `title`(100자 이하), `note`(500자 이하)를 보냅니다. 응답은 `{ "content": "일반 텍스트 본문" }`입니다. 이 API는 게시글이나 사진을 저장하지 않습니다.
+인증된 `POST /api/v1/boards/ai-draft` 요청에 multipart `files`를 반복해 전달하고, 선택적으로 `title`(100자 이하), `note`(500자 이하), `courseId`, 반복된 `visitedSpotIds`를 보냅니다. 코스와 장소 ID는 양의 정수이며, 방문 장소는 중복 없이 최대 20곳입니다. 방문 장소를 보낼 때는 `courseId`가 필요하고 해당 코스에 포함된 장소만 사용할 수 있습니다. 응답은 `{ "content": "일반 텍스트 본문" }`입니다. 이 API는 게시글이나 사진을 저장하지 않습니다.
+
+서버는 `CourseApplicationService.getCourse`의 소유자·멤버·공개 코스 조회 권한을 검사하고 선택한 장소 이름을 서버 데이터에서 가져옵니다. 조회할 수 없는 코스는 기존 403/404 오류를 반환합니다. 코스를 연결해도 사용자가 방문했다고 선택하지 않은 장소, 코스의 날짜·메모·계획 순서는 모델에 전달하지 않습니다. 잘못된 장소 선택은 모델 호출 전에 400 오류로 거절합니다.
+
+작성 지침은 약 150~350자, 2~3개 짧은 문단의 담백한 일상 말투를 요청합니다. 사진마다 풍경을 나열하거나 과장된 수식어를 반복하지 않으며, 사진에서 장소명을 추측하지 않습니다. 장소명은 제목·메모와 사용자가 방문을 확인한 장소에 한정합니다. 사진 속 활동을 사용자가 직접 했다고 단정하거나, 여행 기간만으로 일차별 순서·감정·동행자를 만들지 않도록 지시합니다. 실제 문체와 사실성은 모델 출력에 따라 달라질 수 있어 생성된 본문은 사용자가 확인하고 편집할 수 있습니다.
 
 기존 `GEMINI_API_KEY`, `GEMINI_MODEL`을 사용합니다. 사진 작성 전용 모델은 재시도 없이 60초로 제한하며, 브라우저는 90초 후 재시도 안내를 표시합니다. API가 준비되지 않았거나 생성에 실패하면 오류를 반환하며 임의의 여행담으로 대체하지 않습니다. 본문은 HTML 문자열 대신 에디터의 텍스트 노드로 삽입합니다.
 
@@ -24,4 +28,4 @@ npm test
 npm run build
 ```
 
-Java 21에서 백엔드의 `BoardAiDraftApplicationServiceTest`, `StoryImagePreparerTest`, `StoryDraftRateLimiterTest`, `BoardAiDraftControllerTest`로 멀티모달 요청, 잘못된 이미지, 실패 응답, 호출 제한, 인증을 검증합니다. 테스트는 실제 Gemini와 운영 DB를 호출하지 않습니다.
+Java 21에서 백엔드의 `BoardAiDraftApplicationServiceTest`, `StoryImagePreparerTest`, `StoryDraftRateLimiterTest`, `BoardAiDraftControllerTest`로 멀티모달 요청, 방문 장소 컨텍스트·코스 접근 권한 오류·ID 검증, 잘못된 이미지, 실패 응답, 호출 제한, 인증을 검증합니다. 테스트는 실제 Gemini와 운영 DB를 호출하지 않습니다.

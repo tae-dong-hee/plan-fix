@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -22,6 +22,19 @@ vi.mock("@/services/board", () => ({
 vi.mock("@/services/course", () => ({
   fetchMyCourses: vi.fn(),
 }));
+
+const mockCourse: courseService.CourseResponse = {
+  courseId: 101, userId: 1, title: "제주 동쪽 감성 코스", description: "동쪽 힐링 코스",
+  thumbnail: "https://example.com/jeju.jpg", visibility: "PRIVATE", status: "ACTIVE",
+  viewCount: 0, likeCount: 0, startDate: null, endDate: null,
+  days: [{ dayNumber: 1, spots: [
+    { spotId: 10, title: "성산일출봉", address: "제주 서귀포시 성산읍", sequence: 1, category: "여행지",
+      memo: null, region: "제주", sigungu: "서귀포시", thumbnail: null, latitude: null, longitude: null },
+    { spotId: 20, title: "섭지코지", address: "제주 서귀포시 성산읍", sequence: 2, category: "여행지",
+      memo: null, region: "제주", sigungu: "서귀포시", thumbnail: null, latitude: null, longitude: null },
+  ] }],
+  createdAt: "2026-09-19T00:00:00Z", updatedAt: "2026-09-19T00:00:00Z",
+};
 
 describe("BoardCreatePage (블로그형 여행 후기 에디터)", () => {
   beforeEach(() => {
@@ -50,35 +63,7 @@ describe("BoardCreatePage (블로그형 여행 후기 에디터)", () => {
   });
 
   it("코스 목록을 불러와 셀렉트 박스에 렌더링한다", async () => {
-    const mockCourses = [
-      {
-        courseId: 101,
-        title: "제주 동쪽 감성 코스",
-        description: "동쪽 힐링 코스",
-        thumbnail: "https://example.com/jeju.jpg",
-        totalDistance: "35km",
-        totalDuration: "2일",
-        days: [
-          {
-            dayNumber: 1,
-            spots: [
-              {
-                id: 1,
-                spotId: 10,
-                title: "성산일출봉",
-                address: "제주 서귀포시 성산읍",
-                dayNumber: 1,
-                orderNumber: 1,
-              },
-            ],
-          },
-        ],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-    ];
-
-    vi.mocked(courseService.fetchMyCourses).mockResolvedValue(mockCourses as unknown as courseService.CourseResponse[]);
+    vi.mocked(courseService.fetchMyCourses).mockResolvedValue([mockCourse]);
 
     render(
       <MemoryRouter initialEntries={["/boards/create"]}>
@@ -96,6 +81,49 @@ describe("BoardCreatePage (블로그형 여행 후기 에디터)", () => {
     fireEvent.change(select, { target: { value: "101" } });
 
     expect(screen.getByText("+ 성산일출봉")).toBeInTheDocument();
+  });
+
+  it("코스만 연결하면 방문을 가정하지 않고 직접 고른 장소만 AI에 전달한다", async () => {
+    vi.mocked(courseService.fetchMyCourses).mockResolvedValue([mockCourse]);
+    vi.mocked(draftService.generateBoardDraft).mockResolvedValue({ content: "제주에서 찍은 여행 사진이에요." });
+    render(<MemoryRouter><BoardCreatePage /></MemoryRouter>);
+    await screen.findByRole("option", { name: "제주 동쪽 감성 코스 (1일 코스)" });
+    fireEvent.change(screen.getByRole("combobox", { name: "내 여행 코스 연결" }), { target: { value: "101" } });
+    const places = within(screen.getByRole("group", { name: "다녀온 장소 선택" }));
+    places.getAllByRole("button").forEach((button) => expect(button).toHaveAttribute("aria-pressed", "false"));
+    const file = new File(["trip"], "jeju.jpg", { type: "image/jpeg" });
+    fireEvent.change(screen.getByLabelText("여행 후기 제목"), { target: { value: "제주 여행" } });
+    fireEvent.change(screen.getByLabelText("AI 여행 사진 선택"), { target: { files: [file] } });
+
+    await screen.findByText("제주에서 찍은 여행 사진이에요.");
+    expect(draftService.generateBoardDraft).toHaveBeenNthCalledWith(1,
+      { files: [file], title: "제주 여행", note: "", courseId: 101, visitedSpotIds: [] }, expect.any(AbortSignal));
+    fireEvent.click(places.getByRole("button", { name: "성산일출봉" }));
+    fireEvent.click(screen.getByRole("button", { name: "다시 써주기" }));
+    await screen.findByText("새로 쓴 AI 초안");
+    expect(draftService.generateBoardDraft).toHaveBeenNthCalledWith(2,
+      { files: [file], title: "제주 여행", note: "", courseId: 101, visitedSpotIds: [10] }, expect.any(AbortSignal));
+  });
+
+  it("AI가 작성하는 동안 코스와 방문 장소 선택을 잠그고 완료하면 다시 허용한다", async () => {
+    vi.mocked(courseService.fetchMyCourses).mockResolvedValue([mockCourse]);
+    let resolveDraft!: (value: { content: string }) => void;
+    vi.mocked(draftService.generateBoardDraft).mockReturnValueOnce(new Promise((resolve) => { resolveDraft = resolve; }));
+    render(<MemoryRouter><BoardCreatePage /></MemoryRouter>);
+    await screen.findByRole("option", { name: "제주 동쪽 감성 코스 (1일 코스)" });
+    const courseSelect = screen.getByRole("combobox", { name: "내 여행 코스 연결" });
+    fireEvent.change(courseSelect, { target: { value: "101" } });
+    const place = within(screen.getByRole("group", { name: "다녀온 장소 선택" })).getByRole("button", { name: "성산일출봉" });
+    fireEvent.click(place);
+    fireEvent.change(screen.getByLabelText("AI 여행 사진 선택"), { target: { files: [new File(["trip"], "jeju.jpg", { type: "image/jpeg" })] } });
+
+    expect(courseSelect).toBeDisabled();
+    expect(place).toBeDisabled();
+    expect(screen.getByRole("button", { name: "발행하기" })).toBeDisabled();
+    await act(async () => resolveDraft({ content: "성산일출봉에 다녀왔어요." }));
+    expect(courseSelect).toBeEnabled();
+    expect(place).toBeEnabled();
+    expect(screen.getByRole("button", { name: "발행하기" })).toBeEnabled();
   });
 
   it("제목이 비어있으면 경고창이 뜨고 발행되지 않는다", async () => {

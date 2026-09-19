@@ -1,5 +1,6 @@
 import { setApiBaseUrl } from "@/test-utils/env";
 import { MAX_STORY_PHOTO_BYTES, MAX_STORY_TOTAL_BYTES, validateStoryPhotos } from "./board-ai";
+import type { BoardDraftRequest } from "./board-ai";
 
 function photo(name = "trip.jpg", type = "image/jpeg", size = 10): File {
   const file = new File(["photo"], name, { type });
@@ -77,6 +78,63 @@ describe("generateBoardDraft", () => {
     const form = (fetchSpy.mock.calls[0][1] as RequestInit).body as FormData;
     expect(form.has("title")).toBe(false);
     expect(form.has("note")).toBe(false);
+    expect(form.has("courseId")).toBe(false);
+    expect(form.has("visitedSpotIds")).toBe(false);
+  });
+
+  test("코스와 확인한 장소 ID를 multipart 필드로 전달한다", async () => {
+    const fetchSpy = vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ content: "춘천에서 보낸 2박 3일." }) });
+    global.fetch = fetchSpy as unknown as typeof fetch;
+    const { generateBoardDraft } = await import("./board-ai");
+    const visitedSpotIds = Array.from({ length: 20 }, (_, index) => index + 1);
+
+    await generateBoardDraft({ files: [photo()], courseId: 42, visitedSpotIds });
+
+    const form = (fetchSpy.mock.calls[0][1] as RequestInit).body as FormData;
+    expect(form.get("courseId")).toBe("42");
+    expect(form.getAll("visitedSpotIds")).toEqual(visitedSpotIds.map(String));
+  });
+
+  test.each([undefined, 42])("확인한 장소가 없으면 장소 ID를 생략한다 (courseId=%s)", async (courseId) => {
+    const fetchSpy = vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ content: "여행 이야기" }) });
+    global.fetch = fetchSpy as unknown as typeof fetch;
+    const { generateBoardDraft } = await import("./board-ai");
+
+    await generateBoardDraft({ files: [photo()], courseId, visitedSpotIds: [] });
+
+    const form = (fetchSpy.mock.calls[0][1] as RequestInit).body as FormData;
+    expect(form.get("courseId")).toBe(courseId === undefined ? null : String(courseId));
+    expect(form.has("visitedSpotIds")).toBe(false);
+  });
+
+  test.each([0, -1, 1.5, NaN, Infinity, Number.MAX_SAFE_INTEGER + 1, "42", null])("잘못된 코스 ID는 전송 전에 거절한다: %s", async (courseId) => {
+    const fetchSpy = vi.fn();
+    global.fetch = fetchSpy as unknown as typeof fetch;
+    const { generateBoardDraft } = await import("./board-ai");
+
+    await expect(generateBoardDraft({ files: [photo()], courseId } as BoardDraftRequest)).rejects.toThrow("여행 코스를 다시 선택");
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  test.each([
+    [0], [-1], [1.5], [NaN], [Infinity], [Number.MAX_SAFE_INTEGER + 1], ["1"], [1, 1],
+    Array.from({ length: 21 }, (_, index) => index + 1),
+  ])("잘못된 장소 ID 목록은 전송 전에 거절한다: %j", async (...visitedSpotIds) => {
+    const fetchSpy = vi.fn();
+    global.fetch = fetchSpy as unknown as typeof fetch;
+    const { generateBoardDraft } = await import("./board-ai");
+
+    await expect(generateBoardDraft({ files: [photo()], courseId: 42, visitedSpotIds } as BoardDraftRequest)).rejects.toThrow("중복 없이 최대 20곳");
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  test("여행 코스 없이 장소 ID만 보내지 않는다", async () => {
+    const fetchSpy = vi.fn();
+    global.fetch = fetchSpy as unknown as typeof fetch;
+    const { generateBoardDraft } = await import("./board-ai");
+
+    await expect(generateBoardDraft({ files: [photo()], visitedSpotIds: [1] })).rejects.toThrow("여행 코스를 먼저 선택");
+    expect(fetchSpy).not.toHaveBeenCalled();
   });
 
   test("유효하지 않은 사진은 전송 전에 거절한다", async () => {

@@ -29,10 +29,12 @@ public class BoardAiDraftController {
             @AuthenticationPrincipal AuthenticatedUser principal,
             @RequestParam("files") List<MultipartFile> files,
             @RequestParam(required = false) String title,
-            @RequestParam(required = false) String note) {
+            @RequestParam(required = false) String note,
+            @RequestParam(required = false) Long courseId,
+            @RequestParam(required = false) List<Long> visitedSpotIds) {
         if (principal == null) throw new CoreException(ErrorType.UNAUTHORIZED);
         return ResponseEntity.ok().cacheControl(CacheControl.noStore())
-                .body(new DraftResponse(drafts.generate(principal.id(), files, title, note)));
+                .body(new DraftResponse(drafts.generate(principal.id(), files, title, note, courseId, visitedSpotIds)));
     }
 
     public record DraftResponse(String content) { }

@@ -9,6 +9,7 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 /**
  * [support] 전역 예외 처리.
@@ -43,9 +44,9 @@ public class GlobalExceptionHandler {
 			.body(ErrorResponse.of(errorType, "요청한 리소스를 찾을 수 없습니다."));
 	}
 
-	/** 잘못된 enum을 포함한 요청 JSON은 입력 오류로 응답한다. */
-	@ExceptionHandler(HttpMessageNotReadableException.class)
-	public ResponseEntity<ErrorResponse> handleUnreadableRequest(HttpMessageNotReadableException e) {
+	/** 잘못된 JSON 값이나 숫자로 변환할 수 없는 요청 파라미터는 입력 오류로 응답한다. */
+	@ExceptionHandler({HttpMessageNotReadableException.class, MethodArgumentTypeMismatchException.class})
+	public ResponseEntity<ErrorResponse> handleUnreadableRequest(Exception e) {
 		ErrorType errorType = ErrorType.BAD_REQUEST;
 		return ResponseEntity.status(errorType.getStatus())
 			.body(ErrorResponse.of(errorType, "요청 값의 형식 또는 선택 항목이 올바르지 않습니다."));

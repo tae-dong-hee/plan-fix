@@ -233,15 +233,74 @@ export default function BoardCreatePage() {
         )}
 
         <div className="space-y-6">
+          {/* 사진 생성 전에 제목과 코스 정보를 입력 */}
+          <div>
+            <input
+              type="text"
+              aria-label="여행 후기 제목"
+              disabled={isSubmitting}
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="여행 후기 제목을 입력하세요 (예: 2박 3일 낭만 제주 뚜벅이 후기)"
+              className="w-full border-b border-border/80 bg-transparent px-1 py-3 text-2xl font-extrabold text-foreground placeholder:text-muted-foreground/40 focus:border-primary focus:outline-none sm:text-3xl"
+              maxLength={100}
+            />
+          </div>
+
+          {/* 내 여행 코스 연결 */}
+          <div className="rounded-xl border border-border/70 bg-card p-4 shadow-2xs">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <RouteIcon className="h-4 w-4 text-primary" />
+                <span className="text-xs font-bold text-foreground sm:text-sm">내 여행 코스 연결</span>
+                <span className="text-xs text-muted-foreground">(선택)</span>
+              </div>
+
+              <select
+                aria-label="내 여행 코스 연결"
+                disabled={isSubmitting || isAiWriting}
+                value={selectedCourseId ?? ""}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setSelectedCourseId(val ? Number(val) : null);
+                }}
+                className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs text-foreground focus:border-primary focus:outline-none"
+              >
+                <option value="">코스 선택 안 함</option>
+                {myCourses.map((c) => (
+                  <option key={c.courseId} value={c.courseId}>
+                    {c.title} ({c.days.length}일 코스)
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {selectedCourse && (
+              <div className="mt-3 border-t border-border/50 pt-3">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <span className="font-semibold text-primary">{selectedCourse.title}</span>
+                  <span>·</span>
+                  <span>총 {selectedCourse.days.length}일 여정</span>
+                  <span>·</span>
+                  <span>장소 {courseSpots.length}곳</span>
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground/80">
+                  아래에서 실제로 다녀온 장소를 고르면 AI 후기에 장소명을 반영할 수 있어요.
+                </p>
+              </div>
+            )}
+          </div>
+
           <StoryWritingAssistant
             title={title}
+            course={selectedCourse}
             files={storyPhotos}
             onFilesChange={setStoryPhotos}
             onBusyChange={setIsAiWriting}
             editorRef={editorRef}
             disabled={isSubmitting}
           />
-          {/* 1. 대표 커버 사진 */}
+          {/* 대표 커버 사진 */}
           <fieldset disabled={isSubmitting || isCoverUploading} className="group relative">
             {coverImage ? (
               <div className="relative aspect-[21/9] w-full overflow-hidden rounded-2xl border border-border bg-muted shadow-sm sm:aspect-[24/9]">
@@ -305,65 +364,7 @@ export default function BoardCreatePage() {
             />
           </fieldset>
 
-          {/* 2. 제목 입력 */}
-          <div>
-            <input
-              type="text"
-              aria-label="여행 후기 제목"
-              disabled={isSubmitting}
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="여행 후기 제목을 입력하세요 (예: 2박 3일 낭만 제주 뚜벅이 후기)"
-              className="w-full border-b border-border/80 bg-transparent px-1 py-3 text-2xl font-extrabold text-foreground placeholder:text-muted-foreground/40 focus:border-primary focus:outline-none sm:text-3xl"
-              maxLength={100}
-            />
-          </div>
-
-          {/* 3. 내 여행 코스 연결 */}
-          <div className="rounded-xl border border-border/70 bg-card p-4 shadow-2xs">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <RouteIcon className="h-4 w-4 text-primary" />
-                <span className="text-xs font-bold text-foreground sm:text-sm">내 여행 코스 연결</span>
-                <span className="text-xs text-muted-foreground">(선택)</span>
-              </div>
-
-              <select
-                aria-label="내 여행 코스 연결"
-                disabled={isSubmitting}
-                value={selectedCourseId ?? ""}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setSelectedCourseId(val ? Number(val) : null);
-                }}
-                className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs text-foreground focus:border-primary focus:outline-none"
-              >
-                <option value="">코스 선택 안 함</option>
-                {myCourses.map((c) => (
-                  <option key={c.courseId} value={c.courseId}>
-                    {c.title} ({c.days.length}일 코스)
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {selectedCourse && (
-              <div className="mt-3 border-t border-border/50 pt-3">
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <span className="font-semibold text-primary">{selectedCourse.title}</span>
-                  <span>·</span>
-                  <span>총 {selectedCourse.days.length}일 여정</span>
-                  <span>·</span>
-                  <span>장소 {courseSpots.length}곳</span>
-                </div>
-                <p className="mt-1 text-xs text-muted-foreground/80">
-                  아래 에디터 상단에 코스 장소 칩이 표시되어, 클릭 한 번으로 본문에 장소 카드를 넣을 수 있어요.
-                </p>
-              </div>
-            )}
-          </div>
-
-          {/* 4. 블로그형 리치 텍스트 에디터 */}
+          {/* 블로그형 리치 텍스트 에디터 */}
           <fieldset disabled={isSubmitting}>
             <BlogEditor
               initialContent={contentHtml}
