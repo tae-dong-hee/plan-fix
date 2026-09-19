@@ -614,7 +614,7 @@ export default function MainPage() {
             </button>
           </div>
           <div className="travel-section-description mt-3 flex items-center justify-between gap-4">
-            <p className="break-keep text-[13px] leading-relaxed text-muted-foreground sm:text-sm">강원도의 대표 명소를 새롭게 만나 보세요.</p>
+            <p className="break-keep text-[13px] leading-relaxed text-muted-foreground sm:text-sm">{locationName}의 대표 명소부터 카페와 먹거리까지 만나 보세요.</p>
             {!!popularSpots?.length && !popularSpotsError && (
               <PlaceCarouselControls
                 label="인기 장소"

@@ -591,6 +591,30 @@ describe("MainPage popular spots carousel", () => {
     expect(mockedNavigate).toHaveBeenCalledWith("/spots/popular?region=%EA%B0%95%EB%A6%89");
   });
 
+  test("대표 명소·카페·먹거리 20개를 모두 표시하고 각각의 상세 페이지로 연결한다", async () => {
+    const categories = ["관광지", "문화시설", "카페/음료", "음식점", "쇼핑"];
+    const items = Array.from({ length: 20 }, (_, index) => ({
+      ...recommendedSpot,
+      spotId: 5000 + index,
+      title: `강원 추천 장소 ${index + 1}`,
+      category: categories[index % categories.length],
+      thumbnail: index === 19 ? null : `https://example.com/spot-${index}.jpg`,
+    }));
+    mockedFetchRecommendedSpots.mockResolvedValue({ items, offset: 0, size: 20, totalCount: 360 });
+
+    renderMainPage();
+    await screen.findByText(items[19].title);
+
+    expect(screen.getByText("강원도의 대표 명소부터 카페와 먹거리까지 만나 보세요.")).toBeInTheDocument();
+    const carousel = screen.getByText(items[0].title).closest(".overflow-x-auto") as HTMLElement;
+    expect(within(carousel).getAllByRole("article")).toHaveLength(20);
+    for (const item of items) {
+      expect(within(carousel).getByRole("link", { name: new RegExp(item.title + "(?: |$)") }))
+        .toHaveAttribute("href", `/spots/${item.spotId}`);
+    }
+    for (const category of categories) expect(within(carousel).getAllByText(category)).toHaveLength(4);
+  });
+
   test("carousel arrow buttons scroll the carousel left and right based on scroll position", async () => {
     mockedFetchRecommendedSpots.mockResolvedValue({
       items: [
