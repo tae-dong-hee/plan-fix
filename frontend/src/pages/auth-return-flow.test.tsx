@@ -77,11 +77,8 @@ test.each(["/login", "/login?returnTo=https%3A%2F%2Fevil.example", "/login?retur
   expect(screen.getByTestId("current-path")).toHaveTextContent("/main");
 });
 
-test("로그인에서 가입으로 이동하고 돌아올 때 초대 경로를 유지한다", () => {
-  renderFlow("/login?returnTo=%2Fcourse-invites%2Ftest-token");
-  expect(screen.getByRole("link", { name: "회원가입" })).toHaveAttribute("href", "/signup?returnTo=%2Fcourse-invites%2Ftest-token");
-  fireEvent.click(screen.getByRole("link", { name: "회원가입" }));
-  expect(screen.getByTestId("current-path")).toHaveTextContent("/signup?returnTo=%2Fcourse-invites%2Ftest-token");
+test("가입 화면에서 로그인으로 돌아올 때 초대 경로를 유지한다", () => {
+  renderFlow("/signup?returnTo=%2Fcourse-invites%2Ftest-token");
   expect(screen.getByRole("link", { name: "로그인" })).toHaveAttribute("href", "/login?returnTo=%2Fcourse-invites%2Ftest-token");
   fireEvent.click(screen.getByRole("link", { name: "로그인" }));
   expect(screen.getByTestId("current-path")).toHaveTextContent("/login?returnTo=%2Fcourse-invites%2Ftest-token");
@@ -134,9 +131,21 @@ test("카카오 실패 화면을 새로고침한 뒤 일반 로그인해도 초�
   expect(restoredUrl).toBe("/login?error=denied&returnTo=%2Fcourse-invites%2Ftest-token");
   first.unmount();
   renderFlow(restoredUrl);
-  expect(screen.getByRole("link", { name: "회원가입" })).toHaveAttribute("href", "/signup?returnTo=%2Fcourse-invites%2Ftest-token");
+  expect(screen.queryByRole("link", { name: "회원가입" })).not.toBeInTheDocument();
   await submitLogin();
   expect(screen.getByText("초대 정보")).toBeInTheDocument();
+});
+
+test.each(["카카오 계정 찾기 (새 창)", "카카오 비밀번호 찾기 (새 창)"])("%s 링크를 눌러도 로그인이나 초대 복귀 상태를 변경하지 않는다", (name) => {
+  renderFlow("/login?returnTo=%2Fcourse-invites%2Ftest-token");
+  fireEvent.click(screen.getByRole("link", { name }));
+  expect(signIn).not.toHaveBeenCalled();
+  expect(startKakaoSignIn).not.toHaveBeenCalled();
+  expect(readPendingAuthReturnTo()).toBeNull();
+  expect(screen.getByTestId("current-path")).toHaveTextContent("/login?returnTo=%2Fcourse-invites%2Ftest-token");
+  fireEvent.click(screen.getByRole("button", { name: "카카오 로그인" }));
+  expect(startKakaoSignIn).toHaveBeenCalledTimes(1);
+  expect(readPendingAuthReturnTo()).toBe("/course-invites/test-token");
 });
 
 test("만료된 카카오 복귀 정보로는 메인에서 초대로 이동하지 않는다", () => {

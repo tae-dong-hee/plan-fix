@@ -28,6 +28,8 @@ test("renders the login screen", () => {
 
   expect(screen.getByRole("heading", { name: "로그인" })).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "카카오 로그인" })).toBeInTheDocument();
+  expect(screen.queryByRole("link", { name: "회원가입" })).not.toBeInTheDocument();
+  expect(screen.queryByText(/아직 계정이 없으신가요/)).not.toBeInTheDocument();
 });
 
 test("shows PlanFix validation messages when the login form is empty", () => {
@@ -90,17 +92,15 @@ test("falls back to a generic message for an unknown Kakao error code", () => {
   ).toBeInTheDocument();
 });
 
-test("moves from the login screen to the signup screen", () => {
+test("keeps the signup screen available through its direct route", () => {
   render(
     <MemoryRouter
-      initialEntries={["/login"]}
+      initialEntries={["/signup"]}
       future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
     >
       <App />
     </MemoryRouter>,
   );
-
-  fireEvent.click(screen.getByRole("link", { name: "회원가입" }));
 
   expect(screen.getByRole("heading", { name: "회원가입" })).toBeInTheDocument();
   expect(screen.getByLabelText("아이디")).toBeInTheDocument();
@@ -552,4 +552,3 @@ test("renders the board detail screen on /boards/:boardId", async () => {
 
   expect(await screen.findByText("게시글을 찾을 수 없어요.")).toBeInTheDocument();
 });
-

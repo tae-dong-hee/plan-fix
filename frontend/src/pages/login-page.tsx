@@ -38,7 +38,6 @@ export default function LoginPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [callbackReturnTo] = useState(() => searchParams.has("error") ? readPendingAuthReturnTo() : null);
   const returnTo = getInviteReturnTo(searchParams.get("returnTo")) ?? callbackReturnTo;
-  const signupPath = authPathWithReturnTo("/signup", returnTo);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [message, setMessage] = useState<LoginFormMessage | null>(() => {
@@ -161,8 +160,6 @@ export default function LoginPage() {
             onSubmit={handleSubmit}
             onKakaoLogin={handleKakaoLogin}
             forgotPasswordHref={authPathWithReturnTo("/forgot-password", returnTo)}
-            signUpHref={signupPath}
-            onSignUp={() => navigate(signupPath)}
           />
         </div>
       </section>
