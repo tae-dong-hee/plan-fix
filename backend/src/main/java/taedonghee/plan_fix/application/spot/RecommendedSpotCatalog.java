@@ -19,6 +19,9 @@ import java.util.Set;
 public class RecommendedSpotCatalog {
 
     public static final String REGION = "51";
+    public static final int MAX_PLACES = 360;
+    private static final Set<String> DISTRICTS = Set.of("110", "130", "150", "170", "190", "210", "230",
+            "720", "730", "750", "760", "770", "780", "790", "800", "810", "820", "830");
     private static final String CATALOG_RESOURCE = "recommended-gangwon-spots.json";
 
     private final List<Place> places;
@@ -34,16 +37,16 @@ public class RecommendedSpotCatalog {
     }
 
     RecommendedSpotCatalog(List<Place> places) {
-        if (places == null || places.isEmpty() || places.size() > 100) {
-            throw new IllegalArgumentException("Recommended spot catalog requires 1 to 100 places.");
+        if (places == null || places.isEmpty() || places.size() > MAX_PLACES) {
+            throw new IllegalArgumentException("Recommended spot catalog requires 1 to " + MAX_PLACES + " places.");
         }
         Set<Place> unique = new HashSet<>();
         for (Place place : places) {
             if (place == null || place.title() == null || place.title().isBlank()
                     || !place.title().equals(place.title().strip())
-                    || place.sigungu() == null || !place.sigungu().matches("[0-9]{3}")
+                    || place.sigungu() == null || !DISTRICTS.contains(place.sigungu())
                     || !unique.add(place)) {
-                throw new IllegalArgumentException("Recommended spots require unique titles and three-digit district codes.");
+                throw new IllegalArgumentException("Recommended spots require unique titles within a valid Gangwon district.");
             }
         }
         this.places = List.copyOf(places);

@@ -108,7 +108,7 @@ class RecommendedSpotApplicationServiceTest {
 
     @Test
     void 요청마다_전체_후보를_다시_섞어서_요청_크기만큼_중복없이_선택한다() {
-        List<SpotModel> candidates = IntStream.rangeClosed(1, 36)
+        List<SpotModel> candidates = IntStream.rangeClosed(1, 360)
                 .mapToObj(id -> spot(id, "대표 장소 " + id, "150").build()).toList();
         RecommendedSpotCatalog largeCatalog = new RecommendedSpotCatalog(candidates.stream()
                 .map(spot -> new RecommendedSpotCatalog.Place(spot.title(), spot.sigungu())).toList());
@@ -121,12 +121,13 @@ class RecommendedSpotApplicationServiceTest {
 
         assertThat(first.items()).hasSize(20);
         assertThat(next.items()).hasSize(20);
-        assertThat(first.totalCount()).isEqualTo(36);
+        assertThat(first.totalCount()).isEqualTo(360);
         assertThat(first.items()).extracting(SpotListResult.Item::spotId).doesNotHaveDuplicates();
         assertThat(next.items()).extracting(SpotListResult.Item::spotId).doesNotHaveDuplicates();
         // 고정 테스트 시드로 순서뿐 아니라 선택된 부분집합도 달라짐을 재현 가능하게 검증한다.
         assertThat(Set.copyOf(first.items())).isNotEqualTo(Set.copyOf(next.items()));
-        assertThat(first.items()).allMatch(item -> item.spotId() >= 1 && item.spotId() <= 36);
+        assertThat(first.items()).allMatch(item -> item.spotId() >= 1 && item.spotId() <= 360);
+        assertThat(randomService.list(new RecommendedSpotQuery("51", null, 100), null).items()).hasSize(100);
     }
 
     @Test

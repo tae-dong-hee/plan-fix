@@ -1,59 +1,1447 @@
 {
   "version": 1,
+  "reviewedAt": "2026-09-19",
+  "region": "51",
   "places": [
-    { "title": "남이섬", "sigungu": "110" },
-    { "title": "소양강스카이워크", "sigungu": "110" },
-    { "title": "강촌레일파크(김유정레일바이크)", "sigungu": "110" },
-    { "title": "소금산그랜드밸리", "sigungu": "130" },
-    { "title": "뮤지엄산", "sigungu": "130" },
-    { "title": "구룡사", "sigungu": "130" },
-    { "title": "경포해수욕장", "sigungu": "150" },
-    { "title": "강릉 오죽헌·시립박물관", "sigungu": "150" },
-    { "title": "정동진해변", "sigungu": "150" },
-    { "title": "추암 촛대바위", "sigungu": "170" },
-    { "title": "무릉계곡", "sigungu": "170" },
-    { "title": "도째비골스카이밸리", "sigungu": "170" },
-    { "title": "태백산 국립공원", "sigungu": "190" },
-    { "title": "황지연못", "sigungu": "190" },
-    { "title": "용연동굴 (강원고생대 국가지질공원)", "sigungu": "190" },
-    { "title": "설악산 국립공원(외설악)", "sigungu": "210" },
-    { "title": "속초해수욕장", "sigungu": "210" },
-    { "title": "아바이마을", "sigungu": "210" },
-    { "title": "대금굴", "sigungu": "230" },
-    { "title": "삼척해상케이블카", "sigungu": "230" },
-    { "title": "삼척 죽서루", "sigungu": "230" },
-    { "title": "알파카월드", "sigungu": "720" },
-    { "title": "수타사", "sigungu": "720" },
-    { "title": "팔봉산(홍천)", "sigungu": "720" },
-    { "title": "풍수원성당", "sigungu": "730" },
-    { "title": "[횡성호수길] 5구간", "sigungu": "730" },
-    { "title": "국립 청태산자연휴양림", "sigungu": "730" },
-    { "title": "한반도지형(강원고생대 국가지질공원)", "sigungu": "750" },
-    { "title": "고씨굴 (강원고생대 국가지질공원)", "sigungu": "750" },
-    { "title": "영월 청령포", "sigungu": "750" },
-    { "title": "대관령양떼목장", "sigungu": "760" },
-    { "title": "월정사·월정사 전나무숲", "sigungu": "760" },
-    { "title": "흥정계곡", "sigungu": "760" },
-    { "title": "병방치 스카이워크", "sigungu": "770" },
-    { "title": "아우라지", "sigungu": "770" },
-    { "title": "정선레일바이크", "sigungu": "770" },
-    { "title": "고석정 (한탄강 유네스코 세계지질공원)", "sigungu": "780" },
-    { "title": "철원 한탄강 주상절리길(잔도)", "sigungu": "780" },
-    { "title": "삼부연폭포 (한탄강 유네스코 세계지질공원)", "sigungu": "780" },
-    { "title": "파로호(화천)", "sigungu": "790" },
-    { "title": "평화의 댐(화천)", "sigungu": "790" },
-    { "title": "조경철천문대", "sigungu": "790" },
-    { "title": "두타연 (강원평화지역 국가지질공원)", "sigungu": "800" },
-    { "title": "박수근미술관", "sigungu": "800" },
-    { "title": "한반도섬", "sigungu": "800" },
-    { "title": "원대리 자작나무 숲 (속삭이는 자작나무 숲)", "sigungu": "810" },
-    { "title": "백담사", "sigungu": "810" },
-    { "title": "내린천 래프팅", "sigungu": "810" },
-    { "title": "고성 통일전망타워", "sigungu": "820" },
-    { "title": "화진포(강원평화지역 국가지질공원)", "sigungu": "820" },
-    { "title": "송지호 해수욕장", "sigungu": "820" },
-    { "title": "낙산사", "sigungu": "830" },
-    { "title": "하조대", "sigungu": "830" },
-    { "title": "휴휴암(강원)", "sigungu": "830" }
+    {
+      "title": "남이섬",
+      "sigungu": "110"
+    },
+    {
+      "title": "소양강스카이워크",
+      "sigungu": "110"
+    },
+    {
+      "title": "강촌레일파크(김유정레일바이크)",
+      "sigungu": "110"
+    },
+    {
+      "title": "청평사(춘천)",
+      "sigungu": "110"
+    },
+    {
+      "title": "구곡폭포",
+      "sigungu": "110"
+    },
+    {
+      "title": "레고랜드 코리아 리조트",
+      "sigungu": "110"
+    },
+    {
+      "title": "김유정문학촌",
+      "sigungu": "110"
+    },
+    {
+      "title": "해피초원목장",
+      "sigungu": "110"
+    },
+    {
+      "title": "제이드가든",
+      "sigungu": "110"
+    },
+    {
+      "title": "강아지숲",
+      "sigungu": "110"
+    },
+    {
+      "title": "구봉산 전망대 카페거리",
+      "sigungu": "110"
+    },
+    {
+      "title": "춘천 명동 닭갈비 골목",
+      "sigungu": "110"
+    },
+    {
+      "title": "춘천 삼악산 호수케이블카",
+      "sigungu": "110"
+    },
+    {
+      "title": "소양강댐",
+      "sigungu": "110"
+    },
+    {
+      "title": "국립춘천박물관",
+      "sigungu": "110"
+    },
+    {
+      "title": "춘천 애니메이션박물관·토이로봇관",
+      "sigungu": "110"
+    },
+    {
+      "title": "감자밭",
+      "sigungu": "110"
+    },
+    {
+      "title": "어스17",
+      "sigungu": "110"
+    },
+    {
+      "title": "춘천통나무집닭갈비",
+      "sigungu": "110"
+    },
+    {
+      "title": "유포리막국수",
+      "sigungu": "110"
+    },
+    {
+      "title": "소금산그랜드밸리",
+      "sigungu": "130"
+    },
+    {
+      "title": "뮤지엄산",
+      "sigungu": "130"
+    },
+    {
+      "title": "구룡사",
+      "sigungu": "130"
+    },
+    {
+      "title": "치악산국립공원",
+      "sigungu": "130"
+    },
+    {
+      "title": "원주 반계리 은행나무",
+      "sigungu": "130"
+    },
+    {
+      "title": "원주 강원감영",
+      "sigungu": "130"
+    },
+    {
+      "title": "원주한지테마파크",
+      "sigungu": "130"
+    },
+    {
+      "title": "박경리문학공원",
+      "sigungu": "130"
+    },
+    {
+      "title": "용소막성당",
+      "sigungu": "130"
+    },
+    {
+      "title": "동화마을수목원",
+      "sigungu": "130"
+    },
+    {
+      "title": "원주 법천사지",
+      "sigungu": "130"
+    },
+    {
+      "title": "고판화박물관",
+      "sigungu": "130"
+    },
+    {
+      "title": "미로예술 원주중앙시장",
+      "sigungu": "130"
+    },
+    {
+      "title": "원주 도래미시장",
+      "sigungu": "130"
+    },
+    {
+      "title": "스톤크릭",
+      "sigungu": "130"
+    },
+    {
+      "title": "사니다카페",
+      "sigungu": "130"
+    },
+    {
+      "title": "보릿고개 본점",
+      "sigungu": "130"
+    },
+    {
+      "title": "까치둥지",
+      "sigungu": "130"
+    },
+    {
+      "title": "산정집",
+      "sigungu": "130"
+    },
+    {
+      "title": "토지옹심이",
+      "sigungu": "130"
+    },
+    {
+      "title": "경포해수욕장",
+      "sigungu": "150"
+    },
+    {
+      "title": "강릉 오죽헌·시립박물관",
+      "sigungu": "150"
+    },
+    {
+      "title": "정동진해변",
+      "sigungu": "150"
+    },
+    {
+      "title": "하슬라아트월드",
+      "sigungu": "150"
+    },
+    {
+      "title": "아르떼뮤지엄 강릉",
+      "sigungu": "150"
+    },
+    {
+      "title": "강릉 선교장",
+      "sigungu": "150"
+    },
+    {
+      "title": "안반데기",
+      "sigungu": "150"
+    },
+    {
+      "title": "주문진항",
+      "sigungu": "150"
+    },
+    {
+      "title": "BTS 버스정류장",
+      "sigungu": "150"
+    },
+    {
+      "title": "강릉 경포대",
+      "sigungu": "150"
+    },
+    {
+      "title": "허균·허난설헌 기념공원",
+      "sigungu": "150"
+    },
+    {
+      "title": "오대산 소금강계곡",
+      "sigungu": "150"
+    },
+    {
+      "title": "강릉커피거리",
+      "sigungu": "150"
+    },
+    {
+      "title": "강릉 중앙시장",
+      "sigungu": "150"
+    },
+    {
+      "title": "테라로사 커피공장",
+      "sigungu": "150"
+    },
+    {
+      "title": "보헤미안박이추커피 본점",
+      "sigungu": "150"
+    },
+    {
+      "title": "카페툇마루",
+      "sigungu": "150"
+    },
+    {
+      "title": "강릉짬뽕순두부 동화가든 본점",
+      "sigungu": "150"
+    },
+    {
+      "title": "현대장칼국수",
+      "sigungu": "150"
+    },
+    {
+      "title": "순두부젤라또 1호점",
+      "sigungu": "150"
+    },
+    {
+      "title": "추암 촛대바위",
+      "sigungu": "170"
+    },
+    {
+      "title": "무릉계곡",
+      "sigungu": "170"
+    },
+    {
+      "title": "도째비골스카이밸리",
+      "sigungu": "170"
+    },
+    {
+      "title": "무릉별유천지",
+      "sigungu": "170"
+    },
+    {
+      "title": "망상해변",
+      "sigungu": "170"
+    },
+    {
+      "title": "묵호등대",
+      "sigungu": "170"
+    },
+    {
+      "title": "천곡황금박쥐동굴",
+      "sigungu": "170"
+    },
+    {
+      "title": "묵호항",
+      "sigungu": "170"
+    },
+    {
+      "title": "한섬해변&한섬감성바닷길",
+      "sigungu": "170"
+    },
+    {
+      "title": "삼화사",
+      "sigungu": "170"
+    },
+    {
+      "title": "어달해변",
+      "sigungu": "170"
+    },
+    {
+      "title": "대진 해수욕장",
+      "sigungu": "170"
+    },
+    {
+      "title": "연필뮤지엄",
+      "sigungu": "170"
+    },
+    {
+      "title": "묵호시장",
+      "sigungu": "170"
+    },
+    {
+      "title": "동쪽바다중앙시장",
+      "sigungu": "170"
+    },
+    {
+      "title": "내게와 묵호",
+      "sigungu": "170"
+    },
+    {
+      "title": "현상소",
+      "sigungu": "170"
+    },
+    {
+      "title": "거동탕수육",
+      "sigungu": "170"
+    },
+    {
+      "title": "오부자냄비물회",
+      "sigungu": "170"
+    },
+    {
+      "title": "오뚜기칼국수",
+      "sigungu": "170"
+    },
+    {
+      "title": "태백산 국립공원",
+      "sigungu": "190"
+    },
+    {
+      "title": "황지연못",
+      "sigungu": "190"
+    },
+    {
+      "title": "용연동굴 (강원고생대 국가지질공원)",
+      "sigungu": "190"
+    },
+    {
+      "title": "매봉산 바람의 언덕",
+      "sigungu": "190"
+    },
+    {
+      "title": "구문소 (강원고생대 국가지질공원)",
+      "sigungu": "190"
+    },
+    {
+      "title": "태백 365세이프타운",
+      "sigungu": "190"
+    },
+    {
+      "title": "함백산",
+      "sigungu": "190"
+    },
+    {
+      "title": "검룡소",
+      "sigungu": "190"
+    },
+    {
+      "title": "삼수령",
+      "sigungu": "190"
+    },
+    {
+      "title": "태백 상장동 벽화마을",
+      "sigungu": "190"
+    },
+    {
+      "title": "철암단풍군락지",
+      "sigungu": "190"
+    },
+    {
+      "title": "몽토랑 산양목장",
+      "sigungu": "190"
+    },
+    {
+      "title": "오로라파크",
+      "sigungu": "190"
+    },
+    {
+      "title": "태백석탄박물관",
+      "sigungu": "190"
+    },
+    {
+      "title": "태백 고생대 자연사박물관",
+      "sigungu": "190"
+    },
+    {
+      "title": "철암탄광역사촌",
+      "sigungu": "190"
+    },
+    {
+      "title": "황지 자유시장",
+      "sigungu": "190"
+    },
+    {
+      "title": "김서방네닭갈비",
+      "sigungu": "190"
+    },
+    {
+      "title": "원조태성실비식당",
+      "sigungu": "190"
+    },
+    {
+      "title": "백번의봄",
+      "sigungu": "190"
+    },
+    {
+      "title": "설악산 국립공원(외설악)",
+      "sigungu": "210"
+    },
+    {
+      "title": "속초해수욕장",
+      "sigungu": "210"
+    },
+    {
+      "title": "아바이마을",
+      "sigungu": "210"
+    },
+    {
+      "title": "영금정",
+      "sigungu": "210"
+    },
+    {
+      "title": "대포항",
+      "sigungu": "210"
+    },
+    {
+      "title": "청초호",
+      "sigungu": "210"
+    },
+    {
+      "title": "영랑호",
+      "sigungu": "210"
+    },
+    {
+      "title": "설악산 케이블카",
+      "sigungu": "210"
+    },
+    {
+      "title": "속초등대전망대",
+      "sigungu": "210"
+    },
+    {
+      "title": "외옹치해변",
+      "sigungu": "210"
+    },
+    {
+      "title": "속초시립박물관·속초실향민문화촌",
+      "sigungu": "210"
+    },
+    {
+      "title": "국립산악박물관",
+      "sigungu": "210"
+    },
+    {
+      "title": "속초관광수산시장",
+      "sigungu": "210"
+    },
+    {
+      "title": "칠성조선소",
+      "sigungu": "210"
+    },
+    {
+      "title": "카페 설악산로",
+      "sigungu": "210"
+    },
+    {
+      "title": "청초수물회",
+      "sigungu": "210"
+    },
+    {
+      "title": "봉포머구리집",
+      "sigungu": "210"
+    },
+    {
+      "title": "단천식당",
+      "sigungu": "210"
+    },
+    {
+      "title": "88생선구이",
+      "sigungu": "210"
+    },
+    {
+      "title": "감나무집 감자옹심이",
+      "sigungu": "210"
+    },
+    {
+      "title": "대금굴",
+      "sigungu": "230"
+    },
+    {
+      "title": "삼척해상케이블카",
+      "sigungu": "230"
+    },
+    {
+      "title": "삼척 죽서루",
+      "sigungu": "230"
+    },
+    {
+      "title": "환선굴",
+      "sigungu": "230"
+    },
+    {
+      "title": "장호해변·장호항",
+      "sigungu": "230"
+    },
+    {
+      "title": "삼척 미인폭포",
+      "sigungu": "230"
+    },
+    {
+      "title": "덕봉산",
+      "sigungu": "230"
+    },
+    {
+      "title": "맹방해변",
+      "sigungu": "230"
+    },
+    {
+      "title": "용화해변",
+      "sigungu": "230"
+    },
+    {
+      "title": "덕풍계곡",
+      "sigungu": "230"
+    },
+    {
+      "title": "갈남항",
+      "sigungu": "230"
+    },
+    {
+      "title": "삼척 해신당공원",
+      "sigungu": "230"
+    },
+    {
+      "title": "도계유리나라&나무나라",
+      "sigungu": "230"
+    },
+    {
+      "title": "삼척 해양레일바이크",
+      "sigungu": "230"
+    },
+    {
+      "title": "삼척 중앙시장 (2, 7일)",
+      "sigungu": "230"
+    },
+    {
+      "title": "네가있는바다",
+      "sigungu": "230"
+    },
+    {
+      "title": "보보정",
+      "sigungu": "230"
+    },
+    {
+      "title": "부일막국수",
+      "sigungu": "230"
+    },
+    {
+      "title": "삼고정문",
+      "sigungu": "230"
+    },
+    {
+      "title": "신다리",
+      "sigungu": "230"
+    },
+    {
+      "title": "알파카월드",
+      "sigungu": "720"
+    },
+    {
+      "title": "수타사",
+      "sigungu": "720"
+    },
+    {
+      "title": "팔봉산(홍천)",
+      "sigungu": "720"
+    },
+    {
+      "title": "오션월드",
+      "sigungu": "720"
+    },
+    {
+      "title": "국립삼봉자연휴양림",
+      "sigungu": "720"
+    },
+    {
+      "title": "가령폭포",
+      "sigungu": "720"
+    },
+    {
+      "title": "미약골",
+      "sigungu": "720"
+    },
+    {
+      "title": "가리산자연휴양림",
+      "sigungu": "720"
+    },
+    {
+      "title": "홍천강",
+      "sigungu": "720"
+    },
+    {
+      "title": "홍천 살둔마을",
+      "sigungu": "720"
+    },
+    {
+      "title": "공작산생태숲",
+      "sigungu": "720"
+    },
+    {
+      "title": "무궁화수목원",
+      "sigungu": "720"
+    },
+    {
+      "title": "마리소리골악기박물관",
+      "sigungu": "720"
+    },
+    {
+      "title": "비발디파크 루지월드",
+      "sigungu": "720"
+    },
+    {
+      "title": "비발디파크 스키장",
+      "sigungu": "720"
+    },
+    {
+      "title": "홍천 중앙시장 (1,6일)",
+      "sigungu": "720"
+    },
+    {
+      "title": "양지말화로구이",
+      "sigungu": "720"
+    },
+    {
+      "title": "홍천한우사랑말식당",
+      "sigungu": "720"
+    },
+    {
+      "title": "러스틱라이프",
+      "sigungu": "720"
+    },
+    {
+      "title": "금수강산막국수",
+      "sigungu": "720"
+    },
+    {
+      "title": "풍수원성당",
+      "sigungu": "730"
+    },
+    {
+      "title": "[횡성호수길] 5구간",
+      "sigungu": "730"
+    },
+    {
+      "title": "국립 청태산자연휴양림",
+      "sigungu": "730"
+    },
+    {
+      "title": "안흥찐빵모락모락마을",
+      "sigungu": "730"
+    },
+    {
+      "title": "태기산",
+      "sigungu": "730"
+    },
+    {
+      "title": "국립횡성숲체원",
+      "sigungu": "730"
+    },
+    {
+      "title": "병지방계곡",
+      "sigungu": "730"
+    },
+    {
+      "title": "태종대(횡성)",
+      "sigungu": "730"
+    },
+    {
+      "title": "국순당 주향로",
+      "sigungu": "730"
+    },
+    {
+      "title": "웰리힐리파크 워터플래닛",
+      "sigungu": "730"
+    },
+    {
+      "title": "미술관 자작나무숲",
+      "sigungu": "730"
+    },
+    {
+      "title": "횡성한우체험관",
+      "sigungu": "730"
+    },
+    {
+      "title": "횡성루지체험장",
+      "sigungu": "730"
+    },
+    {
+      "title": "횡성호",
+      "sigungu": "730"
+    },
+    {
+      "title": "노랑공장",
+      "sigungu": "730"
+    },
+    {
+      "title": "호수길133",
+      "sigungu": "730"
+    },
+    {
+      "title": "면사무소앞안흥찐빵",
+      "sigungu": "730"
+    },
+    {
+      "title": "횡성축협 한우프라자 본점",
+      "sigungu": "730"
+    },
+    {
+      "title": "박현자네더덕밥",
+      "sigungu": "730"
+    },
+    {
+      "title": "함밭식당",
+      "sigungu": "730"
+    },
+    {
+      "title": "한반도지형(강원고생대 국가지질공원)",
+      "sigungu": "750"
+    },
+    {
+      "title": "고씨굴 (강원고생대 국가지질공원)",
+      "sigungu": "750"
+    },
+    {
+      "title": "영월 청령포",
+      "sigungu": "750"
+    },
+    {
+      "title": "영월 장릉(단종) [유네스코 세계유산]",
+      "sigungu": "750"
+    },
+    {
+      "title": "선돌 (강원고생대 국가지질공원)",
+      "sigungu": "750"
+    },
+    {
+      "title": "영월 어라연(강원고생대 국가지질공원)",
+      "sigungu": "750"
+    },
+    {
+      "title": "법흥사(영월)",
+      "sigungu": "750"
+    },
+    {
+      "title": "동강(영월)",
+      "sigungu": "750"
+    },
+    {
+      "title": "난고 김삿갓 유적지",
+      "sigungu": "750"
+    },
+    {
+      "title": "별마로천문대",
+      "sigungu": "750"
+    },
+    {
+      "title": "요선정·요선암",
+      "sigungu": "750"
+    },
+    {
+      "title": "영월 섶다리 마을",
+      "sigungu": "750"
+    },
+    {
+      "title": "김삿갓 계곡",
+      "sigungu": "750"
+    },
+    {
+      "title": "젊은달 와이파크",
+      "sigungu": "750"
+    },
+    {
+      "title": "동강사진박물관",
+      "sigungu": "750"
+    },
+    {
+      "title": "조선민화박물관",
+      "sigungu": "750"
+    },
+    {
+      "title": "영월 서부아침시장",
+      "sigungu": "750"
+    },
+    {
+      "title": "동강다슬기",
+      "sigungu": "750"
+    },
+    {
+      "title": "카페 느리게",
+      "sigungu": "750"
+    },
+    {
+      "title": "이달엔영월 ((주)영월청년들)",
+      "sigungu": "750"
+    },
+    {
+      "title": "대관령양떼목장",
+      "sigungu": "760"
+    },
+    {
+      "title": "월정사·월정사 전나무숲",
+      "sigungu": "760"
+    },
+    {
+      "title": "흥정계곡",
+      "sigungu": "760"
+    },
+    {
+      "title": "대관령 하늘목장",
+      "sigungu": "760"
+    },
+    {
+      "title": "삼양라운드힐",
+      "sigungu": "760"
+    },
+    {
+      "title": "발왕산 관광케이블카",
+      "sigungu": "760"
+    },
+    {
+      "title": "평창 육백마지기",
+      "sigungu": "760"
+    },
+    {
+      "title": "허브나라농원",
+      "sigungu": "760"
+    },
+    {
+      "title": "백룡동굴 (강원고생대 국가지질공원)",
+      "sigungu": "760"
+    },
+    {
+      "title": "선자령",
+      "sigungu": "760"
+    },
+    {
+      "title": "오대산국립공원",
+      "sigungu": "760"
+    },
+    {
+      "title": "이효석 문학관",
+      "sigungu": "760"
+    },
+    {
+      "title": "평창무이예술관",
+      "sigungu": "760"
+    },
+    {
+      "title": "효석문화마을 메밀음식거리",
+      "sigungu": "760"
+    },
+    {
+      "title": "2018 평창동계올림픽대회 및 동계패럴림픽대회 기념관",
+      "sigungu": "760"
+    },
+    {
+      "title": "수미카페",
+      "sigungu": "760"
+    },
+    {
+      "title": "소곤소곤 커피소리",
+      "sigungu": "760"
+    },
+    {
+      "title": "납작식당",
+      "sigungu": "760"
+    },
+    {
+      "title": "황태회관",
+      "sigungu": "760"
+    },
+    {
+      "title": "송어의집",
+      "sigungu": "760"
+    },
+    {
+      "title": "병방치 스카이워크",
+      "sigungu": "770"
+    },
+    {
+      "title": "아우라지",
+      "sigungu": "770"
+    },
+    {
+      "title": "정선레일바이크",
+      "sigungu": "770"
+    },
+    {
+      "title": "민둥산",
+      "sigungu": "770"
+    },
+    {
+      "title": "화암동굴 (강원고생대 국가지질공원)",
+      "sigungu": "770"
+    },
+    {
+      "title": "삼탄아트마인",
+      "sigungu": "770"
+    },
+    {
+      "title": "정암사 수마노탑",
+      "sigungu": "770"
+    },
+    {
+      "title": "화암약수 (강원고생대 국가지질공원)",
+      "sigungu": "770"
+    },
+    {
+      "title": "만항재",
+      "sigungu": "770"
+    },
+    {
+      "title": "아라리촌",
+      "sigungu": "770"
+    },
+    {
+      "title": "가리왕산케이블카",
+      "sigungu": "770"
+    },
+    {
+      "title": "아리랑박물관",
+      "sigungu": "770"
+    },
+    {
+      "title": "정선 아리랑시장·정선 5일장(2, 7일)",
+      "sigungu": "770"
+    },
+    {
+      "title": "고한 구공탄시장",
+      "sigungu": "770"
+    },
+    {
+      "title": "나전역카페",
+      "sigungu": "770"
+    },
+    {
+      "title": "단임길",
+      "sigungu": "770"
+    },
+    {
+      "title": "회동집",
+      "sigungu": "770"
+    },
+    {
+      "title": "싸리골",
+      "sigungu": "770"
+    },
+    {
+      "title": "동광식당",
+      "sigungu": "770"
+    },
+    {
+      "title": "로미지안가든",
+      "sigungu": "770"
+    },
+    {
+      "title": "고석정 (한탄강 유네스코 세계지질공원)",
+      "sigungu": "780"
+    },
+    {
+      "title": "철원 한탄강 주상절리길(잔도)",
+      "sigungu": "780"
+    },
+    {
+      "title": "삼부연폭포 (한탄강 유네스코 세계지질공원)",
+      "sigungu": "780"
+    },
+    {
+      "title": "백마고지 위령비와 기념관",
+      "sigungu": "780"
+    },
+    {
+      "title": "소이산 모노레일",
+      "sigungu": "780"
+    },
+    {
+      "title": "고석정 꽃밭",
+      "sigungu": "780"
+    },
+    {
+      "title": "철원역사문화공원",
+      "sigungu": "780"
+    },
+    {
+      "title": "도피안사(철원)",
+      "sigungu": "780"
+    },
+    {
+      "title": "송대소주상절리",
+      "sigungu": "780"
+    },
+    {
+      "title": "철원 한탄강 은하수교",
+      "sigungu": "780"
+    },
+    {
+      "title": "철원 평화전망대 (한탄강 유네스코 세계지질공원)",
+      "sigungu": "780"
+    },
+    {
+      "title": "철원 노동당사",
+      "sigungu": "780"
+    },
+    {
+      "title": "직탕폭포 (한탄강 유네스코 세계지질공원)",
+      "sigungu": "780"
+    },
+    {
+      "title": "월정리역",
+      "sigungu": "780"
+    },
+    {
+      "title": "제2땅굴(철원)",
+      "sigungu": "780"
+    },
+    {
+      "title": "한탄강 래프팅",
+      "sigungu": "780"
+    },
+    {
+      "title": "카페은하수",
+      "sigungu": "780"
+    },
+    {
+      "title": "[백년가게]철원막국수",
+      "sigungu": "780"
+    },
+    {
+      "title": "어랑손만두국",
+      "sigungu": "780"
+    },
+    {
+      "title": "철원 솔향기",
+      "sigungu": "780"
+    },
+    {
+      "title": "파로호(화천)",
+      "sigungu": "790"
+    },
+    {
+      "title": "평화의 댐(화천)",
+      "sigungu": "790"
+    },
+    {
+      "title": "조경철천문대",
+      "sigungu": "790"
+    },
+    {
+      "title": "산천어커피박물관",
+      "sigungu": "790"
+    },
+    {
+      "title": "백암산케이블카",
+      "sigungu": "790"
+    },
+    {
+      "title": "딴산",
+      "sigungu": "790"
+    },
+    {
+      "title": "비수구미마을(비수구미계곡)",
+      "sigungu": "790"
+    },
+    {
+      "title": "꺼먹다리",
+      "sigungu": "790"
+    },
+    {
+      "title": "거례리사랑나무",
+      "sigungu": "790"
+    },
+    {
+      "title": "곡운구곡 (강원평화지역 국가지질공원)",
+      "sigungu": "790"
+    },
+    {
+      "title": "화천 산타클로스우체국 대한민국 본점",
+      "sigungu": "790"
+    },
+    {
+      "title": "붕어섬&황톳길",
+      "sigungu": "790"
+    },
+    {
+      "title": "광덕계곡",
+      "sigungu": "790"
+    },
+    {
+      "title": "광덕산(화천)",
+      "sigungu": "790"
+    },
+    {
+      "title": "수달연구센터",
+      "sigungu": "790"
+    },
+    {
+      "title": "화천박물관",
+      "sigungu": "790"
+    },
+    {
+      "title": "화천시장",
+      "sigungu": "790"
+    },
+    {
+      "title": "광덕 별아래",
+      "sigungu": "790"
+    },
+    {
+      "title": "화천어죽탕",
+      "sigungu": "790"
+    },
+    {
+      "title": "신천일막국수",
+      "sigungu": "790"
+    },
+    {
+      "title": "두타연 (강원평화지역 국가지질공원)",
+      "sigungu": "800"
+    },
+    {
+      "title": "박수근미술관",
+      "sigungu": "800"
+    },
+    {
+      "title": "한반도섬",
+      "sigungu": "800"
+    },
+    {
+      "title": "국토정중앙천문대",
+      "sigungu": "800"
+    },
+    {
+      "title": "국립DMZ자생식물원",
+      "sigungu": "800"
+    },
+    {
+      "title": "파로호꽃섬",
+      "sigungu": "800"
+    },
+    {
+      "title": "을지전망대",
+      "sigungu": "800"
+    },
+    {
+      "title": "양구 펀치볼마을 (펀치볼)",
+      "sigungu": "800"
+    },
+    {
+      "title": "광치자연휴양림",
+      "sigungu": "800"
+    },
+    {
+      "title": "DMZ펀치볼둘레길",
+      "sigungu": "800"
+    },
+    {
+      "title": "양구백자박물관",
+      "sigungu": "800"
+    },
+    {
+      "title": "양구선사근현대사박물관",
+      "sigungu": "800"
+    },
+    {
+      "title": "양구인문학박물관",
+      "sigungu": "800"
+    },
+    {
+      "title": "양구통일관",
+      "sigungu": "800"
+    },
+    {
+      "title": "양구중앙시장",
+      "sigungu": "800"
+    },
+    {
+      "title": "양구농사꾼",
+      "sigungu": "800"
+    },
+    {
+      "title": "배꼽제빵소",
+      "sigungu": "800"
+    },
+    {
+      "title": "시래원",
+      "sigungu": "800"
+    },
+    {
+      "title": "석장골오골계숯불구이",
+      "sigungu": "800"
+    },
+    {
+      "title": "광치막국수",
+      "sigungu": "800"
+    },
+    {
+      "title": "원대리 자작나무 숲 (속삭이는 자작나무 숲)",
+      "sigungu": "810"
+    },
+    {
+      "title": "백담사",
+      "sigungu": "810"
+    },
+    {
+      "title": "내린천 래프팅",
+      "sigungu": "810"
+    },
+    {
+      "title": "국립방태산자연휴양림",
+      "sigungu": "810"
+    },
+    {
+      "title": "방동약수",
+      "sigungu": "810"
+    },
+    {
+      "title": "대암산 용늪 (강원평화지역 국가지질공원)",
+      "sigungu": "810"
+    },
+    {
+      "title": "비밀의정원",
+      "sigungu": "810"
+    },
+    {
+      "title": "만해마을",
+      "sigungu": "810"
+    },
+    {
+      "title": "인제 황태마을",
+      "sigungu": "810"
+    },
+    {
+      "title": "용대 매바위 인공폭포",
+      "sigungu": "810"
+    },
+    {
+      "title": "점봉산 곰배령",
+      "sigungu": "810"
+    },
+    {
+      "title": "백담계곡",
+      "sigungu": "810"
+    },
+    {
+      "title": "십이선녀탕(탕수동계곡)",
+      "sigungu": "810"
+    },
+    {
+      "title": "아침가리계곡",
+      "sigungu": "810"
+    },
+    {
+      "title": "인제산촌민속박물관",
+      "sigungu": "810"
+    },
+    {
+      "title": "박인환문학관",
+      "sigungu": "810"
+    },
+    {
+      "title": "인제스피디움 서킷",
+      "sigungu": "810"
+    },
+    {
+      "title": "카페 하추리",
+      "sigungu": "810"
+    },
+    {
+      "title": "용바위식당",
+      "sigungu": "810"
+    },
+    {
+      "title": "송희식당",
+      "sigungu": "810"
+    },
+    {
+      "title": "고성 통일전망타워",
+      "sigungu": "820"
+    },
+    {
+      "title": "화진포(강원평화지역 국가지질공원)",
+      "sigungu": "820"
+    },
+    {
+      "title": "송지호 해수욕장",
+      "sigungu": "820"
+    },
+    {
+      "title": "아야진해변",
+      "sigungu": "820"
+    },
+    {
+      "title": "청간정",
+      "sigungu": "820"
+    },
+    {
+      "title": "고성 왕곡마을",
+      "sigungu": "820"
+    },
+    {
+      "title": "능파대 (강원평화지역 국가지질공원)",
+      "sigungu": "820"
+    },
+    {
+      "title": "하늬라벤더팜",
+      "sigungu": "820"
+    },
+    {
+      "title": "봉포해변",
+      "sigungu": "820"
+    },
+    {
+      "title": "거진항",
+      "sigungu": "820"
+    },
+    {
+      "title": "천학정",
+      "sigungu": "820"
+    },
+    {
+      "title": "화암사(고성)",
+      "sigungu": "820"
+    },
+    {
+      "title": "건봉사",
+      "sigungu": "820"
+    },
+    {
+      "title": "백섬해상전망대",
+      "sigungu": "820"
+    },
+    {
+      "title": "바우지움 조각미술관",
+      "sigungu": "820"
+    },
+    {
+      "title": "고성 DMZ박물관",
+      "sigungu": "820"
+    },
+    {
+      "title": "바다정원",
+      "sigungu": "820"
+    },
+    {
+      "title": "온더버튼",
+      "sigungu": "820"
+    },
+    {
+      "title": "백촌막국수",
+      "sigungu": "820"
+    },
+    {
+      "title": "제비호식당",
+      "sigungu": "820"
+    },
+    {
+      "title": "낙산사",
+      "sigungu": "830"
+    },
+    {
+      "title": "하조대",
+      "sigungu": "830"
+    },
+    {
+      "title": "휴휴암(강원)",
+      "sigungu": "830"
+    },
+    {
+      "title": "낙산해수욕장",
+      "sigungu": "830"
+    },
+    {
+      "title": "양리단길",
+      "sigungu": "830"
+    },
+    {
+      "title": "인구해수욕장",
+      "sigungu": "830"
+    },
+    {
+      "title": "설악산 오색주전골",
+      "sigungu": "830"
+    },
+    {
+      "title": "오색령(한계령)",
+      "sigungu": "830"
+    },
+    {
+      "title": "남애항",
+      "sigungu": "830"
+    },
+    {
+      "title": "죽도정·죽도 전망대",
+      "sigungu": "830"
+    },
+    {
+      "title": "오산리선사유적박물관",
+      "sigungu": "830"
+    },
+    {
+      "title": "서피비치",
+      "sigungu": "830"
+    },
+    {
+      "title": "양양전통시장 (4, 9일)",
+      "sigungu": "830"
+    },
+    {
+      "title": "오색약수터",
+      "sigungu": "830"
+    },
+    {
+      "title": "국립미천골자연휴양림",
+      "sigungu": "830"
+    },
+    {
+      "title": "바다뷰제빵소",
+      "sigungu": "830"
+    },
+    {
+      "title": "카페 로그",
+      "sigungu": "830"
+    },
+    {
+      "title": "영광정메밀국수",
+      "sigungu": "830"
+    },
+    {
+      "title": "옛뜰",
+      "sigungu": "830"
+    },
+    {
+      "title": "공가네감자옹심이",
+      "sigungu": "830"
+    }
   ]
 }

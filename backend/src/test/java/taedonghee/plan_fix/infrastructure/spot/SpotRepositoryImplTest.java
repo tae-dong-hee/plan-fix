@@ -5,6 +5,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.core.io.ClassPathResource;
+import taedonghee.plan_fix.application.spot.RecommendedSpotApplicationService;
+import taedonghee.plan_fix.application.spot.RecommendedSpotCatalog;
+import taedonghee.plan_fix.application.spot.RecommendedSpotQuery;
+import taedonghee.plan_fix.application.spot.SpotListResult;
 import taedonghee.plan_fix.domain.spot.SpotModel;
 import taedonghee.plan_fix.domain.spot.RecommendedSpotRepository;
 import taedonghee.plan_fix.domain.spot.SpotRepository;
@@ -31,6 +37,37 @@ class SpotRepositoryImplTest {
 
     @Autowired
     private RecommendedSpotRepository recommendedSpotRepository;
+
+    @Autowired
+    private RecommendedSpotApplicationService recommendedSpotService;
+
+    @Test
+    void 실제_DB에서_360개_후보와_지역별_20개를_누락없이_반환한다() throws Exception {
+        List<RecommendedSpotCatalog.Place> places;
+        try (var input = new ClassPathResource("recommended-gangwon-spots.json").getInputStream()) {
+            places = new ObjectMapper().readValue(input, RecommendedSpotCatalog.Catalog.class).places();
+        }
+        String[] categories = {"관광지", "문화시설", "레포츠", "카페/음료", "음식점", "쇼핑"};
+        for (int i = 0; i < places.size(); i++) {
+            var place = places.get(i);
+            save(categories[i % categories.length], place.title(), "51", place.sigungu(), SpotStatus.ACTIVE, 0, 0);
+        }
+        // 조회 결과에 숨김·타지역·미선정 레코드가 섞여도 추천 수가 늘어나면 안 된다.
+        save("관광지", "남이섬", "51", "110", SpotStatus.HIDDEN, 0, 0);
+        save("관광지", "남이섬", "11", "110", SpotStatus.ACTIVE, 0, 0);
+        save("음식점", "미선정 음식점", "51", "110", SpotStatus.ACTIVE, 0, 0);
+
+        var all = recommendedSpotService.list(new RecommendedSpotQuery("51", null, 100), null);
+        assertThat(all.totalCount()).isEqualTo(360);
+        assertThat(all.items()).hasSize(100).extracting(SpotListResult.Item::spotId).doesNotHaveDuplicates();
+        for (String district : places.stream().map(RecommendedSpotCatalog.Place::sigungu).distinct().toList()) {
+            var result = recommendedSpotService.list(new RecommendedSpotQuery("51", district, 20), null);
+            assertThat(result.totalCount()).isEqualTo(20);
+            assertThat(result.items()).hasSize(20).allMatch(item -> district.equals(item.sigungu()));
+            assertThat(result.items()).extracting(SpotListResult.Item::title).containsExactlyInAnyOrderElementsOf(
+                    places.stream().filter(place -> district.equals(place.sigungu())).map(RecommendedSpotCatalog.Place::title).toList());
+        }
+    }
 
     @Test
     void 추천_후보는_선정_이름과_지역에_맞는_공개_TourAPI_장소만_조회한다() {
