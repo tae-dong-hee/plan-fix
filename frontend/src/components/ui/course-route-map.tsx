@@ -1,11 +1,12 @@
 import { useId, useRef, useState, type KeyboardEvent } from "react";
 import { Link } from "react-router-dom";
-import { ArrowUpRight, MapPin, Navigation, Route } from "lucide-react";
+import { ArrowUpRight, MapPin, Navigation, Route, Sparkles } from "lucide-react";
 
 import KakaoMap from "@/components/ui/kakao-map";
 import SpotImage from "@/components/ui/spot-image";
 import { hasMapCoordinates } from "@/lib/map-coordinates";
 import { MISSING_SPOT_ADDRESS } from "@/lib/spot-display";
+import { describeDayThemes } from "@/lib/ai-trip-themes";
 import type { CourseDay, CourseSpotSummary, DayAccommodation } from "@/services/course";
 
 type CourseRouteMapProps = {
@@ -141,6 +142,7 @@ export default function CourseRouteMap({ days, startDate, accommodations = [] }:
           {orderedDays.map((item, index) => {
             const active = item.dayNumber === day.dayNumber;
             const label = dayDate(startDate, item.dayNumber);
+            const hasTheme = Boolean(item.themes?.length || item.tripIdeas?.length);
             return (
               <button
                 key={item.dayNumber}
@@ -149,15 +151,19 @@ export default function CourseRouteMap({ days, startDate, accommodations = [] }:
                 type="button"
                 role="tab"
                 aria-label={`Day ${item.dayNumber}`}
+                aria-describedby={hasTheme ? `${id}-theme-${item.dayNumber}` : undefined}
                 aria-selected={active}
                 aria-controls={`${id}-panel`}
                 tabIndex={active ? 0 : -1}
                 onClick={() => selectDay(item.dayNumber)}
                 onKeyDown={(event) => handleTabKeyDown(event, index)}
-                className={`flex shrink-0 items-center gap-2 rounded-xl border px-4 py-2.5 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${active ? "border-primary bg-primary font-bold text-primary-foreground shadow-sm" : "border-border/70 bg-background/80 font-medium text-muted-foreground hover:border-primary/30 hover:text-primary"}`}
+                className={`flex shrink-0 flex-col items-start justify-center gap-1 rounded-xl border px-4 py-2.5 text-left text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${active ? "border-primary bg-primary font-bold text-primary-foreground shadow-sm" : "border-border/70 bg-background/80 font-medium text-muted-foreground hover:border-primary/30 hover:text-primary"}`}
               >
-                <span>Day {item.dayNumber}</span>
-                {label && <span className={`text-[11px] font-normal ${active ? "text-primary-foreground/80" : "text-muted-foreground"}`}>{label}</span>}
+                <span className="flex items-center gap-2">
+                  <span>Day {item.dayNumber}</span>
+                  {label && <span className={`text-[11px] font-normal ${active ? "text-primary-foreground/80" : "text-muted-foreground"}`}>{label}</span>}
+                </span>
+                {hasTheme && <span id={`${id}-theme-${item.dayNumber}`} className="max-w-48 text-xs font-medium">{describeDayThemes(item)}</span>}
               </button>
             );
           })}
@@ -201,9 +207,12 @@ export default function CourseRouteMap({ days, startDate, accommodations = [] }:
         </div>
 
         <div data-testid={`day-detail-${day.dayNumber}`} className="px-5 pb-6 pt-6 sm:px-7">
-          <div className="mb-4 flex items-center justify-between gap-3">
-            <h3 className="flex items-center gap-2 text-sm font-bold text-foreground"><span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true" />Day {day.dayNumber} 일정{dateLabel && <span className="ml-1 text-xs font-normal text-muted-foreground">{dateLabel}</span>}</h3>
-            <span className="text-xs text-muted-foreground">{spots.length}개 장소</span>
+          <div className="mb-4 flex items-start justify-between gap-3">
+            <div>
+              <h3 className="flex flex-wrap items-center gap-2 text-sm font-bold text-foreground"><span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden="true" />Day {day.dayNumber} 일정{dateLabel && <span className="ml-1 text-xs font-normal text-muted-foreground">{dateLabel}</span>}</h3>
+              {(day.themes?.length || day.tripIdeas?.length) ? <p className="mt-2 flex items-start gap-1 text-xs font-medium text-primary" data-testid={`day-theme-${day.dayNumber}`}><Sparkles className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" /><span>{describeDayThemes(day)}</span></p> : null}
+            </div>
+            <span className="shrink-0 text-xs text-muted-foreground">{spots.length}개 장소</span>
           </div>
 
           {spots.length === 0 ? (

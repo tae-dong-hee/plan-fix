@@ -1,5 +1,5 @@
 import { UnauthorizedError } from "./spots";
-import type { AiCourseTheme } from "./ai-course";
+import type { AiCourseTheme, AiCourseTripIdea } from "./ai-course";
 
 export type CourseGenerationSource = "LLM" | "RULE_BASED" | "MANUAL";
 
@@ -20,6 +20,8 @@ export type CourseSpotSummary = {
 export type CourseDay = {
   dayNumber: number;
   spots: CourseSpotSummary[];
+  themes?: AiCourseTheme[];
+  tripIdeas?: AiCourseTripIdea[];
 };
 
 export type CourseResponse = {
@@ -141,6 +143,8 @@ export type PublicCourseList = {
 export type CreateCourseDayInput = {
   dayNumber: number;
   spots: { spotId: number; memo?: string | null }[];
+  themes?: AiCourseTheme[];
+  tripIdeas?: AiCourseTripIdea[];
 };
 
 export type CreateCoursePayload = {
