@@ -392,7 +392,8 @@ describe("KakaoMap", () => {
     const sdk = installSdkMock();
     const frames = installFrameQueue();
     const { rerender } = render(<KakaoMap spots={spots} showRoute={false} />);
-    await screen.findByRole("region", { name: "장소 위치 지도" });
+    // 지도 컨테이너는 SDK 준비 전에도 존재한다. 최초 마커까지 기다린 후 호출을 초기화한다.
+    await screen.findByText("경포해변");
     frames.flush();
     const map = sdk.maps[0];
     map.setBounds.mockClear();
