@@ -138,6 +138,17 @@ class CoursePlannerTest {
 		assertThat(days).allSatisfy(day -> assertThat(day).isEmpty());
 	}
 
+	@Test
+	void anchor_without_coordinates_is_kept_even_without_candidates() {
+		SpotModel anchor = SpotModel.builder().spotId(99L).sourceType(SpotSourceType.TOUR_API)
+			.attributes(new SpotModel.SourceAttributes("필수 장소", "관광지", "51", "150", "주소", null, null, null, null))
+			.build();
+		for (List<SpotModel> candidates : List.of(List.<SpotModel>of(), List.of(richSpot(1L, "주변", "관광지", 37.8, 128.9)))) {
+			List<List<SpotModel>> days = planner.plan(candidates, List.of(anchor), 1, List.of(), CourseCompanion.COUPLE, Map.of());
+			assertThat(days.getFirst()).extracting(SpotModel::spotId).contains(99L);
+		}
+	}
+
 	private static SpotModel richSpot(Long id, String title, String category, double lat, double lng) {
 		return spot(id, title, category, lat, lng, "thumb.jpg", "충분히 긴 설명입니다. ".repeat(5));
 	}

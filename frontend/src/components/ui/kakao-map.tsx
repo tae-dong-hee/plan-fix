@@ -130,7 +130,9 @@ export default function KakaoMap({
   const fittedViewportKeyRef = useRef<string | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "no-key" | "error" | "empty">("loading");
   const [retryCount, setRetryCount] = useState(0);
-  const [roadPaths, setRoadPaths] = useState<DrivingRoutePoint[][] | null>(null);
+  const [roadRoute, setRoadRoute] = useState<{ key: string; paths: DrivingRoutePoint[][] } | null>(null);
+  const [routeStatus, setRouteStatus] = useState<"loading" | "ready" | "error" | "idle">("idle");
+  const [routeRetry, setRouteRetry] = useState(0);
   const onSpotClickRef = useRef(onSpotClick);
   onSpotClickRef.current = onSpotClick;
   const focusedSpotIdRef = useRef(focusedSpotId);
@@ -152,22 +154,29 @@ export default function KakaoMap({
     ? JSON.stringify(viewportCoordinates!.map((spot) => [spot.latitude, spot.longitude]))
     : positionsKey;
   const interactive = Boolean(onSpotClick);
+  const routeKey = JSON.stringify([positionsKey, returnToStart]);
+  const roadPaths = roadRoute?.key === routeKey ? roadRoute.paths : null;
 
   useEffect(() => {
     let cancelled = false;
     if (!showRoute || plottable.length < 2) {
-      setRoadPaths(null);
+      setRoadRoute(null);
+      setRouteStatus("idle");
       return;
     }
-    setRoadPaths(null);
+    setRoadRoute(null);
+    setRouteStatus("loading");
     const points = plottable.map(({ spot }) => ({ latitude: spot.latitude!, longitude: spot.longitude! }));
     if (returnToStart && points.length > 1) points.push(points[0]);
     void fetchDrivingRoute(points)
       .then((route) => {
-        if (!cancelled && route) setRoadPaths(route.paths);
-      });
+        if (cancelled) return;
+        setRoadRoute(route ? { key: routeKey, paths: route.paths } : null);
+        setRouteStatus(route ? "ready" : "error");
+      })
+      .catch(() => { if (!cancelled) setRouteStatus("error"); });
     return () => { cancelled = true; };
-  }, [positionsKey, showRoute, returnToStart]); // 좌표·방문 순서가 바뀔 때만 다시 조회한다.
+  }, [positionsKey, showRoute, returnToStart, routeRetry]); // 좌표·방문 순서 또는 재시도 시 조회한다.
 
   const roadPathsKey = JSON.stringify(roadPaths);
 
@@ -298,23 +307,6 @@ export default function KakaoMap({
     // 웹폰트 적용 후 달라진 실제 글자 폭으로 다시 계산한다.
     void document.fonts?.ready.then(() => { if (!disposed) scheduleLayout(); });
 
-    if (showRoute && positions.length > 1) {
-      const primary = containerRef.current
-        ? getComputedStyle(containerRef.current).getPropertyValue("--primary").trim()
-        : "";
-      const fallbackPath = returnToStart ? [...positions, positions[0]] : positions;
-      const routePath = roadPaths?.flatMap((path) => path.map((point) => new kakao.maps.LatLng(point.latitude, point.longitude))) ?? fallbackPath;
-      const polyline = new kakao.maps.Polyline({
-        path: routePath,
-        strokeWeight: 3,
-        strokeColor: primary ? `hsl(${primary})` : "#7B4AED",
-        strokeOpacity: 0.75,
-        strokeStyle: "shortdash",
-      });
-      polyline.setMap(map);
-      overlays.push(polyline);
-    }
-
     const viewportPositions = hasExplicitViewport
       ? viewportCoordinates!.map((spot) => new kakao.maps.LatLng(spot.latitude, spot.longitude))
       : positions;
@@ -354,7 +346,27 @@ export default function KakaoMap({
       overlays.forEach((overlay) => overlay.setMap(null));
       markersRef.current = [];
     };
-  }, [status, positionsKey, viewportKey, hasExplicitViewport, roadPathsKey, showRoute, returnToStart, interactive]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [status, positionsKey, viewportKey, hasExplicitViewport, showRoute, returnToStart, interactive]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (status !== "ready" || !mapRef.current || !showRoute || !roadPaths) return;
+    const kakao = window.kakao;
+    const map = mapRef.current;
+    const primary = containerRef.current
+      ? getComputedStyle(containerRef.current).getPropertyValue("--primary").trim() : "";
+    const overlays = roadPaths.map((path) => {
+      const polyline = new kakao.maps.Polyline({
+        path: path.map((point) => new kakao.maps.LatLng(point.latitude, point.longitude)),
+        strokeWeight: 3,
+        strokeColor: primary ? `hsl(${primary})` : "#7B4AED",
+        strokeOpacity: 0.75,
+        strokeStyle: "solid",
+      });
+      polyline.setMap(map);
+      return polyline;
+    });
+    return () => overlays.forEach((overlay) => overlay.setMap(null));
+  }, [status, roadPathsKey, showRoute, positionsKey, returnToStart]);
 
   useEffect(() => {
     markersRef.current.forEach(({ element, overlay, spotId }) => {
@@ -438,6 +450,15 @@ export default function KakaoMap({
           </div>
         )}
       </div>
+      {status === "ready" && showRoute && routeStatus === "loading" && (
+        <p className="mt-1.5 text-xs text-muted-foreground" role="status">자동차 경로를 불러오는 중이에요.</p>
+      )}
+      {status === "ready" && showRoute && routeStatus === "error" && (
+        <div className="mt-1.5 flex items-center gap-2 text-xs text-muted-foreground" role="status">
+          <span>자동차 경로를 불러오지 못했어요.</span>
+          <button type="button" onClick={() => setRouteRetry((count) => count + 1)} className="rounded border border-border px-2 py-1 text-primary">경로 다시 시도</button>
+        </div>
+      )}
       {missingCoordCount > 0 && hasMapLocations && (
         <p className="mt-1.5 text-xs text-muted-foreground">
           위치를 확인할 수 없는 장소 {missingCoordCount}곳은 목록에서 볼 수 있어요.

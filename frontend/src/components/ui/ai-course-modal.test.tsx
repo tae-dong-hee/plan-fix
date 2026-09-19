@@ -465,6 +465,15 @@ describe("AiCourseModal", () => {
     await waitFor(() => expect(onApply).toHaveBeenCalledWith(draft, [], defaultDates));
   });
 
+  it("검색어만 입력한 상태에서는 장소 선택을 안내하고 추천을 요청하지 않는다", async () => {
+    renderModal();
+    fireEvent.click(screen.getByRole("button", { name: /추가 설정/ }));
+    fireEvent.change(screen.getByRole("textbox", { name: "고정할 장소 검색" }), { target: { value: "경포" } });
+    fireEvent.click(screen.getByRole("button", { name: "AI로 코스 만들기" }));
+    expect(fetchAiCourseDraft).not.toHaveBeenCalled();
+    expect(screen.getByRole("alert")).toHaveTextContent("검색 결과에서 꼭 가고 싶은 장소를 선택해 주세요.");
+  });
+
   it("선택 사항에서 검색한 장소를 필수 방문 장소로 전달한다", async () => {
     vi.useFakeTimers();
     const { onApply } = renderModal();

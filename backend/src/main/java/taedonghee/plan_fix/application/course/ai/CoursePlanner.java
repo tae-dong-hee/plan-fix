@@ -166,7 +166,7 @@ public class CoursePlanner {
 		plottable.stream().filter(spot -> !anchorIds.contains(spot.spotId())).forEach(pool::add);
 
 		if (pool.isEmpty()) {
-			return emptyDays(dayCount);
+			return includeMissingAnchors(emptyDays(dayCount), anchors);
 		}
 
 		Map<Long, Double> scores = scoreAll(pool, themes, likedCategoryCounts);
@@ -178,6 +178,20 @@ public class CoursePlanner {
 			List<SpotModel> cluster = dayIndex < orderedClusters.size() ? orderedClusters.get(dayIndex) : List.of();
 			List<SpotModel> picked = pickForDay(cluster, scores, anchorIds, companion.spotsPerDay());
 			days.add(orderByProximity(picked));
+		}
+		return includeMissingAnchors(days, anchors);
+	}
+
+	/** 좌표가 없는 필수 장소도 목록에는 유지한다. 지도에서만 위치 표시를 생략한다. */
+	private List<List<SpotModel>> includeMissingAnchors(List<List<SpotModel>> plannedDays, List<SpotModel> anchors) {
+		List<List<SpotModel>> days = plannedDays.stream()
+			.map(day -> (List<SpotModel>) new ArrayList<>(day)).toList();
+		Set<Long> included = days.stream().flatMap(List::stream).map(SpotModel::spotId)
+			.collect(HashSet::new, Set::add, Set::addAll);
+		for (SpotModel anchor : anchors) {
+			if (included.add(anchor.spotId())) {
+				days.stream().min(Comparator.comparingInt(List::size)).orElseThrow().add(anchor);
+			}
 		}
 		return days;
 	}

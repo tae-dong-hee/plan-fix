@@ -37,6 +37,15 @@ class KakaoRoadRouteClientTest {
         server.verify();
     }
 
+    @Test
+    void same_location_does_not_request_directions() {
+        RestClient.Builder builder = RestClient.builder();
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+        KakaoRoadRouteClient client = new KakaoRoadRouteClient(new KakaoRoadProperties("test-road-key"), builder);
+        assertThat(client.route(List.of(point("37.5", "127.1"), point("37.50", "127.10")))).isPresent();
+        server.verify();
+    }
+
     private static KakaoRoadRouteClient.Point point(String latitude, String longitude) {
         return new KakaoRoadRouteClient.Point(new BigDecimal(latitude), new BigDecimal(longitude));
     }
