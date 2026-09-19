@@ -143,8 +143,8 @@ public class CourseRepositoryImpl implements CourseRepository {
                 .likeCount(course.likeCount())
                 .startDate(course.startDate())
                 .endDate(course.endDate())
-                .createdAt(course.createdAt())
-                .updatedAt(course.updatedAt())
+                .createdAt(course.createdAt().truncatedTo(ChronoUnit.MICROS))
+                .updatedAt(course.updatedAt().truncatedTo(ChronoUnit.MICROS))
                 .build();
     }
 

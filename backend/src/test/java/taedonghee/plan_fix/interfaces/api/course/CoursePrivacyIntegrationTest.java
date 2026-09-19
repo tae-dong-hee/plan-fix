@@ -422,6 +422,78 @@ class CoursePrivacyIntegrationTest {
                 .andExpect(jsonPath("$.courseId").isEmpty());
     }
 
+    @Test
+    void staleOwnerTabCannotRepublishPrivateCourse() throws Exception {
+        setVisibility("PUBLIC");
+        String stale = payload("PUBLIC", "STALE-TITLE");
+        setVisibility("PRIVATE");
+        as(owner, patch(path()).contentType(MediaType.APPLICATION_JSON).content(stale))
+                .andExpect(status().isConflict());
+        assertPrivateCourseUnchanged();
+    }
+
+    @Test
+    void missingVersionCannotOverwriteCourse() throws Exception {
+        var body = (com.fasterxml.jackson.databind.node.ObjectNode) mapper.readTree(payload("PUBLIC"));
+        body.remove("expectedUpdatedAt");
+        as(owner, patch(path()).contentType(MediaType.APPLICATION_JSON).content(body.toString()))
+                .andExpect(status().isConflict());
+        assertPrivateCourseUnchanged();
+    }
+
+    @Autowired jakarta.persistence.EntityManager entityManager;
+
+    @Test
+    void responseTimestampRoundTripsThroughDatabaseAndOrdinarySavePreservesPrivacy() throws Exception {
+        JsonNode course = read(as(owner, get(path())).andExpect(status().isOk()));
+        entityManager.flush();
+        entityManager.clear();
+        var body = (com.fasterxml.jackson.databind.node.ObjectNode) mapper.readTree(payload("PRIVATE", "UPDATED"));
+        body.remove("visibility");
+        body.put("expectedUpdatedAt", course.path("updatedAt").asText());
+        JsonNode saved = read(as(owner, patch(path()).contentType(MediaType.APPLICATION_JSON).content(body.toString()))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.visibility").value("PRIVATE")));
+        entityManager.flush();
+        entityManager.clear();
+        body.put("expectedUpdatedAt", saved.path("updatedAt").asText());
+        as(owner, patch(path()).contentType(MediaType.APPLICATION_JSON).content(body.toString()))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void removedMemberNeedsNewInviteButOtherRecipientsCanStillUseExistingLink() throws Exception {
+        setVisibility("PUBLIC");
+        String oldToken = invite("EDITOR");
+        as(stranger, post("/api/v1/course-invites/" + oldToken + "/accept")).andExpect(status().isOk());
+        as(owner, delete(path() + "/members/" + strangerId)).andExpect(status().isNoContent());
+        as(stranger, post("/api/v1/course-invites/" + oldToken + "/accept")).andExpect(status().isForbidden());
+        assertThat(members.existsByCourseIdAndUserId(privateId, strangerId)).isFalse();
+        UserModel another = users.save(UserModel.create(username(), null, null));
+        Cookie recipient = new Cookie("access_token", tokens.create(another).accessToken());
+        as(recipient, post("/api/v1/course-invites/" + oldToken + "/accept")).andExpect(status().isOk());
+        String newToken = invite("VIEWER");
+        as(stranger, post("/api/v1/course-invites/" + newToken + "/accept")).andExpect(status().isOk());
+        assertThat(members.existsByCourseIdAndUserIdAndRole(privateId, strangerId, CourseMemberRole.VIEWER)).isTrue();
+        as(owner, delete(path() + "/members/" + strangerId)).andExpect(status().isNoContent());
+        as(stranger, post("/api/v1/course-invites/" + newToken + "/accept")).andExpect(status().isForbidden());
+    }
+
+    @Test
+    void responseDistinguishesEditorFromOwnerAndViewer() throws Exception {
+        setVisibility("PUBLIC");
+        as(owner, get(path())).andExpect(jsonPath("$.canEdit").value(true))
+                .andExpect(jsonPath("$.isOwner").value(true));
+        as(stranger, get(path())).andExpect(jsonPath("$.canEdit").value(false));
+        addLegacyMember("EDITOR");
+        as(stranger, get(path())).andExpect(jsonPath("$.canEdit").value(true))
+                .andExpect(jsonPath("$.isOwner").value(false));
+        as(stranger, patch(path()).contentType(MediaType.APPLICATION_JSON).content(payload("PUBLIC", "EDITOR-SAVED")))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.canEdit").value(true))
+                .andExpect(jsonPath("$.isOwner").value(false));
+        as(stranger, put(path() + "/day-accommodations").contentType(MediaType.APPLICATION_JSON).content("[]"))
+                .andExpect(status().isForbidden());
+    }
+
     private void assertPrivateBoardLinkRejected(ResultActions response) throws Exception {
         response.andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("Bad Request"))
@@ -493,10 +565,12 @@ class CoursePrivacyIntegrationTest {
     }
 
     private String payload(String visibility, String title, long requestedSpotId) throws Exception {
-        return mapper.writeValueAsString(Map.of("title", title, "description", "PRIVATE-DESCRIPTION",
+        var body = new java.util.LinkedHashMap<String, Object>(Map.of("title", title, "description", "PRIVATE-DESCRIPTION",
                 "visibility", visibility, "startDate", "2026-10-01", "endDate", "2026-10-01",
                 "days", List.of(Map.of("dayNumber", 1,
                         "spots", List.of(Map.of("spotId", requestedSpotId, "memo", "PRIVATE-MEMO"))))));
+        if (privateId != 0) body.put("expectedUpdatedAt", courses.findById(privateId).orElseThrow().getUpdatedAt().toString());
+        return mapper.writeValueAsString(body);
     }
 
     private ResultActions as(Cookie user, MockHttpServletRequestBuilder request) throws Exception {

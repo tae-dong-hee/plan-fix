@@ -27,6 +27,7 @@ public class CourseInviteApplicationService {
     private final CourseInviteJpaRepository inviteRepository;
     private final CourseMemberJpaRepository memberRepository;
     private final UserJpaRepository userRepository;
+    private final CourseMemberRevocationJpaRepository revocationRepository;
 
     @Transactional
     public CourseInviteResult createInvite(Long ownerId, Long courseId, CourseMemberRole memberRole, String frontendBaseUrl) {
@@ -58,6 +59,11 @@ public class CourseInviteApplicationService {
         }
         if (course.userId().equals(userId)) return new CourseInviteAcceptResult(course.courseId(), false, true);
         if (memberRepository.existsByCourseIdAndUserId(course.courseId(), userId)) return new CourseInviteAcceptResult(course.courseId(), false, true);
+        Long inviteId = invite.getCourseInviteId();
+        if (revocationRepository.findByCourseIdAndUserId(course.courseId(), userId)
+                .filter(revocation -> inviteId <= revocation.getRevokedThroughInviteId()).isPresent()) {
+            throw new CoreException(ErrorType.FORBIDDEN, "이 초대로 다시 참여할 수 없습니다. 코스 작성자에게 새 초대를 요청해 주세요.");
+        }
         memberRepository.save(CourseMemberJpaEntity.builder().courseId(course.courseId()).userId(userId)
                 .role(invite.getMemberRole()).createdAt(OffsetDateTime.now()).build());
         return new CourseInviteAcceptResult(course.courseId(), true, false);
@@ -84,7 +90,14 @@ public class CourseInviteApplicationService {
     @Transactional
     public void removeMember(Long ownerId, Long courseId, Long memberUserId) {
         CourseModel course = activeCourseForUpdate(courseId); course.ensureOwner(ownerId);
-        memberRepository.deleteByCourseIdAndUserIdAndRoleIn(courseId, memberUserId, List.of(CourseMemberRole.VIEWER, CourseMemberRole.EDITOR));
+        long removed = memberRepository.deleteByCourseIdAndUserIdAndRoleIn(courseId, memberUserId, List.of(CourseMemberRole.VIEWER, CourseMemberRole.EDITOR));
+        if (removed > 0) {
+            long cutoff = inviteRepository.latestInviteId(courseId);
+            CourseMemberRevocationJpaEntity revocation = revocationRepository.findByCourseIdAndUserId(courseId, memberUserId)
+                    .orElseGet(() -> new CourseMemberRevocationJpaEntity(courseId, memberUserId, cutoff));
+            revocation.revokeThrough(cutoff);
+            revocationRepository.save(revocation);
+        }
     }
 
     @Transactional public void updateMemberRole(Long ownerId, Long courseId, Long memberUserId, CourseMemberRole role) {

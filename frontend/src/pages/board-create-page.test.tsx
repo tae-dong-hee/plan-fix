@@ -105,7 +105,7 @@ describe("BoardCreatePage (블로그형 여행 후기 에디터)", () => {
     const option = await screen.findByRole("option", { name: /제주 동쪽 감성 코스.*나만 보기/ });
     expect(option).toBeDisabled();
     const select = screen.getByRole("combobox", { name: "내 여행 코스 연결" });
-    expect(select).toHaveAccessibleDescription("나만 보기 코스는 연결할 수 없어요. 코스 수정에서 전체 공개로 변경한 뒤 다시 연결해 주세요.");
+    expect(select).toHaveAccessibleDescription("다녀온 여행 코스를 연결하고 사진을 올려 AI로 여행 후기를 작성해 보세요. 나만 보기 코스는 연결할 수 없어요. 코스 수정에서 전체 공개로 변경한 뒤 다시 연결해 주세요.");
 
     // A stale or programmatically changed selection must not supply private spots to the editor or AI.
     fireEvent.change(select, { target: { value: "101" } });

@@ -1,3 +1,4 @@
+import { CourseAccessError, CourseConflictError } from "@/lib/course-errors";
 import { act, createEvent, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { Mock } from "vitest";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
@@ -622,10 +623,89 @@ describe("CourseCreatePage", () => {
     });
   });
 
+  const editableCourse: courseService.CourseResponse = {
+    courseId: 99, userId: 1, title: "공동 여행", description: null, thumbnail: null,
+    visibility: "PUBLIC", status: "ACTIVE", isOwner: true, canEdit: true, viewCount: 0, likeCount: 0,
+    startDate: "2026-09-10", endDate: "2026-09-11",
+    days: [{ dayNumber: 1, spots: [{ spotId: 101, sequence: 0, memo: null, title: "경포해변", category: "관광지", region: null, sigungu: null, address: null, thumbnail: null, latitude: null, longitude: null }] }, { dayNumber: 2, spots: [] }],
+    createdAt: "2026-09-01T00:00:00Z", updatedAt: "2026-09-01T00:00:00.123456Z",
+  };
+  const renderEditableCourse = () => render(<MemoryRouter initialEntries={["/courses/99/edit"]}>
+    <Routes><Route path="/courses/:courseId/edit" element={<CourseCreatePage />} /></Routes>
+  </MemoryRouter>);
+
+  it("편집자는 숙소 요청 없이 일정만 저장하고 공개 범위를 덮어쓰지 않는다", async () => {
+    vi.mocked(courseService.fetchCourse).mockResolvedValue({ ...editableCourse, isOwner: false });
+    vi.mocked(courseService.updateCourse).mockResolvedValue({ ...editableCourse, isOwner: false });
+    renderEditableCourse();
+    fireEvent.click(await screen.findByRole("button", { name: "수정 완료" }));
+    await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith("/courses/99", { replace: true }));
+    expect(courseService.updateCourse).toHaveBeenCalledWith("99", expect.objectContaining({
+      expectedUpdatedAt: editableCourse.updatedAt, visibility: undefined,
+    }));
+    expect(courseService.fetchDayAccommodations).not.toHaveBeenCalled();
+    expect(courseService.saveDayAccommodations).not.toHaveBeenCalled();
+    expect(screen.queryByRole("button", { name: /숙소 추가/ })).not.toBeInTheDocument();
+  });
+
+  it("읽기 멤버는 수정 화면에서 코스를 저장할 수 없다", async () => {
+    vi.mocked(courseService.fetchCourse).mockResolvedValue({ ...editableCourse, isOwner: false, canEdit: false });
+    renderEditableCourse();
+    expect(await screen.findByText("이 코스를 수정할 권한이 없습니다.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "수정 완료" })).toBeDisabled();
+    expect(courseService.fetchDayAccommodations).not.toHaveBeenCalled();
+  });
+
+  it.each([new CourseConflictError(), new CourseAccessError()])("저장 권한/충돌 오류는 로그인 이동 없이 재저장을 차단하고 다시 불러올 수 있다", async (error) => {
+    vi.mocked(courseService.fetchCourse).mockResolvedValue(editableCourse);
+    vi.mocked(courseService.updateCourse).mockRejectedValueOnce(error);
+    renderEditableCourse();
+    await waitFor(() => expect(screen.getByRole("button", { name: "수정 완료" })).toBeEnabled());
+    fireEvent.click(screen.getByRole("button", { name: "수정 완료" }));
+    expect(await screen.findByText(error.message)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "수정 완료" })).toBeDisabled();
+    expect(mockNavigate).not.toHaveBeenCalledWith("/login");
+    if (error instanceof CourseAccessError) expect(screen.queryByDisplayValue(editableCourse.title)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "최신 코스 불러오기" }));
+    await waitFor(() => expect(screen.getByRole("button", { name: "수정 완료" })).toBeEnabled());
+  });
+
+  it("숙소 조회 실패 시 빈 숙소 목록으로 기존 값을 덮어쓰지 않는다", async () => {
+    vi.mocked(courseService.fetchCourse).mockResolvedValue(editableCourse);
+    vi.mocked(courseService.fetchDayAccommodations).mockRejectedValueOnce(new Error("숙소 조회 실패"));
+    renderEditableCourse();
+    expect(await screen.findByText("숙소 조회 실패")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "수정 완료" }));
+    expect(courseService.updateCourse).not.toHaveBeenCalled();
+    expect(courseService.saveDayAccommodations).not.toHaveBeenCalled();
+  });
+
+  it("생성 후 숙소 저장 실패를 재시도하거나 임시저장을 복원해도 같은 코스를 수정한다", async () => {
+    sessionStorage.setItem("planfix:course-draft", JSON.stringify({
+      title: editableCourse.title, description: "", startDate: editableCourse.startDate, endDate: editableCourse.endDate,
+      days: [[{ ...editableCourse.days[0].spots[0], memo: "" }], []],
+    }));
+    vi.mocked(courseService.createCourse).mockResolvedValue(editableCourse);
+    vi.mocked(courseService.updateCourse).mockResolvedValue(editableCourse);
+    vi.mocked(courseService.saveDayAccommodations).mockRejectedValueOnce(new Error("네트워크 오류"));
+    const page = renderPage();
+    fireEvent.click(screen.getByRole("button", { name: "코스 저장하기" }));
+    expect(await screen.findByText(/코스는 저장됐지만 숙소를 저장하지 못했습니다/)).toBeInTheDocument();
+    expect(mockNavigate).not.toHaveBeenCalled();
+    await waitFor(() => expect(JSON.parse(sessionStorage.getItem("planfix:course-draft")!).savedCourse.courseId).toBe(99));
+    page.unmount();
+    renderPage();
+    fireEvent.click(screen.getByRole("button", { name: "코스 저장하기" }));
+    await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith("/courses/99", { replace: true }));
+    expect(courseService.createCourse).toHaveBeenCalledTimes(1);
+    expect(courseService.updateCourse).toHaveBeenCalledWith(99, expect.objectContaining({ expectedUpdatedAt: editableCourse.updatedAt }));
+    expect(sessionStorage.getItem("planfix:course-draft")).toBeNull();
+  });
+
   it.each([true, false])("공개 코스를 수정할 때 작성자 여부(%s)에 따라 나만 보기 변경과 권한 해제 안내를 제공한다", async (isOwner) => {
     vi.mocked(courseService.fetchCourse).mockResolvedValue({
       courseId: 99, userId: 1, title: "공개 여행 코스", description: null, thumbnail: null,
-      visibility: "PUBLIC", status: "ACTIVE", isOwner, viewCount: 0, likeCount: 0,
+      visibility: "PUBLIC", status: "ACTIVE", isOwner, canEdit: true, viewCount: 0, likeCount: 0,
       startDate: "2026-09-10", endDate: "2026-09-10", days: [{ dayNumber: 1, spots: [] }],
       createdAt: "2026-09-01T00:00:00Z", updatedAt: "2026-09-01T00:00:00Z",
     });

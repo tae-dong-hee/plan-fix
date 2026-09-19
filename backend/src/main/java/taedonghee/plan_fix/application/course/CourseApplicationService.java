@@ -24,6 +24,7 @@ import taedonghee.plan_fix.domain.spot.SpotStatus;
 import taedonghee.plan_fix.support.error.CoreException;
 import taedonghee.plan_fix.support.error.ErrorType;
 
+import java.time.OffsetDateTime;
 import java.util.Collection;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -226,6 +227,12 @@ public class CourseApplicationService {
         return CourseResult.from(course, spotsById, spotThumbnailResolver.resolve(spotsById.values()));
     }
 
+    public boolean canEdit(Long requesterId, CourseResult course) {
+        return requesterId != null && (requesterId.equals(course.userId())
+                || (course.visibility() == CourseVisibility.PUBLIC && courseMemberJpaRepository != null
+                    && courseMemberJpaRepository.existsByCourseIdAndUserIdAndRole(course.courseId(), requesterId, CourseMemberRole.EDITOR)));
+    }
+
     /**
      * 로그인 사용자의 코스 단건 조회 처리 (하위 호환용)
      */
@@ -255,12 +262,28 @@ public class CourseApplicationService {
      */
     @Transactional
     public CourseResult update(Long userId, Long courseId, CourseCommand.Update command) {
+        return updateInternal(userId, courseId, command, null, false);
+    }
+
+    /** HTTP 수정은 조회 당시 시각이 일치하는 요청만 허용한다. 예전 클라이언트는 새로고침해야 한다. */
+    @Transactional
+    public CourseResult update(Long userId, Long courseId, CourseCommand.Update command, OffsetDateTime expectedUpdatedAt) {
+        return updateInternal(userId, courseId, command, expectedUpdatedAt, true);
+    }
+
+    private CourseResult updateInternal(Long userId, Long courseId, CourseCommand.Update command,
+                                        OffsetDateTime expectedUpdatedAt, boolean checkVersion) {
         CourseModel course = getActiveCourseForUpdateOrThrow(courseId);
         boolean isOwner = userId.equals(course.userId());
         boolean isEditor = course.visibility() == CourseVisibility.PUBLIC && courseMemberJpaRepository != null
                 && courseMemberJpaRepository.existsByCourseIdAndUserIdAndRole(courseId, userId, CourseMemberRole.EDITOR);
         if (!isOwner && !isEditor) {
             throw new CoreException(ErrorType.FORBIDDEN, "코스 소유자 또는 편집 권한이 있는 멤버만 수정할 수 있습니다.");
+        }
+
+        if (checkVersion && (expectedUpdatedAt == null
+                || !expectedUpdatedAt.toInstant().equals(course.updatedAt().toInstant()))) {
+            throw new CoreException(ErrorType.CONFLICT, "다른 화면에서 코스가 변경되었습니다. 최신 코스를 불러온 뒤 다시 수정해 주세요.");
         }
 
         CourseVisibility visibility = command.visibility() == null ? course.visibility() : command.visibility();

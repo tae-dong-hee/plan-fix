@@ -33,14 +33,15 @@ public record CourseResponse(
         OffsetDateTime updatedAt,
         boolean isOwner,
         CourseGenerationSource generatedBy,
-        List<CourseTravelTheme> themes
+        List<CourseTravelTheme> themes,
+        boolean canEdit
 ) {
     public CourseResponse(
             Long courseId, Long userId, String title, String description, String thumbnail,
             CourseVisibility visibility, CourseStatus status, long viewCount, long likeCount,
             LocalDate startDate, LocalDate endDate, List<Day> days, OffsetDateTime createdAt, OffsetDateTime updatedAt
     ) {
-        this(courseId, userId, title, description, thumbnail, visibility, status, viewCount, likeCount, startDate, endDate, days, createdAt, updatedAt, false, null, List.of());
+        this(courseId, userId, title, description, thumbnail, visibility, status, viewCount, likeCount, startDate, endDate, days, createdAt, updatedAt, false, null, List.of(), false);
     }
 
     public CourseResponse(Long courseId, Long userId, String title, String description, String thumbnail,
@@ -48,7 +49,7 @@ public record CourseResponse(
                           LocalDate startDate, LocalDate endDate, List<Day> days,
                           OffsetDateTime createdAt, OffsetDateTime updatedAt, boolean isOwner) {
         this(courseId, userId, title, description, thumbnail, visibility, status, viewCount, likeCount,
-                startDate, endDate, days, createdAt, updatedAt, isOwner, null, List.of());
+                startDate, endDate, days, createdAt, updatedAt, isOwner, null, List.of(), isOwner);
     }
 
     /**
@@ -62,6 +63,10 @@ public record CourseResponse(
      * 요청자 ID를 기반으로 isOwner를 판별하여 응답 DTO로 변환
      */
     public static CourseResponse from(CourseResult result, Long requesterId) {
+        return from(result, requesterId, requesterId != null && requesterId.equals(result.userId()));
+    }
+
+    public static CourseResponse from(CourseResult result, Long requesterId, boolean canEdit) {
         boolean isOwner = requesterId != null && requesterId.equals(result.userId());
         return new CourseResponse(
                 result.courseId(),
@@ -80,7 +85,8 @@ public record CourseResponse(
                 result.updatedAt(),
                 isOwner,
                 result.generatedBy(),
-                result.themes()
+                result.themes(),
+                canEdit
         );
     }
 

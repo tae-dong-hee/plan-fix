@@ -17,6 +17,7 @@ import taedonghee.plan_fix.infrastructure.course.CourseInviteJpaRepository;
 import taedonghee.plan_fix.infrastructure.course.CourseMemberJpaEntity;
 import taedonghee.plan_fix.infrastructure.course.CourseMemberJpaRepository;
 import taedonghee.plan_fix.infrastructure.course.CourseMemberRole;
+import taedonghee.plan_fix.infrastructure.course.CourseMemberRevocationJpaRepository;
 import taedonghee.plan_fix.infrastructure.user.UserJpaRepository;
 import taedonghee.plan_fix.support.error.CoreException;
 import taedonghee.plan_fix.support.error.ErrorType;
@@ -46,7 +47,7 @@ class CourseInviteApplicationServiceTest {
     private final CourseInviteJpaRepository invites = mock(CourseInviteJpaRepository.class);
     private final CourseMemberJpaRepository members = mock(CourseMemberJpaRepository.class);
     private final UserJpaRepository users = mock(UserJpaRepository.class);
-    private final CourseInviteApplicationService service = new CourseInviteApplicationService(courses, invites, members, users);
+    private final CourseInviteApplicationService service = new CourseInviteApplicationService(courses, invites, members, users, mock(CourseMemberRevocationJpaRepository.class));
 
     @ParameterizedTest
     @EnumSource(value = CourseMemberRole.class, names = {"VIEWER", "EDITOR"})

@@ -145,39 +145,56 @@ export default function CourseDetailPage() {
     setLoading(true);
     setError(null);
 
+    let latestRequest = 0;
     const loadCourse = async () => {
+      const request = ++latestRequest;
+      const isCurrent = () => !ignore && request === latestRequest;
       try {
         const res = await fetchCourse(courseId);
-        if (!ignore) {
+        if (isCurrent()) {
           setCourse(res);
+          setError(null);
+          setDayAccommodations([]);
           if (res?.isOwner) {
             void fetchDayAccommodations(courseId)
               .then((values) => {
-                if (!ignore) setDayAccommodations(values);
+                if (isCurrent()) setDayAccommodations(values);
               })
               .catch(() => undefined);
           }
         }
       } catch (err) {
+        if (!isCurrent()) return;
         if (err instanceof UnauthorizedError) {
           alert("로그인이 필요합니다. 로그인 페이지로 이동합니다.");
           navigate("/login");
           return;
         }
-        if (!ignore) {
+        if (isCurrent()) {
+          setCourse(null);
+          setDayAccommodations([]);
+          setMembers([]);
+          setPendingInvites([]);
+          setInviteToast(null);
+          setInviteDialogOpen(false);
+          setShowMembersTable(false);
           setError(err instanceof Error ? err.message : "코스를 불러오지 못했습니다.");
         }
       } finally {
-        if (!ignore) {
+        if (isCurrent()) {
           setLoading(false);
         }
       }
     };
 
-    loadCourse();
-
+    void loadCourse();
+    const revalidate = () => { if (document.visibilityState === "visible") void loadCourse(); };
+    window.addEventListener("focus", revalidate);
+    document.addEventListener("visibilitychange", revalidate);
     return () => {
       ignore = true;
+      window.removeEventListener("focus", revalidate);
+      document.removeEventListener("visibilitychange", revalidate);
     };
   }, [courseId, navigate]);
 
@@ -270,9 +287,9 @@ export default function CourseDetailPage() {
                   </span>
                 </div>
 
-                {course.isOwner !== false && (
+                {(course.canEdit ?? course.isOwner !== false) && (
                   <div className="flex flex-wrap items-center gap-2">
-                    {course.visibility === "PUBLIC" && (
+                    {course.isOwner !== false && course.visibility === "PUBLIC" && (
                       <>
                         <button type="button" onClick={() => { setInviteToast(null); setInviteDialogOpen(true); }} className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground transition-colors hover:opacity-90">
                           <UserPlus className="h-3.5 w-3.5" /> <span>친구 초대</span>
@@ -287,7 +304,7 @@ export default function CourseDetailPage() {
                       <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
                       <span>코스 수정</span>
                     </Link>
-                    <button
+                    {course.isOwner !== false && <button
                       type="button"
                       onClick={handleDelete}
                       disabled={deleting}
@@ -295,7 +312,7 @@ export default function CourseDetailPage() {
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                       <span>{deleting ? "삭제 중..." : "코스 삭제"}</span>
-                    </button>
+                    </button>}
                   </div>
                 )}
               </div>

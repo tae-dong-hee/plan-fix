@@ -83,12 +83,12 @@ class CourseControllerTest {
                 start, end,
                 List.of(new CourseDayModel(1, List.of(new CourseSpotModel(1L, null))))
         );
-        when(courseApplicationService.update(10L, 1L, command)).thenReturn(result());
+        when(courseApplicationService.update(10L, 1L, command, null)).thenReturn(result());
 
         ResponseEntity<CourseResponse> response = controller.update(principal, 1L, request);
 
         assertThat(response.getStatusCode().value()).isEqualTo(200);
-        verify(courseApplicationService).update(10L, 1L, command);
+        verify(courseApplicationService).update(10L, 1L, command, null);
     }
 
     @Test
