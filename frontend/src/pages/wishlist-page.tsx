@@ -16,6 +16,7 @@ import {
   Route,
 } from "lucide-react";
 import { MISSING_SPOT_ADDRESS } from "@/lib/spot-display";
+import { getSimilarSpotImage } from "@/lib/similar-spot-images";
 import SpotImage from "@/components/ui/spot-image";
 import AppNav from "@/components/ui/app-nav";
 import { unlikeSpot, UnauthorizedError } from "@/services/spots";
@@ -304,6 +305,7 @@ export default function WishlistPage() {
                             <SpotImage
                               src={spot.thumbnail}
                               alt={spot.title}
+                              similarImage={getSimilarSpotImage(spot)}
                               className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 motion-reduce:transform-none motion-reduce:transition-none"
                             />
                             <button
@@ -348,6 +350,15 @@ export default function WishlistPage() {
                   )}
                 </div>
               )}
+
+              {activeTab === "spots" && spots.length > 0 ? (
+                <p className="mt-6 text-center text-xs leading-5 text-muted-foreground">
+                  ‘유사 이미지’는 장소의 종류와 분위기를 참고한 사진이에요.{" "}
+                  <Link to="/image-credits#similar-images" className="rounded underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                    사진 출처
+                  </Link>
+                </p>
+              ) : null}
 
               {/* 2. 여행 코스 탭 */}
               {activeTab === "courses" && (

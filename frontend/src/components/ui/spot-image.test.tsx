@@ -72,3 +72,11 @@ test("empty thumbnails use the matched photo and navigation can retry the origin
   fireEvent.error(screen.getByRole("img"));
   expect(screen.getByRole("img")).toHaveAttribute("src", similarImage.url);
 });
+
+test("compact thumbnails keep the full accessible description with a short visible label", () => {
+  const similarImage = getSimilarSpotImage({ spotId: 1, title: "작은 카페", category: "카페/음료" });
+  render(<SpotImage alt="작은 카페" similarImage={similarImage} compactSimilarLabel />);
+  expect(screen.getByRole("img")).toHaveAccessibleName(expect.stringContaining("작은 카페 유사 이미지"));
+  expect(screen.getByText("유사")).toBeInTheDocument();
+  expect(screen.getByRole("img")).not.toHaveAttribute("compactSimilarLabel");
+});

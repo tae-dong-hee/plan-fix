@@ -38,6 +38,7 @@ import { aiCourseNotice } from "@/lib/ai-course-notice";
 import { describeDayThemes } from "@/lib/ai-trip-themes";
 import { inferCourseSearchRegions } from "@/lib/course-search-regions";
 import { formatCourseDuration } from "@/lib/course-duration";
+import { getSimilarSpotImage } from "@/lib/similar-spot-images";
 
 const DRAFT_STORAGE_KEY = "planfix:course-draft";
 const ACCOMMODATION_HINT_STORAGE_KEY = "planfix:accommodation-hint-dismissed";
@@ -1131,10 +1132,16 @@ export default function CourseCreatePage() {
                                 <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-[11px] font-bold text-muted-foreground">
                                   {spotIndex + 1}
                                 </span>
-                                <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-muted">
+                                <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-muted">
                                   <SpotImage
                                     src={spot.thumbnail}
-                                    alt={spot.title}
+                                    alt={spot.title || "여행 장소"}
+                                    similarImage={getSimilarSpotImage({
+                                      ...spot,
+                                      title: spot.title || "여행 장소",
+                                      category: spot.category || "관광지",
+                                    })}
+                                    compactSimilarLabel
                                     className="h-full w-full object-cover"
                                   />
                                 </div>

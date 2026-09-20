@@ -6,6 +6,7 @@ import { unlikeBoard, type BoardDetail, type BoardLikeState } from "@/services/b
 import { unlikeCourse, type CourseResponse } from "@/services/course";
 import { unlikeSpot } from "@/services/spots";
 import { fetchLikedBoards, fetchLikedCourses, fetchLikedSpots, type WishlistSpot } from "@/services/wishlist";
+import { getSimilarSpotImage } from "@/lib/similar-spot-images";
 
 vi.mock("@/components/ui/app-nav", () => ({ default: () => null }));
 vi.mock("@/services/wishlist");
@@ -55,6 +56,32 @@ describe("WishlistPage", () => {
     vi.mocked(fetchLikedCourses).mockResolvedValue([course]);
     vi.mocked(fetchLikedBoards).mockResolvedValue([board]);
     vi.mocked(unlikeBoard).mockResolvedValue({ likeCount: 1, liked: false });
+  });
+
+  test("사진이 없는 위시리스트 장소에도 유형에 맞는 유사 이미지를 보여준다", async () => {
+    renderPage();
+
+    const card = await screen.findByTestId("wishlist-spot-1");
+    expect(within(card).getByRole("img")).toHaveAttribute("src", getSimilarSpotImage(spot).url);
+    expect(within(card).getByRole("img")).toHaveAccessibleName(/경포해변 유사 이미지:/);
+    expect(within(card).getByText("유사 이미지")).toBeInTheDocument();
+    expect(card).toHaveAttribute("href", "/spots/1");
+    const creditLink = screen.getByRole("link", { name: "사진 출처" });
+    expect(creditLink).toHaveAttribute("href", "/image-credits#similar-images");
+    expect(card).not.toContainElement(creditLink);
+  });
+
+  test("기존 사진을 먼저 보여주고 로딩에 실패하면 유사 이미지로 복구한다", async () => {
+    vi.mocked(fetchLikedSpots).mockResolvedValue([{ ...spot, thumbnail: "https://example.com/beach.jpg" }]);
+    renderPage();
+
+    const card = await screen.findByTestId("wishlist-spot-1");
+    const image = within(card).getByRole("img", { name: spot.title });
+    expect(image).toHaveAttribute("src", "https://example.com/beach.jpg");
+    expect(within(card).queryByText("유사 이미지")).not.toBeInTheDocument();
+    fireEvent.error(image);
+    expect(image).toHaveAttribute("src", getSimilarSpotImage(spot).url);
+    expect(within(card).getByText("유사 이미지")).toBeInTheDocument();
   });
 
   test("비공개 전환으로 좋아요 취소가 거절되면 오래된 코스를 목록에서 제거한다", async () => {

@@ -8,6 +8,7 @@ import { hasMapCoordinates } from "@/lib/map-coordinates";
 import { MISSING_SPOT_ADDRESS } from "@/lib/spot-display";
 import { describeDayThemes } from "@/lib/ai-trip-themes";
 import { formatCourseDuration } from "@/lib/course-duration";
+import { getSimilarSpotImage } from "@/lib/similar-spot-images";
 import type { CourseDay, CourseSpotSummary, DayAccommodation } from "@/services/course";
 
 type CourseRouteMapProps = {
@@ -31,9 +32,11 @@ function hasAccommodationCoordinates(
 }
 
 function SpotPhoto({ spot, className, descriptive = false }: { spot: CourseSpotSummary; className: string; descriptive?: boolean }) {
+  const title = spot.title || "여행 장소";
+  const similarImage = getSimilarSpotImage({ ...spot, title, category: spot.category || "관광지" });
   return (
-    <div className={`flex shrink-0 items-center justify-center overflow-hidden rounded-xl bg-primary/[0.06] text-primary/50 ${className}`}>
-      <SpotImage src={spot.thumbnail} alt={descriptive ? spot.title || "여행 장소" : ""} className="h-full w-full object-cover" loading="lazy" />
+    <div className={`relative flex shrink-0 items-center justify-center overflow-hidden rounded-xl bg-primary/[0.06] text-primary/50 ${className}`}>
+      <SpotImage src={spot.thumbnail} alt={descriptive ? title : ""} similarImage={similarImage} compactSimilarLabel={!descriptive} className="h-full w-full object-cover" loading="lazy" />
     </div>
   );
 }

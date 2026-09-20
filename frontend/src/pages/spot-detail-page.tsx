@@ -23,6 +23,7 @@ import AppNav from "@/components/ui/app-nav";
 import SpotImage from "@/components/ui/spot-image";
 import GooglePlacePhotoCard from "@/components/ui/google-place-photo-card";
 import { getVerifiedSpotImageCredit } from "@/lib/verified-spot-images";
+import { getSimilarSpotImage } from "@/lib/similar-spot-images";
 import {
   hasSpotCoordinates,
   MISSING_SPOT_ADDRESS,
@@ -271,6 +272,7 @@ export default function SpotDetailPage() {
                       className="h-full w-full object-cover"
                       src={activeImage}
                       alt={spot.title}
+                      similarImage={getSimilarSpotImage(spot)}
                     />
                     {galleryImages.length > 1 ? (
                       <>
@@ -283,6 +285,14 @@ export default function SpotDetailPage() {
                       </>
                     ) : null}
                   </div>
+                  {!activeImage ? (
+                    <p className="px-2 pb-1 pt-3 text-xs leading-5 text-muted-foreground sm:px-3">
+                      ‘유사 이미지’는 실제 장소 사진이 아닙니다.{" "}
+                      <Link to="/image-credits#similar-images" className={`rounded underline underline-offset-4 hover:text-primary ${FOCUS_RING}`}>
+                        유사 이미지 출처
+                      </Link>
+                    </p>
+                  ) : null}
                 </GooglePlacePhotoCard>
                 {galleryImages.length > 1 ? (
                   <div className="flex items-center justify-end gap-1.5 px-2 pt-3 text-xs font-medium text-muted-foreground sm:px-3" role="status" aria-label="현재 사진">

@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { Mock } from "vitest";
 import SpotSearchModal from "./spot-search-modal";
+import { getSimilarSpotImage } from "@/lib/similar-spot-images";
 import * as spotService from "@/services/spots";
 
 vi.mock("@/services/spots");
@@ -179,6 +180,21 @@ describe("SpotSearchModal", () => {
     expect(await screen.findByText("경포해변")).toBeInTheDocument();
     expect(screen.getByText("안목커피거리")).toBeInTheDocument();
     expect(spotService.searchSpots).toHaveBeenCalledWith(initialQuery);
+  });
+
+  it("사진이 없거나 로딩에 실패한 검색 장소는 유사 사진과 작은 표시를 보여준다", async () => {
+    render(<SpotSearchModal {...defaultProps} />);
+
+    const missingPhoto = within(await screen.findByTestId("spot-search-item-2"));
+    expect(missingPhoto.getByRole("img", { name: /안목커피거리 유사 이미지:/ })).toHaveAttribute("src", getSimilarSpotImage(mockSpots[1]).url);
+    expect(missingPhoto.getByText("유사")).toBeInTheDocument();
+
+    const originalPhoto = within(screen.getByTestId("spot-search-item-1"));
+    expect(originalPhoto.getByRole("img", { name: "경포해변" })).toHaveAttribute("src", mockSpots[0].thumbnail);
+    expect(originalPhoto.queryByText("유사")).not.toBeInTheDocument();
+    fireEvent.error(originalPhoto.getByRole("img", { name: "경포해변" }));
+    expect(originalPhoto.getByRole("img", { name: /경포해변 유사 이미지:/ })).toHaveAttribute("src", getSimilarSpotImage(mockSpots[0]).url);
+    expect(originalPhoto.getByText("유사")).toBeInTheDocument();
   });
 
   it.each([{ regions: undefined }, { regions: [] }])("코스 지역이 $regions이면 강원 전체와 18개 시군을 제공한다", async ({ regions }) => {

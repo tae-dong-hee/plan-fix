@@ -3,6 +3,7 @@ import { MemoryRouter } from "react-router-dom";
 
 import CourseRouteMap from "@/components/ui/course-route-map";
 import { FALLBACK_SPOT_IMAGE } from "@/components/ui/spot-image";
+import { getSimilarSpotImage } from "@/lib/similar-spot-images";
 import type { CourseDay, CourseSpotSummary } from "@/services/course";
 
 type MapSpot = {
@@ -159,11 +160,15 @@ describe("CourseRouteMap", () => {
     expect(screen.getByRole("button", { name: "안목 / 커피거리 지도에서 보기" })).toHaveAttribute("aria-pressed", "true");
   });
 
-  test("사진과 주소가 누락된 장소도 기본 이미지와 안내를 보여주며 지도 선택을 유지한다", () => {
+  test("사진과 주소가 누락된 장소도 유사 이미지와 안내를 보여주며 지도 선택을 유지한다", () => {
     renderRoute([{ dayNumber: 1, spots: [{ ...beach, thumbnail: "  ", address: "  " }, cafe] }]);
 
     const selected = within(screen.getByRole("region", { name: "선택한 장소" }));
-    expect(selected.getByRole("img", { name: beach.title })).toHaveAttribute("src", FALLBACK_SPOT_IMAGE);
+    expect(selected.getByRole("img", { name: /경포해변 유사 이미지:/ })).toHaveAttribute("src", getSimilarSpotImage(beach).url);
+    expect(selected.getByText("유사 이미지")).toBeInTheDocument();
+    const listItem = within(screen.getByRole("button", { name: "경포해변 지도에서 보기" }));
+    expect(listItem.getByRole("img")).toHaveAttribute("src", getSimilarSpotImage(beach).url);
+    expect(listItem.getByText("유사")).toBeInTheDocument();
     expect(selected.getByText("주소 정보가 등록되지 않은 장소예요.")).toBeInTheDocument();
     expect(within(screen.getByRole("button", { name: "경포해변 지도에서 보기" })).getByText("주소 정보가 등록되지 않은 장소예요.")).toBeInTheDocument();
     expect(latestMapProps().highlightedSpotId).toBe(beach.spotId);
@@ -173,12 +178,25 @@ describe("CourseRouteMap", () => {
     expect(latestMapProps().focusedSpotId).toBe(cafe.spotId);
   });
 
-  test("지도에서 선택한 장소의 사진 로딩이 실패하면 기본 이미지로 대체한다", () => {
+  test("지도에서 선택한 장소의 사진 로딩이 실패하면 유사 이미지로 대체하고 유사 이미지도 실패할 때 기본 그림을 표시한다", () => {
     renderRoute();
     const selected = within(screen.getByRole("region", { name: "선택한 장소" }));
     fireEvent.error(selected.getByRole("img", { name: beach.title }));
+    expect(selected.getByRole("img", { name: /경포해변 유사 이미지:/ })).toHaveAttribute("src", getSimilarSpotImage(beach).url);
+    fireEvent.error(selected.getByRole("img", { name: /경포해변 유사 이미지:/ }));
     expect(selected.getByRole("img", { name: beach.title })).toHaveAttribute("src", FALLBACK_SPOT_IMAGE);
     expect(selected.getByRole("link", { name: /길찾기/ })).toBeInTheDocument();
+  });
+
+  test("장소 이름과 분류가 누락되어도 기본 여행 장소 분류의 유사 사진을 표시한다", () => {
+    const unnamed = { ...beach, title: "", category: "", thumbnail: null };
+    renderRoute([{ dayNumber: 1, spots: [unnamed] }]);
+
+    const selected = within(screen.getByRole("region", { name: "선택한 장소" }));
+    expect(selected.getByRole("img", { name: /여행 장소 유사 이미지:/ })).toHaveAttribute(
+      "src",
+      getSimilarSpotImage({ ...unnamed, title: "여행 장소", category: "관광지" }).url,
+    );
   });
 
   test("좌표 없는 장소가 앞에 있어도 첫 유효 장소를 선택하며 방문 순서 번호를 보존한다", () => {

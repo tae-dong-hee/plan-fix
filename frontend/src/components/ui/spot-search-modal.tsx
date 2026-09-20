@@ -9,6 +9,7 @@ import SpotImage from "@/components/ui/spot-image";
 import KakaoMap from "@/components/ui/kakao-map";
 import { SPOT_CATEGORY_OPTIONS } from "@/constants/spot-categories";
 import { PopularSpot, searchSpots } from "@/services/spots";
+import { getSimilarSpotImage } from "@/lib/similar-spot-images";
 import "./spot-search-modal.css";
 
 export interface SpotSearchModalProps {
@@ -425,6 +426,8 @@ function SpotSearchContent({
                       <SpotImage
                         src={spot.thumbnail}
                         alt={spot.title}
+                        similarImage={getSimilarSpotImage(spot)}
+                        compactSimilarLabel
                         className="h-full w-full object-cover"
                         loading="lazy"
                       />

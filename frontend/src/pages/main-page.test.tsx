@@ -487,6 +487,28 @@ describe("MainPage popular spots carousel", () => {
     mockedFetch5DayWeather.mockResolvedValue(mockWeatherItems);
   });
 
+  test.each([null, "   ", "https://example.com/unavailable.jpg"])("메인 인기 장소의 누락/깨진 사진도 음식 유형에 맞는 유사 이미지로 표시한다 (%s)", async (thumbnail) => {
+    mockedFetchRecommendedSpots.mockResolvedValue({
+      items: [recommendedSpot, {
+        spotId: 4925, title: "영광정메밀국수", category: "음식점", region: "51", sigungu: "830", thumbnail,
+      }],
+      offset: 0, size: 20, totalCount: 2,
+    });
+    renderMainPage();
+    const heading = await screen.findByRole("heading", { name: "영광정메밀국수" });
+    const card = heading.closest("article")!;
+    const image = within(card).getByRole("img");
+    if (thumbnail?.trim()) {
+      expect(image).toHaveAttribute("src", thumbnail);
+      fireEvent.error(image);
+    }
+    expect(image).toHaveAttribute("src", "/images/spot-fallbacks/similar-gangwon-course-cover-40.webp");
+    expect(image).toHaveAccessibleName(expect.stringContaining("영광정메밀국수 유사 이미지"));
+    expect(within(card).getByText("유사 이미지")).toBeInTheDocument();
+    expect(within(card).getByRole("link")).toHaveAttribute("href", "/spots/4925");
+    expect(screen.getByRole("img", { name: recommendedSpot.title })).toHaveAttribute("src", recommendedSpot.thumbnail);
+  });
+
   test("fetches curated Gangwon recommendations with size 20 on initial load", async () => {
     mockedFetchRecommendedSpots.mockResolvedValue({
       items: [

@@ -75,7 +75,7 @@ export default function ImageCreditsPage() {
         <section id="similar-images" aria-labelledby="similar-images-heading" className="mt-6 scroll-mt-24 rounded-2xl border border-border bg-background p-5 sm:p-6">
           <h2 id="similar-images-heading" className="text-base font-semibold">장소 유사 이미지</h2>
           <p className="mt-3 break-keep text-sm leading-6 text-muted-foreground">
-            인기 장소와 여행 장소 목록에서 사진이 없거나 불러올 수 없을 때, 음식·숙소·풍경 등 종류가 비슷한 사진을 ‘유사 이미지’로 표시합니다.
+            메인 추천, 장소 목록·상세, 위시리스트와 코스의 장소 사진이 없거나 불러올 수 없을 때, 음식·숙소·풍경 등 종류가 비슷한 사진을 ‘유사 이미지’로 표시합니다.
             실제 해당 장소의 메뉴, 객실, 시설을 보여주는 사진은 아닙니다. 한국관광공사 TourAPI에서 제공하는 기존 장소 사진과 아래 이용 조건이 명시된 여행 코스 사진을 사용합니다.
           </p>
         </section>
