@@ -3,10 +3,13 @@ import {
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
+  type PointerEvent as ReactPointerEvent,
 } from "react";
 import { Check, Compass, Landmark, MapPinned, UtensilsCrossed, X } from "lucide-react";
 
 import { gangwonMapPaths } from "@/assets/gangwon-map-paths";
+
+import "./gangwon-region-map.css";
 
 export type GangwonRegion =
   | "철원"
@@ -287,7 +290,8 @@ export default function GangwonRegionMap({
     }
   };
 
-  const handleMapMouseMove = (event: ReactMouseEvent<SVGSVGElement>) => {
+  const handleMapPointerMove = (event: ReactPointerEvent<SVGSVGElement>) => {
+    if (event.pointerType === "touch") return;
     const region = getRegionFromMapTarget(event.target);
     if (region && region !== hoveredRegion) setHoveredRegion(region);
   };
@@ -299,7 +303,7 @@ export default function GangwonRegionMap({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/30 sm:p-5"
+      className="region-map-overlay fixed inset-0 z-50 flex items-center justify-center bg-foreground/30"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
@@ -308,9 +312,9 @@ export default function GangwonRegionMap({
         role="dialog"
         aria-modal="true"
         aria-labelledby="region-dialog-title"
-        className="relative flex h-dvh w-full max-w-5xl flex-col overflow-hidden bg-background shadow-[0_16px_48px_hsl(var(--foreground)/0.12)] sm:h-auto sm:max-h-[92dvh] sm:rounded-2xl sm:border sm:border-border/70"
+        className="region-map-dialog relative flex w-full max-w-5xl flex-col overflow-hidden bg-background shadow-[0_16px_48px_hsl(var(--foreground)/0.12)]"
       >
-        <div className="z-20 flex shrink-0 items-center justify-end bg-background px-3 py-2 sm:px-4">
+        <div className="region-map-close">
           <button
             type="button"
             onClick={onClose}
@@ -321,21 +325,21 @@ export default function GangwonRegionMap({
           </button>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-5 sm:px-7 sm:pb-7">
-          <header className="mx-auto max-w-2xl text-center">
+        <div className="region-map-content">
+          <header className="region-map-heading text-center">
             <h2
               id="region-dialog-title"
               className="text-xl font-bold tracking-tight text-foreground sm:text-2xl"
             >
               어디로 떠나볼까요?
             </h2>
-            <p className="mt-2 text-xs leading-6 text-muted-foreground sm:text-[13px]">
+            <p className="region-map-subtitle text-muted-foreground">
               강원도 18개 시·군 중 여행할 지역을 선택해 주세요.
             </p>
           </header>
 
-          <div className="mt-5 grid content-start gap-4 sm:mt-6 sm:gap-5 lg:grid-cols-[1fr_260px] lg:items-stretch">
-            <div className="relative overflow-hidden rounded-xl bg-muted/40 p-3 sm:p-4">
+          <div className="region-map-layout">
+            <div className="region-map-canvas relative overflow-hidden rounded-xl bg-muted/40">
               <style>{`
                 #gangwon-boundary-map path {
                   fill: hsl(var(--muted));
@@ -382,7 +386,7 @@ export default function GangwonRegionMap({
                 }
               `}</style>
 
-              <div className="relative mx-auto aspect-[800/699] w-full max-w-[620px]">
+              <div className="region-map-stage relative mx-auto w-full max-w-[620px]">
                 <svg className="pointer-events-none absolute h-0 w-0" aria-hidden="true">
                   <defs>
                     <linearGradient id="hovered-region-fill" x1="0" y1="0" x2="0" y2="1">
@@ -440,8 +444,8 @@ export default function GangwonRegionMap({
                   viewBox="0 0 800 699"
                   role="presentation"
                   aria-hidden="true"
-                  onMouseMove={handleMapMouseMove}
-                  onMouseLeave={() => setHoveredRegion(null)}
+                  onPointerMove={handleMapPointerMove}
+                  onPointerLeave={() => setHoveredRegion(null)}
                   onClick={handleMapClick}
                 >
                   <g>
@@ -476,8 +480,14 @@ export default function GangwonRegionMap({
                           transformOrigin: "center",
                           transition: "transform 220ms cubic-bezier(0.22, 1, 0.36, 1)",
                         }}
-                        onMouseEnter={() => setHoveredRegion(region.name)}
-                        onMouseLeave={() => setHoveredRegion(null)}
+                        onPointerEnter={(event) => {
+                          if (event.pointerType !== "touch") setHoveredRegion(region.name);
+                        }}
+                        onPointerDown={(event) => {
+                          // Touch selects on click without a focus/hover preview moving the map.
+                          if (event.pointerType === "touch") event.preventDefault();
+                        }}
+                        onPointerLeave={() => setHoveredRegion(null)}
                         onFocus={() => setHoveredRegion(region.name)}
                         onBlur={() => setHoveredRegion(null)}
                         onClick={() => setPendingRegion(region.name)}
@@ -497,12 +507,9 @@ export default function GangwonRegionMap({
                           textAnchor="middle"
                           dominantBaseline="middle"
                           fill={isActive ? "hsl(var(--primary-foreground))" : "hsl(var(--foreground))"}
-                          stroke={isActive ? "hsl(var(--primary))" : "hsl(var(--background))"}
-                          strokeWidth={isActive ? 5.5 : 4.5}
                           fontSize={20}
                           letterSpacing={region.labelLetterSpacing}
-                          paintOrder="stroke"
-                          className="pointer-events-none select-none font-semibold transition-colors duration-200"
+                          className="region-map-label pointer-events-none select-none font-semibold transition-colors duration-200"
                         >
                           {region.name}
                         </text>
@@ -511,55 +518,55 @@ export default function GangwonRegionMap({
                   })}
                 </svg>
               </div>
-              <p className="mt-2 text-center text-[10px] font-semibold tracking-[0.16em] text-muted-foreground sm:text-xs">
+              <p className="region-map-brand text-center text-[10px] font-semibold tracking-[0.16em] text-muted-foreground">
                 PlanFix
               </p>
             </div>
 
-            <aside className="flex min-h-0 flex-col rounded-xl border border-border/70 bg-background p-4 text-foreground sm:p-5">
-              <div className="flex items-center gap-3 lg:block">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/5 text-primary lg:h-11 lg:w-11">
+            <aside className="region-map-details flex flex-col rounded-xl border border-border/70 bg-background text-foreground">
+              <div className="region-map-selection">
+                <div className="region-map-icon flex shrink-0 items-center justify-center rounded-xl bg-primary/5 text-primary">
                   <MapPinned className="h-5 w-5" aria-hidden="true" />
                 </div>
                 <div>
-                  <p className="text-[11px] text-muted-foreground lg:mt-4">선택한 지역</p>
-                  <p className="mt-0.5 text-xl font-semibold tracking-tight lg:mt-1 lg:text-[22px]">
+                  <p className="text-[11px] text-muted-foreground">선택한 지역</p>
+                  <p className="region-map-name font-semibold tracking-tight">
                     {activeRegion ?? "지역을 골라주세요"}
                   </p>
                 </div>
               </div>
-              <div className="mt-3 min-h-0 lg:mt-4 lg:min-h-[168px]" aria-live="polite">
+              <div className="region-map-guide" aria-live="polite">
                 {activeGuide ? (
-                  <div data-testid="region-guide">
-                    <p className="text-xs leading-5 text-muted-foreground sm:text-[13px] sm:leading-6">
+                  <div className="region-map-selected-guide" data-testid="region-guide">
+                    <p className="region-map-description text-muted-foreground">
                       {activeGuide.description}
                     </p>
-                    <div className="mt-3 sm:mt-4">
-                      <p className="flex items-center gap-1.5 text-xs font-semibold text-foreground sm:gap-2">
+                    <div className="region-map-keywords">
+                      <p className="region-map-keyword-title flex items-center gap-1.5 text-xs font-semibold text-foreground">
                         <Compass className="h-4 w-4 text-primary" aria-hidden="true" />
                         여행 키워드
                       </p>
                       <div
-                        className="mt-2 flex flex-wrap gap-1.5 pl-5 sm:pl-6"
+                        className="region-map-keyword-list flex flex-wrap gap-1.5"
                         aria-label={`${activeRegion} 여행 키워드`}
                       >
                         {activeGuide.keywords.map((keyword) => (
                           <span
                             key={keyword}
-                            className="rounded-full bg-primary/5 px-2.5 py-1 text-[11px] font-medium text-primary"
+                            className="rounded-full bg-primary/5 px-2 py-1 text-[11px] font-medium text-primary"
                           >
                             {keyword}
                           </span>
                         ))}
                       </div>
                     </div>
-                    <dl className="mt-3 grid grid-cols-2 gap-3 border-t border-border/70 pt-3 text-xs lg:mt-4 lg:block lg:space-y-4 lg:pt-4">
+                    <dl className="region-map-facts border-t border-border/70 text-xs">
                       <div>
                         <dt className="flex items-center gap-1.5 font-semibold text-foreground sm:gap-2">
                           <Landmark className="h-4 w-4 text-primary" aria-hidden="true" />
                           대표 명소
                         </dt>
-                        <dd className="mt-1 pl-5 leading-4 text-muted-foreground sm:pl-6 sm:leading-5">
+                        <dd className="region-map-fact-value text-muted-foreground">
                           {activeGuide.attractions.join(" · ")}
                         </dd>
                       </div>
@@ -571,14 +578,14 @@ export default function GangwonRegionMap({
                           />
                           대표 먹거리
                         </dt>
-                        <dd className="mt-1 pl-5 leading-4 text-muted-foreground sm:pl-6 sm:leading-5">
+                        <dd className="region-map-fact-value text-muted-foreground">
                           {activeGuide.foods.join(" · ")}
                         </dd>
                       </div>
                     </dl>
                   </div>
                 ) : (
-                  <p className="text-xs leading-5 text-muted-foreground sm:text-[13px] sm:leading-6">
+                  <p className="region-map-description text-muted-foreground">
                     지도에서 지역을 누르면 선택됩니다. 마우스뿐 아니라 키보드와 터치로도
                     이용할 수 있어요.
                   </p>
@@ -591,7 +598,7 @@ export default function GangwonRegionMap({
                 onClick={() => {
                   if (pendingRegion) onSelect(pendingRegion);
                 }}
-                className="mt-4 flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-primary px-5 text-[13px] font-semibold text-primary-foreground transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground lg:mt-auto"
+                className="region-map-confirm flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-primary px-5 text-[13px] font-semibold text-primary-foreground transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground"
               >
                 <Check className="h-4 w-4" aria-hidden="true" />
                 {pendingRegion ? `${pendingRegion} 선택하기` : "지역 선택하기"}

@@ -6,7 +6,9 @@ import taedonghee.plan_fix.domain.course.CourseModel;
 import taedonghee.plan_fix.domain.course.CourseRepository;
 import taedonghee.plan_fix.domain.course.CourseSortType;
 import taedonghee.plan_fix.domain.spot.SpotModel;
+import taedonghee.plan_fix.domain.spot.SpotImageCandidate;
 import taedonghee.plan_fix.domain.spot.SpotRepository;
+import taedonghee.plan_fix.domain.spot.SpotSourceType;
 import taedonghee.plan_fix.domain.spot.TourDataImageRepository;
 
 import java.util.List;
@@ -137,6 +139,40 @@ class CoursePublicCoverApplicationServiceTest {
         assertThat(result.size()).isEqualTo(20);
         verify(spots).findAllByIdIn(Set.of(11L));
         verifyNoMoreInteractions(spots);
+        verify(courses, never()).save(any());
+    }
+
+    @Test
+    void public_list_uses_spot_representative_and_saved_detail_photos_before_catalog() {
+        CourseRepository courses = mock(CourseRepository.class);
+        SpotRepository spots = mock(SpotRepository.class);
+        TourDataImageRepository images = mock(TourDataImageRepository.class);
+        CourseModel first = course(1, "장소 사진 코스", null, null, 11L);
+        CourseModel second = course(2, "상세 사진 코스", null, null, 12L);
+        CourseModel uploaded = course(3, "직접 올린 사진", null, "https://user.example.com/upload.jpg", 99L);
+        SpotModel representative = SpotModel.builder().spotId(11L).sourceType(SpotSourceType.TOUR_API)
+                .title("대표 사진 장소").category("관광지").thumbnail("https://images.example.com/spot.jpg").build();
+        SpotModel detailOnly = spot(12, "51", "110", "상세 사진 장소", "관광지", null);
+        when(courses.searchPublic(CourseSortType.POPULAR, 0, 20)).thenReturn(List.of(first, second, uploaded));
+        when(courses.countPublic()).thenReturn(3L);
+        when(spots.findAllByIdIn(Set.of(11L, 12L))).thenReturn(List.of(representative, detailOnly));
+        when(images.findBySpotIds(Set.of(12L))).thenReturn(List.of(
+                new SpotImageCandidate(12L, "https://images.example.com/detail.jpg", null)));
+        CourseApplicationService service = new CourseApplicationService(courses, spots, null, null,
+                new CourseCoverImageSelector(List.of(new CourseCoverImageSelector.Image("fallback",
+                        "https://images.example.com/fallback.jpg", List.of(), List.of(), List.of()))),
+                new SpotThumbnailResolver(images));
+
+        CourseListResult result = service.listPublic(new CourseListQuery("popular", 0, 20));
+
+        assertThat(result.items()).extracting(CourseListResult.Item::thumbnail).containsExactly(
+                representative.thumbnail(), "https://images.example.com/detail.jpg", uploaded.thumbnail());
+        assertThat(first.thumbnail()).isNull();
+        assertThat(second.thumbnail()).isNull();
+        assertThat(detailOnly.thumbnail()).isNull();
+        verify(spots).findAllByIdIn(Set.of(11L, 12L));
+        verify(images).findBySpotIds(Set.of(12L));
+        verifyNoMoreInteractions(spots, images);
         verify(courses, never()).save(any());
     }
 

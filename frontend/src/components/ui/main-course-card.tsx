@@ -4,6 +4,8 @@ import { Link } from "react-router-dom";
 
 import type { PublicCourseItem } from "@/services/course";
 import { getCourseCoverCredit, getCourseCoverImageSrc } from "@/lib/course-cover-images";
+import { getVerifiedSpotImageCredit, getVerifiedSpotImageTitle } from "@/lib/verified-spot-images";
+import { cn } from "@/lib/utils";
 import { CourseCardSummary, CourseThemeLine } from "@/components/ui/course-metadata";
 
 type MainCourseCardProps = {
@@ -23,7 +25,8 @@ export default function MainCourseCard({
 }: MainCourseCardProps) {
   const [failedThumbnail, setFailedThumbnail] = useState<string | null>(null);
   const thumbnail = course.thumbnail?.trim();
-  const credit = getCourseCoverCredit(thumbnail);
+  const spotCredit = getVerifiedSpotImageCredit(thumbnail);
+  const credit = getCourseCoverCredit(thumbnail) ?? spotCredit;
 
   return (
     <article className="group/card relative w-[76%] shrink-0 snap-start rounded-[24px] border border-zinc-200/80 bg-white shadow-[0_4px_16px_-10px_rgb(0_0_0/0.12)] transition-[transform,box-shadow,border-color] duration-300 hover:-translate-y-1 hover:border-zinc-300 hover:shadow-[0_14px_28px_-14px_rgb(0_0_0/0.18)] motion-reduce:transform-none motion-reduce:transition-none dark:border-zinc-700 dark:bg-background dark:hover:border-zinc-600 sm:w-[46%] lg:w-[calc((100%_-_3.75rem)/4)]">
@@ -36,9 +39,10 @@ export default function MainCourseCard({
             <img
               src={getCourseCoverImageSrc(thumbnail)}
               alt={course.title}
+              title={getVerifiedSpotImageTitle(thumbnail)}
               loading="lazy"
               onError={() => setFailedThumbnail(thumbnail)}
-              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 motion-reduce:transform-none motion-reduce:transition-none"
+              className={cn("h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 motion-reduce:transform-none motion-reduce:transition-none", spotCredit && "object-contain scale-100 hover:scale-100 group-hover:scale-100")}
             />
           ) : (
             <div aria-hidden="true" className="absolute inset-0 flex items-center justify-center bg-primary/5">

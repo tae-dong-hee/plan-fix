@@ -440,14 +440,14 @@ test("opens the Gangwon map and applies the selected region", () => {
   const sokchoLabel = screen.getByRole("button", { name: "속초" }).querySelector("text");
   const yangyangLabel = screen.getByRole("button", { name: "양양" }).querySelector("text");
   expect(sokchoLabel).toHaveAttribute("font-size", "20");
-  expect(sokchoLabel).toHaveAttribute("stroke-width", "4.5");
+  expect(sokchoLabel).not.toHaveAttribute("stroke-width");
   expect(sokchoLabel?.getAttribute("fill")).toBe(yangyangLabel?.getAttribute("fill"));
   expect(sokchoLabel?.getAttribute("stroke")).toBe(yangyangLabel?.getAttribute("stroke"));
 
   const gangneungRegion = screen.getByRole("button", { name: "강릉" });
   const gangwonMap = screen.getByTestId("gangwon-boundary-map");
 
-  fireEvent.mouseEnter(gangneungRegion);
+  fireEvent.pointerEnter(gangneungRegion);
   expect(gangwonMap).toHaveAttribute("data-active-region", "강릉");
   expect(gangneungRegion).toHaveStyle({ transform: "translateY(-8px)" });
   expect(screen.getByText("강릉", { selector: "p" })).toBeInTheDocument();
@@ -461,7 +461,7 @@ test("opens the Gangwon map and applies the selected region", () => {
     "초당순두부 · 장칼국수",
   );
 
-  fireEvent.mouseLeave(gangneungRegion);
+  fireEvent.pointerLeave(gangneungRegion);
   expect(gangwonMap).toHaveAttribute("data-active-region", "");
   expect(gangneungRegion).toHaveStyle({ transform: "translateY(0)" });
   expect(screen.queryByTestId("region-guide")).not.toBeInTheDocument();
@@ -475,6 +475,39 @@ test("opens the Gangwon map and applies the selected region", () => {
   expect(
     screen.getByRole("button", { name: "여행 지역 선택: 강원도 / 강릉" }),
   ).toBeInTheDocument();
+});
+
+test("touch selects a region without a hover preview moving the map before the click", () => {
+  render(
+    <MemoryRouter
+      initialEntries={["/main"]}
+      future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+    >
+      <App />
+    </MemoryRouter>,
+  );
+
+  fireEvent.click(
+    screen.getByRole("button", { name: "여행 지역 선택: 강원도 / 지역 선택" }),
+  );
+  const region = screen.getByRole("button", { name: "정선" });
+
+  for (const type of ["pointerover", "pointermove", "pointerdown"]) {
+    // JSDOM does not implement PointerEvent's pointerType yet.
+    const event = new MouseEvent(type, { bubbles: true, cancelable: true });
+    Object.defineProperty(event, "pointerType", { value: "touch" });
+    fireEvent(region, event);
+    if (type === "pointerdown") expect(event.defaultPrevented).toBe(true);
+  }
+  fireEvent.mouseEnter(region);
+
+  expect(screen.queryByTestId("region-guide")).not.toBeInTheDocument();
+  expect(region).toHaveStyle({ transform: "translateY(0)" });
+
+  fireEvent.click(region);
+
+  expect(region).toHaveAttribute("aria-pressed", "true");
+  expect(screen.getByRole("button", { name: "정선 선택하기" })).toBeEnabled();
 });
 
 test("shows region guidance with keyboard selection", () => {

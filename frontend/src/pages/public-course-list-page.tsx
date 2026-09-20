@@ -5,6 +5,8 @@ import AppNav from "@/components/ui/app-nav";
 import CourseMetadata, { CourseSummaryBadges } from "@/components/ui/course-metadata";
 import { fetchPublicCourses, type PublicCourseItem } from "@/services/course";
 import { getCourseCoverCredit, getCourseCoverImageSrc } from "@/lib/course-cover-images";
+import { getVerifiedSpotImageCredit, getVerifiedSpotImageTitle } from "@/lib/verified-spot-images";
+import { cn } from "@/lib/utils";
 
 const FALLBACK_IMAGE =
   "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=85";
@@ -76,12 +78,13 @@ export default function PublicCourseListPage() {
             <p className="mt-6 text-[13px] text-muted-foreground">총 {totalCount}개의 코스</p>
             <div className="mt-5 grid gap-x-5 gap-y-8 sm:grid-cols-2 lg:grid-cols-4">
               {items?.map((course) => {
-                const credit = getCourseCoverCredit(course.thumbnail);
+                const spotCredit = getVerifiedSpotImageCredit(course.thumbnail);
+                const credit = getCourseCoverCredit(course.thumbnail) ?? spotCredit;
                 return (
                   <article key={course.courseId} className="relative min-w-0">
                     <Link to={`/courses/${course.courseId}`} className="group block rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-4">
                       <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-muted">
-                        <img src={getCourseCoverImageSrc(course.thumbnail || FALLBACK_IMAGE)} alt="" loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 motion-reduce:transform-none motion-reduce:transition-none" />
+                        <img src={getCourseCoverImageSrc(course.thumbnail || FALLBACK_IMAGE)} alt="" title={getVerifiedSpotImageTitle(course.thumbnail)} loading="lazy" className={cn("h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 motion-reduce:transform-none motion-reduce:transition-none", spotCredit && "object-contain scale-100 hover:scale-100 group-hover:scale-100")} />
                       </div>
                       <div className="px-0.5 pb-1 pt-3">
                         <h2 className="line-clamp-2 break-keep text-[15px] font-semibold leading-snug tracking-tight [overflow-wrap:anywhere]">{course.title}</h2>
