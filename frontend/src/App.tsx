@@ -5,6 +5,7 @@ import UniqueLoaderDemo from "@/components/ui/unique-loader-demo";
 import AuthReturnRedirect from "@/components/auth-return-redirect";
 import BoardCreatePage from "@/pages/board-create-page";
 import BoardDetailPage from "@/pages/board-detail-page";
+import BoardListPage from "@/pages/board-list-page";
 import CourseCreatePage from "@/pages/course-create-page";
 import CourseDetailPage from "@/pages/course-detail-page";
 import CourseListPage from "@/pages/course-list-page";
@@ -41,6 +42,7 @@ export default function App() {
       <Route path="/spots" element={<PopularSpotsPage mode="discover" />} />
       <Route path="/spots/popular" element={<PopularSpotsPage />} />
       <Route path="/spots/:spotId" element={<SpotDetailPage />} />
+      <Route path="/boards" element={<BoardListPage />} />
       <Route path="/boards/create" element={<BoardCreatePage />} />
       <Route path="/boards/:boardId" element={<BoardDetailPage />} />
       <Route path="/courses" element={<CourseListPage />} />

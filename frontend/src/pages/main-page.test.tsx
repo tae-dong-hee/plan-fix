@@ -956,6 +956,7 @@ describe("MainPage travel story sorting and carousel", () => {
     const link2 = screen.getByText("속초 1박 2일 코스").closest("a");
     expect(link1).toHaveAttribute("href", "/boards/101");
     expect(link2).toHaveAttribute("href", "/boards/102");
+    expect(screen.getByRole("link", { name: "여행 후기 전체보기" })).toHaveAttribute("href", "/boards?sort=popular");
   });
 
   test("shows empty message when boards returns an empty list", async () => {
@@ -987,6 +988,7 @@ describe("MainPage travel story sorting and carousel", () => {
 
     fireEvent.click(latestButton);
     expect(mockedFetchBoards).toHaveBeenNthCalledWith(2, { sort: "latest", size: 6 });
+    expect(screen.getByRole("link", { name: "여행 후기 전체보기" })).toHaveAttribute("href", "/boards?sort=latest");
     expect(latestButton).toHaveAttribute("aria-pressed", "true");
     expect(popularButton).toHaveAttribute("aria-pressed", "false");
     expect(within(stories).getByRole("status")).toHaveTextContent("여행 후기를 불러오는 중...");
