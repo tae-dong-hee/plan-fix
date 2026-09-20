@@ -85,7 +85,7 @@ describe("WishlistPage", () => {
     expect(useGoogleSpotCover).toHaveBeenCalledWith(expect.objectContaining({
       spotId: 728, title: "파인시티호텔", latitude: 37.7608316, longitude: 128.8991773,
     }));
-    expect(onSourceChange).toHaveBeenLastCalledWith(photo.url);
+    await waitFor(() => expect(onSourceChange).toHaveBeenLastCalledWith(photo.url));
     const author = screen.getByRole("link", { name: "호텔 촬영자" });
     expect(author).toHaveAttribute("href", photo.google.authors[0].uri);
     expect(author.parentElement?.closest("a, button")).toBeNull();
@@ -94,7 +94,7 @@ describe("WishlistPage", () => {
 
     fireEvent.error(image);
     expect(image).toHaveAttribute("src", getSimilarSpotImage(googleSpot).url);
-    expect(onSourceChange).toHaveBeenLastCalledWith(getSimilarSpotImage(googleSpot).url);
+    await waitFor(() => expect(onSourceChange).toHaveBeenLastCalledWith(getSimilarSpotImage(googleSpot).url));
     vi.mocked(useGoogleSpotCover).mockReturnValue({ viewportRef, photo, attribution: undefined, onSourceChange });
     rerender(<MemoryRouter initialEntries={["/wishlist"]} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <WishlistPage /><HistoryControls />
