@@ -80,14 +80,14 @@
 .travel-hero-primary,
 .travel-hero-secondary {
   display: inline-flex;
-  min-height: 52px;
+  min-height: 44px;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 7px;
   border: 1px solid transparent;
-  border-radius: 12px;
-  padding: 13px 16px;
-  font-size: 9px;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 14px;
   font-weight: 700;
   line-height: 1.4;
   white-space: nowrap;
@@ -325,7 +325,7 @@
     content: "";
     pointer-events: none;
   }
-  .travel-hero-actions { align-items: stretch; flex-direction: column; }
+  .travel-hero-actions { max-width: 224px; align-items: stretch; flex-direction: column; gap: 8px; }
   .travel-hero-primary, .travel-hero-secondary { justify-content: flex-start; }
   .travel-hero-actions a > svg:last-child { margin-left: auto; }
   .travel-weather-icon { width: 29px; height: 29px; border-radius: 9px; }
