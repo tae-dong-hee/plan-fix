@@ -110,6 +110,10 @@ describe("PopularSpotsPage", () => {
     expect(await screen.findByRole("heading", { name: "경포해변" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "안목해변" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "강원도 인기 장소" })).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "경포해변" })).toHaveAttribute("src", "https://example.com/thumb1.jpg");
+    expect(screen.getByRole("img", { name: /안목해변 유사 이미지/ })).toHaveAttribute("src", expect.stringContaining("/images/spot-fallbacks/"));
+    expect(screen.getAllByText("유사 이미지")).toHaveLength(1);
+    expect(screen.getByRole("link", { name: "사진 출처" })).toHaveAttribute("href", "/image-credits#similar-images");
   });
 
   test("reads region query parameter and fetches popular spots for that region", async () => {

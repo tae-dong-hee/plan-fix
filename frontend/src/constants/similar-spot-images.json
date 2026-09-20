@@ -1,0 +1,1043 @@
+{
+  "version": 1,
+  "images": [
+    {
+      "id": "similar-spot-4943",
+      "title": "옹심이 한 그릇",
+      "kind": "dumplings",
+      "url": "/images/spot-fallbacks/similar-spot-4943.webp",
+      "regions": [
+        "830"
+      ],
+      "author": "한국관광공사 TourAPI",
+      "license": "TourAPI 제공 사진 · 원본 이용 조건 적용",
+      "licenseUrl": "https://api.visitkorea.or.kr/",
+      "sourceUrl": "https://tong.visitkorea.or.kr/cms/resource/19/2837919_image2_1.jpg",
+      "sourceTitle": "공가네감자옹심이",
+      "sourceSpotId": 4943,
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-spot-1351",
+      "title": "순두부 한 상",
+      "kind": "tofu",
+      "url": "/images/spot-fallbacks/similar-spot-1351.webp",
+      "regions": [
+        "150"
+      ],
+      "author": "한국관광공사 TourAPI",
+      "license": "TourAPI 제공 사진 · 원본 이용 조건 적용",
+      "licenseUrl": "https://api.visitkorea.or.kr/",
+      "sourceUrl": "https://tong.visitkorea.or.kr/cms/resource/21/1022421_image2_1.jpg",
+      "sourceTitle": "초당할머니순두부",
+      "sourceSpotId": 1351,
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-spot-1680",
+      "title": "나물과 한식 반찬",
+      "kind": "meal",
+      "url": "/images/spot-fallbacks/similar-spot-1680.webp",
+      "regions": [
+        "130"
+      ],
+      "author": "한국관광공사 TourAPI",
+      "license": "TourAPI 제공 사진 · 원본 이용 조건 적용",
+      "licenseUrl": "https://api.visitkorea.or.kr/",
+      "sourceUrl": "https://tong.visitkorea.or.kr/cms/resource/67/3544567_image2_1.jpeg",
+      "sourceTitle": "보릿고개 본점",
+      "sourceSpotId": 1680,
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-spot-2387",
+      "title": "생선구이 한 상",
+      "kind": "fish",
+      "url": "/images/spot-fallbacks/similar-spot-2387.webp",
+      "regions": [
+        "210"
+      ],
+      "author": "한국관광공사 TourAPI",
+      "license": "TourAPI 제공 사진 · 원본 이용 조건 적용",
+      "licenseUrl": "https://api.visitkorea.or.kr/",
+      "sourceUrl": "https://tong.visitkorea.or.kr/cms/resource/81/3555081_image2_1.jpg",
+      "sourceTitle": "88생선구이",
+      "sourceSpotId": 2387,
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-spot-2330",
+      "title": "돈가스 정식",
+      "kind": "cutlet",
+      "url": "/images/spot-fallbacks/similar-spot-2330.webp",
+      "regions": [
+        "210"
+      ],
+      "author": "한국관광공사 TourAPI",
+      "license": "TourAPI 제공 사진 · 원본 이용 조건 적용",
+      "licenseUrl": "https://api.visitkorea.or.kr/",
+      "sourceUrl": "https://tong.visitkorea.or.kr/cms/resource/48/2901648_image2_1.jpg",
+      "sourceTitle": "돈까스렛",
+      "sourceSpotId": 2330,
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-spot-2415",
+      "title": "뜨끈한 국밥",
+      "kind": "soup",
+      "url": "/images/spot-fallbacks/similar-spot-2415.webp",
+      "regions": [
+        "210"
+      ],
+      "author": "한국관광공사 TourAPI",
+      "license": "TourAPI 제공 사진 · 원본 이용 조건 적용",
+      "licenseUrl": "https://api.visitkorea.or.kr/",
+      "sourceUrl": "https://tong.visitkorea.or.kr/cms/resource/77/2892077_image2_1.jpg",
+      "sourceTitle": "영식이네순대국밥",
+      "sourceSpotId": 2415,
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-spot-2364-0",
+      "title": "해산물 물회",
+      "kind": "mulhoe",
+      "url": "/images/spot-fallbacks/similar-spot-2364-0.webp",
+      "regions": [
+        "210"
+      ],
+      "author": "한국관광공사 TourAPI",
+      "license": "TourAPI 제공 사진 · 원본 이용 조건 적용",
+      "licenseUrl": "https://api.visitkorea.or.kr/",
+      "sourceUrl": "https://tong.visitkorea.or.kr/cms/resource/70/3500170_image2_1.jpg",
+      "sourceTitle": "청초수물회",
+      "sourceSpotId": 2364,
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-spot-4934-1",
+      "title": "생선회 모둠",
+      "kind": "sashimi",
+      "url": "/images/spot-fallbacks/similar-spot-4934-1.webp",
+      "regions": [
+        "830"
+      ],
+      "author": "한국관광공사 TourAPI",
+      "license": "TourAPI 제공 사진 · 원본 이용 조건 적용",
+      "licenseUrl": "https://api.visitkorea.or.kr/",
+      "sourceUrl": "https://tong.visitkorea.or.kr/cms/resource/82/2903582_image2_1.jpg",
+      "sourceTitle": "다래횟집",
+      "sourceSpotId": 4934,
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-spot-4934-2",
+      "title": "대게와 해산물",
+      "kind": "crab",
+      "url": "/images/spot-fallbacks/similar-spot-4934-2.webp",
+      "regions": [
+        "830"
+      ],
+      "author": "한국관광공사 TourAPI",
+      "license": "TourAPI 제공 사진 · 원본 이용 조건 적용",
+      "licenseUrl": "https://api.visitkorea.or.kr/",
+      "sourceUrl": "https://tong.visitkorea.or.kr/cms/resource/83/2903583_image2_1.jpeg",
+      "sourceTitle": "다래횟집",
+      "sourceSpotId": 4934,
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-spot-1288-2",
+      "title": "얼큰한 짬뽕 순두부",
+      "kind": "spicy-tofu",
+      "url": "/images/spot-fallbacks/similar-spot-1288-2.webp",
+      "regions": [
+        "150"
+      ],
+      "author": "한국관광공사 TourAPI",
+      "license": "TourAPI 제공 사진 · 원본 이용 조건 적용",
+      "licenseUrl": "https://api.visitkorea.or.kr/",
+      "sourceUrl": "https://tong.visitkorea.or.kr/cms/resource/12/3029712_image2_1.jpg",
+      "sourceTitle": "강릉짬뽕순두부 동화가든 본점",
+      "sourceSpotId": 1288,
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-spot-4902-0",
+      "title": "수제 햄버거",
+      "kind": "burger",
+      "url": "/images/spot-fallbacks/similar-spot-4902-0.webp",
+      "regions": [
+        "830"
+      ],
+      "author": "한국관광공사 TourAPI",
+      "license": "TourAPI 제공 사진 · 원본 이용 조건 적용",
+      "licenseUrl": "https://api.visitkorea.or.kr/",
+      "sourceUrl": "https://tong.visitkorea.or.kr/cms/resource/18/2946118_image2_1.jpg",
+      "sourceTitle": "파머스키친",
+      "sourceSpotId": 4902,
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-spot-4929-2",
+      "title": "짜장면",
+      "kind": "chinese",
+      "url": "/images/spot-fallbacks/similar-spot-4929-2.webp",
+      "regions": [
+        "830"
+      ],
+      "author": "한국관광공사 TourAPI",
+      "license": "TourAPI 제공 사진 · 원본 이용 조건 적용",
+      "licenseUrl": "https://api.visitkorea.or.kr/",
+      "sourceUrl": "https://tong.visitkorea.or.kr/cms/resource/73/2892473_image2_1.jpg",
+      "sourceTitle": "하조대반점",
+      "sourceSpotId": 4929,
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-spot-4929-3",
+      "title": "해물 짬뽕",
+      "kind": "jjamppong",
+      "url": "/images/spot-fallbacks/similar-spot-4929-3.webp",
+      "regions": [
+        "830"
+      ],
+      "author": "한국관광공사 TourAPI",
+      "license": "TourAPI 제공 사진 · 원본 이용 조건 적용",
+      "licenseUrl": "https://api.visitkorea.or.kr/",
+      "sourceUrl": "https://tong.visitkorea.or.kr/cms/resource/74/2892474_image2_1.jpg",
+      "sourceTitle": "하조대반점",
+      "sourceSpotId": 4929,
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-spot-3682-0",
+      "title": "삼겹살 불판",
+      "kind": "barbecue",
+      "url": "/images/spot-fallbacks/similar-spot-3682-0.webp",
+      "regions": [
+        "760"
+      ],
+      "author": "한국관광공사 TourAPI",
+      "license": "TourAPI 제공 사진 · 원본 이용 조건 적용",
+      "licenseUrl": "https://api.visitkorea.or.kr/",
+      "sourceUrl": "https://tong.visitkorea.or.kr/cms/resource/87/2788987_image2_1.jpg",
+      "sourceTitle": "솥뚜껑삼겹도령과 낙지낭자",
+      "sourceSpotId": 3682,
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-spot-3730-0",
+      "title": "장어구이 상차림",
+      "kind": "eel",
+      "url": "/images/spot-fallbacks/similar-spot-3730-0.webp",
+      "regions": [
+        "760"
+      ],
+      "author": "한국관광공사 TourAPI",
+      "license": "TourAPI 제공 사진 · 원본 이용 조건 적용",
+      "licenseUrl": "https://api.visitkorea.or.kr/",
+      "sourceUrl": "https://tong.visitkorea.or.kr/cms/resource/99/2789399_image2_1.jpg",
+      "sourceTitle": "일순이풍천장어",
+      "sourceSpotId": 3730,
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-spot-1677-1",
+      "title": "프라이드치킨과 양념치킨",
+      "kind": "chicken",
+      "url": "/images/spot-fallbacks/similar-spot-1677-1.webp",
+      "regions": [
+        "130"
+      ],
+      "author": "한국관광공사 TourAPI",
+      "license": "TourAPI 제공 사진 · 원본 이용 조건 적용",
+      "licenseUrl": "https://api.visitkorea.or.kr/",
+      "sourceUrl": "https://tong.visitkorea.or.kr/cms/resource/43/3045343_image2_1.jpg",
+      "sourceTitle": "진미통닭",
+      "sourceSpotId": 1677,
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-spot-955-0",
+      "title": "컵에 담긴 젤라또",
+      "kind": "icecream",
+      "url": "/images/spot-fallbacks/similar-spot-955-0.webp",
+      "regions": [
+        "150"
+      ],
+      "author": "한국관광공사 TourAPI",
+      "license": "TourAPI 제공 사진 · 원본 이용 조건 적용",
+      "licenseUrl": "https://api.visitkorea.or.kr/",
+      "sourceUrl": "https://tong.visitkorea.or.kr/cms/resource/25/2928125_image2_1.JPG",
+      "sourceTitle": "순두부젤라또 1호점",
+      "sourceSpotId": 955,
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-spot-4930-0",
+      "title": "바다가 보이는 카페",
+      "kind": "ocean-cafe",
+      "url": "/images/spot-fallbacks/similar-spot-4930-0.webp",
+      "regions": [
+        "830"
+      ],
+      "author": "한국관광공사 TourAPI",
+      "license": "TourAPI 제공 사진 · 원본 이용 조건 적용",
+      "licenseUrl": "https://api.visitkorea.or.kr/",
+      "sourceUrl": "https://tong.visitkorea.or.kr/cms/resource/62/2839862_image2_1.JPG",
+      "sourceTitle": "바다뷰제빵소",
+      "sourceSpotId": 4930,
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-spot-2402-0",
+      "title": "베이커리 진열대",
+      "kind": "bakery",
+      "url": "/images/spot-fallbacks/similar-spot-2402-0.webp",
+      "regions": [
+        "210"
+      ],
+      "author": "한국관광공사 TourAPI",
+      "license": "TourAPI 제공 사진 · 원본 이용 조건 적용",
+      "licenseUrl": "https://api.visitkorea.or.kr/",
+      "sourceUrl": "https://tong.visitkorea.or.kr/cms/resource/95/2839795_image2_1.JPG",
+      "sourceTitle": "봉브레드",
+      "sourceSpotId": 2402,
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-spot-2402-3",
+      "title": "갓 구운 빵",
+      "kind": "bakery",
+      "url": "/images/spot-fallbacks/similar-spot-2402-3.webp",
+      "regions": [
+        "210"
+      ],
+      "author": "한국관광공사 TourAPI",
+      "license": "TourAPI 제공 사진 · 원본 이용 조건 적용",
+      "licenseUrl": "https://api.visitkorea.or.kr/",
+      "sourceUrl": "https://tong.visitkorea.or.kr/cms/resource/99/2839799_image2_1.JPG",
+      "sourceTitle": "봉브레드",
+      "sourceSpotId": 2402,
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-spot-4264-2",
+      "title": "한옥 숙소 실내",
+      "kind": "hanok",
+      "url": "/images/spot-fallbacks/similar-spot-4264-2.webp",
+      "regions": [
+        "790"
+      ],
+      "author": "한국관광공사 TourAPI",
+      "license": "TourAPI 제공 사진 · 원본 이용 조건 적용",
+      "licenseUrl": "https://api.visitkorea.or.kr/",
+      "sourceUrl": "https://tong.visitkorea.or.kr/cms/resource/30/2592430_image2_1.jpg",
+      "sourceTitle": "다가가다한옥",
+      "sourceSpotId": 4264,
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-spot-4423-0",
+      "title": "책이 가득한 서가",
+      "kind": "books",
+      "url": "/images/spot-fallbacks/similar-spot-4423-0.webp",
+      "regions": [
+        "810"
+      ],
+      "author": "한국관광공사 TourAPI",
+      "license": "TourAPI 제공 사진 · 원본 이용 조건 적용",
+      "licenseUrl": "https://api.visitkorea.or.kr/",
+      "sourceUrl": "https://tong.visitkorea.or.kr/cms/resource/49/4074649_image2_1.jpg",
+      "sourceTitle": "인제기적의도서관",
+      "sourceSpotId": 4423,
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-spot-1516-0",
+      "title": "미술관 전시 공간",
+      "kind": "gallery",
+      "url": "/images/spot-fallbacks/similar-spot-1516-0.webp",
+      "regions": [
+        "130"
+      ],
+      "author": "한국관광공사 TourAPI",
+      "license": "TourAPI 제공 사진 · 원본 이용 조건 적용",
+      "licenseUrl": "https://api.visitkorea.or.kr/",
+      "sourceUrl": "https://tong.visitkorea.or.kr/cms/resource/05/3584405_image2_1.jpg",
+      "sourceTitle": "뮤지엄산",
+      "sourceSpotId": 1516,
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-spot-3387-0",
+      "title": "박물관 전시 공간",
+      "kind": "museum",
+      "url": "/images/spot-fallbacks/similar-spot-3387-0.webp",
+      "regions": [
+        "760"
+      ],
+      "author": "한국관광공사 TourAPI",
+      "license": "TourAPI 제공 사진 · 원본 이용 조건 적용",
+      "licenseUrl": "https://api.visitkorea.or.kr/",
+      "sourceUrl": "https://tong.visitkorea.or.kr/cms/resource/77/3535177_image2_1.JPG",
+      "sourceTitle": "2018 평창동계올림픽대회 및 동계패럴림픽대회 기념관",
+      "sourceSpotId": 3387,
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-spot-891-2",
+      "title": "전통시장 골목",
+      "kind": "market",
+      "url": "/images/spot-fallbacks/similar-spot-891-2.webp",
+      "regions": [
+        "150"
+      ],
+      "author": "한국관광공사 TourAPI",
+      "license": "TourAPI 제공 사진 · 원본 이용 조건 적용",
+      "licenseUrl": "https://api.visitkorea.or.kr/",
+      "sourceUrl": "https://tong.visitkorea.or.kr/cms/resource/68/3495768_image2_1.jpg",
+      "sourceTitle": "강릉 중앙시장",
+      "sourceSpotId": 891,
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-spot-4657",
+      "title": "상점의 상품 진열대",
+      "kind": "shop",
+      "url": "/images/spot-fallbacks/similar-spot-4657.webp",
+      "regions": [
+        "820"
+      ],
+      "author": "한국관광공사 TourAPI",
+      "license": "TourAPI 제공 사진 · 원본 이용 조건 적용",
+      "licenseUrl": "https://api.visitkorea.or.kr/",
+      "sourceUrl": "https://tong.visitkorea.or.kr/cms/resource/39/3026739_image2_1.jpg",
+      "sourceTitle": "고성 DMZ박물관 뮤지엄샵",
+      "sourceSpotId": 4657,
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-spot-4610",
+      "title": "잔디가 펼쳐진 골프장",
+      "kind": "golf",
+      "url": "/images/spot-fallbacks/similar-spot-4610.webp",
+      "regions": [
+        "820"
+      ],
+      "author": "한국관광공사 TourAPI",
+      "license": "TourAPI 제공 사진 · 원본 이용 조건 적용",
+      "licenseUrl": "https://api.visitkorea.or.kr/",
+      "sourceUrl": "https://tong.visitkorea.or.kr/cms/resource/89/4101489_image2_1.jpg",
+      "sourceTitle": "파인리즈컨트리클럽",
+      "sourceSpotId": 4610,
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-spot-562",
+      "title": "야외 수영장",
+      "kind": "pool",
+      "url": "/images/spot-fallbacks/similar-spot-562.webp",
+      "regions": [
+        "150"
+      ],
+      "author": "한국관광공사 TourAPI",
+      "license": "TourAPI 제공 사진 · 원본 이용 조건 적용",
+      "licenseUrl": "https://api.visitkorea.or.kr/",
+      "sourceUrl": "https://tong.visitkorea.or.kr/cms/resource/73/3380973_image2_1.jpg",
+      "sourceTitle": "라카이 샌드파인 수영장",
+      "sourceSpotId": 562,
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-spot-2508",
+      "title": "배가 정박한 항구",
+      "kind": "harbor",
+      "url": "/images/spot-fallbacks/similar-spot-2508.webp",
+      "regions": [
+        "230"
+      ],
+      "author": "한국관광공사 TourAPI",
+      "license": "TourAPI 제공 사진 · 원본 이용 조건 적용",
+      "licenseUrl": "https://api.visitkorea.or.kr/",
+      "sourceUrl": "https://tong.visitkorea.or.kr/cms/resource/12/3394112_image2_1.JPG",
+      "sourceTitle": "갈남항",
+      "sourceSpotId": 2508,
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-spot-3275",
+      "title": "잔디 위 교회",
+      "kind": "church",
+      "url": "/images/spot-fallbacks/similar-spot-3275.webp",
+      "regions": [
+        "760"
+      ],
+      "author": "한국관광공사 TourAPI",
+      "license": "TourAPI 제공 사진 · 원본 이용 조건 적용",
+      "licenseUrl": "https://api.visitkorea.or.kr/",
+      "sourceUrl": "https://tong.visitkorea.or.kr/cms/resource/43/3377443_image2_1.JPG",
+      "sourceTitle": "실버벨교회",
+      "sourceSpotId": 3275,
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-spot-182",
+      "title": "숲길을 지나는 레일바이크",
+      "kind": "railbike",
+      "url": "/images/spot-fallbacks/similar-spot-182.webp",
+      "regions": [
+        "110"
+      ],
+      "author": "한국관광공사 TourAPI",
+      "license": "TourAPI 제공 사진 · 원본 이용 조건 적용",
+      "licenseUrl": "https://api.visitkorea.or.kr/",
+      "sourceUrl": "https://tong.visitkorea.or.kr/cms/resource/48/2739748_image2_1.jpeg",
+      "sourceTitle": "강촌레일파크(김유정레일바이크)",
+      "sourceSpotId": 182,
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-spot-4454",
+      "title": "야외 카트 트랙",
+      "kind": "kart",
+      "url": "/images/spot-fallbacks/similar-spot-4454.webp",
+      "regions": [
+        "810"
+      ],
+      "author": "한국관광공사 TourAPI",
+      "license": "TourAPI 제공 사진 · 원본 이용 조건 적용",
+      "licenseUrl": "https://api.visitkorea.or.kr/",
+      "sourceUrl": "https://tong.visitkorea.or.kr/cms/resource/60/4066160_image2_1.jpg",
+      "sourceTitle": "인제스피디움 서킷",
+      "sourceSpotId": 4454,
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-spot-9",
+      "title": "물가의 공원",
+      "kind": "park",
+      "url": "/images/spot-fallbacks/similar-spot-9.webp",
+      "regions": [
+        "110"
+      ],
+      "author": "한국관광공사 TourAPI",
+      "license": "TourAPI 제공 사진 · 원본 이용 조건 적용",
+      "licenseUrl": "https://api.visitkorea.or.kr/",
+      "sourceUrl": "https://tong.visitkorea.or.kr/cms/resource/79/4087379_image2_1.jpg",
+      "sourceTitle": "공지천유원지",
+      "sourceSpotId": 9,
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-spot-4038",
+      "title": "전통 거리 풍경",
+      "kind": "village",
+      "url": "/images/spot-fallbacks/similar-spot-4038.webp",
+      "regions": [
+        "780"
+      ],
+      "author": "한국관광공사 TourAPI",
+      "license": "TourAPI 제공 사진 · 원본 이용 조건 적용",
+      "licenseUrl": "https://api.visitkorea.or.kr/",
+      "sourceUrl": "https://tong.visitkorea.or.kr/cms/resource/12/3096112_image2_1.jpg",
+      "sourceTitle": "철원역사문화공원",
+      "sourceSpotId": 4038,
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-spot-3099-0",
+      "title": "실내 체육시설 외관",
+      "kind": "sports",
+      "url": "/images/spot-fallbacks/similar-spot-3099-0.webp",
+      "regions": [
+        "750"
+      ],
+      "author": "한국관광공사 TourAPI",
+      "license": "TourAPI 제공 사진 · 원본 이용 조건 적용",
+      "licenseUrl": "https://api.visitkorea.or.kr/",
+      "sourceUrl": "https://tong.visitkorea.or.kr/cms/resource/57/3040157_image2_1.jpg",
+      "sourceTitle": "영월국민체육센터",
+      "sourceSpotId": 3099,
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-gangwon-course-cover-01",
+      "title": "춘천 소양호의 가을",
+      "kind": "lake",
+      "url": "/images/spot-fallbacks/similar-gangwon-course-cover-01.webp",
+      "regions": [
+        "110"
+      ],
+      "author": "쿠키몬스터",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:20241108_%EC%BF%A0%ED%82%A4%EB%AA%AC%EC%8A%A4%ED%84%B0_%EC%86%8C%EC%96%91%ED%98%B8.jpg",
+      "sourceTitle": "춘천 소양호의 가을",
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-gangwon-course-cover-02",
+      "title": "원주 치악산 비로봉 능선",
+      "kind": "mountain",
+      "url": "/images/spot-fallbacks/similar-gangwon-course-cover-02.webp",
+      "regions": [
+        "130"
+      ],
+      "author": "Ashy Minivet",
+      "license": "CC0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Chiaksan_as_seen_from_Birobong_Peak.jpg",
+      "sourceTitle": "원주 치악산 비로봉 능선",
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-gangwon-course-cover-03",
+      "title": "원주 치악산 단풍",
+      "kind": "forest",
+      "url": "/images/spot-fallbacks/similar-gangwon-course-cover-03.webp",
+      "regions": [
+        "130"
+      ],
+      "author": "Lcarrion88",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Chiaksan_Foliage.jpg",
+      "sourceTitle": "원주 치악산 단풍",
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-gangwon-course-cover-04",
+      "title": "원주 치악산 계곡",
+      "kind": "river",
+      "url": "/images/spot-fallbacks/similar-gangwon-course-cover-04.webp",
+      "regions": [
+        "130"
+      ],
+      "author": "Lcarrion88",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Chiaksan_Stream.jpg",
+      "sourceTitle": "원주 치악산 계곡",
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-gangwon-course-cover-05",
+      "title": "원주 치악산 숲길",
+      "kind": "forest",
+      "url": "/images/spot-fallbacks/similar-gangwon-course-cover-05.webp",
+      "regions": [
+        "130"
+      ],
+      "author": "Lcarrion88",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Chiaksan_Trail.jpg",
+      "sourceTitle": "원주 치악산 숲길",
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-gangwon-course-cover-06",
+      "title": "강릉 경포해변",
+      "kind": "beach",
+      "url": "/images/spot-fallbacks/similar-gangwon-course-cover-06.webp",
+      "regions": [
+        "150"
+      ],
+      "author": "Mobius6",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Gyeongpo_Beach_20220502_002.jpg",
+      "sourceTitle": "강릉 경포해변",
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-gangwon-course-cover-09",
+      "title": "삼척 바다와 해변",
+      "kind": "beach",
+      "url": "/images/spot-fallbacks/similar-gangwon-course-cover-09.webp",
+      "regions": [
+        "230"
+      ],
+      "author": "pcamp",
+      "license": "CC BY 2.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Korea-Samcheok-Beach-01.jpg",
+      "sourceTitle": "삼척 바다와 해변",
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-gangwon-course-cover-12",
+      "title": "태백산 문수봉 조망",
+      "kind": "mountain",
+      "url": "/images/spot-fallbacks/similar-gangwon-course-cover-12.webp",
+      "regions": [
+        "190"
+      ],
+      "author": "Dcpeets",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Taebaeksan_main_peaks_from_Munsubong.jpg",
+      "sourceTitle": "태백산 문수봉 조망",
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-gangwon-course-cover-15",
+      "title": "평창 대관령 초원과 양",
+      "kind": "farm",
+      "url": "/images/spot-fallbacks/similar-gangwon-course-cover-15.webp",
+      "regions": [
+        "760"
+      ],
+      "author": "Lim_bau",
+      "license": "CC0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Daegwallyeong.jpg",
+      "sourceTitle": "평창 대관령 초원과 양",
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-gangwon-course-cover-18",
+      "title": "고성 화진포해변",
+      "kind": "beach",
+      "url": "/images/spot-fallbacks/similar-gangwon-course-cover-18.webp",
+      "regions": [
+        "820"
+      ],
+      "author": "Treeinkr",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Goseong_Hwajinpo_Beach_20260418_(05).jpg",
+      "sourceTitle": "고성 화진포해변",
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-gangwon-course-cover-19",
+      "title": "철원 한탄강 협곡",
+      "kind": "river",
+      "url": "/images/spot-fallbacks/similar-gangwon-course-cover-19.webp",
+      "regions": [
+        "780"
+      ],
+      "author": "용인 학생",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:%ED%95%9C%ED%83%84%EA%B0%95_%EC%9E%94%EB%8F%84%EA%B8%B8_%ED%98%91%EA%B3%A1_3.jpg",
+      "sourceTitle": "철원 한탄강 협곡",
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-gangwon-course-cover-20",
+      "title": "양양 인구해변 풍경",
+      "kind": "beach",
+      "url": "/images/spot-fallbacks/similar-gangwon-course-cover-20.webp",
+      "regions": [
+        "830"
+      ],
+      "author": "EasyKL",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Gangwon_coast.JPG",
+      "sourceTitle": "양양 인구해변 풍경",
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-gangwon-course-cover-21",
+      "title": "속초 등대해변의 파도",
+      "kind": "beach",
+      "url": "/images/spot-fallbacks/similar-gangwon-course-cover-21.webp",
+      "regions": [
+        "210"
+      ],
+      "author": "HE YUNONG",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:South_Korea_Sokcho_Sea_View.jpg",
+      "sourceTitle": "속초 등대해변의 파도",
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-gangwon-course-cover-22",
+      "title": "숙소 테마 · 포근한 호텔 객실",
+      "kind": "hotel",
+      "url": "/images/spot-fallbacks/similar-gangwon-course-cover-22.webp",
+      "regions": [],
+      "author": "Kurt Kaiser",
+      "license": "CC0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Bed_in_hotel_room_2.jpg",
+      "sourceTitle": "숙소 테마 · 포근한 호텔 객실",
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-gangwon-course-cover-23",
+      "title": "숙소 테마 · 따뜻한 목조 펜션 실내",
+      "kind": "pension",
+      "url": "/images/spot-fallbacks/similar-gangwon-course-cover-23.webp",
+      "regions": [],
+      "author": "Nenad Stojković (Shixart1985)",
+      "license": "CC BY 2.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Cozy_wooden_cabin_interior_with_seating_area_and_bedroom_space.jpg",
+      "sourceTitle": "숙소 테마 · 따뜻한 목조 펜션 실내",
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-gangwon-course-cover-24",
+      "title": "숙소 테마 · 햇살 아래 글램핑 텐트",
+      "kind": "glamping",
+      "url": "/images/spot-fallbacks/similar-gangwon-course-cover-24.webp",
+      "regions": [],
+      "author": "JLunder96",
+      "license": "CC BY 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Glamping_Thorbjornrud_Hotel.jpg",
+      "sourceTitle": "숙소 테마 · 햇살 아래 글램핑 텐트",
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-gangwon-course-cover-25",
+      "title": "캠핑 테마 · 잔잔한 물가의 텐트",
+      "kind": "camping",
+      "url": "/images/spot-fallbacks/similar-gangwon-course-cover-25.webp",
+      "regions": [],
+      "author": "Nikhil More",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Tent_camping.jpg",
+      "sourceTitle": "캠핑 테마 · 잔잔한 물가의 텐트",
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-gangwon-course-cover-31",
+      "title": "평창 알펜시아 야간 스키장",
+      "kind": "ski",
+      "url": "/images/spot-fallbacks/similar-gangwon-course-cover-31.webp",
+      "regions": [
+        "760"
+      ],
+      "author": "Albert Lee1",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Alpensia.jpg",
+      "sourceTitle": "평창 알펜시아 야간 스키장",
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-gangwon-course-cover-32",
+      "title": "액티비티 테마 · 파도를 타는 서퍼",
+      "kind": "surf",
+      "url": "/images/spot-fallbacks/similar-gangwon-course-cover-32.webp",
+      "regions": [],
+      "author": "Dylan Wooters",
+      "license": "CC BY-SA 2.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Surfing_in_Popoyo,_Nicaragua.jpg",
+      "sourceTitle": "액티비티 테마 · 파도를 타는 서퍼",
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-gangwon-course-cover-33",
+      "title": "액티비티 테마 · 급류 래프팅",
+      "kind": "rafting",
+      "url": "/images/spot-fallbacks/similar-gangwon-course-cover-33.webp",
+      "regions": [],
+      "author": "Hamdigumus",
+      "license": "CC0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Rafting,_F%C4%B1rt%C4%B1na_Deresi,_Rize_2014.jpg",
+      "sourceTitle": "액티비티 테마 · 급류 래프팅",
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-gangwon-course-cover-34",
+      "title": "액티비티 테마 · 고요한 호수 카누",
+      "kind": "watersports",
+      "url": "/images/spot-fallbacks/similar-gangwon-course-cover-34.webp",
+      "regions": [],
+      "author": "Spica-Vega Photo Arts (Banu Nazikcan)",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Sunset_Canoe_Ride_in_Lake_Mert.jpg",
+      "sourceTitle": "액티비티 테마 · 고요한 호수 카누",
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-gangwon-course-cover-35",
+      "title": "액티비티 테마 · 푸른 하늘 패러글라이딩",
+      "kind": "paragliding",
+      "url": "/images/spot-fallbacks/similar-gangwon-course-cover-35.webp",
+      "regions": [],
+      "author": "Vyacheslav Argenberg",
+      "license": "CC BY 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Paragliding_in_Arambol_sky,_Goa.jpg",
+      "sourceTitle": "액티비티 테마 · 푸른 하늘 패러글라이딩",
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-gangwon-course-cover-36",
+      "title": "강릉 찻집의 유리 다관",
+      "kind": "tea",
+      "url": "/images/spot-fallbacks/similar-gangwon-course-cover-36.webp",
+      "regions": [
+        "150"
+      ],
+      "author": "최광모",
+      "license": "CC0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:20151003%EC%B5%9C%EA%B4%91%EB%AA%A8RX10DSC03041.JPG",
+      "sourceTitle": "강릉 찻집의 유리 다관",
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-gangwon-course-cover-37",
+      "title": "카페 테마 · 라테아트 커피 한 잔",
+      "kind": "coffee",
+      "url": "/images/spot-fallbacks/similar-gangwon-course-cover-37.webp",
+      "regions": [],
+      "author": "Vee Satayamas",
+      "license": "CC BY 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:A_cup_of_cappuccino.jpg",
+      "sourceTitle": "카페 테마 · 라테아트 커피 한 잔",
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-gangwon-course-cover-38",
+      "title": "카페 테마 · 커피와 초콜릿 디저트",
+      "kind": "dessert",
+      "url": "/images/spot-fallbacks/similar-gangwon-course-cover-38.webp",
+      "regions": [],
+      "author": "TricksterWildcat",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Cappuccino_and_cookie.jpg",
+      "sourceTitle": "카페 테마 · 커피와 초콜릿 디저트",
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-gangwon-course-cover-39",
+      "title": "맛집 테마 · 닭갈비 한 접시",
+      "kind": "dakgalbi",
+      "url": "/images/spot-fallbacks/similar-gangwon-course-cover-39.webp",
+      "regions": [],
+      "author": "Fumikas Sagisavas",
+      "license": "CC0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Chuncheon_sizzling_chicken_(Dakgalbi).jpg",
+      "sourceTitle": "맛집 테마 · 닭갈비 한 접시",
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-gangwon-course-cover-40",
+      "title": "강릉 들깨 막국수 한 상",
+      "kind": "noodles",
+      "url": "/images/spot-fallbacks/similar-gangwon-course-cover-40.webp",
+      "regions": [
+        "150"
+      ],
+      "author": "Mobius6",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Deulkkae_makguksu_20220501_001.jpg",
+      "sourceTitle": "강릉 들깨 막국수 한 상",
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-gangwon-course-cover-41",
+      "title": "양양 낙산사의 전통 단청",
+      "kind": "temple",
+      "url": "/images/spot-fallbacks/similar-gangwon-course-cover-41.webp",
+      "regions": [
+        "830"
+      ],
+      "author": "Bernard Gagnon",
+      "license": "CC0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/deed.en",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Bell_Pavilion_at_Naksansa_02.jpg",
+      "sourceTitle": "양양 낙산사의 전통 단청",
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-spot-408-2",
+      "title": "삼계탕 한 그릇",
+      "kind": "chicken-soup",
+      "url": "/images/spot-fallbacks/similar-spot-408-2.webp",
+      "regions": [
+        "110"
+      ],
+      "author": "한국관광공사 TourAPI",
+      "license": "TourAPI 제공 사진 · 원본 이용 조건 적용",
+      "licenseUrl": "https://api.visitkorea.or.kr/",
+      "sourceUrl": "https://tong.visitkorea.or.kr/cms/resource/97/2901397_image2_1.jpg",
+      "sourceTitle": "할매삼계탕",
+      "sourceSpotId": 408,
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-spot-2807-2",
+      "title": "불판 위 한우구이",
+      "kind": "beef",
+      "url": "/images/spot-fallbacks/similar-spot-2807-2.webp",
+      "regions": [
+        "720"
+      ],
+      "author": "한국관광공사 TourAPI",
+      "license": "TourAPI 제공 사진 · 원본 이용 조건 적용",
+      "licenseUrl": "https://api.visitkorea.or.kr/",
+      "sourceUrl": "https://tong.visitkorea.or.kr/cms/resource/51/2807651_image2_1.jpg",
+      "sourceTitle": "홍천한우사랑말식당",
+      "sourceSpotId": 2807,
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-spot-401-1",
+      "title": "햇살이 드는 레스토랑",
+      "kind": "restaurant",
+      "url": "/images/spot-fallbacks/similar-spot-401-1.webp",
+      "regions": [
+        "110"
+      ],
+      "author": "한국관광공사 TourAPI",
+      "license": "TourAPI 제공 사진 · 원본 이용 조건 적용",
+      "licenseUrl": "https://api.visitkorea.or.kr/",
+      "sourceUrl": "https://tong.visitkorea.or.kr/cms/resource/88/2919888_image2_1.jpg",
+      "sourceTitle": "고목",
+      "sourceSpotId": 401,
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-spot-1682-1",
+      "title": "해산물이 담긴 얼큰한 탕",
+      "kind": "seafood-stew",
+      "url": "/images/spot-fallbacks/similar-spot-1682-1.webp",
+      "regions": [
+        "130"
+      ],
+      "author": "한국관광공사 TourAPI",
+      "license": "TourAPI 제공 사진 · 원본 이용 조건 적용",
+      "licenseUrl": "https://api.visitkorea.or.kr/",
+      "sourceUrl": "https://tong.visitkorea.or.kr/cms/resource/85/3374385_image2_1.jpeg",
+      "sourceTitle": "까치둥지",
+      "sourceSpotId": 1682,
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    },
+    {
+      "id": "similar-spot-1682-0",
+      "title": "정갈한 한식 반찬",
+      "kind": "meal",
+      "url": "/images/spot-fallbacks/similar-spot-1682-0.webp",
+      "regions": [
+        "130"
+      ],
+      "author": "한국관광공사 TourAPI",
+      "license": "TourAPI 제공 사진 · 원본 이용 조건 적용",
+      "licenseUrl": "https://api.visitkorea.or.kr/",
+      "sourceUrl": "https://tong.visitkorea.or.kr/cms/resource/83/3374383_image2_1.jpg",
+      "sourceTitle": "까치둥지",
+      "sourceSpotId": 1682,
+      "changes": "웹 표시용으로 축소하고 WebP로 변환했습니다. 카드 비율에 따라 일부가 잘려 보일 수 있습니다. 실제 해당 장소 사진이 아닌 유사 이미지입니다."
+    }
+  ]
+}

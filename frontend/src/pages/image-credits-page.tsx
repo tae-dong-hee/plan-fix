@@ -5,6 +5,7 @@ import { Link, useLocation } from "react-router-dom";
 import AppNav from "@/components/ui/app-nav";
 import catalog from "@/constants/course-cover-images.json";
 import { verifiedSpotImages } from "@/lib/verified-spot-images";
+import { similarSpotImages } from "@/lib/similar-spot-images";
 
 type ImageCredit = {
   id: string;
@@ -17,7 +18,7 @@ type ImageCredit = {
   changes?: string;
 };
 
-const images: ImageCredit[] = [...catalog.images, ...verifiedSpotImages];
+const images: ImageCredit[] = [...catalog.images, ...verifiedSpotImages, ...similarSpotImages];
 
 const externalLinkClassName = "inline-flex items-center gap-1 rounded text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background";
 
@@ -68,6 +69,14 @@ export default function ImageCreditsPage() {
             장소 카드를 불러올 때 브라우저가 Google 서버에 연결됩니다. 이 과정에서 Google이 처리하는 정보에는{" "}
             <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className={externalLinkClassName}>Google 개인정보처리방침</a>
             이 적용됩니다.
+          </p>
+        </section>
+
+        <section id="similar-images" aria-labelledby="similar-images-heading" className="mt-6 scroll-mt-24 rounded-2xl border border-border bg-background p-5 sm:p-6">
+          <h2 id="similar-images-heading" className="text-base font-semibold">장소 유사 이미지</h2>
+          <p className="mt-3 break-keep text-sm leading-6 text-muted-foreground">
+            인기 장소와 여행 장소 목록에서 사진이 없거나 불러올 수 없을 때, 음식·숙소·풍경 등 종류가 비슷한 사진을 ‘유사 이미지’로 표시합니다.
+            실제 해당 장소의 메뉴, 객실, 시설을 보여주는 사진은 아닙니다. 한국관광공사 TourAPI에서 제공하는 기존 장소 사진과 아래 이용 조건이 명시된 여행 코스 사진을 사용합니다.
           </p>
         </section>
 

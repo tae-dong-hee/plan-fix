@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import SpotImage, { FALLBACK_SPOT_IMAGE } from "@/components/ui/spot-image";
+import { getSimilarSpotImage } from "@/lib/similar-spot-images";
 
 test.each([null, undefined, "", "  "])("shows the default image for a missing source (%s)", (src) => {
   render(<SpotImage src={src} alt="장소 사진" />);
@@ -37,4 +38,37 @@ test("credits the displayed verified photo, preserves a supplied title, and clea
 
   rerender(<SpotImage src="https://unrelated.example/images/verified-spots/526.jpg" alt="다른 사진" />);
   expect(img).not.toHaveAttribute("title");
+});
+
+test("keeps the original photo, then recovers with a labelled similar photo and finally the placeholder", () => {
+  const similarImage = getSimilarSpotImage({ spotId: 1, title: "바다횟집", category: "음식점" });
+  render(<SpotImage src="https://example.com/restaurant.jpg" alt="바다횟집" similarImage={similarImage} />);
+  const img = screen.getByRole("img", { name: "바다횟집" });
+  expect(img).toHaveAttribute("src", "https://example.com/restaurant.jpg");
+  expect(screen.queryByText("유사 이미지")).not.toBeInTheDocument();
+
+  fireEvent.error(img);
+  expect(img).toHaveAttribute("src", similarImage.url);
+  expect(img).toHaveAccessibleName(expect.stringContaining("바다횟집 유사 이미지"));
+  expect(img).toHaveAttribute("title", expect.stringContaining(similarImage.author));
+  expect(screen.getByText("유사 이미지")).toBeInTheDocument();
+
+  fireEvent.error(img);
+  expect(img).toHaveAttribute("src", FALLBACK_SPOT_IMAGE);
+  expect(screen.queryByText("유사 이미지")).not.toBeInTheDocument();
+  fireEvent.error(img);
+  expect(img).toHaveAttribute("src", FALLBACK_SPOT_IMAGE);
+});
+
+test("empty thumbnails use the matched photo and navigation can retry the original source", () => {
+  const similarImage = getSimilarSpotImage({ spotId: 1, title: "사진 없는 카페", category: "카페/음료" });
+  const { rerender } = render(<SpotImage src="  " alt="카페" similarImage={similarImage} />);
+  expect(screen.getByRole("img")).toHaveAttribute("src", similarImage.url);
+  fireEvent.error(screen.getByRole("img"));
+  expect(screen.getByRole("img")).toHaveAttribute("src", FALLBACK_SPOT_IMAGE);
+
+  rerender(<SpotImage src="https://example.com/new.jpg" alt="새 카페" similarImage={similarImage} />);
+  expect(screen.getByRole("img")).toHaveAttribute("src", "https://example.com/new.jpg");
+  fireEvent.error(screen.getByRole("img"));
+  expect(screen.getByRole("img")).toHaveAttribute("src", similarImage.url);
 });

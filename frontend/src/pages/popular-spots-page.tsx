@@ -19,6 +19,7 @@ import {
   type PopularSpot,
 } from "@/services/spots";
 import { fetchLikedSpots } from "@/services/wishlist";
+import { getSimilarSpotImage } from "@/lib/similar-spot-images";
 
 const GANGWON_REGION_CODE = "51";
 const PAGE_SIZE = 20;
@@ -359,6 +360,7 @@ export default function PopularSpotsPage({ mode = "popular" }: PopularSpotsPageP
                         <SpotImage
                           className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105 motion-reduce:transform-none"
                           src={spot.thumbnail}
+                          similarImage={getSimilarSpotImage(spot)}
                           alt={spot.title}
                           loading="lazy"
                         />
@@ -386,6 +388,13 @@ export default function PopularSpotsPage({ mode = "popular" }: PopularSpotsPageP
                 );
               })}
             </div>
+
+            <p className="mt-6 text-center text-xs leading-5 text-muted-foreground">
+              ‘유사 이미지’는 장소의 종류와 분위기를 참고한 사진이에요.{" "}
+              <Link to="/image-credits#similar-images" className="rounded underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                사진 출처
+              </Link>
+            </p>
 
             {totalPages > 1 && (
               <nav aria-label="페이지네이션" className="mt-10 flex items-center justify-center gap-1.5 sm:gap-2">
