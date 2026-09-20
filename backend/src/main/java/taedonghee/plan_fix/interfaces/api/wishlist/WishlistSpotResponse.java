@@ -3,6 +3,8 @@ package taedonghee.plan_fix.interfaces.api.wishlist;
 import taedonghee.plan_fix.domain.spot.SpotModel;
 import taedonghee.plan_fix.application.wishlist.WishlistSpotResult;
 
+import java.math.BigDecimal;
+
 /**
  * [interfaces] 위시리스트 스팟 응답 DTO
  */
@@ -13,6 +15,8 @@ public record WishlistSpotResponse(
         String region,
         String sigungu,
         String address,
+        BigDecimal latitude,
+        BigDecimal longitude,
         String thumbnail,
         long likeCount,
         boolean isLiked
@@ -29,6 +33,8 @@ public record WishlistSpotResponse(
                 spot.region(),
                 spot.sigungu(),
                 spot.address(),
+                spot.latitude(),
+                spot.longitude(),
                 spot.thumbnail(),
                 spot.likeCount(),
                 spot.isLiked()

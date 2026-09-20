@@ -1,11 +1,13 @@
 import type { MouseEvent } from "react";
 import { ArrowUpRight, Heart, Loader2, MapPin } from "lucide-react";
 import SpotImage from "@/components/ui/spot-image";
+import { GooglePhotoAttribution } from "@/components/ui/spot-photo-gallery";
 import { Link } from "react-router-dom";
 
 import { sigunguCodeByRegion } from "@/components/ui/gangwon-region-map";
 import { getSimilarSpotImage } from "@/lib/similar-spot-images";
 import type { PopularSpot } from "@/services/spots";
+import { useGoogleSpotCover } from "@/hooks/use-google-spot-cover";
 
 const cityByCode = Object.fromEntries(
   Object.entries(sigunguCodeByRegion).map(([city, code]) => [code, city]),
@@ -26,11 +28,13 @@ export default function MainSpotCard({
   isLoading,
   onToggleLike,
 }: MainSpotCardProps) {
+  const { viewportRef, photo, attribution, onSourceChange } = useGoogleSpotCover(spot);
   const isGuide = variant === "guide";
   const city = spot.region === "51" && spot.sigungu ? cityByCode[spot.sigungu] : undefined;
 
   return (
     <article
+      ref={viewportRef}
       className={`relative shrink-0 snap-start rounded-[24px] border border-zinc-200/80 bg-white shadow-[0_4px_16px_-10px_rgb(0_0_0/0.12)] transition-[transform,box-shadow,border-color] duration-300 hover:-translate-y-1 hover:border-zinc-300 hover:shadow-[0_14px_28px_-14px_rgb(0_0_0/0.18)] motion-reduce:transform-none motion-reduce:transition-none dark:border-zinc-700 dark:bg-background dark:hover:border-zinc-600 ${
         isGuide
           ? "w-[76%] sm:w-[46%] lg:w-[calc((100%_-_3.75rem)/4)]"
@@ -48,7 +52,8 @@ export default function MainSpotCard({
         >
           <SpotImage
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 motion-reduce:transform-none motion-reduce:transition-none"
-            src={spot.thumbnail}
+            src={photo?.url ?? spot.thumbnail}
+            onSourceChange={onSourceChange}
             similarImage={getSimilarSpotImage(spot)}
             alt={spot.title}
             loading="lazy"
@@ -74,6 +79,11 @@ export default function MainSpotCard({
           </p>
         </div>
       </Link>
+      {attribution ? (
+        <div className={`pointer-events-none absolute inset-x-0 top-0 ${isGuide ? "aspect-[4/3]" : "aspect-square"}`}>
+          <GooglePhotoAttribution google={attribution} compact className="pointer-events-auto absolute bottom-2 left-2 right-2 rounded-md bg-white/95 px-2 py-1 text-zinc-700 shadow-sm dark:bg-zinc-900/95 dark:text-zinc-100" />
+        </div>
+      ) : null}
       <button
         type="button"
         onClick={(event) => onToggleLike(event, spot.spotId)}

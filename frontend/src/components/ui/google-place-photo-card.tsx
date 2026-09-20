@@ -3,13 +3,69 @@ import { Link } from "react-router-dom";
 
 import { loadGooglePlacesUiKit } from "@/lib/google-places-sdk";
 import { getVerifiedGooglePlaceId, type GooglePlaceSpot } from "@/lib/verified-google-places";
+import { fetchGooglePlacePhotos } from "@/lib/google-place-photos";
+import { getSimilarSpotImage } from "@/lib/similar-spot-images";
+import SpotPhotoGallery, { type SpotGalleryPhoto } from "./spot-photo-gallery";
 
 type GooglePlacePhotoCardProps = {
-  spot: GooglePlaceSpot;
+  spot: GooglePlaceSpot & { category?: string };
   children: ReactNode;
 };
 
 type PlaceDetailsElement = HTMLElement & { place?: { id?: string } };
+
+function ApprovedGoogleGallery({ spot, placeId, apiKey, children }: GooglePlacePhotoCardProps & {
+  placeId: string;
+  apiKey: string;
+}) {
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const requestRef = useRef<Promise<SpotGalleryPhoto[]> | null>(null);
+  const [visible, setVisible] = useState(false);
+  const [photos, setPhotos] = useState<SpotGalleryPhoto[]>([]);
+
+  useEffect(() => {
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+    if (!("IntersectionObserver" in window)) {
+      setVisible(true);
+      return;
+    }
+    const observer = new IntersectionObserver((entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) {
+        setVisible(true);
+        observer.disconnect();
+      }
+    });
+    observer.observe(viewport);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!visible) return;
+    let cancelled = false;
+    // StrictMode 재실행에서도 현재 갤러리의 요청만 공유한다. 사진 URI를 영속 저장하지 않는다.
+    const request = requestRef.current ??= fetchGooglePlacePhotos(placeId, apiKey);
+    void request.then((nextPhotos) => {
+      if (!cancelled) setPhotos(nextPhotos);
+    }).catch(() => {
+      if (!cancelled) setPhotos([]);
+    });
+    return () => { cancelled = true; };
+  }, [apiKey, placeId, visible]);
+
+  return (
+    <div ref={viewportRef} className="min-w-0">
+      {photos.length > 0 ? (
+        <SpotPhotoGallery
+          title={spot.title}
+          photos={photos}
+          similarImage={getSimilarSpotImage({ ...spot, category: spot.category || "관광지" })}
+          onUnavailable={() => setPhotos([])}
+        />
+      ) : children}
+    </div>
+  );
+}
 
 function ApprovedGooglePlaceCard({ placeId, apiKey, children }: {
   placeId: string;
@@ -111,10 +167,13 @@ function ApprovedGooglePlaceCard({ placeId, apiKey, children }: {
   );
 }
 
-/** 실사진이 없는 승인 장소 상세에만 표시하며, 기존 갤러리와 목록 썸네일은 그대로 둔다. */
+/** 승인 장소의 실사진이 없을 때 활성 설정에 따라 공통 사진 갤러리 또는 기본 UI Kit를 표시한다. */
 export default function GooglePlacePhotoCard({ spot, children }: GooglePlacePhotoCardProps) {
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim();
   const placeId = getVerifiedGooglePlaceId(spot);
   if (!apiKey || !placeId) return children;
+  if (import.meta.env.VITE_GOOGLE_PLACE_PHOTOS_ENABLED === "true") {
+    return <ApprovedGoogleGallery key={`${placeId}:${apiKey}`} spot={spot} placeId={placeId} apiKey={apiKey}>{children}</ApprovedGoogleGallery>;
+  }
   return <ApprovedGooglePlaceCard key={placeId} placeId={placeId} apiKey={apiKey}>{children}</ApprovedGooglePlaceCard>;
 }

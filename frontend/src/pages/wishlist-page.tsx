@@ -1,6 +1,6 @@
 import { CourseAccessError } from "@/lib/course-errors";
 import { formatCourseDuration } from "@/lib/course-duration";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type MouseEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   BookOpen,
@@ -18,6 +18,8 @@ import {
 import { MISSING_SPOT_ADDRESS } from "@/lib/spot-display";
 import { getSimilarSpotImage } from "@/lib/similar-spot-images";
 import SpotImage from "@/components/ui/spot-image";
+import { GooglePhotoAttribution } from "@/components/ui/spot-photo-gallery";
+import { useGoogleSpotCover } from "@/hooks/use-google-spot-cover";
 import AppNav from "@/components/ui/app-nav";
 import { unlikeSpot, UnauthorizedError } from "@/services/spots";
 import { unlikeCourse, CourseResponse } from "@/services/course";
@@ -36,6 +38,59 @@ const WISHLIST_CATEGORIES = [
   { id: "courses", label: "여행 코스", description: "따라가고 싶은 일정", icon: Route },
   { id: "boards", label: "여행 후기", description: "다시 읽고 싶은 순간", icon: BookOpen },
 ] as const;
+
+function WishlistSpotCard({ spot, onUnlike }: {
+  spot: WishlistSpot;
+  onUnlike: (event: MouseEvent<HTMLButtonElement>, spotId: number) => void;
+}) {
+  const { viewportRef, photo, attribution, onSourceChange } = useGoogleSpotCover(spot);
+  return (
+    <article ref={viewportRef} className="group relative min-w-0">
+      <Link
+        to={`/spots/${spot.spotId}`}
+        data-testid={`wishlist-spot-${spot.spotId}`}
+        className="flex h-full min-w-0 flex-col rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-4"
+      >
+        <div className="relative aspect-square w-full overflow-hidden rounded-2xl bg-muted">
+          <SpotImage
+            src={photo?.url ?? spot.thumbnail}
+            onSourceChange={onSourceChange}
+            alt={spot.title}
+            similarImage={getSimilarSpotImage(spot)}
+            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 motion-reduce:transform-none motion-reduce:transition-none"
+          />
+          <div className="absolute left-3 top-3 max-w-[calc(100%_-_4.5rem)]">
+            <span className="block truncate rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-medium text-zinc-800">여행지 · {spot.category}</span>
+          </div>
+        </div>
+        <div className="flex flex-1 flex-col justify-between px-0.5 pb-1 pt-3">
+          <div>
+            <h3 className="line-clamp-2 text-[15px] font-semibold leading-snug tracking-tight text-foreground">{spot.title}</h3>
+            <p className="mt-1.5 line-clamp-2 text-[13px] leading-5 text-muted-foreground">{spot.address?.trim() || MISSING_SPOT_ADDRESS}</p>
+          </div>
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{[spot.region, spot.sigungu].filter(Boolean).join(" ")}</span>
+            <span className="flex items-center gap-1"><Heart className="h-3.5 w-3.5" />{spot.likeCount}</span>
+          </div>
+        </div>
+      </Link>
+      {attribution ? (
+        <div className="pointer-events-none absolute inset-x-0 top-0 aspect-square">
+          <GooglePhotoAttribution google={attribution} compact className="pointer-events-auto absolute bottom-2 left-2 right-2 rounded-md bg-white/95 px-2 py-1 text-zinc-700 shadow-sm dark:bg-zinc-900/95 dark:text-zinc-100" />
+        </div>
+      ) : null}
+      <button
+        type="button"
+        onClick={(event) => onUnlike(event, spot.spotId)}
+        aria-label={`${spot.title} 여행지 좋아요 취소`}
+        title="여행지 좋아요 취소"
+        className="absolute right-2 top-2 flex h-11 w-11 items-center justify-center rounded-full bg-white/95 text-primary shadow-sm transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+      >
+        <Heart className="h-[18px] w-[18px] fill-current" />
+      </button>
+    </article>
+  );
+}
 
 export default function WishlistPage() {
   const navigate = useNavigate();
@@ -295,56 +350,7 @@ export default function WishlistPage() {
                   ) : (
                     <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:gap-x-5 lg:grid-cols-4">
                       {spots.map((spot) => (
-                        <Link
-                          key={spot.spotId}
-                          to={`/spots/${spot.spotId}`}
-                          data-testid={`wishlist-spot-${spot.spotId}`}
-                          className="group relative flex min-w-0 flex-col rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-4"
-                        >
-                          <div className="relative aspect-square w-full overflow-hidden rounded-2xl bg-muted">
-                            <SpotImage
-                              src={spot.thumbnail}
-                              alt={spot.title}
-                              similarImage={getSimilarSpotImage(spot)}
-                              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 motion-reduce:transform-none motion-reduce:transition-none"
-                            />
-                            <button
-                              type="button"
-                              onClick={(e) => handleUnlikeSpot(e, spot.spotId)}
-                              aria-label={`${spot.title} 여행지 좋아요 취소`}
-                              title="여행지 좋아요 취소"
-                              className="absolute right-2 top-2 flex h-11 w-11 items-center justify-center rounded-full bg-white/95 text-primary shadow-sm transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                            >
-                              <Heart className="h-[18px] w-[18px] fill-current" />
-                            </button>
-                            <div className="absolute left-3 top-3 max-w-[calc(100%_-_4.5rem)]">
-                              <span className="block truncate rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-medium text-zinc-800">
-                                여행지 · {spot.category}
-                              </span>
-                            </div>
-                          </div>
-
-                          <div className="flex flex-1 flex-col justify-between px-0.5 pb-1 pt-3">
-                            <div>
-                              <h3 className="line-clamp-2 text-[15px] font-semibold leading-snug tracking-tight text-foreground">
-                                {spot.title}
-                              </h3>
-                              <p className="mt-1.5 line-clamp-2 text-[13px] leading-5 text-muted-foreground">
-                                {spot.address?.trim() || MISSING_SPOT_ADDRESS}
-                              </p>
-                            </div>
-                            <div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 text-xs text-muted-foreground">
-                              <span className="flex items-center gap-1">
-                                <MapPin className="h-3.5 w-3.5" />
-                                {[spot.region, spot.sigungu].filter(Boolean).join(" ")}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <Heart className="h-3.5 w-3.5" />
-                                {spot.likeCount}
-                              </span>
-                            </div>
-                          </div>
-                        </Link>
+                        <WishlistSpotCard key={spot.spotId} spot={spot} onUnlike={handleUnlikeSpot} />
                       ))}
                     </div>
                   )}

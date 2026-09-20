@@ -66,11 +66,13 @@ jobs:
         env:
           VITE_KAKAO_JS_KEY: ${{ vars.VITE_KAKAO_JS_KEY }}
           VITE_GOOGLE_MAPS_API_KEY: ${{ vars.VITE_GOOGLE_MAPS_API_KEY }}
+          VITE_GOOGLE_PLACE_PHOTOS_ENABLED: ${{ vars.VITE_GOOGLE_PLACE_PHOTOS_ENABLED }}
         run: |
           test -n "$VITE_KAKAO_JS_KEY" || { echo 'Set the VITE_KAKAO_JS_KEY repository variable.'; exit 1; }
           docker build --build-arg VITE_API_BASE_URL=/api/v1 \
             --build-arg VITE_KAKAO_JS_KEY \
             --build-arg VITE_GOOGLE_MAPS_API_KEY \
+            --build-arg VITE_GOOGLE_PLACE_PHOTOS_ENABLED \
             --build-arg "DEPLOY_SHA=${GITHUB_SHA}" \
             --tag "${IMAGE_REPOSITORY}:${GITHUB_SHA}" frontend
       - name: Authenticate to Google Cloud

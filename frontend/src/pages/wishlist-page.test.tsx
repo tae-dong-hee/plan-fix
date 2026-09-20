@@ -7,12 +7,14 @@ import { unlikeCourse, type CourseResponse } from "@/services/course";
 import { unlikeSpot } from "@/services/spots";
 import { fetchLikedBoards, fetchLikedCourses, fetchLikedSpots, type WishlistSpot } from "@/services/wishlist";
 import { getSimilarSpotImage } from "@/lib/similar-spot-images";
+import { useGoogleSpotCover } from "@/hooks/use-google-spot-cover";
 
 vi.mock("@/components/ui/app-nav", () => ({ default: () => null }));
 vi.mock("@/services/wishlist");
 vi.mock("@/services/board");
 vi.mock("@/services/course");
 vi.mock("@/services/spots");
+vi.mock("@/hooks/use-google-spot-cover");
 
 const spot: WishlistSpot = {
   spotId: 1, title: "경포해변", category: "관광지", region: "강원", sigungu: "강릉",
@@ -52,10 +54,54 @@ function renderPage(path = "/wishlist") {
 describe("WishlistPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(useGoogleSpotCover).mockReturnValue({ viewportRef: vi.fn(), photo: null, attribution: undefined, onSourceChange: vi.fn() });
     vi.mocked(fetchLikedSpots).mockResolvedValue([spot]);
     vi.mocked(fetchLikedCourses).mockResolvedValue([course]);
     vi.mocked(fetchLikedBoards).mockResolvedValue([board]);
     vi.mocked(unlikeBoard).mockResolvedValue({ likeCount: 1, liked: false });
+  });
+
+  test("Google 대표 사진과 촬영자 링크를 표시하고 사진 실패 후 출처를 제거한다", async () => {
+    const googleSpot: WishlistSpot = {
+      ...spot, spotId: 728, title: "파인시티호텔", category: "숙박", region: "51", sigungu: "150",
+      address: "강원특별자치도 강릉시 옥천로62번길 13 (옥천동)", latitude: 37.7608316, longitude: 128.8991773,
+    };
+    vi.mocked(fetchLikedSpots).mockResolvedValue([googleSpot]);
+    const viewportRef = vi.fn();
+    const onSourceChange = vi.fn();
+    const photo = {
+      url: "https://example.com/google-first.jpg",
+      google: {
+        authors: [{ displayName: "호텔 촬영자", uri: "https://maps.google.com/contrib/author" }],
+        mapsUrl: "https://maps.google.com/place/hotel",
+      },
+    };
+    vi.mocked(useGoogleSpotCover).mockReturnValue({ viewportRef, photo, attribution: photo.google, onSourceChange });
+    const { rerender } = renderPage();
+    const card = await screen.findByTestId("wishlist-spot-728");
+    const image = within(card).getByRole("img");
+    expect(image).toHaveAttribute("src", photo.url);
+    expect(viewportRef).toHaveBeenCalledWith(card.closest("article"));
+    expect(useGoogleSpotCover).toHaveBeenCalledWith(expect.objectContaining({
+      spotId: 728, title: "파인시티호텔", latitude: 37.7608316, longitude: 128.8991773,
+    }));
+    expect(onSourceChange).toHaveBeenLastCalledWith(photo.url);
+    const author = screen.getByRole("link", { name: "호텔 촬영자" });
+    expect(author).toHaveAttribute("href", photo.google.authors[0].uri);
+    expect(author.parentElement?.closest("a, button")).toBeNull();
+    expect(card).not.toContainElement(author);
+    expect(screen.getByRole("button", { name: `${googleSpot.title} 여행지 좋아요 취소` }).closest("a")).toBeNull();
+
+    fireEvent.error(image);
+    expect(image).toHaveAttribute("src", getSimilarSpotImage(googleSpot).url);
+    expect(onSourceChange).toHaveBeenLastCalledWith(getSimilarSpotImage(googleSpot).url);
+    vi.mocked(useGoogleSpotCover).mockReturnValue({ viewportRef, photo, attribution: undefined, onSourceChange });
+    rerender(<MemoryRouter initialEntries={["/wishlist"]} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <WishlistPage /><HistoryControls />
+    </MemoryRouter>);
+    expect(screen.queryByRole("link", { name: "Google Maps" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "호텔 촬영자" })).not.toBeInTheDocument();
+    expect(within(card).getByRole("img")).toHaveAttribute("src", getSimilarSpotImage(googleSpot).url);
   });
 
   test("사진이 없는 위시리스트 장소에도 유형에 맞는 유사 이미지를 보여준다", async () => {

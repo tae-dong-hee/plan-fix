@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { ChevronDown, ChevronLeft, ChevronRight, Heart, X } from "lucide-react";
 
 import SpotImage from "@/components/ui/spot-image";
+import { GooglePhotoAttribution } from "@/components/ui/spot-photo-gallery";
 import AppNav from "@/components/ui/app-nav";
 import GangwonRegionSymbol from "@/components/ui/gangwon-region-symbol";
 import GangwonRegionMap, {
@@ -20,6 +21,7 @@ import {
 } from "@/services/spots";
 import { fetchLikedSpots } from "@/services/wishlist";
 import { getSimilarSpotImage } from "@/lib/similar-spot-images";
+import { useGoogleSpotCover } from "@/hooks/use-google-spot-cover";
 
 const GANGWON_REGION_CODE = "51";
 const PAGE_SIZE = 20;
@@ -39,6 +41,58 @@ function getPageNumbers(current: number, total: number): number[] {
 type PopularSpotsPageProps = {
   mode?: "popular" | "discover";
 };
+
+function PopularSpotCard({ spot, isLiked, isLoading, onToggleLike }: {
+  spot: PopularSpot;
+  isLiked: boolean;
+  isLoading: boolean;
+  onToggleLike: (event: React.MouseEvent, spotId: number) => void;
+}) {
+  const { viewportRef, photo, attribution, onSourceChange } = useGoogleSpotCover(spot);
+
+  return (
+    <article ref={viewportRef} className="relative">
+      <Link
+        to={`/spots/${spot.spotId}`}
+        className="group block rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+      >
+        <div className="relative aspect-square overflow-hidden rounded-2xl bg-muted">
+          <SpotImage
+            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105 motion-reduce:transform-none"
+            src={photo?.url ?? spot.thumbnail}
+            similarImage={getSimilarSpotImage(spot)}
+            alt={spot.title}
+            loading="lazy"
+            onSourceChange={onSourceChange}
+          />
+        </div>
+        <div className="px-0.5 pb-1 pt-3">
+          <h2 className="line-clamp-2 text-[15px] font-semibold leading-snug">{spot.title}</h2>
+          <p className="mt-1.5 text-[13px] text-muted-foreground">{spot.category}</p>
+        </div>
+      </Link>
+      {attribution ? (
+        <div className="pointer-events-none absolute inset-x-0 top-0 flex aspect-square items-end overflow-hidden rounded-2xl">
+          <GooglePhotoAttribution google={attribution} compact className="pointer-events-auto w-full bg-white/95 px-2 py-1 text-zinc-600 dark:bg-zinc-900/95 dark:text-zinc-100" />
+        </div>
+      ) : null}
+      <button
+        type="button"
+        onClick={(event) => onToggleLike(event, spot.spotId)}
+        disabled={isLoading}
+        className="absolute right-2 top-2 flex h-11 w-11 items-center justify-center rounded-full bg-white/95 shadow-sm transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:opacity-60"
+        aria-pressed={isLiked}
+        aria-label={isLiked ? `${spot.title} 좋아요 취소` : `${spot.title} 좋아요`}
+      >
+        <Heart
+          className={`h-5 w-5 ${isLiked ? "fill-primary text-primary" : "text-zinc-700"}`}
+          strokeWidth={1.8}
+          aria-hidden="true"
+        />
+      </button>
+    </article>
+  );
+}
 
 export default function PopularSpotsPage({ mode = "popular" }: PopularSpotsPageProps) {
   const navigate = useNavigate();
@@ -343,50 +397,15 @@ export default function PopularSpotsPage({ mode = "popular" }: PopularSpotsPageP
         ) : (
           <>
             <div className="grid grid-cols-2 gap-x-4 gap-y-7 sm:grid-cols-3 sm:gap-x-5 sm:gap-y-8 lg:grid-cols-4">
-              {(popularSpots ?? []).map((spot) => {
-                const isLiked =
-                  likedSpots[spot.spotId] !== undefined
-                    ? likedSpots[spot.spotId]
-                    : !!spot.isLiked;
-                const isLoading = !!loadingSpots[spot.spotId];
-
-                return (
-                  <article key={spot.spotId} className="relative">
-                    <Link
-                      to={`/spots/${spot.spotId}`}
-                      className="group block rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-                    >
-                      <div className="relative aspect-square overflow-hidden rounded-2xl bg-muted">
-                        <SpotImage
-                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105 motion-reduce:transform-none"
-                          src={spot.thumbnail}
-                          similarImage={getSimilarSpotImage(spot)}
-                          alt={spot.title}
-                          loading="lazy"
-                        />
-                      </div>
-                      <div className="px-0.5 pb-1 pt-3">
-                        <h2 className="line-clamp-2 text-[15px] font-semibold leading-snug">{spot.title}</h2>
-                        <p className="mt-1.5 text-[13px] text-muted-foreground">{spot.category}</p>
-                      </div>
-                    </Link>
-                    <button
-                      type="button"
-                      onClick={(event) => handleToggleLike(event, spot.spotId)}
-                      disabled={isLoading}
-                      className="absolute right-2 top-2 flex h-11 w-11 items-center justify-center rounded-full bg-white/95 shadow-sm transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:opacity-60"
-                      aria-pressed={isLiked}
-                      aria-label={isLiked ? `${spot.title} 좋아요 취소` : `${spot.title} 좋아요`}
-                    >
-                      <Heart
-                        className={`h-5 w-5 ${isLiked ? "fill-primary text-primary" : "text-zinc-700"}`}
-                        strokeWidth={1.8}
-                        aria-hidden="true"
-                      />
-                    </button>
-                  </article>
-                );
-              })}
+              {(popularSpots ?? []).map((spot) => (
+                <PopularSpotCard
+                  key={spot.spotId}
+                  spot={spot}
+                  isLiked={likedSpots[spot.spotId] ?? !!spot.isLiked}
+                  isLoading={!!loadingSpots[spot.spotId]}
+                  onToggleLike={handleToggleLike}
+                />
+              ))}
             </div>
 
             <p className="mt-6 text-center text-xs leading-5 text-muted-foreground">

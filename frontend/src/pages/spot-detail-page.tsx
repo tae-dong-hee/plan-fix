@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   CalendarDays,
@@ -7,7 +7,6 @@ import {
   Clock3,
   Eye,
   Heart,
-  Images,
   Info,
   MapPin,
   ParkingCircle,
@@ -20,9 +19,8 @@ import {
 
 import { LoaderFour } from "@/components/ui/unique-loader-components";
 import AppNav from "@/components/ui/app-nav";
-import SpotImage from "@/components/ui/spot-image";
+import SpotPhotoGallery from "@/components/ui/spot-photo-gallery";
 import GooglePlacePhotoCard from "@/components/ui/google-place-photo-card";
-import { getVerifiedSpotImageCredit } from "@/lib/verified-spot-images";
 import { getSimilarSpotImage } from "@/lib/similar-spot-images";
 import {
   hasSpotCoordinates,
@@ -82,8 +80,6 @@ export default function SpotDetailPage() {
   const navigate = useNavigate();
   // undefined = 로딩 중, null = 없음(404) 또는 에러
   const [spot, setSpot] = useState<SpotDetail | null | undefined>(undefined);
-  const [selectedImage, setSelectedImage] = useState(0);
-  const [displayedImage, setDisplayedImage] = useState<{ key: string; source: string } | null>(null);
 
   // 이 API는 호출할 때마다 조회수를 늘린다. React.StrictMode는 개발 모드에서 effect를
   // 마운트→클린업→재마운트로 일부러 두 번 실행하는데, 이때 매번 fetch를 새로 호출하면
@@ -95,7 +91,6 @@ export default function SpotDetailPage() {
     const currentSpotId = spotId ?? "";
     let cancelled = false;
     setSpot(undefined);
-    setSelectedImage(0);
 
     let request = inFlightRequest.current;
     if (!request || request.spotId !== currentSpotId) {
@@ -127,9 +122,10 @@ export default function SpotDetailPage() {
   }, [spotId]);
 
   const [isTogglingLike, setIsTogglingLike] = useState(false);
-  const galleryImages = useMemo(
+  const galleryPhotos = useMemo(
     () => spot ? Array.from(new Set([spot.thumbnail, ...(spot.images ?? [])]
-      .map((image) => image?.trim()).filter((image): image is string => Boolean(image)))) : [],
+      .map((image) => image?.trim()).filter((image): image is string => Boolean(image))))
+      .map((url) => ({ url })) : [],
     [spot?.thumbnail, spot?.images],
   );
   const address = useMemo(() => formatTourText(spot?.address), [spot?.address]);
@@ -139,17 +135,7 @@ export default function SpotDetailPage() {
       .filter(({ value }) => value),
     [spot?.info],
   );
-  const activeImage = galleryImages[selectedImage];
   const similarImage = spot ? getSimilarSpotImage(spot) : undefined;
-  const imageKey = JSON.stringify([spot?.spotId, activeImage, similarImage?.url]);
-  const displayedSource = displayedImage?.key === imageKey
-    ? displayedImage.source
-    : activeImage ?? similarImage?.url;
-  const activeImageCredit = getVerifiedSpotImageCredit(displayedSource);
-  const isSimilarImage = !!similarImage && displayedSource === similarImage.url;
-  const handleImageSourceChange = useCallback((source: string) => {
-    setDisplayedImage({ key: imageKey, source });
-  }, [imageKey]);
 
   const goBack = () => navigate(-1);
 
@@ -277,72 +263,8 @@ export default function SpotDetailPage() {
             <div className="min-w-0 space-y-6">
               <section aria-label="장소 사진" className="overflow-hidden rounded-3xl border border-primary/10 bg-white p-2 shadow-sm dark:bg-background sm:p-3">
                 <GooglePlacePhotoCard spot={spot}>
-                  <div className="relative aspect-[4/3] overflow-hidden rounded-[18px] bg-muted sm:aspect-[16/10]">
-                    <SpotImage
-                      className="h-full w-full object-cover"
-                      src={activeImage}
-                      alt={spot.title}
-                      similarImage={similarImage}
-                      onSourceChange={handleImageSourceChange}
-                    />
-                    {galleryImages.length > 1 ? (
-                      <>
-                        <button type="button" aria-label="이전 사진" onClick={() => setSelectedImage((index) => (index - 1 + galleryImages.length) % galleryImages.length)} className={`absolute left-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-zinc-800 shadow-sm transition-colors hover:bg-white ${FOCUS_RING}`}>
-                          <ChevronLeft className="h-5 w-5" aria-hidden="true" />
-                        </button>
-                        <button type="button" aria-label="다음 사진" onClick={() => setSelectedImage((index) => (index + 1) % galleryImages.length)} className={`absolute right-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 text-zinc-800 shadow-sm transition-colors hover:bg-white ${FOCUS_RING}`}>
-                          <ChevronRight className="h-5 w-5" aria-hidden="true" />
-                        </button>
-                      </>
-                    ) : null}
-                  </div>
-                  {isSimilarImage ? (
-                    <p className="px-2 pb-1 pt-3 text-xs leading-5 text-muted-foreground sm:px-3">
-                      ‘유사 이미지’는 실제 장소 사진이 아닙니다.{" "}
-                      <Link to="/image-credits#similar-images" className={`rounded underline underline-offset-4 hover:text-primary ${FOCUS_RING}`}>
-                        유사 이미지 출처
-                      </Link>
-                    </p>
-                  ) : null}
+                  <SpotPhotoGallery title={spot.title} photos={galleryPhotos} similarImage={similarImage} />
                 </GooglePlacePhotoCard>
-                {galleryImages.length > 1 ? (
-                  <div className="flex items-center justify-end gap-1.5 px-2 pt-3 text-xs font-medium text-muted-foreground sm:px-3" role="status" aria-label="현재 사진">
-                    <Images className="h-3.5 w-3.5" aria-hidden="true" />
-                    {selectedImage + 1} / {galleryImages.length}
-                  </div>
-                ) : null}
-                {galleryImages.length > 1 ? (
-                  <div className="mt-2 flex gap-2 overflow-x-auto p-1 sm:mt-3 sm:gap-3" aria-label="사진 선택">
-                    {galleryImages.map((image, index) => (
-                      <button
-                        key={image}
-                        type="button"
-                        aria-label={`${spot.title} 사진 ${index + 1} 보기`}
-                        aria-pressed={activeImage === image}
-                        onClick={() => setSelectedImage(index)}
-                        className={`group h-20 w-28 shrink-0 overflow-hidden rounded-xl border-2 transition-colors sm:h-24 sm:w-32 ${FOCUS_RING} ${activeImage === image ? "border-primary" : "border-transparent opacity-70 hover:opacity-100"}`}
-                      >
-                        <SpotImage
-                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105 motion-reduce:transform-none motion-reduce:transition-none"
-                          src={image}
-                          alt={`${spot.title} 사진 ${index + 1}`}
-                          loading="lazy"
-                        />
-                      </button>
-                    ))}
-                  </div>
-                ) : null}
-                {activeImageCredit ? (
-                  <p className="px-2 pb-1 pt-3 text-xs leading-5 text-muted-foreground sm:px-3">
-                    사진: {activeImageCredit.author} · {activeImageCredit.license}{" "}
-                    <Link
-                      to={`/image-credits#${activeImageCredit.id}`}
-                      className={`ml-1 rounded underline underline-offset-4 hover:text-primary ${FOCUS_RING}`}
-                    >
-                      사진 출처
-                    </Link>
-                  </p>
-                ) : null}
               </section>
 
               <section aria-labelledby="spot-description-heading" className="rounded-3xl border border-primary/10 bg-white p-6 shadow-sm dark:bg-background sm:p-7">

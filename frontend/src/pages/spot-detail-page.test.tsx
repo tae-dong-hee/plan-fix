@@ -504,6 +504,23 @@ test("gallery selection and wrapping controls keep the main image, thumbnail and
   expect(counter).toHaveTextContent("3 / 3");
 });
 
+test("uses the first actual gallery photo when the thumbnail is absent and ignores duplicate or blank entries", async () => {
+  mockedFetchSpotDetail.mockResolvedValue(spotFixture({
+    thumbnail: null,
+    images: [null, "  ", " https://example.com/first.jpg ", "https://example.com/first.jpg", "https://example.com/second.jpg"],
+  }));
+
+  renderAt("1");
+  await screen.findByRole("heading", { name: "정동진" });
+
+  expect(screen.getByRole("img", { name: "정동진" })).toHaveAttribute("src", "https://example.com/first.jpg");
+  expect(screen.getByRole("status", { name: "현재 사진" })).toHaveTextContent("1 / 2");
+  expect(screen.getAllByRole("img")).toHaveLength(3);
+  expect(screen.queryByText("유사 이미지")).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "다음 사진" }));
+  expect(screen.getByRole("img", { name: "정동진" })).toHaveAttribute("src", "https://example.com/second.jpg");
+});
+
 test("recovers a failed representative photo with a similar image, then the placeholder if that also fails", async () => {
   mockedFetchSpotDetail.mockResolvedValue(spotFixture({
     thumbnail: "https://example.com/broken-main.jpg",
