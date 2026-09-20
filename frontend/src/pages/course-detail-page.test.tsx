@@ -361,6 +361,21 @@ describe("CourseDetailPage", () => {
     expect(shareCourseInvite).toHaveBeenCalledExactlyOnceWith({ inviteUrl: mockInvite.inviteUrl, courseTitle: mockCourse.title, memberRole: "VIEWER" });
   });
 
+  it("카카오톡 공유를 다시 열고 링크를 복사해도 초대 링크를 추가 생성하지 않는다", async () => {
+    renderComponent();
+    fireEvent.click(await openInviteDialog());
+    const kakaoButton = await screen.findByRole("button", { name: "카카오톡으로 초대" });
+    await waitFor(() => expect(kakaoButton).toBeEnabled());
+    fireEvent.click(kakaoButton);
+    fireEvent.click(kakaoButton);
+    fireEvent.click(screen.getByRole("button", { name: "링크 복사" }));
+
+    await waitFor(() => expect(writeClipboard).toHaveBeenCalledTimes(2));
+    expect(courseService.createCourseInvite).toHaveBeenCalledExactlyOnceWith("10", "EDITOR");
+    expect(shareCourseInvite).toHaveBeenCalledTimes(2);
+    expect(vi.mocked(shareCourseInvite).mock.calls.every(([invite]) => invite.inviteUrl === mockInvite.inviteUrl)).toBe(true);
+  });
+
   it.each([
     "초대 설정이 올바르지 않습니다.",
     "코스 소유자만 초대 링크를 만들 수 있습니다.",
@@ -458,6 +473,46 @@ describe("CourseDetailPage", () => {
     fireEvent.click(screen.getByRole("button", { name: "friend 멤버 삭제" }));
     await screen.findByText("참여 중인 멤버가 없습니다.");
     expect(courseService.removeCourseMember).toHaveBeenCalledExactlyOnceWith("10", 2);
+  });
+
+  it("같은 권한의 기존 링크가 여러 개여도 한 그룹에서 개수와 발급 시각을 보여준다", async () => {
+    vi.mocked(courseService.fetchCourseMembers).mockResolvedValue([{ userId: 2, username: "friend", role: "EDITOR", joinedAt: "2026-09-19" }]);
+    const invites = ["2026-09-19T12:00:00Z", "2026-09-19T11:00:00Z", "2026-09-19T10:00:00Z"].map((createdAt, index) => ({
+      token: `existing-${index}`, role: "EDITOR" as const, createdAt, expiresAt: mockInvite.expiresAt,
+    }));
+    vi.mocked(courseService.fetchPendingCourseInvites).mockResolvedValue(invites);
+    renderComponent();
+    fireEvent.click(await screen.findByRole("button", { name: "멤버 관리" }));
+
+    const group = await screen.findByText("편집 초대 링크 · 3개");
+    expect(screen.getAllByRole("combobox", { name: "friend 참여 권한" })).toHaveLength(1);
+    expect(screen.getByText(/공유 가능한 링크는 3개예요/)).toBeInTheDocument();
+    const details = group.closest("details")!;
+    expect(details).not.toHaveAttribute("open");
+    fireEvent.click(group);
+    await waitFor(() => expect(details).toHaveAttribute("open"));
+    expect(within(details).getAllByRole("button", { name: "다시 공유" })).toHaveLength(3);
+    expect(Array.from(details.querySelectorAll("time")).map((time) => time.dateTime)).toEqual(invites.flatMap((invite) => [invite.createdAt, invite.expiresAt]));
+    fireEvent.click(within(details).getAllByRole("button", { name: "초대 취소" })[1]);
+    await screen.findByText("편집 초대 링크 · 2개");
+    expect(courseService.cancelCourseInvite).toHaveBeenCalledExactlyOnceWith("10", "existing-1");
+  });
+
+  it("멤버 관리의 기존 링크를 새로 생성하지 않고 복사와 카카오톡으로 다시 공유한다", async () => {
+    vi.mocked(courseService.fetchPendingCourseInvites).mockResolvedValue([{ token: mockInvite.token, role: "VIEWER", createdAt: "2026-09-19T12:00:00Z", expiresAt: mockInvite.expiresAt }]);
+    renderComponent();
+    fireEvent.click(await screen.findByRole("button", { name: "멤버 관리" }));
+    fireEvent.click(await screen.findByRole("button", { name: "다시 공유" }));
+
+    const inviteUrl = `${window.location.origin}/course-invites/${mockInvite.token}`;
+    expect(await screen.findByLabelText("초대 링크")).toHaveValue(inviteUrl);
+    expect(screen.queryByRole("dialog", { name: "멤버 및 초대 관리" })).not.toBeInTheDocument();
+    await waitFor(() => expect(writeClipboard).toHaveBeenCalledExactlyOnceWith(inviteUrl));
+    const kakaoButton = screen.getByRole("button", { name: "카카오톡으로 초대" });
+    await waitFor(() => expect(kakaoButton).toBeEnabled());
+    fireEvent.click(kakaoButton);
+    expect(shareCourseInvite).toHaveBeenCalledExactlyOnceWith({ inviteUrl, courseTitle: mockCourse.title, memberRole: "VIEWER" });
+    expect(courseService.createCourseInvite).not.toHaveBeenCalled();
   });
 
   it("권한 변경이 실패하면 기존 권한을 유지하고 다시 시도할 수 있다", async () => {

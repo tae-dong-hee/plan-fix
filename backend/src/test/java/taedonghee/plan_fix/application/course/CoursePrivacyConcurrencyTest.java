@@ -214,6 +214,21 @@ class CoursePrivacyConcurrencyTest {
     }
 
     @Test
+    void simultaneousInvitePreparationCreatesOneLinkUnderTheCourseLock() throws Exception {
+        inviteService.cancelInvite(ownerId, courseId, inviteToken);
+        var firstToken = new java.util.concurrent.atomic.AtomicReference<String>();
+        Object replay = runAfterBlocked(() -> {
+            var result = inviteService.createInvite(ownerId, courseId, CourseMemberRole.EDITOR, "https://example.test");
+            firstToken.set(result.token());
+            return result;
+        }, () -> inviteService.createInvite(ownerId, courseId, CourseMemberRole.EDITOR, "https://example.test"));
+        assertThat(replay).isInstanceOfSatisfying(CourseInviteApplicationService.CourseInviteResult.class,
+                result -> assertThat(result.token()).isEqualTo(firstToken.get()));
+        assertThat(invites.findByCourseIdOrderByCreatedAtDesc(courseId)).singleElement()
+                .satisfies(invite -> assertThat(invite.getToken()).isEqualTo(firstToken.get()));
+    }
+
+    @Test
     void duplicateConcurrentAcceptanceCreatesExactlyOneMembership() throws Exception {
         Object replay = runAfterBlocked(() -> inviteService.accept(inviteeId, inviteToken),
                 () -> inviteService.accept(inviteeId, inviteToken));
@@ -241,6 +256,7 @@ class CoursePrivacyConcurrencyTest {
     @Test
     void acceptingIssuedEditorLinkWaitsForOwnerDowngradeAndCannotUndoIt() throws Exception {
         inviteService.accept(inviteeId, inviteToken);
+        inviteService.createInvite(ownerId, courseId, CourseMemberRole.VIEWER, "https://example.test");
         String pendingEditorToken = inviteService.createInvite(ownerId, courseId, CourseMemberRole.EDITOR,
                 "https://example.test").token();
         runAfterBlocked(() -> {
@@ -266,6 +282,7 @@ class CoursePrivacyConcurrencyTest {
     @Test
     void acceptanceWaitsForRemovalAndCannotRestoreMemberUsingAnAlreadyIssuedLink() throws Exception {
         inviteService.accept(inviteeId, inviteToken);
+        inviteService.createInvite(ownerId, courseId, CourseMemberRole.VIEWER, "https://example.test");
         String pendingEditorToken = inviteService.createInvite(ownerId, courseId, CourseMemberRole.EDITOR,
                 "https://example.test").token();
         assertThatThrownBy(() -> runAfterBlocked(() -> {

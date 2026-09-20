@@ -40,14 +40,25 @@ public class CourseInviteApplicationService {
         // Protect legacy memberships from links issued before this policy was introduced.
         // Baseline before saving the new invitation so that this new link can change roles.
         long previousInviteId = inviteRepository.latestInviteId(courseId);
-        memberRepository.findByCourseIdOrderByCreatedAtAsc(courseId)
-                .forEach(member -> member.initializeInviteBaseline(previousInviteId));
+        List<CourseMemberJpaEntity> members = memberRepository.findByCourseIdOrderByCreatedAtAsc(courseId);
+        members.forEach(member -> member.initializeInviteBaseline(previousInviteId));
         OffsetDateTime now = OffsetDateTime.now();
+        // Preparing/sharing the same invitation again must not add indistinguishable links.
+        // Only reuse the newest issuance: EDITOR -> VIEWER -> EDITOR needs a new order.
+        // A member's direct role change or removal may also require a fresh invitation.
+        CourseInviteJpaEntity reusable = inviteRepository.findFirstByCourseIdOrderByCourseInviteIdDesc(courseId)
+                .filter(invite -> invite.getMemberRole() == memberRole && invite.getExpiresAt().isAfter(now))
+                .filter(invite -> members.stream().noneMatch(member ->
+                        member.getLastAppliedInviteId() >= invite.getCourseInviteId() && member.getRole() != memberRole))
+                .filter(invite -> !revocationRepository.existsByCourseIdAndRevokedThroughInviteIdGreaterThanEqual(
+                        courseId, invite.getCourseInviteId()))
+                .orElse(null);
+        if (reusable != null) return inviteResult(reusable, frontendBaseUrl);
         String token = newToken();
         CourseInviteJpaEntity invite = inviteRepository.save(CourseInviteJpaEntity.builder()
                 .courseId(courseId).createdByUserId(ownerId).token(token).memberRole(memberRole)
                 .createdAt(now).expiresAt(now.plusDays(INVITE_VALID_DAYS)).build());
-        return CourseInviteResult.from(invite, frontendBaseUrl.replaceAll("/$", "") + "/course-invites/" + token);
+        return inviteResult(invite, frontendBaseUrl);
     }
 
     @Transactional
@@ -183,6 +194,10 @@ public class CourseInviteApplicationService {
     private String newToken() {
         byte[] bytes = new byte[32];
         do { RANDOM.nextBytes(bytes); String token = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes); if (!inviteRepository.existsByToken(token)) return token; } while (true);
+    }
+
+    private CourseInviteResult inviteResult(CourseInviteJpaEntity invite, String frontendBaseUrl) {
+        return CourseInviteResult.from(invite, frontendBaseUrl.replaceAll("/$", "") + "/course-invites/" + invite.getToken());
     }
 
     public record CourseInviteResult(String token, String inviteUrl, CourseMemberRole memberRole, OffsetDateTime expiresAt) {
