@@ -221,10 +221,10 @@ export default function CourseDetailPage() {
   }, [courseId, isOwner, course?.visibility]);
 
   return (
-    <div className="min-h-screen bg-muted/20 pb-28 md:pb-16">
+    <div className="app-page min-h-screen bg-muted/20 pb-28 md:pb-16">
       <AppNav courseIsOwner={isOwner} />
 
-      <main className="mx-auto max-w-4xl px-4 pt-6 sm:px-6 sm:pt-8 md:pt-24">
+      <main className="app-page-content mx-auto max-w-4xl px-4 sm:px-6">
         {/* 상단 브레드크럼 */}
         <nav aria-label="현재 위치" className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <Link to={courseListPath} className="hover:text-foreground">

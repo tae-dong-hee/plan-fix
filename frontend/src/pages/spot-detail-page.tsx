@@ -174,7 +174,7 @@ export default function SpotDetailPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-28 text-foreground md:pb-16 md:pt-16">
+    <div className="app-page min-h-screen bg-background pb-28 text-foreground md:pb-16">
       <AppNav />
 
       <div className="pointer-events-none absolute inset-x-0 top-0 h-[30rem] bg-gradient-to-b from-primary/[0.08] to-transparent" aria-hidden="true" />
@@ -214,7 +214,7 @@ export default function SpotDetailPage() {
           </button>
         </div>
       ) : (
-        <main className="relative mx-auto max-w-6xl px-5 pb-8 sm:px-8 lg:px-10">
+        <main className="app-page-content relative mx-auto max-w-6xl px-5 pb-8 sm:px-8 lg:px-10">
           <div className="mb-7 flex flex-col items-start justify-between gap-5 sm:mb-8 sm:flex-row sm:items-center sm:gap-8">
             <div className="min-w-0">
               <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/10 bg-primary/[0.08] px-3 py-1.5 text-xs font-semibold text-primary">

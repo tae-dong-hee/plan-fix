@@ -501,7 +501,7 @@ export default function MainPage() {
   };
 
   return (
-    <div className="travel-home min-h-screen bg-background pb-28 text-foreground md:pb-0 md:pt-16">
+    <div className="app-page travel-home min-h-screen bg-background pb-28 text-foreground md:pb-0">
       <main>
         <MainTravelHeader
           selectedRegion={selectedRegion}

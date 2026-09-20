@@ -69,7 +69,7 @@ export default function MainTravelHeader({
 
   return (
     <section className="main-travel-header">
-      <div className="mx-auto max-w-7xl px-5 pb-5 pt-6 sm:px-8 lg:px-10">
+      <div className="app-page-content mx-auto max-w-7xl px-5 pb-5 sm:px-8 lg:px-10">
         <div className="travel-hero">
           <div className="travel-hero-copy">
             <p className="travel-hero-eyebrow"><span />PLAN YOUR GANGWON</p>

@@ -190,11 +190,11 @@ export default function BoardCreatePage() {
   };
 
   return (
-    <div className="travel-home min-h-screen bg-background pb-32 text-foreground md:pb-20 md:pt-16">
+    <div className="app-page travel-home min-h-screen bg-background pb-32 text-foreground md:pb-20">
       <AppNav />
 
       {/* 상단 액션바 */}
-      <header className="sticky top-0 z-30 border-b border-border/80 bg-background/95 backdrop-blur-md">
+      <header className="app-page-sticky-header sticky z-30 border-b border-border/80 bg-background/95 backdrop-blur-md">
         <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-3 sm:px-6">
           <div className="flex items-center gap-3">
             <button
@@ -233,7 +233,7 @@ export default function BoardCreatePage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-4xl px-4 pt-6 sm:px-6 sm:pt-8">
+      <main className="app-page-content mx-auto max-w-4xl px-4 sm:px-6">
         {/* 에러 알림 */}
         {submitError && (
           <div className="mb-6 rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm font-medium text-destructive">
