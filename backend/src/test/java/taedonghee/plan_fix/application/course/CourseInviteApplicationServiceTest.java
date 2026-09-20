@@ -6,6 +6,7 @@ import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
+import org.springframework.test.util.ReflectionTestUtils;
 import taedonghee.plan_fix.domain.course.CourseDayModel;
 import taedonghee.plan_fix.domain.course.CourseModel;
 import taedonghee.plan_fix.domain.course.CourseRepository;
@@ -223,14 +224,14 @@ class CourseInviteApplicationServiceTest {
         when(courses.findByIdForUpdate(COURSE_ID)).thenReturn(Optional.of(course(CourseVisibility.PUBLIC)));
         CourseMemberJpaEntity member = CourseMemberJpaEntity.builder().courseId(COURSE_ID).userId(MEMBER_ID)
                 .role(CourseMemberRole.VIEWER).createdAt(OffsetDateTime.now()).build();
-        when(members.findByCourseIdOrderByCreatedAtAsc(COURSE_ID)).thenReturn(List.of(member));
+        when(members.findByCourseIdAndUserId(COURSE_ID, MEMBER_ID)).thenReturn(Optional.of(member));
 
         service.updateMemberRole(OWNER_ID, COURSE_ID, MEMBER_ID, CourseMemberRole.EDITOR);
 
         assertThat(member.getRole()).isEqualTo(CourseMemberRole.EDITOR);
         InOrder order = inOrder(courses, members);
         order.verify(courses).findByIdForUpdate(COURSE_ID);
-        order.verify(members).findByCourseIdOrderByCreatedAtAsc(COURSE_ID);
+        order.verify(members).findByCourseIdAndUserId(COURSE_ID, MEMBER_ID);
     }
 
     @Test
@@ -276,8 +277,10 @@ class CourseInviteApplicationServiceTest {
 
     private CourseInviteJpaEntity invite(boolean expired) {
         OffsetDateTime now = OffsetDateTime.now();
-        return CourseInviteJpaEntity.builder().courseId(COURSE_ID).createdByUserId(OWNER_ID).token(TOKEN)
+        CourseInviteJpaEntity invite = CourseInviteJpaEntity.builder().courseId(COURSE_ID).createdByUserId(OWNER_ID).token(TOKEN)
                 .memberRole(CourseMemberRole.EDITOR).createdAt(now.minusDays(1))
                 .expiresAt(expired ? now.minusMinutes(1) : now.plusDays(1)).build();
+        ReflectionTestUtils.setField(invite, "courseInviteId", 10L);
+        return invite;
     }
 }

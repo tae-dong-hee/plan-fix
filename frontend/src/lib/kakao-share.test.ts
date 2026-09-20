@@ -138,16 +138,17 @@ test.each([
   const sdk = installSdk();
   const { prepareKakaoShare, shareCourseInvite } = await import("./kakao-share");
   await prepareKakaoShare();
-  const inviteUrl = "https://planfix.example/invite/a-token_with.dots?source=invite";
+  const inviteUrl = "https://planfix.example/course-invites/a-token_with.dots?source=invite";
 
   const result = shareCourseInvite({ inviteUrl, courseTitle: "제주 여행", memberRole });
 
-  expect(result).toBeUndefined();
+  expect(result).toEqual({ inviteToken: "a-token_with.dots", requestId: expect.any(String) });
   expect(sdk.Share.sendDefault).toHaveBeenCalledExactlyOnceWith({
     objectType: "text",
     text: expect.stringContaining(`제주 여행\n${label}`),
     link: { mobileWebUrl: inviteUrl, webUrl: inviteUrl },
     buttonTitle: "초대 확인하기",
+    serverCallbackArgs: { invite_token: "a-token_with.dots", share_request_id: result.requestId },
   });
 });
 
@@ -155,7 +156,7 @@ test("긴 이모지 제목에서도 역할 안내와 텍스트 템플릿 길이 
   const sdk = installSdk(true);
   const { shareCourseInvite } = await import("./kakao-share");
 
-  shareCourseInvite({ inviteUrl: "https://planfix.example/invite/token", courseTitle: "🌴".repeat(500), memberRole: "EDITOR" });
+  shareCourseInvite({ inviteUrl: "https://planfix.example/course-invites/token", courseTitle: "🌴".repeat(500), memberRole: "EDITOR" });
 
   const message = sdk.Share.sendDefault.mock.calls[0][0];
   expect(message.text.length).toBeLessThanOrEqual(200);
@@ -165,7 +166,7 @@ test("긴 이모지 제목에서도 역할 안내와 텍스트 템플릿 길이 
 test("준비 전 공유는 다운로드를 시작하지 않고 재시도를 안내한다", async () => {
   const { shareCourseInvite } = await import("./kakao-share");
 
-  expect(() => shareCourseInvite({ inviteUrl: "https://planfix.example/invite/token", courseTitle: "여행", memberRole: "VIEWER" }))
+  expect(() => shareCourseInvite({ inviteUrl: "https://planfix.example/course-invites/token", courseTitle: "여행", memberRole: "VIEWER" }))
     .toThrow("잠시 후 다시 시도");
   expect(document.querySelector(scriptSelector)).toBeNull();
 });
@@ -175,6 +176,14 @@ test("공유 창을 열지 못하면 원본 SDK 오류 대신 링크 복사를 �
   sdk.Share.sendDefault.mockImplementation(() => { throw new Error("SDK internal error"); });
   const { shareCourseInvite } = await import("./kakao-share");
 
-  expect(() => shareCourseInvite({ inviteUrl: "https://planfix.example/invite/token", courseTitle: "여행", memberRole: "VIEWER" }))
+  expect(() => shareCourseInvite({ inviteUrl: "https://planfix.example/course-invites/token", courseTitle: "여행", memberRole: "VIEWER" }))
     .toThrow("공유 창을 열지 못했어요. 다시 시도하거나 초대 링크를 복사");
+});
+
+
+test("같은 링크를 다시 공유해도 서로 다른 전송 확인 ID를 사용한다", async () => {
+  installSdk(true);
+  const { shareCourseInvite } = await import("./kakao-share");
+  const input = { inviteUrl: "https://planfix.example/course-invites/token", courseTitle: "여행", memberRole: "VIEWER" as const };
+  expect(shareCourseInvite(input).requestId).not.toBe(shareCourseInvite(input).requestId);
 });

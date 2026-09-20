@@ -45,6 +45,8 @@ security:
 
 app:
   frontend-base-url: ${FRONTEND_BASE_URL:http://localhost:3000}
+  kakao-share:
+    admin-key: ${KAKAO_ADMIN_KEY:}
   password-reset:
     enabled: ${PASSWORD_RESET_ENABLED:false}
     from: ${PASSWORD_RESET_FROM:}

@@ -99,6 +99,7 @@ class CoursePrivacyConcurrencyTest {
         new TransactionTemplate(transactions).executeWithoutResult(status -> {
             if (courseId != null) {
                 jdbc.update("DELETE FROM course_members WHERE course_id = ?", courseId);
+                jdbc.update("DELETE FROM course_member_revocations WHERE course_id = ?", courseId);
                 jdbc.update("DELETE FROM course_invites WHERE course_id = ?", courseId);
                 jdbc.update("DELETE FROM course_likes WHERE course_id = ?", courseId);
                 jdbc.update("DELETE FROM course_spots WHERE course_id = ?", courseId);
@@ -209,6 +210,134 @@ class CoursePrivacyConcurrencyTest {
                     Long.class, courseId)).isZero();
         } finally {
             commitPermission.countDown();
+        }
+    }
+
+    @Test
+    void duplicateConcurrentAcceptanceCreatesExactlyOneMembership() throws Exception {
+        Object replay = runAfterBlocked(() -> inviteService.accept(inviteeId, inviteToken),
+                () -> inviteService.accept(inviteeId, inviteToken));
+        assertThat(replay).isInstanceOfSatisfying(CourseInviteApplicationService.CourseInviteAcceptResult.class,
+                result -> {
+                    assertThat(result.joined()).isFalse();
+                    assertThat(result.alreadyMember()).isTrue();
+                });
+        assertOneMemberWithRole(CourseMemberRole.EDITOR);
+        assertAccommodationEditing(true);
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void differentConcurrentInvitesConvergeToNewestIssuedPermissionRegardlessOfLockOrder(boolean newestFirst) throws Exception {
+        String newerViewerToken = inviteService.createInvite(ownerId, courseId, CourseMemberRole.VIEWER,
+                "https://example.test").token();
+        runAfterBlocked(() -> inviteService.accept(inviteeId, newestFirst ? newerViewerToken : inviteToken),
+                () -> inviteService.accept(inviteeId, newestFirst ? inviteToken : newerViewerToken));
+
+        assertOneMemberWithRole(CourseMemberRole.VIEWER);
+        assertAccommodationEditing(false);
+    }
+
+    @Test
+    void acceptingIssuedEditorLinkWaitsForOwnerDowngradeAndCannotUndoIt() throws Exception {
+        inviteService.accept(inviteeId, inviteToken);
+        String pendingEditorToken = inviteService.createInvite(ownerId, courseId, CourseMemberRole.EDITOR,
+                "https://example.test").token();
+        runAfterBlocked(() -> {
+            inviteService.updateMemberRole(ownerId, courseId, inviteeId, CourseMemberRole.VIEWER);
+            return true;
+        }, () -> inviteService.accept(inviteeId, pendingEditorToken));
+
+        assertOneMemberWithRole(CourseMemberRole.VIEWER);
+        assertAccommodationEditing(false);
+    }
+
+    @Test
+    void ownerDowngradeWaitsForAcceptanceAndItsFinalPermissionWins() throws Exception {
+        runAfterBlocked(() -> inviteService.accept(inviteeId, inviteToken), () -> {
+            inviteService.updateMemberRole(ownerId, courseId, inviteeId, CourseMemberRole.VIEWER);
+            return true;
+        });
+
+        assertOneMemberWithRole(CourseMemberRole.VIEWER);
+        assertAccommodationEditing(false);
+    }
+
+    @Test
+    void acceptanceWaitsForRemovalAndCannotRestoreMemberUsingAnAlreadyIssuedLink() throws Exception {
+        inviteService.accept(inviteeId, inviteToken);
+        String pendingEditorToken = inviteService.createInvite(ownerId, courseId, CourseMemberRole.EDITOR,
+                "https://example.test").token();
+        assertThatThrownBy(() -> runAfterBlocked(() -> {
+            inviteService.removeMember(ownerId, courseId, inviteeId);
+            return true;
+        }, () -> inviteService.accept(inviteeId, pendingEditorToken)))
+                .isInstanceOf(ExecutionException.class).hasCauseInstanceOf(CoreException.class)
+                .satisfies(error -> assertThat(((CoreException) error.getCause()).getErrorType())
+                        .isEqualTo(ErrorType.FORBIDDEN));
+
+        assertThat(members.findByCourseIdOrderByCreatedAtAsc(courseId)).isEmpty();
+        assertAccommodationEditing(false);
+    }
+
+    @Test
+    void removalWaitsForAcceptanceThenDeletesItsMembershipAndBlocksTheSameLink() throws Exception {
+        runAfterBlocked(() -> inviteService.accept(inviteeId, inviteToken), () -> {
+            inviteService.removeMember(ownerId, courseId, inviteeId);
+            return true;
+        });
+
+        assertThat(members.findByCourseIdOrderByCreatedAtAsc(courseId)).isEmpty();
+        assertThatThrownBy(() -> inviteService.accept(inviteeId, inviteToken))
+                .isInstanceOfSatisfying(CoreException.class,
+                        error -> assertThat(error.getErrorType()).isEqualTo(ErrorType.FORBIDDEN));
+        assertAccommodationEditing(false);
+    }
+
+    private Object runAfterBlocked(Supplier<?> holder, Supplier<?> waiter) throws Exception {
+        CountDownLatch changed = new CountDownLatch(1);
+        CountDownLatch commit = new CountDownLatch(1);
+        CompletableFuture<Integer> holderPid = new CompletableFuture<>();
+        CompletableFuture<Integer> waiterPid = new CompletableFuture<>();
+        Future<?> first = transactionWorker(holderPid, () -> {
+            Object result = holder.get();
+            changed.countDown();
+            awaitRelease(commit);
+            return result;
+        });
+        try {
+            assertThat(changed.await(10, TimeUnit.SECONDS)).as("first operation holds its transaction").isTrue();
+            Future<?> second = transactionWorker(waiterPid, waiter);
+            assertBlockedBy(waiterPid.get(10, TimeUnit.SECONDS), holderPid.get(10, TimeUnit.SECONDS), second);
+            commit.countDown();
+            first.get(10, TimeUnit.SECONDS);
+            return second.get(10, TimeUnit.SECONDS);
+        } finally {
+            commit.countDown();
+        }
+    }
+
+    private void assertOneMemberWithRole(CourseMemberRole role) {
+        assertThat(members.findByCourseIdOrderByCreatedAtAsc(courseId)).singleElement().satisfies(member -> {
+            assertThat(member.getUserId()).isEqualTo(inviteeId);
+            assertThat(member.getRole()).isEqualTo(role);
+        });
+        assertThat(inviteService.canEdit(inviteeId, courseId)).isEqualTo(role == CourseMemberRole.EDITOR);
+    }
+
+    private void assertAccommodationEditing(boolean permitted) {
+        var user = new AuthenticatedUser(inviteeId, "invitee", UserRole.USER);
+        var request = List.of(new CourseDayAccommodationController.Request(1, "Race checked hotel", null, null, null, null));
+        if (permitted) {
+            accommodations.put(user, courseId, request);
+            assertThat(jdbc.queryForObject("SELECT count(*) FROM course_day_accommodations WHERE course_id = ?",
+                    Long.class, courseId)).isEqualTo(1L);
+        } else {
+            assertThatThrownBy(() -> accommodations.put(user, courseId, request))
+                    .isInstanceOfSatisfying(CoreException.class,
+                            error -> assertThat(error.getErrorType()).isEqualTo(ErrorType.FORBIDDEN));
+            assertThat(jdbc.queryForObject("SELECT count(*) FROM course_day_accommodations WHERE course_id = ?",
+                    Long.class, courseId)).isZero();
         }
     }
 

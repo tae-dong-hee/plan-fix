@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
@@ -29,11 +30,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /** Exercises shared course permissions using real invite acceptance, cookie authentication and PostgreSQL. */
-@SpringBootTest(properties = "security.jwt.secret=private-course-regression-test-key-not-a-production-secret")
+@SpringBootTest(properties = {"security.jwt.secret=private-course-regression-test-key-not-a-production-secret",
+        "app.kakao-share.admin-key=share-webhook-test-key"})
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Transactional
@@ -43,6 +46,8 @@ class CourseInvitePermissionsIntegrationTest {
     @Autowired UserRepository users;
     @Autowired JwtTokenProvider tokens;
     @Autowired SpotJpaRepository spots;
+    @Autowired JdbcTemplate jdbc;
+    @Autowired jakarta.persistence.EntityManager entityManager;
 
     private Cookie owner;
     private Cookie member;
@@ -50,6 +55,185 @@ class CourseInvitePermissionsIntegrationTest {
     private Long memberId;
     private Long courseId;
     private Long spotId;
+
+    @ParameterizedTest
+    @ValueSource(strings = {"VIEWER", "EDITOR"})
+    void newerInviteReplacesPermissionWithoutAddingMembershipAndOldLinksCannotUndoIt(String originalRole) throws Exception {
+        String originalToken = invite(originalRole);
+        accept(originalToken).andExpect(status().isOk());
+        String latestRole = oppositeRole(originalRole);
+        String latestToken = invite(latestRole);
+        accept(latestToken)
+                .andExpect(status().isOk()).andExpect(jsonPath("$.alreadyMember").value(true))
+                .andExpect(jsonPath("$.joined").value(false));
+        assertSingleMembershipAndEditing(latestRole);
+
+        for (String token : List.of(originalToken, latestToken, originalToken)) {
+            accept(token).andExpect(status().isOk()).andExpect(jsonPath("$.alreadyMember").value(true));
+            assertSingleMembershipAndEditing(latestRole);
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"VIEWER", "EDITOR"})
+    void acceptingOlderUnusedInviteAfterNewerInviteCannotReplaceLatestPermission(String latestRole) throws Exception {
+        String olderToken = invite(oppositeRole(latestRole));
+        String newerToken = invite(latestRole);
+        accept(newerToken).andExpect(status().isOk()).andExpect(jsonPath("$.joined").value(true));
+        accept(olderToken).andExpect(status().isOk()).andExpect(jsonPath("$.alreadyMember").value(true));
+        assertSingleMembershipAndEditing(latestRole);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"VIEWER", "EDITOR"})
+    void ownerRoleChangeInvalidatesEveryPreviouslyIssuedInviteButAllowsANewInvite(String ownerRole) throws Exception {
+        String originalToken = invite(oppositeRole(ownerRole));
+        accept(originalToken).andExpect(status().isOk());
+        // Even a never-accepted link issued after the first acceptance precedes the owner's decision.
+        String unusedToken = invite(oppositeRole(ownerRole));
+        setRole(ownerRole);
+        for (String token : List.of(originalToken, unusedToken)) {
+            accept(token).andExpect(status().isOk());
+            assertSingleMembershipAndEditing(ownerRole);
+        }
+        accept(invite(oppositeRole(ownerRole))).andExpect(status().isOk());
+        assertSingleMembershipAndEditing(oppositeRole(ownerRole));
+    }
+
+    @Test
+    void removingMemberBlocksAllPreviouslyIssuedLinksAndFreshRejoinDoesNotRestoreOldEditorRole() throws Exception {
+        String editorToken = invite("EDITOR");
+        accept(editorToken).andExpect(status().isOk());
+        String unusedEditorToken = invite("EDITOR");
+        String unusedViewerToken = invite("VIEWER");
+        as(owner, delete(path() + "/members/" + memberId)).andExpect(status().isNoContent());
+        entityManager.flush();
+        entityManager.clear();
+        assertThat(membershipCount()).isZero();
+        for (String token : List.of(editorToken, unusedEditorToken, unusedViewerToken)) {
+            accept(token).andExpect(status().isForbidden());
+            assertThat(membershipCount()).isZero();
+        }
+        saveAccommodation(member, "Removed member hotel", "Forbidden").andExpect(status().isForbidden());
+        as(member, patch(path()).contentType(MediaType.APPLICATION_JSON).content(updatedItinerary()))
+                .andExpect(status().isForbidden());
+        accept(invite("VIEWER")).andExpect(status().isOk()).andExpect(jsonPath("$.joined").value(true));
+        accept(unusedEditorToken).andExpect(status().isOk());
+        assertSingleMembershipAndEditing("VIEWER");
+
+        // The per-user cutoff must not revoke a reusable link for other invitees.
+        as(visitor, post(invitePath(unusedEditorToken) + "/accept")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.joined").value(true));
+        saveAccommodation(visitor, "Another editor hotel", "Allowed").andExpect(status().isOk());
+        assertSingleMembershipAndEditing("VIEWER");
+    }
+
+    @Test
+    void cancellingAnUnusedNewerLinkDoesNotChangeExistingMemberPermission() throws Exception {
+        accept(invite("EDITOR")).andExpect(status().isOk());
+        String newerToken = invite("VIEWER");
+        as(owner, delete(path() + "/invites/" + newerToken)).andExpect(status().isNoContent());
+        accept(newerToken).andExpect(status().isNotFound());
+        assertSingleMembershipAndEditing("EDITOR");
+    }
+
+    @Test
+    void legacyMemberCannotBeChangedByAPreexistingLinkButCanAcceptANewlyIssuedRole() throws Exception {
+        accept(invite("EDITOR")).andExpect(status().isOk());
+        String oldViewerToken = invite("VIEWER");
+        entityManager.flush();
+        jdbc.update("UPDATE course_members SET last_applied_invite_id = NULL WHERE course_id = ? AND user_id = ?",
+                courseId, memberId);
+        entityManager.clear();
+
+        accept(oldViewerToken).andExpect(status().isOk());
+        assertSingleMembershipAndEditing("EDITOR");
+        accept(invite("VIEWER")).andExpect(status().isOk());
+        assertSingleMembershipAndEditing("VIEWER");
+    }
+
+    @Test
+    void issuingNewInviteInitializesLegacyMemberBeforeItsFirstPostUpgradeAcceptance() throws Exception {
+        String oldToken = invite("EDITOR");
+        accept(oldToken).andExpect(status().isOk());
+        entityManager.flush();
+        jdbc.update("UPDATE course_members SET last_applied_invite_id = NULL WHERE course_id = ? AND user_id = ?",
+                courseId, memberId);
+        entityManager.clear();
+
+        String newToken = invite("VIEWER");
+        accept(newToken).andExpect(status().isOk());
+        accept(oldToken).andExpect(status().isOk());
+        assertSingleMembershipAndEditing("VIEWER");
+    }
+
+    @Test
+    void legacyRejoinedMemberKeepsCurrentPermissionWhenReplayingALinkFromBeforeRemoval() throws Exception {
+        String removedEditorToken = invite("EDITOR");
+        accept(removedEditorToken).andExpect(status().isOk());
+        as(owner, delete(path() + "/members/" + memberId)).andExpect(status().isNoContent());
+        accept(invite("VIEWER")).andExpect(status().isOk());
+        entityManager.flush();
+        jdbc.update("UPDATE course_members SET last_applied_invite_id = NULL WHERE course_id = ? AND user_id = ?",
+                courseId, memberId);
+        entityManager.clear();
+
+        accept(removedEditorToken).andExpect(status().isOk()).andExpect(jsonPath("$.alreadyMember").value(true));
+        assertSingleMembershipAndEditing("VIEWER");
+        accept(invite("EDITOR")).andExpect(status().isOk());
+        assertSingleMembershipAndEditing("EDITOR");
+    }
+
+    @Test
+    void cancellingLatestAcceptedLinkThenChangingRoleCannotMakeAnOlderEditorLinkEffectiveAgain() throws Exception {
+        String olderEditorToken = invite("EDITOR");
+        accept(olderEditorToken).andExpect(status().isOk());
+        String latestViewerToken = invite("VIEWER");
+        accept(latestViewerToken).andExpect(status().isOk());
+        as(owner, delete(path() + "/invites/" + latestViewerToken)).andExpect(status().isNoContent());
+        setRole("VIEWER");
+
+        accept(olderEditorToken).andExpect(status().isOk());
+        accept(latestViewerToken).andExpect(status().isNotFound());
+        assertSingleMembershipAndEditing("VIEWER");
+        accept(invite("EDITOR")).andExpect(status().isOk());
+        assertSingleMembershipAndEditing("EDITOR");
+    }
+
+    @Test
+    void onlyVerifiedKakaoDeliveryCompletesTheMatchingAttemptAndLinkCanStillBeCancelled() throws Exception {
+        String token = invite("EDITOR");
+        String requestId = UUID.randomUUID().toString();
+        String statusUrl = invitePath(token) + "/kakao-shares/" + requestId;
+        String payload = mapper.writeValueAsString(Map.of("invite_token", token, "share_request_id", requestId,
+                "CHAT_TYPE", "MultiChat", "HASH_CHAT_ID", "test-chat"));
+        mvc.perform(get(statusUrl)).andExpect(status().isUnauthorized());
+        as(visitor, get(statusUrl)).andExpect(status().isForbidden());
+        as(owner, get(statusUrl)).andExpect(status().isOk()).andExpect(jsonPath("$.shared").value(false));
+        for (String key : List.of("", "KakaoAK incorrect-key")) {
+            mvc.perform(post("/api/v1/webhooks/kakao/share").header("Authorization", key)
+                    .contentType(MediaType.APPLICATION_JSON).content(payload)).andExpect(status().isUnauthorized());
+        }
+        as(owner, get(statusUrl)).andExpect(jsonPath("$.shared").value(false));
+        for (int retry = 0; retry < 2; retry++) {
+            mvc.perform(post("/api/v1/webhooks/kakao/share").header("Authorization", "KakaoAK share-webhook-test-key")
+                    .contentType(MediaType.APPLICATION_JSON).content(payload)).andExpect(status().isNoContent());
+            entityManager.flush();
+            entityManager.clear();
+        }
+        as(owner, get(statusUrl)).andExpect(status().isOk()).andExpect(jsonPath("$.shared").value(true))
+                .andExpect(header().string("Cache-Control", "no-store"));
+        as(owner, get(invitePath(token) + "/kakao-shares/" + UUID.randomUUID()))
+                .andExpect(jsonPath("$.shared").value(false));
+        // Sending the invitation never creates a membership; acceptance is a separate action.
+        as(owner, get(path() + "/members")).andExpect(jsonPath("$.length()").value(1));
+        as(owner, delete(path() + "/invites/" + token)).andExpect(status().isNoContent());
+        entityManager.flush();
+        entityManager.clear();
+        as(owner, get(statusUrl)).andExpect(status().isNotFound());
+        mvc.perform(post("/api/v1/webhooks/kakao/share").header("Authorization", "KakaoAK share-webhook-test-key")
+                .contentType(MediaType.APPLICATION_JSON).content(payload)).andExpect(status().isNoContent());
+    }
 
     @BeforeEach
     void createCourseAndUsers() throws Exception {
@@ -233,6 +417,32 @@ class CourseInvitePermissionsIntegrationTest {
                 "days", List.of(Map.of("dayNumber", 1, "spots", List.of()),
                         Map.of("dayNumber", 2, "spots", List.of(Map.of("spotId", spotId, "memo", "Editor itinerary memo"))))));
     }
+
+    private long membershipCount() {
+        return jdbc.queryForObject("SELECT count(*) FROM course_members WHERE course_id = ? AND user_id = ?",
+                Long.class, courseId, memberId);
+    }
+
+    private void assertSingleMembershipAndEditing(String role) throws Exception {
+        entityManager.flush();
+        entityManager.clear();
+        assertThat(membershipCount()).as("one persisted permission per course and person").isEqualTo(1L);
+        as(owner, get(path() + "/members")).andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.userId == " + memberId + ")].role")
+                        .value(org.hamcrest.Matchers.contains(role)));
+        boolean editor = role.equals("EDITOR");
+        as(member, get(path())).andExpect(status().isOk()).andExpect(jsonPath("$.canEdit").value(editor));
+        as(member, get(path() + "/day-accommodations")).andExpect(status().isOk());
+        as(member, patch(path()).contentType(MediaType.APPLICATION_JSON).content(updatedItinerary()))
+                .andExpect(editor ? status().isOk() : status().isForbidden());
+        String hotelBefore = read(as(owner, get(path() + "/day-accommodations"))).get(0).path("name").asText();
+        saveAccommodation(member, "Permission checked hotel", "Permission checked memo")
+                .andExpect(editor ? status().isOk() : status().isForbidden());
+        as(owner, get(path() + "/day-accommodations"))
+                .andExpect(jsonPath("$[0].name").value(editor ? "Permission checked hotel" : hotelBefore));
+    }
+
+    private static String oppositeRole(String role) { return role.equals("EDITOR") ? "VIEWER" : "EDITOR"; }
 
     private ResultActions saveAccommodation(Cookie user, String name, String memo) throws Exception {
         return as(user, put(path() + "/day-accommodations").contentType(MediaType.APPLICATION_JSON)

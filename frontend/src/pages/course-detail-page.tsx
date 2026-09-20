@@ -49,7 +49,12 @@ type InviteToast =
 
 export default function CourseDetailPage() {
   const { courseId } = useParams<{ courseId: string }>();
+  return <CourseDetail key={courseId} courseId={courseId} />;
+}
+
+function CourseDetail({ courseId }: { courseId: string | undefined }) {
   const navigate = useNavigate();
+  const active = useRef(false);
 
   const [course, setCourse] = useState<CourseResponse | null>(null);
   const [dayAccommodations, setDayAccommodations] = useState<DayAccommodation[]>([]);
@@ -65,6 +70,8 @@ export default function CourseDetailPage() {
   const [showMembersTable, setShowMembersTable] = useState(false);
   const [members, setMembers] = useState<CourseMember[]>([]);
   const [membersLoading, setMembersLoading] = useState(false);
+  const membersLoadingInFlight = useRef(false);
+  const membersRequest = useRef(0);
   const [memberActionPending, setMemberActionPending] = useState(false);
   const memberActionInFlight = useRef(false);
   const [memberError, setMemberError] = useState<string | null>(null);
@@ -73,8 +80,15 @@ export default function CourseDetailPage() {
   const [importing, setImporting] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
   const isOwner = !loading && !error && String(course?.courseId) === courseId && course?.isOwner === true;
+  const managementAllowed = useRef(false);
+  managementAllowed.current = isOwner && course?.visibility === "PUBLIC";
   const canEdit = course?.canEdit ?? isOwner;
   const courseListPath = isOwner ? "/courses" : "/courses/public";
+
+  useEffect(() => {
+    active.current = true;
+    return () => { active.current = false; membersRequest.current += 1; };
+  }, []);
 
   const handleDelete = async () => {
     if (!courseId) return;
@@ -127,6 +141,7 @@ export default function CourseDetailPage() {
     } catch {
       // 링크 생성은 성공했다. 복사 권한이 없어도 생성된 링크를 계속 사용할 수 있다.
     } finally {
+      if (!active.current) return;
       setCopyingInvite(false);
       setInviteToast((current) => current?.kind === "success" && current.inviteUrl === inviteUrl
         ? { ...current, copied, message: copied ? "초대 링크를 복사했습니다. 친구에게 보내 주세요." : "초대 링크는 만들어졌지만 자동 복사를 하지 못했습니다. 아래 링크를 직접 복사해 주세요." }
@@ -141,6 +156,7 @@ export default function CourseDetailPage() {
     setInviteToast(null);
     try {
       const invite = await createCourseInvite(courseId, inviteRole);
+      if (!active.current || !managementAllowed.current) return;
       setInviteDialogOpen(false);
       setInviteToast({
         kind: "success",
@@ -151,33 +167,53 @@ export default function CourseDetailPage() {
       });
       await copyInviteLink(invite.inviteUrl);
     } catch (err) {
+      if (!active.current || !managementAllowed.current) return;
       if (err instanceof UnauthorizedError) { navigate("/login"); return; }
       setInviteToast({ kind: "error", title: "초대 링크 생성 실패", message: err instanceof Error ? err.message : "초대 링크를 만들지 못했습니다." });
     } finally {
       inviteCreationInFlight.current = false;
-      setCreatingInvite(false);
+      if (active.current) setCreatingInvite(false);
     }
   };
 
   const openMembers = async () => {
-    if (!courseId || !isOwner || course?.visibility !== "PUBLIC" || membersLoading) return;
+    if (!courseId || !managementAllowed.current) return;
     setInviteDialogOpen(false);
-    setShowMembersTable(true); setMembersLoading(true); setMemberError(null);
+    setShowMembersTable(true);
+    if (membersLoadingInFlight.current || memberActionInFlight.current) return;
+    membersLoadingInFlight.current = true;
+    const request = ++membersRequest.current;
+    const isCurrent = () => active.current && managementAllowed.current && request === membersRequest.current;
+    setMembersLoading(true); setMemberError(null);
     try {
       const [memberResult, pendingResult] = await Promise.all([fetchCourseMembers(courseId), fetchPendingCourseInvites(courseId)]);
-      setMembers(memberResult); setPendingInvites(pendingResult);
-    } catch (err) { setMemberError(err instanceof Error ? err.message : "멤버 목록을 불러오지 못했습니다."); }
-    finally { setMembersLoading(false); }
+      if (isCurrent()) { setMembers(memberResult); setPendingInvites(pendingResult); }
+    } catch (err) {
+      if (!isCurrent()) return;
+      if (err instanceof UnauthorizedError) { navigate("/login"); return; }
+      setMemberError(err instanceof Error ? err.message : "멤버 목록을 불러오지 못했습니다.");
+    } finally {
+      membersLoadingInFlight.current = false;
+      if (active.current) setMembersLoading(false);
+    }
   };
 
-  const manageMember = async (action: () => Promise<void>) => {
-    if (!isOwner || memberActionInFlight.current) return;
+  const manageMember = async (action: () => Promise<void>, onSuccess: () => void) => {
+    if (!managementAllowed.current || memberActionInFlight.current) return;
     memberActionInFlight.current = true;
+    const request = ++membersRequest.current;
+    const isCurrent = () => active.current && managementAllowed.current && request === membersRequest.current;
     setMemberActionPending(true);
     setMemberError(null);
-    try { await action(); }
-    catch (error) { setMemberError(error instanceof Error ? error.message : "변경 내용을 저장하지 못했습니다. 다시 시도해 주세요."); }
-    finally { memberActionInFlight.current = false; setMemberActionPending(false); }
+    try { await action(); if (isCurrent()) onSuccess(); }
+    catch (error) {
+      if (!isCurrent()) return;
+      if (error instanceof UnauthorizedError) { navigate("/login"); return; }
+      setMemberError(error instanceof Error ? error.message : "변경 내용을 저장하지 못했습니다. 다시 시도해 주세요.");
+    } finally {
+      memberActionInFlight.current = false;
+      if (active.current) setMemberActionPending(false);
+    }
   };
 
   useEffect(() => {
@@ -195,6 +231,14 @@ export default function CourseDetailPage() {
         const res = await fetchCourse(courseId);
         if (isCurrent()) {
           setCourse(res);
+          if (!res?.isOwner || res.visibility !== "PUBLIC") {
+            membersRequest.current += 1;
+            setMembers([]);
+            setPendingInvites([]);
+            setInviteToast(null);
+            setInviteDialogOpen(false);
+            setShowMembersTable(false);
+          }
           setError(null);
           setDayAccommodations([]);
           if (res && (res.canViewAccommodations ?? res.isOwner === true)) {
@@ -242,7 +286,12 @@ export default function CourseDetailPage() {
 
   useEffect(() => {
     if (!courseId || course?.visibility !== "PUBLIC" || !isOwner) return;
-    fetchCourseMembers(courseId).then(setMembers).catch(() => undefined);
+    let ignore = false;
+    const request = ++membersRequest.current;
+    fetchCourseMembers(courseId).then((result) => {
+      if (!ignore && request === membersRequest.current) setMembers(result);
+    }).catch(() => undefined);
+    return () => { ignore = true; };
   }, [courseId, isOwner, course?.visibility]);
 
   return (
@@ -444,6 +493,7 @@ export default function CourseDetailPage() {
       </main>
       {inviteToast?.kind === "success" && (
         <CourseInviteShareDialog
+          key={inviteToast.inviteUrl}
           inviteUrl={inviteToast.inviteUrl}
           courseTitle={course?.title ?? "여행 코스"}
           memberRole={inviteToast.memberRole}
@@ -467,23 +517,25 @@ export default function CourseDetailPage() {
           {memberError && <p role="alert" className="mt-4 rounded-xl bg-destructive/5 p-3 text-sm text-destructive">{memberError}</p>}
           {membersLoading ? <div role="status" aria-label="멤버 불러오는 중" className="flex h-24 items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div> : <>
             <h3 className="mt-5 text-sm font-semibold">참여 중인 멤버</h3>
+            <p className="mt-1.5 break-keep text-xs leading-5 text-muted-foreground">멤버마다 권한은 하나예요. 여기서 변경하면 즉시 적용되고, 그전에 만든 초대 링크로 되돌릴 수 없어요. 멤버를 삭제하면 참여 권한을 회수해요.</p>
             <div className="mt-3 overflow-x-auto rounded-xl border border-border">
               <table className="w-full text-left text-sm"><thead className="bg-muted/50 text-xs text-muted-foreground"><tr><th className="px-4 py-3">이름</th><th className="px-4 py-3">닉네임</th><th className="px-4 py-3">권한</th><th className="px-4 py-3">관리</th></tr></thead>
                 <tbody className="divide-y divide-border">{members.filter((member) => member.role !== "OWNER").map((member) => <tr key={member.userId}>
                   <td className="px-4 py-3">{member.name || "-"}</td><td className="px-4 py-3">{member.username || "-"}</td>
                   <td className="px-4 py-3"><select aria-label={`${member.username || member.name || "멤버"} 참여 권한`} value={member.role} disabled={memberActionPending} onChange={(event) => {
                     const role = event.currentTarget.value as CourseInviteRole;
-                    void manageMember(async () => { await updateCourseMemberRole(courseId!, member.userId, role); setMembers((list) => list.map((item) => item.userId === member.userId ? { ...item, role } : item)); });
+                    void manageMember(() => updateCourseMemberRole(courseId!, member.userId, role), () => setMembers((list) => list.map((item) => item.userId === member.userId ? { ...item, role } : item)));
                   }} className="rounded-lg border border-border bg-background px-2 py-1 text-xs"><option value="VIEWER">읽기 권한</option><option value="EDITOR">편집 권한</option></select></td>
-                  <td className="px-4 py-3"><button type="button" disabled={memberActionPending} onClick={() => void manageMember(async () => { await removeCourseMember(courseId!, member.userId); setMembers((list) => list.filter((item) => item.userId !== member.userId)); })} className="text-destructive disabled:opacity-50" aria-label={`${member.username || member.name || "멤버"} 멤버 삭제`}><Trash2 className="h-4 w-4" /></button></td>
+                  <td className="px-4 py-3"><button type="button" disabled={memberActionPending} onClick={() => void manageMember(() => removeCourseMember(courseId!, member.userId), () => setMembers((list) => list.filter((item) => item.userId !== member.userId)))} className="text-destructive disabled:opacity-50" aria-label={`${member.username || member.name || "멤버"} 멤버 삭제`}><Trash2 className="h-4 w-4" /></button></td>
                 </tr>)}</tbody>
               </table>
               {members.filter((member) => member.role !== "OWNER").length === 0 && <p className="p-5 text-center text-sm text-muted-foreground">참여 중인 멤버가 없습니다.</p>}
             </div>
             <h3 className="mt-6 text-sm font-semibold">사용 가능한 초대 링크</h3>
+            <p className="mt-1.5 break-keep text-xs leading-5 text-muted-foreground">아래는 공유할 수 있는 초대 링크예요. 기존 멤버도 새로 만든 초대를 수락하면 해당 권한으로 바뀌어요. 초대 취소는 링크만 막고, 참여 중인 멤버의 권한은 회수하지 않아요.</p>
             <div className="mt-3 space-y-2">{pendingInvites.length ? pendingInvites.map((invite) => <div key={invite.token} className="flex items-center justify-between rounded-lg border border-border px-3 py-2 text-sm">
               <span>{invite.role === "EDITOR" ? "편집 권한" : "읽기 권한"}</span>
-              <button type="button" disabled={memberActionPending} onClick={() => void manageMember(async () => { await cancelCourseInvite(courseId!, invite.token); setPendingInvites((list) => list.filter((item) => item.token !== invite.token)); })} className="text-xs font-semibold text-destructive disabled:opacity-50">초대 취소</button>
+              <button type="button" disabled={memberActionPending} onClick={() => void manageMember(() => cancelCourseInvite(courseId!, invite.token), () => setPendingInvites((list) => list.filter((item) => item.token !== invite.token)))} className="text-xs font-semibold text-destructive disabled:opacity-50">초대 취소</button>
             </div>) : <p className="text-sm text-muted-foreground">사용 가능한 초대 링크가 없습니다.</p>}</div>
           </>}
         </section>

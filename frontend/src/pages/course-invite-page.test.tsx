@@ -64,14 +64,15 @@ describe("CourseInvitePage", () => {
   });
 
   it.each([
-    ["VIEWER", "읽기 권한으로 참여해요"],
-    ["EDITOR", "편집 권한으로 참여해요"],
+    ["VIEWER", "읽기 권한 초대"],
+    ["EDITOR", "편집 권한 초대"],
   ] as const)("%s 초대의 코스명, 권한, 만료일과 수락 버튼을 표시한다", async (memberRole, label) => {
     vi.mocked(fetchCourseInvite).mockResolvedValue({ ...preview, memberRole });
     renderPage();
 
     expect(await screen.findByRole("heading", { name: preview.courseTitle })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: label })).toBeInTheDocument();
+    expect(screen.getByText(/더 최신 초대를 수락했거나 작성자가 이후 권한을 변경했다면 현재 권한이 유지돼요/)).toBeInTheDocument();
     expect(screen.getByText(/2026년 9월 20일/)).toHaveAttribute("dateTime", preview.expiresAt);
     expect(screen.getByRole("button", { name: "초대 수락하고 참여하기" })).toBeEnabled();
     expect(screen.getByRole("link", { name: "회원가입" })).toHaveAttribute("href", `/signup?${new URLSearchParams({ returnTo: `/course-invites/${token}` })}`);

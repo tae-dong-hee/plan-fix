@@ -86,7 +86,7 @@ export async function createCourseInvite(courseId: number | string, memberRole: 
 }
 
 export async function fetchCourseMembers(courseId: number | string): Promise<CourseMember[]> {
-  const base = getApiBaseUrl(); if (!base) return [];
+  const base = requireMemberManagementApi();
   const response = await fetch(`${base}/courses/${courseId}/members`, { credentials: "include" });
   if (response.status === 401) throw new UnauthorizedError();
   if (response.status === 403) throw new CourseAccessError();
@@ -95,7 +95,7 @@ export async function fetchCourseMembers(courseId: number | string): Promise<Cou
 }
 
 export async function fetchPendingCourseInvites(courseId: number | string): Promise<PendingCourseInvite[]> {
-  const base = getApiBaseUrl(); if (!base) return [];
+  const base = requireMemberManagementApi();
   const response = await fetch(`${base}/courses/${courseId}/invites`, { credentials: "include" });
   if (response.status === 401) throw new UnauthorizedError();
   if (response.status === 403) throw new CourseAccessError();
@@ -104,24 +104,33 @@ export async function fetchPendingCourseInvites(courseId: number | string): Prom
 }
 
 export async function updateCourseMemberRole(courseId: number | string, userId: number, role: CourseInviteRole) {
-  const base = getApiBaseUrl(); if (!base) return;
+  const base = requireMemberManagementApi();
   const response = await fetch(`${base}/courses/${courseId}/members/${userId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, credentials: "include", body: JSON.stringify({ role }) });
+  if (response.status === 401) throw new UnauthorizedError();
   if (response.status === 403) throw new CourseAccessError();
   if (!response.ok) throw new Error("권한을 변경하지 못했습니다.");
 }
 
 export async function cancelCourseInvite(courseId: number | string, token: string) {
-  const base = getApiBaseUrl(); if (!base) return;
-  const response = await fetch(`${base}/courses/${courseId}/invites/${token}`, { method: "DELETE", credentials: "include" });
+  const base = requireMemberManagementApi();
+  const response = await fetch(`${base}/courses/${courseId}/invites/${encodeURIComponent(token)}`, { method: "DELETE", credentials: "include" });
+  if (response.status === 401) throw new UnauthorizedError();
   if (response.status === 403) throw new CourseAccessError();
   if (!response.ok) throw new Error("초대를 취소하지 못했습니다.");
 }
 
 export async function removeCourseMember(courseId: number | string, userId: number) {
-  const base = getApiBaseUrl(); if (!base) return;
+  const base = requireMemberManagementApi();
   const response = await fetch(`${base}/courses/${courseId}/members/${userId}`, { method: "DELETE", credentials: "include" });
+  if (response.status === 401) throw new UnauthorizedError();
   if (response.status === 403) throw new CourseAccessError();
   if (!response.ok) throw new Error("멤버를 삭제하지 못했습니다.");
+}
+
+function requireMemberManagementApi(): string {
+  const base = getApiBaseUrl();
+  if (!base) throw new Error("멤버 및 초대 관리 서비스를 사용할 수 없습니다. 잠시 후 다시 시도해 주세요.");
+  return base;
 }
 
 export type PublicCourseItem = {
@@ -168,7 +177,7 @@ export type CreateCoursePayload = {
 };
 
 function getApiBaseUrl(): string | undefined {
-  return import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "");
+  return import.meta.env.VITE_API_BASE_URL?.trim().replace(/\/$/, "");
 }
 
 /** 코스 생성 API 호출 */
