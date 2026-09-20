@@ -47,6 +47,10 @@ type InviteToast =
   | { kind: "success"; message: string; inviteUrl: string; memberRole: CourseInviteRole; copied: boolean }
   | { kind: "error"; title: string; message: string };
 
+const inviteDateFormatter = new Intl.DateTimeFormat("ko-KR", {
+  year: "numeric", month: "numeric", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "Asia/Seoul",
+});
+
 export default function CourseDetailPage() {
   const { courseId } = useParams<{ courseId: string }>();
   return <CourseDetail key={courseId} courseId={courseId} />;
@@ -160,7 +164,7 @@ function CourseDetail({ courseId }: { courseId: string | undefined }) {
       setInviteDialogOpen(false);
       setInviteToast({
         kind: "success",
-        message: `${inviteRole === "EDITOR" ? "편집" : "읽기"} 권한 초대 링크를 만들었습니다.`,
+        message: `${invite.memberRole === "EDITOR" ? "편집" : "읽기"} 권한 초대 링크가 준비됐어요.`,
         inviteUrl: invite.inviteUrl,
         memberRole: invite.memberRole,
         copied: false,
@@ -174,6 +178,14 @@ function CourseDetail({ courseId }: { courseId: string | undefined }) {
       inviteCreationInFlight.current = false;
       if (active.current) setCreatingInvite(false);
     }
+  };
+
+  const shareExistingInvite = (invite: PendingCourseInvite) => {
+    if (!managementAllowed.current) return;
+    const inviteUrl = new URL(`/course-invites/${encodeURIComponent(invite.token)}`, window.location.origin).href;
+    setShowMembersTable(false);
+    setInviteToast({ kind: "success", message: "기존 초대 링크를 다시 공유할 수 있어요.", inviteUrl, memberRole: invite.role, copied: false });
+    void copyInviteLink(inviteUrl);
   };
 
   const openMembers = async () => {
@@ -532,11 +544,25 @@ function CourseDetail({ courseId }: { courseId: string | undefined }) {
               {members.filter((member) => member.role !== "OWNER").length === 0 && <p className="p-5 text-center text-sm text-muted-foreground">참여 중인 멤버가 없습니다.</p>}
             </div>
             <h3 className="mt-6 text-sm font-semibold">사용 가능한 초대 링크</h3>
-            <p className="mt-1.5 break-keep text-xs leading-5 text-muted-foreground">아래는 공유할 수 있는 초대 링크예요. 기존 멤버도 새로 만든 초대를 수락하면 해당 권한으로 바뀌어요. 초대 취소는 링크만 막고, 참여 중인 멤버의 권한은 회수하지 않아요.</p>
-            <div className="mt-3 space-y-2">{pendingInvites.length ? pendingInvites.map((invite) => <div key={invite.token} className="flex items-center justify-between rounded-lg border border-border px-3 py-2 text-sm">
-              <span>{invite.role === "EDITOR" ? "편집 권한" : "읽기 권한"}</span>
-              <button type="button" disabled={memberActionPending} onClick={() => void manageMember(() => cancelCourseInvite(courseId!, invite.token), () => setPendingInvites((list) => list.filter((item) => item.token !== invite.token)))} className="text-xs font-semibold text-destructive disabled:opacity-50">초대 취소</button>
-            </div>) : <p className="text-sm text-muted-foreground">사용 가능한 초대 링크가 없습니다.</p>}</div>
+            <p className="mt-1.5 break-keep text-xs leading-5 text-muted-foreground">공유 가능한 링크는 {pendingInvites.length}개예요. 멤버별 현재 권한은 위에서 확인할 수 있어요. 같은 권한의 사용 가능한 최신 링크는 다시 사용하며, 권한을 바꾸면 새 링크를 만들어요.</p>
+            <p className="mt-1 break-keep text-xs leading-5 text-muted-foreground">기존 멤버도 더 새로 만든 초대를 수락하면 해당 권한으로 바뀌어요. 초대 취소는 링크만 막고, 참여 중인 멤버의 권한은 회수하지 않아요.</p>
+            <div className="mt-3 space-y-2">{pendingInvites.length ? (["EDITOR", "VIEWER"] as const).map((role) => {
+              const roleInvites = pendingInvites.filter((invite) => invite.role === role);
+              if (!roleInvites.length) return null;
+              return <details key={role} open={roleInvites.length === 1} className="rounded-lg border border-border text-sm">
+                <summary className="cursor-pointer px-3 py-3 font-medium">{role === "EDITOR" ? "편집" : "읽기"} 초대 링크 · {roleInvites.length}개</summary>
+                <div className="divide-y divide-border border-t border-border">{roleInvites.map((invite) => <div key={invite.token} className="flex flex-wrap items-center justify-between gap-3 px-3 py-3">
+                  <div className="space-y-1 text-xs leading-5 text-muted-foreground">
+                    <p>생성 <time dateTime={invite.createdAt}>{inviteDateFormatter.format(new Date(invite.createdAt))}</time></p>
+                    <p>만료 <time dateTime={invite.expiresAt}>{inviteDateFormatter.format(new Date(invite.expiresAt))}</time> (한국 시간)</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button type="button" disabled={memberActionPending} onClick={() => shareExistingInvite(invite)} className="text-xs font-semibold text-primary disabled:opacity-50">다시 공유</button>
+                    <button type="button" disabled={memberActionPending} onClick={() => void manageMember(() => cancelCourseInvite(courseId!, invite.token), () => setPendingInvites((list) => list.filter((item) => item.token !== invite.token)))} className="text-xs font-semibold text-destructive disabled:opacity-50">초대 취소</button>
+                  </div>
+                </div>)}</div>
+              </details>;
+            }) : <p className="text-sm text-muted-foreground">사용 가능한 초대 링크가 없습니다.</p>}</div>
           </>}
         </section>
       </div>}

@@ -58,6 +58,73 @@ class CourseInvitePermissionsIntegrationTest {
 
     @ParameterizedTest
     @ValueSource(strings = {"VIEWER", "EDITOR"})
+    void preparingSameRoleRepeatedlyReusesOneLinkEvenAfterAcceptance(String role) throws Exception {
+        String token = invite(role);
+        JsonNode preview = read(mvc.perform(get(invitePath(token))).andExpect(status().isOk()));
+        assertThat(invite(role)).isEqualTo(token);
+        accept(token).andExpect(status().isOk());
+        assertThat(invite(role)).isEqualTo(token);
+        as(owner, get(path() + "/invites")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].expiresAt").value(preview.path("expiresAt").asText()));
+        assertSingleMembershipAndEditing(role);
+    }
+
+    @Test
+    void changingBackToEditorIssuesANewLinkRatherThanReusingOlderEditorPermission() throws Exception {
+        String editor = invite("EDITOR");
+        accept(editor).andExpect(status().isOk());
+        String viewer = invite("VIEWER");
+        accept(viewer).andExpect(status().isOk());
+        String newestEditor = invite("EDITOR");
+        assertThat(newestEditor).isNotEqualTo(editor).isNotEqualTo(viewer);
+        accept(newestEditor).andExpect(status().isOk());
+        accept(viewer).andExpect(status().isOk());
+        assertSingleMembershipAndEditing("EDITOR");
+        assertThat(invite("EDITOR")).isEqualTo(newestEditor);
+    }
+
+    @Test
+    void removingMemberThenRequestingSameRoleCreatesFreshUsableLink() throws Exception {
+        String editor = invite("EDITOR");
+        accept(editor).andExpect(status().isOk());
+        as(owner, delete(path() + "/members/" + memberId)).andExpect(status().isNoContent());
+        String fresh = invite("EDITOR");
+        assertThat(fresh).isNotEqualTo(editor);
+        assertThat(invite("EDITOR")).isEqualTo(fresh);
+        accept(editor).andExpect(status().isForbidden());
+        accept(fresh).andExpect(status().isOk());
+        assertSingleMembershipAndEditing("EDITOR");
+    }
+
+    @Test
+    void expiredLatestLinkIsReplacedWithoutReusingOlderSameRoleLink() throws Exception {
+        String older = invite("EDITOR");
+        invite("VIEWER");
+        String expired = invite("EDITOR");
+        entityManager.flush();
+        jdbc.update("UPDATE course_invites SET expires_at = now() - interval '1 minute' WHERE token = ?", expired);
+        entityManager.clear();
+        String fresh = invite("EDITOR");
+        assertThat(fresh).isNotEqualTo(expired).isNotEqualTo(older);
+        assertThat(invite("EDITOR")).isEqualTo(fresh);
+        accept(expired).andExpect(status().isBadRequest());
+        accept(fresh).andExpect(status().isOk());
+    }
+
+    @Test
+    void cancelledOnlyLinkIsReplacedRatherThanReturnedAgain() throws Exception {
+        String token = invite("VIEWER");
+        as(owner, delete(path() + "/invites/" + token)).andExpect(status().isNoContent());
+        String fresh = invite("VIEWER");
+        assertThat(fresh).isNotEqualTo(token);
+        assertThat(invite("VIEWER")).isEqualTo(fresh);
+        accept(token).andExpect(status().isNotFound());
+        accept(fresh).andExpect(status().isOk());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"VIEWER", "EDITOR"})
     void newerInviteReplacesPermissionWithoutAddingMembershipAndOldLinksCannotUndoIt(String originalRole) throws Exception {
         String originalToken = invite(originalRole);
         accept(originalToken).andExpect(status().isOk());
@@ -90,7 +157,9 @@ class CourseInvitePermissionsIntegrationTest {
         String originalToken = invite(oppositeRole(ownerRole));
         accept(originalToken).andExpect(status().isOk());
         // Even a never-accepted link issued after the first acceptance precedes the owner's decision.
+        invite(ownerRole);
         String unusedToken = invite(oppositeRole(ownerRole));
+        assertThat(unusedToken).isNotEqualTo(originalToken);
         setRole(ownerRole);
         for (String token : List.of(originalToken, unusedToken)) {
             accept(token).andExpect(status().isOk());
@@ -104,7 +173,9 @@ class CourseInvitePermissionsIntegrationTest {
     void removingMemberBlocksAllPreviouslyIssuedLinksAndFreshRejoinDoesNotRestoreOldEditorRole() throws Exception {
         String editorToken = invite("EDITOR");
         accept(editorToken).andExpect(status().isOk());
+        invite("VIEWER");
         String unusedEditorToken = invite("EDITOR");
+        assertThat(unusedEditorToken).isNotEqualTo(editorToken);
         String unusedViewerToken = invite("VIEWER");
         as(owner, delete(path() + "/members/" + memberId)).andExpect(status().isNoContent());
         entityManager.flush();

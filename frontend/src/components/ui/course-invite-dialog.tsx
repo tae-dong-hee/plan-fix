@@ -83,7 +83,8 @@ export function CourseInviteDialog({ title, role, onRoleChange, creating, error,
             </button>;
           })}
         </div>
-        <p className="mt-4 flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground"><Clock3 className="h-3.5 w-3.5" aria-hidden="true" />초대 링크는 7일 동안 사용할 수 있어요.</p>
+        <p className="mt-4 flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground"><Clock3 className="h-3.5 w-3.5" aria-hidden="true" />새 초대 링크는 만든 날부터 7일 동안 사용할 수 있어요.</p>
+        <p className="mt-2 break-keep text-center text-[11px] leading-5 text-muted-foreground">같은 권한의 사용 가능한 최신 링크는 다시 사용해요. 권한을 바꾸면 새 링크를 만들어요.</p>
         <p className="mt-2 break-keep text-center text-[11px] leading-5 text-muted-foreground">멤버의 권한은 하나만 적용돼요. 새로 만든 초대를 수락하면 해당 권한으로 바뀌며, 이전 링크는 최신 권한을 바꾸지 못해요.</p>
         {error && <div role="alert" className="relative mt-4 flex gap-2.5 rounded-xl border border-destructive/15 bg-destructive/5 p-3 pr-8"><AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" aria-hidden="true" /><div><p className="text-xs font-semibold text-destructive">{error.title}</p><p className="mt-1 break-keep text-xs leading-5 text-muted-foreground">{error.message}</p></div><button type="button" onClick={onDismissError} aria-label="알림 닫기" className="absolute right-2 top-2 text-muted-foreground hover:text-foreground"><X className="h-3.5 w-3.5" /></button></div>}
         <div className="mt-6 flex gap-2.5 border-t border-border/60 pt-5">

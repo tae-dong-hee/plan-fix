@@ -16,7 +16,7 @@ SCRIPT = Path(__file__).resolve().parents[1] / "deploy.sh"
 # One fake executable dispatches on its symlink name. Its state models the
 # running container independently of the saved deployment state on disk.
 FAKE_CLI = r'''#!/usr/bin/env python3
-import json, os, sys
+import fcntl, json, os, sys
 from pathlib import Path
 
 command = Path(sys.argv[0]).name
@@ -25,7 +25,12 @@ if command == "flock":
     sys.exit(0)
 if command == "timeout":
     os.execvp(args[1], args[1:])
+# The metadata curl and docker login execute concurrently in one shell pipeline.
+# Consume login's stdin first so its producer can finish before we take the lock.
+login_input = sys.stdin.read().strip() if command == "docker" and args[0] == "login" else None
 state_file = Path(os.environ["TEST_DOCKER_STATE"])
+state_lock = state_file.with_suffix(".lock").open("a")
+fcntl.flock(state_lock.fileno(), fcntl.LOCK_EX)
 state = json.loads(state_file.read_text())
 state["events"].append([command, args])
 
@@ -37,7 +42,7 @@ def finish(output="", status=0):
 
 if command == "docker":
     if args[0] == "login":
-        if sys.stdin.read().strip() != "secret-test-token":
+        if login_input != "secret-test-token":
             finish(status=1)
         config = Path(os.environ["DOCKER_CONFIG"])
         (config / "config.json").write_text("secret-test-token")
@@ -190,8 +195,9 @@ class DeploymentTest(unittest.TestCase):
                 rejected = self.state_dir / "rejected" / NEW_IMAGE.removeprefix("sha256:")
                 rejected.unlink(missing_ok=True)
                 self.update_state(scenario=scenario, promotions=[])
-                self.run_deployer(expected_status=1)
-                self.assertEqual(self.state()["promotions"], [NEW_IMAGE, OLD_IMAGE])
+                result = self.run_deployer(expected_status=1)
+                self.assertEqual(self.state()["promotions"], [NEW_IMAGE, OLD_IMAGE],
+                                 result.stdout + result.stderr)
                 self.assertEqual(self.state()["live_image"], OLD_IMAGE)
                 self.assertTrue(self.state()["running"])
                 self.assert_saved("current.env", OLD_IMAGE)
