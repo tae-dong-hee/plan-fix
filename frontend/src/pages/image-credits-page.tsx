@@ -56,7 +56,7 @@ export default function ImageCreditsPage() {
         <section id="google-maps" aria-labelledby="google-maps-heading" className="mt-6 scroll-mt-24 rounded-2xl border border-border bg-background p-5 sm:p-6">
           <h2 id="google-maps-heading" className="text-base font-semibold">Google Maps 장소 사진</h2>
           <p className="mt-3 break-keep text-sm leading-6 text-muted-foreground">
-            Google Maps로 표시된 장소 카드와 사진은 Google에서 제공합니다. 사진을 확대하면 촬영자와 원본 출처를 확인할 수 있습니다.
+            Google Maps로 표시된 사진은 Google에서 제공합니다. 갤러리의 사진 출처 또는 Google 카드의 확대 화면에서 촬영자와 원본 출처를 확인할 수 있습니다.
           </p>
           <h3 className="mt-4 text-sm font-medium">이용 조건</h3>
           <p className="mt-2 break-keep text-sm leading-6 text-muted-foreground">
@@ -66,7 +66,7 @@ export default function ImageCreditsPage() {
           </p>
           <h3 className="mt-4 text-sm font-medium">개인정보 안내</h3>
           <p className="mt-2 break-keep text-sm leading-6 text-muted-foreground">
-            장소 카드를 불러올 때 브라우저가 Google 서버에 연결됩니다. 이 과정에서 Google이 처리하는 정보에는{" "}
+            장소 사진을 불러올 때 브라우저가 Google 서버에 연결됩니다. 이 과정에서 Google이 처리하는 정보에는{" "}
             <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className={externalLinkClassName}>Google 개인정보처리방침</a>
             이 적용됩니다.
           </p>

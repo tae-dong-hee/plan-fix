@@ -4,9 +4,11 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-libra
 
 import GooglePlacePhotoCard from "./google-place-photo-card";
 import { loadGooglePlacesUiKit } from "@/lib/google-places-sdk";
+import { fetchGooglePlacePhotos } from "@/lib/google-place-photos";
 import type { GooglePlaceSpot } from "@/lib/verified-google-places";
 
 vi.mock("@/lib/google-places-sdk", () => ({ loadGooglePlacesUiKit: vi.fn() }));
+vi.mock("@/lib/google-place-photos", () => ({ fetchGooglePlacePhotos: vi.fn() }));
 vi.mock("@/constants/verified-google-places.json", () => ({ default: {
   version: 1, places: [{
     spotId: 942, title: "임계식당", address: "강원특별자치도 강릉시 중앙시장길22-2(성남동)",
@@ -24,7 +26,9 @@ const disconnect = vi.fn();
 
 beforeEach(() => {
   vi.stubEnv("VITE_GOOGLE_MAPS_API_KEY", "public-test-key");
+  vi.stubEnv("VITE_GOOGLE_PLACE_PHOTOS_ENABLED", "false");
   loadSdk.mockReset().mockResolvedValue();
+  vi.mocked(fetchGooglePlacePhotos).mockReset();
   disconnect.mockReset();
   vi.stubGlobal("IntersectionObserver", class {
     constructor(callback: IntersectionObserverCallback) { intersect = callback; }
@@ -131,4 +135,117 @@ test("does not create a widget after unmounting during SDK load", async () => {
   view.unmount();
   await act(async () => ready());
   expect(document.querySelector("gmp-place-details-compact")).toBeNull();
+});
+
+test("uses the shared full-width gallery with the first Google photo as its initial representative", async () => {
+  vi.stubEnv("VITE_GOOGLE_PLACE_PHOTOS_ENABLED", "true");
+  vi.mocked(fetchGooglePlacePhotos).mockResolvedValue([
+    { url: "https://example.com/first.jpg", google: { authors: [{ displayName: "사진가", uri: "https://example.com/author" }] } },
+    { url: "https://example.com/second.jpg", google: { authors: [{ displayName: "다른 사진가" }] } },
+  ]);
+  renderCard();
+  expect(fetchGooglePlacePhotos).not.toHaveBeenCalled();
+  await act(async () => intersect([{ isIntersecting: true }] as IntersectionObserverEntry[], {} as IntersectionObserver));
+  expect(fetchGooglePlacePhotos).toHaveBeenCalledExactlyOnceWith("ChIJ_verified-place", "public-test-key");
+  expect(screen.getByRole("img", { name: "임계식당" })).toHaveAttribute("src", "https://example.com/first.jpg");
+  expect(screen.getByRole("status", { name: "현재 사진" })).toHaveTextContent("1 / 2");
+  expect(screen.queryByText("기존 사진 안내")).not.toBeInTheDocument();
+  expect(document.querySelector("gmp-place-details-compact")).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "다음 사진" }));
+  expect(screen.getByRole("img", { name: "임계식당" })).toHaveAttribute("src", "https://example.com/second.jpg");
+  expect(screen.getByRole("status", { name: "현재 사진" })).toHaveTextContent("2 / 2");
+});
+
+test.each(["empty", "denied"])("keeps the existing photo when custom Google photos are unavailable (%s)", async (result) => {
+  vi.stubEnv("VITE_GOOGLE_PLACE_PHOTOS_ENABLED", "true");
+  if (result === "empty") vi.mocked(fetchGooglePlacePhotos).mockResolvedValue([]);
+  else vi.mocked(fetchGooglePlacePhotos).mockRejectedValue(new Error("Photo quota exceeded"));
+  renderCard();
+  await act(async () => intersect([{ isIntersecting: true }] as IntersectionObserverEntry[], {} as IntersectionObserver));
+  expect(screen.getByText("기존 사진 안내")).toBeVisible();
+  expect(fetchGooglePlacePhotos).toHaveBeenCalledTimes(1);
+  expect(loadSdk).not.toHaveBeenCalled();
+});
+
+test("keeps surviving Google photos and returns to the existing photo only after all fail", async () => {
+  vi.stubEnv("VITE_GOOGLE_PLACE_PHOTOS_ENABLED", "true");
+  vi.mocked(fetchGooglePlacePhotos).mockResolvedValue([
+    { url: "https://example.com/blocked-photo.jpg", google: { authors: [{ displayName: "사진가" }] } },
+    { url: "https://example.com/another.jpg", google: { authors: [] } },
+  ]);
+  renderCard();
+  await act(async () => intersect([{ isIntersecting: true }] as IntersectionObserverEntry[], {} as IntersectionObserver));
+  fireEvent.error(screen.getByRole("img", { name: "임계식당" }));
+  expect(screen.queryByText("기존 사진 안내")).not.toBeInTheDocument();
+  expect(screen.getByRole("img", { name: "임계식당" })).toHaveAttribute("src", "https://example.com/another.jpg");
+  expect(screen.queryByText("사진가")).not.toBeInTheDocument();
+  expect(screen.getByText("Google Maps")).toBeVisible();
+
+  fireEvent.error(screen.getByRole("img", { name: "임계식당" }));
+  expect(screen.getByText("기존 사진 안내")).toBeVisible();
+  expect(screen.queryByRole("button", { name: "다음 사진" })).not.toBeInTheDocument();
+  expect(screen.queryByText("Google Maps")).not.toBeInTheDocument();
+  expect(fetchGooglePlacePhotos).toHaveBeenCalledTimes(1);
+});
+
+test("removes a failed selected photo while retaining the representative and other thumbnail nodes", async () => {
+  vi.stubEnv("VITE_GOOGLE_PLACE_PHOTOS_ENABLED", "true");
+  vi.mocked(fetchGooglePlacePhotos).mockResolvedValue(["first", "second", "third"].map((name) => ({
+    url: `https://example.com/${name}.jpg`, google: { authors: [{ displayName: `${name} 사진가` }] },
+  })));
+  renderCard();
+  await act(async () => intersect([{ isIntersecting: true }] as IntersectionObserverEntry[], {} as IntersectionObserver));
+  const firstThumbnail = screen.getByRole("img", { name: "임계식당 사진 1" });
+  const thirdThumbnail = screen.getByRole("img", { name: "임계식당 사진 3" });
+
+  fireEvent.click(screen.getByRole("button", { name: "임계식당 사진 2 보기" }));
+  fireEvent.error(screen.getByRole("img", { name: "임계식당" }));
+
+  expect(screen.getByRole("img", { name: "임계식당" })).toHaveAttribute("src", "https://example.com/first.jpg");
+  expect(screen.getByRole("status", { name: "현재 사진" })).toHaveTextContent("1 / 2");
+  expect(screen.getByRole("img", { name: "임계식당 사진 1" })).toBe(firstThumbnail);
+  expect(screen.getByRole("img", { name: "임계식당 사진 2" })).toBe(thirdThumbnail);
+  expect(screen.queryByText("second 사진가")).not.toBeInTheDocument();
+  expect(screen.queryByText("기존 사진 안내")).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "다음 사진" }));
+  expect(screen.getByRole("img", { name: "임계식당" })).toHaveAttribute("src", "https://example.com/third.jpg");
+  expect(fetchGooglePlacePhotos).toHaveBeenCalledTimes(1);
+});
+
+test("removes failed thumbnails without changing a healthy selection or refetching photos", async () => {
+  vi.stubEnv("VITE_GOOGLE_PLACE_PHOTOS_ENABLED", "true");
+  vi.mocked(fetchGooglePlacePhotos).mockResolvedValue(["first", "second", "third"].map((name) => ({
+    url: `https://example.com/${name}.jpg`, google: { authors: [{ displayName: `${name} 사진가` }] },
+  })));
+  renderCard();
+  await act(async () => intersect([{ isIntersecting: true }] as IntersectionObserverEntry[], {} as IntersectionObserver));
+  fireEvent.click(screen.getByRole("button", { name: "임계식당 사진 3 보기" }));
+  const hero = screen.getByRole("img", { name: "임계식당" });
+  const selectedThumbnail = screen.getByRole("img", { name: "임계식당 사진 3" });
+  fireEvent.error(screen.getByRole("img", { name: "임계식당 사진 1" }));
+
+  expect(screen.getByRole("img", { name: "임계식당" })).toBe(hero);
+  expect(hero).toHaveAttribute("src", "https://example.com/third.jpg");
+  expect(screen.getByRole("status", { name: "현재 사진" })).toHaveTextContent("2 / 2");
+  expect(screen.getByRole("img", { name: "임계식당 사진 2" })).toBe(selectedThumbnail);
+  expect(screen.queryByText("first 사진가")).not.toBeInTheDocument();
+  expect(fetchGooglePlacePhotos).toHaveBeenCalledTimes(1);
+});
+
+test("returns to the existing fallback when quota errors fail all thumbnail requests together", async () => {
+  vi.stubEnv("VITE_GOOGLE_PLACE_PHOTOS_ENABLED", "true");
+  vi.mocked(fetchGooglePlacePhotos).mockResolvedValue(["first", "second", "third"].map((name) => ({
+    url: `https://example.com/${name}.jpg`, google: { authors: [{ displayName: `${name} 사진가` }] },
+  })));
+  renderCard();
+  await act(async () => intersect([{ isIntersecting: true }] as IntersectionObserverEntry[], {} as IntersectionObserver));
+  const thumbnails = screen.getAllByRole("img", { name: /임계식당 사진 \d/ });
+
+  act(() => { thumbnails.forEach((thumbnail) => fireEvent.error(thumbnail)); });
+
+  expect(screen.getByText("기존 사진 안내")).toBeVisible();
+  expect(screen.queryByRole("img")).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: /사진/ })).not.toBeInTheDocument();
+  expect(screen.queryByText("Google Maps")).not.toBeInTheDocument();
+  expect(fetchGooglePlacePhotos).toHaveBeenCalledTimes(1);
 });

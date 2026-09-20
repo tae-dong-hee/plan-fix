@@ -9,6 +9,8 @@ export type WishlistSpot = {
   region: string | null;
   sigungu: string | null;
   address: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   thumbnail: string | null;
   likeCount: number;
   isLiked: boolean;
