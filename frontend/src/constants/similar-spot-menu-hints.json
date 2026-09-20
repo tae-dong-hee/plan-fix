@@ -1,0 +1,1571 @@
+{
+  "checkedAt": "2026-09-20",
+  "spots": [
+    {
+      "spotId": 942,
+      "title": "임계식당",
+      "category": "음식점",
+      "menu": "수육국밥"
+    },
+    {
+      "spotId": 4510,
+      "title": "용바위식당",
+      "category": "음식점",
+      "menu": "황태구이정식"
+    },
+    {
+      "spotId": 4506,
+      "title": "송희식당",
+      "category": "음식점",
+      "menu": "황태정식"
+    },
+    {
+      "spotId": 4354,
+      "title": "시래원",
+      "category": "음식점",
+      "menu": "시래기 정식"
+    },
+    {
+      "spotId": 4017,
+      "title": "싸리골",
+      "category": "음식점",
+      "menu": "곤드레나물밥"
+    },
+    {
+      "spotId": 3638,
+      "title": "송어의집",
+      "category": "음식점",
+      "menu": "송어회"
+    },
+    {
+      "spotId": 3233,
+      "title": "동강다슬기",
+      "category": "음식점",
+      "menu": "다슬기 해장국"
+    },
+    {
+      "spotId": 2961,
+      "title": "박현자네더덕밥",
+      "category": "음식점",
+      "menu": "박현자네 더덕밥 정식"
+    },
+    {
+      "spotId": 2583,
+      "title": "삼고정문",
+      "category": "음식점",
+      "menu": "기본솥밥정식"
+    },
+    {
+      "spotId": 4678,
+      "title": "제비호식당",
+      "category": "음식점",
+      "menu": "동태탕"
+    },
+    {
+      "spotId": 2962,
+      "title": "함밭식당",
+      "category": "음식점",
+      "menu": "횡성한우"
+    },
+    {
+      "spotId": 2569,
+      "title": "신다리",
+      "category": "음식점",
+      "menu": "동치미국수"
+    },
+    {
+      "spotId": 2151,
+      "title": "원조태성실비식당",
+      "category": "음식점",
+      "menu": "한우 갈빗살"
+    },
+    {
+      "spotId": 1721,
+      "title": "산정집",
+      "category": "음식점",
+      "menu": "한우말이고기"
+    },
+    {
+      "spotId": 1050,
+      "title": "성산옛집",
+      "category": "음식점",
+      "menu": "아구찜"
+    },
+    {
+      "spotId": 1012,
+      "title": "철뚝소머리집",
+      "category": "음식점",
+      "menu": "소머리국밥"
+    },
+    {
+      "spotId": 999,
+      "title": "대영유통",
+      "category": "음식점",
+      "menu": "대게"
+    },
+    {
+      "spotId": 970,
+      "title": "감자유원지",
+      "category": "음식점",
+      "menu": "메밀 김밥 필 무렵"
+    },
+    {
+      "spotId": 3246,
+      "title": "장릉보리밥집",
+      "category": "음식점",
+      "menu": "보리밥"
+    },
+    {
+      "spotId": 3236,
+      "title": "주천묵집",
+      "category": "음식점",
+      "menu": "도토리묵밥"
+    },
+    {
+      "spotId": 2589,
+      "title": "알로블루빈",
+      "category": "음식점",
+      "menu": "알로 랍스터 플레이트 세트"
+    },
+    {
+      "spotId": 2037,
+      "title": "덕취원",
+      "category": "음식점",
+      "menu": "삼선짬뽕"
+    },
+    {
+      "spotId": 1315,
+      "title": "정선 이모네 식당",
+      "category": "음식점",
+      "menu": "감자옹심이 콧등치기 장칼국수"
+    },
+    {
+      "spotId": 1289,
+      "title": "연곡꾹저구탕",
+      "category": "음식점",
+      "menu": "꾹저구탕"
+    },
+    {
+      "spotId": 1240,
+      "title": "하월당",
+      "category": "음식점",
+      "menu": "짬뽕순두부"
+    },
+    {
+      "spotId": 1231,
+      "title": "똥고집",
+      "category": "음식점",
+      "menu": "한우소곱창"
+    },
+    {
+      "spotId": 1168,
+      "title": "감천골",
+      "category": "음식점",
+      "menu": "쌈생선구이정식"
+    },
+    {
+      "spotId": 1139,
+      "title": "육대장 강릉점",
+      "category": "음식점",
+      "menu": "엣날전통육개장"
+    },
+    {
+      "spotId": 1104,
+      "title": "정화식당",
+      "category": "음식점",
+      "menu": "갈치조림"
+    },
+    {
+      "spotId": 1098,
+      "title": "심곡홍가네식당",
+      "category": "음식점",
+      "menu": "망치매운탕"
+    },
+    {
+      "spotId": 1083,
+      "title": "주문진순이네",
+      "category": "음식점",
+      "menu": "장치조림"
+    },
+    {
+      "spotId": 1058,
+      "title": "춘하추동 교동택지점",
+      "category": "음식점",
+      "menu": "뼈해장국"
+    },
+    {
+      "spotId": 1042,
+      "title": "흥부네쌈밥",
+      "category": "음식점",
+      "menu": "생선구이쌈밥"
+    },
+    {
+      "spotId": 1031,
+      "title": "효주원",
+      "category": "음식점",
+      "menu": "삼선짜장면"
+    },
+    {
+      "spotId": 979,
+      "title": "경포가든",
+      "category": "음식점",
+      "menu": "한우특수부위"
+    },
+    {
+      "spotId": 968,
+      "title": "아날로그 소사이어티",
+      "category": "음식점",
+      "menu": "아날로그 스테이크"
+    },
+    {
+      "spotId": 338,
+      "title": "산토리니",
+      "category": "음식점",
+      "menu": "딸기라떼"
+    },
+    {
+      "spotId": 4938,
+      "title": "달래촌",
+      "category": "음식점",
+      "menu": "명품송이돌솥밥"
+    },
+    {
+      "spotId": 4923,
+      "title": "오색식당",
+      "category": "음식점",
+      "menu": "약수가마솥정식"
+    },
+    {
+      "spotId": 4918,
+      "title": "알로하웨이브",
+      "category": "음식점",
+      "menu": "로코모코"
+    },
+    {
+      "spotId": 4913,
+      "title": "오색통나무집",
+      "category": "음식점",
+      "menu": "통나무집정식"
+    },
+    {
+      "spotId": 4911,
+      "title": "수라상",
+      "category": "음식점",
+      "menu": "통섭전골"
+    },
+    {
+      "spotId": 4910,
+      "title": "산골식당",
+      "category": "음식점",
+      "menu": "오색약수정식"
+    },
+    {
+      "spotId": 4909,
+      "title": "전라도식당",
+      "category": "음식점",
+      "menu": "생선구이"
+    },
+    {
+      "spotId": 4675,
+      "title": "산호식당",
+      "category": "음식점",
+      "menu": "물곰탕"
+    },
+    {
+      "spotId": 4671,
+      "title": "화진포박포수가든",
+      "category": "음식점",
+      "menu": "막국수"
+    },
+    {
+      "spotId": 4517,
+      "title": "산채촌",
+      "category": "음식점",
+      "menu": "산채정식"
+    },
+    {
+      "spotId": 4513,
+      "title": "용대리진부령식당",
+      "category": "음식점",
+      "menu": "황태구이정식"
+    },
+    {
+      "spotId": 4358,
+      "title": "백토미가",
+      "category": "음식점",
+      "menu": "시래기 소불고기"
+    },
+    {
+      "spotId": 4165,
+      "title": "영진식당",
+      "category": "음식점",
+      "menu": "오징어불고기"
+    },
+    {
+      "spotId": 4163,
+      "title": "순담식당",
+      "category": "음식점",
+      "menu": "메기매운탕"
+    },
+    {
+      "spotId": 4162,
+      "title": "폭포가든",
+      "category": "음식점",
+      "menu": "메기매운탕"
+    },
+    {
+      "spotId": 4157,
+      "title": "임꺽정가든",
+      "category": "음식점",
+      "menu": "메기매운탕"
+    },
+    {
+      "spotId": 4154,
+      "title": "옛고을",
+      "category": "음식점",
+      "menu": "두부전골"
+    },
+    {
+      "spotId": 4152,
+      "title": "사랑채",
+      "category": "음식점",
+      "menu": "토종삼계탕"
+    },
+    {
+      "spotId": 4148,
+      "title": "현무암",
+      "category": "음식점",
+      "menu": "생야채불고기"
+    },
+    {
+      "spotId": 4145,
+      "title": "지동관",
+      "category": "음식점",
+      "menu": "짜장면"
+    },
+    {
+      "spotId": 4144,
+      "title": "영풍가든",
+      "category": "음식점",
+      "menu": "영풍 모둠"
+    },
+    {
+      "spotId": 4142,
+      "title": "직탕가든",
+      "category": "음식점",
+      "menu": "메기매운탕"
+    },
+    {
+      "spotId": 4138,
+      "title": "동주산성",
+      "category": "음식점",
+      "menu": "양념갈비정식"
+    },
+    {
+      "spotId": 4131,
+      "title": "들꽃향기",
+      "category": "음식점",
+      "menu": "제육쌈밥정식"
+    },
+    {
+      "spotId": 4019,
+      "title": "동박골식당",
+      "category": "음식점",
+      "menu": "돌솥곤드레밥정식+제육볶음"
+    },
+    {
+      "spotId": 4018,
+      "title": "시골밥상",
+      "category": "음식점",
+      "menu": "생선구이정식"
+    },
+    {
+      "spotId": 4016,
+      "title": "석탄회관",
+      "category": "음식점",
+      "menu": "마늘범벅갈비살"
+    },
+    {
+      "spotId": 4009,
+      "title": "한치식당",
+      "category": "음식점",
+      "menu": "황기족발"
+    },
+    {
+      "spotId": 3999,
+      "title": "성원식당",
+      "category": "음식점",
+      "menu": "곤드레밥"
+    },
+    {
+      "spotId": 3832,
+      "title": "쌍둥이네가벼슬",
+      "category": "음식점",
+      "menu": "곤드레밥"
+    },
+    {
+      "spotId": 3637,
+      "title": "강남식당",
+      "category": "음식점",
+      "menu": "불백"
+    },
+    {
+      "spotId": 3635,
+      "title": "오대산가는길",
+      "category": "음식점",
+      "menu": "칼국수"
+    },
+    {
+      "spotId": 3633,
+      "title": "노다지",
+      "category": "음식점",
+      "menu": "곤드레돌솥밥정식"
+    },
+    {
+      "spotId": 3629,
+      "title": "유정식당",
+      "category": "음식점",
+      "menu": "산채정식"
+    },
+    {
+      "spotId": 3625,
+      "title": "묵사발",
+      "category": "음식점",
+      "menu": "메밀물막국수"
+    },
+    {
+      "spotId": 3616,
+      "title": "남경식당",
+      "category": "음식점",
+      "menu": "돼지수육 / 꿩손만두국"
+    },
+    {
+      "spotId": 3613,
+      "title": "새벽",
+      "category": "음식점",
+      "menu": "갈비탕"
+    },
+    {
+      "spotId": 3606,
+      "title": "동래현",
+      "category": "음식점",
+      "menu": "한방옻백숙"
+    },
+    {
+      "spotId": 3605,
+      "title": "들향기쌈밥",
+      "category": "음식점",
+      "menu": "들향기쌈밥정식"
+    },
+    {
+      "spotId": 3598,
+      "title": "외갓집",
+      "category": "음식점",
+      "menu": "오삼불고기"
+    },
+    {
+      "spotId": 3594,
+      "title": "도암식당",
+      "category": "음식점",
+      "menu": "오삼불고기"
+    },
+    {
+      "spotId": 3591,
+      "title": "부일식당",
+      "category": "음식점",
+      "menu": "산채백반"
+    },
+    {
+      "spotId": 3579,
+      "title": "다키닥팜",
+      "category": "음식점",
+      "menu": "생오리 숯불구이"
+    },
+    {
+      "spotId": 3578,
+      "title": "삼성우렁촌",
+      "category": "음식점",
+      "menu": "우렁쌈밥 정식"
+    },
+    {
+      "spotId": 3567,
+      "title": "소문난 식당",
+      "category": "음식점",
+      "menu": "곤드레밥"
+    },
+    {
+      "spotId": 3566,
+      "title": "시래기밥상",
+      "category": "음식점",
+      "menu": "시래기돌솥비빔밥"
+    },
+    {
+      "spotId": 3564,
+      "title": "밥먹을시간",
+      "category": "음식점",
+      "menu": "더덕오삼불고기"
+    },
+    {
+      "spotId": 3562,
+      "title": "뜰안채",
+      "category": "음식점",
+      "menu": "황태전골"
+    },
+    {
+      "spotId": 3561,
+      "title": "부림식당",
+      "category": "음식점",
+      "menu": "산채정식"
+    },
+    {
+      "spotId": 3247,
+      "title": "한반도장수촌",
+      "category": "음식점",
+      "menu": "한방오리·토종닭누룽지백숙"
+    },
+    {
+      "spotId": 3245,
+      "title": "영월 박가네",
+      "category": "음식점",
+      "menu": "어수리 더덕정식"
+    },
+    {
+      "spotId": 3240,
+      "title": "강원토속식당",
+      "category": "음식점",
+      "menu": "칡국수"
+    },
+    {
+      "spotId": 3239,
+      "title": "사랑방식당",
+      "category": "음식점",
+      "menu": "오징어불백"
+    },
+    {
+      "spotId": 3237,
+      "title": "농가맛집 산속의친구",
+      "category": "음식점",
+      "menu": "강원나물밥 한상차림"
+    },
+    {
+      "spotId": 3235,
+      "title": "솔잎가든",
+      "category": "음식점",
+      "menu": "한우불고기백반"
+    },
+    {
+      "spotId": 3234,
+      "title": "제천식당",
+      "category": "음식점",
+      "menu": "꼴두국수"
+    },
+    {
+      "spotId": 2970,
+      "title": "둔내민속촌",
+      "category": "음식점",
+      "menu": "곤드레나물밥"
+    },
+    {
+      "spotId": 2968,
+      "title": "미소마루",
+      "category": "음식점",
+      "menu": "순대국밥"
+    },
+    {
+      "spotId": 2967,
+      "title": "차이원",
+      "category": "음식점",
+      "menu": "찹쌀탕수육"
+    },
+    {
+      "spotId": 2966,
+      "title": "엄마밥줘",
+      "category": "음식점",
+      "menu": "더덕오삼불고기"
+    },
+    {
+      "spotId": 2963,
+      "title": "장미산장",
+      "category": "음식점",
+      "menu": "곤드레밥정식"
+    },
+    {
+      "spotId": 2959,
+      "title": "횡성 버드나무집",
+      "category": "음식점",
+      "menu": "갈아 추어탕"
+    },
+    {
+      "spotId": 2958,
+      "title": "윤가이가",
+      "category": "음식점",
+      "menu": "더덕영양돌솥밥 코스요리"
+    },
+    {
+      "spotId": 2955,
+      "title": "쌍둥이네 미꾸라지탕",
+      "category": "음식점",
+      "menu": "갈미꾸라지탕"
+    },
+    {
+      "spotId": 2954,
+      "title": "아다만",
+      "category": "음식점",
+      "menu": "수제돈까스"
+    },
+    {
+      "spotId": 2950,
+      "title": "횡성 화수목",
+      "category": "음식점",
+      "menu": "1++화수목 눈꽃모듬"
+    },
+    {
+      "spotId": 2949,
+      "title": "향원",
+      "category": "음식점",
+      "menu": "짬뽕"
+    },
+    {
+      "spotId": 2947,
+      "title": "벌나무식당",
+      "category": "음식점",
+      "menu": "더덕한우불고기전골"
+    },
+    {
+      "spotId": 2944,
+      "title": "삼정",
+      "category": "음식점",
+      "menu": "한우"
+    },
+    {
+      "spotId": 2936,
+      "title": "소문난식당",
+      "category": "음식점",
+      "menu": "산청흑돼지"
+    },
+    {
+      "spotId": 2934,
+      "title": "용천각",
+      "category": "음식점",
+      "menu": "해물뚝배기짬뽕"
+    },
+    {
+      "spotId": 2803,
+      "title": "본토",
+      "category": "음식점",
+      "menu": "숯불닭갈비"
+    },
+    {
+      "spotId": 2802,
+      "title": "비발디송어골",
+      "category": "음식점",
+      "menu": "송어회"
+    },
+    {
+      "spotId": 2591,
+      "title": "너울가지",
+      "category": "음식점",
+      "menu": "목살스테이크"
+    },
+    {
+      "spotId": 2587,
+      "title": "노이마레",
+      "category": "음식점",
+      "menu": "마레 토마토 파스타"
+    },
+    {
+      "spotId": 2580,
+      "title": "환선밥상",
+      "category": "음식점",
+      "menu": "더덕정식"
+    },
+    {
+      "spotId": 2384,
+      "title": "두메산골",
+      "category": "음식점",
+      "menu": "황태정식"
+    },
+    {
+      "spotId": 2383,
+      "title": "시골할머니나물밥",
+      "category": "음식점",
+      "menu": "시골할머니나물밥 한정식"
+    },
+    {
+      "spotId": 2381,
+      "title": "낙천회관",
+      "category": "음식점",
+      "menu": "명태회냉면"
+    },
+    {
+      "spotId": 2377,
+      "title": "점봉산산채",
+      "category": "음식점",
+      "menu": "점봉산 산채정식"
+    },
+    {
+      "spotId": 2375,
+      "title": "속초아바이신다신",
+      "category": "음식점",
+      "menu": "모둠순대"
+    },
+    {
+      "spotId": 2365,
+      "title": "감자바우",
+      "category": "음식점",
+      "menu": "감자옹심이"
+    },
+    {
+      "spotId": 2363,
+      "title": "황두막",
+      "category": "음식점",
+      "menu": "초당순두부"
+    },
+    {
+      "spotId": 2361,
+      "title": "속초해녀마을",
+      "category": "음식점",
+      "menu": "전복해물뚝배기"
+    },
+    {
+      "spotId": 2358,
+      "title": "하마식당",
+      "category": "음식점",
+      "menu": "후토마끼"
+    },
+    {
+      "spotId": 2355,
+      "title": "섭죽마을",
+      "category": "음식점",
+      "menu": "섭국(홍합해장국)"
+    },
+    {
+      "spotId": 2352,
+      "title": "속초생대구",
+      "category": "음식점",
+      "menu": "생대구탕"
+    },
+    {
+      "spotId": 2347,
+      "title": "홍용가",
+      "category": "음식점",
+      "menu": "홍용가짬뽕"
+    },
+    {
+      "spotId": 2345,
+      "title": "구구집",
+      "category": "음식점",
+      "menu": "전복·해삼물회"
+    },
+    {
+      "spotId": 2344,
+      "title": "왕박골식당",
+      "category": "음식점",
+      "menu": "장칼국수"
+    },
+    {
+      "spotId": 2333,
+      "title": "후포식당",
+      "category": "음식점",
+      "menu": "조림"
+    },
+    {
+      "spotId": 2050,
+      "title": "보리밭",
+      "category": "음식점",
+      "menu": "산채비빔밥"
+    },
+    {
+      "spotId": 2040,
+      "title": "참맛골",
+      "category": "음식점",
+      "menu": "코다리조림"
+    },
+    {
+      "spotId": 2039,
+      "title": "돌박사",
+      "category": "음식점",
+      "menu": "오겹살"
+    },
+    {
+      "spotId": 2035,
+      "title": "뚱보네푸줏간",
+      "category": "음식점",
+      "menu": "쌈솥밥정식"
+    },
+    {
+      "spotId": 2033,
+      "title": "소복소복",
+      "category": "음식점",
+      "menu": "새우소바"
+    },
+    {
+      "spotId": 1757,
+      "title": "우미관",
+      "category": "음식점",
+      "menu": "우미관모둠"
+    },
+    {
+      "spotId": 1730,
+      "title": "칡산에",
+      "category": "음식점",
+      "menu": "문어모듬보쌈"
+    },
+    {
+      "spotId": 1722,
+      "title": "고려원사랑채",
+      "category": "음식점",
+      "menu": "사랑채 한정식"
+    },
+    {
+      "spotId": 1720,
+      "title": "오대산산채정식",
+      "category": "음식점",
+      "menu": "산채정식"
+    },
+    {
+      "spotId": 1719,
+      "title": "용수골가든",
+      "category": "음식점",
+      "menu": "토종닭백숙"
+    },
+    {
+      "spotId": 1718,
+      "title": "들녘",
+      "category": "음식점",
+      "menu": "돌솥불고기쌈밥정식"
+    },
+    {
+      "spotId": 1715,
+      "title": "소담 본점",
+      "category": "음식점",
+      "menu": "버섯 영양돌솥밥"
+    },
+    {
+      "spotId": 1710,
+      "title": "농부가",
+      "category": "음식점",
+      "menu": "호박꽃밥정식"
+    },
+    {
+      "spotId": 1706,
+      "title": "목향",
+      "category": "음식점",
+      "menu": "명품생등심"
+    },
+    {
+      "spotId": 1705,
+      "title": "횡성더덕밥김가",
+      "category": "음식점",
+      "menu": "진진한상"
+    },
+    {
+      "spotId": 1701,
+      "title": "장군본가",
+      "category": "음식점",
+      "menu": "복숭아불고기"
+    },
+    {
+      "spotId": 1669,
+      "title": "한성본가",
+      "category": "음식점",
+      "menu": "한우구이"
+    },
+    {
+      "spotId": 1341,
+      "title": "보배골",
+      "category": "음식점",
+      "menu": "한방능이오리"
+    },
+    {
+      "spotId": 1338,
+      "title": "돈우마을",
+      "category": "음식점",
+      "menu": "양념돼지갈비"
+    },
+    {
+      "spotId": 1337,
+      "title": "꿀꺽",
+      "category": "음식점",
+      "menu": "삼겹살"
+    },
+    {
+      "spotId": 1336,
+      "title": "바다식당",
+      "category": "음식점",
+      "menu": "생선구이"
+    },
+    {
+      "spotId": 1335,
+      "title": "깐숙이네",
+      "category": "음식점",
+      "menu": "냉삼"
+    },
+    {
+      "spotId": 1334,
+      "title": "동보성",
+      "category": "음식점",
+      "menu": "짜장면"
+    },
+    {
+      "spotId": 1333,
+      "title": "송이랑능이랑",
+      "category": "음식점",
+      "menu": "능이산채비빔밥"
+    },
+    {
+      "spotId": 1330,
+      "title": "장군시오야끼 포남직영점",
+      "category": "음식점",
+      "menu": "시오야끼"
+    },
+    {
+      "spotId": 1329,
+      "title": "초당다나정원",
+      "category": "음식점",
+      "menu": "해물장칼국수"
+    },
+    {
+      "spotId": 1320,
+      "title": "샤브향 강릉교동점",
+      "category": "음식점",
+      "menu": "월남쌈"
+    },
+    {
+      "spotId": 1317,
+      "title": "기사문&강릉락강정",
+      "category": "음식점",
+      "menu": "가자미덮밥"
+    },
+    {
+      "spotId": 1316,
+      "title": "래원",
+      "category": "음식점",
+      "menu": "짜장면"
+    },
+    {
+      "spotId": 1314,
+      "title": "다모아식당",
+      "category": "음식점",
+      "menu": "장치찜"
+    },
+    {
+      "spotId": 1313,
+      "title": "원족발 입암점",
+      "category": "음식점",
+      "menu": "족발"
+    },
+    {
+      "spotId": 1312,
+      "title": "오딧세이포남2호점",
+      "category": "음식점",
+      "menu": "통닭"
+    },
+    {
+      "spotId": 1307,
+      "title": "수미골",
+      "category": "음식점",
+      "menu": "골뱅이숙회"
+    },
+    {
+      "spotId": 1305,
+      "title": "애너벨리",
+      "category": "음식점",
+      "menu": "뚝배기 과일 팥빙수"
+    },
+    {
+      "spotId": 1302,
+      "title": "미림식당",
+      "category": "음식점",
+      "menu": "도루묵찌개, 생태찌개, 생선매운탕"
+    },
+    {
+      "spotId": 1300,
+      "title": "궁전구내식당",
+      "category": "음식점",
+      "menu": "미역국"
+    },
+    {
+      "spotId": 1298,
+      "title": "팔당수산",
+      "category": "음식점",
+      "menu": "민물장어 소금구이"
+    },
+    {
+      "spotId": 1297,
+      "title": "추억의맛집",
+      "category": "음식점",
+      "menu": "보쌈"
+    },
+    {
+      "spotId": 1295,
+      "title": "정혜영쿡",
+      "category": "음식점",
+      "menu": "쿡정식"
+    },
+    {
+      "spotId": 1294,
+      "title": "원조 춘하추동 본점",
+      "category": "음식점",
+      "menu": "감자탕"
+    },
+    {
+      "spotId": 1291,
+      "title": "용소원",
+      "category": "음식점",
+      "menu": "짜장면"
+    },
+    {
+      "spotId": 1290,
+      "title": "OODD",
+      "category": "음식점",
+      "menu": "꽈뜨로풍기"
+    },
+    {
+      "spotId": 1286,
+      "title": "송정가든",
+      "category": "음식점",
+      "menu": "참숯양념돼지갈비"
+    },
+    {
+      "spotId": 1285,
+      "title": "아이러브피자 교동점",
+      "category": "음식점",
+      "menu": "고구마피자"
+    },
+    {
+      "spotId": 1284,
+      "title": "인성식당",
+      "category": "음식점",
+      "menu": "두루치기"
+    },
+    {
+      "spotId": 1280,
+      "title": "짱신",
+      "category": "음식점",
+      "menu": "짬뽕"
+    },
+    {
+      "spotId": 1278,
+      "title": "핫밀",
+      "category": "음식점",
+      "menu": "왕돈가스"
+    },
+    {
+      "spotId": 1271,
+      "title": "강릉김밥",
+      "category": "음식점",
+      "menu": "날치알 김밥"
+    },
+    {
+      "spotId": 1268,
+      "title": "안목바다식당",
+      "category": "음식점",
+      "menu": "콩국수"
+    },
+    {
+      "spotId": 1266,
+      "title": "해미가",
+      "category": "음식점",
+      "menu": "스페셜매운탕"
+    },
+    {
+      "spotId": 1263,
+      "title": "굴사랑 교동택지점",
+      "category": "음식점",
+      "menu": "굴돌솥밥"
+    },
+    {
+      "spotId": 1248,
+      "title": "용궁식당",
+      "category": "음식점",
+      "menu": "추어탕"
+    },
+    {
+      "spotId": 1242,
+      "title": "산두꺼비",
+      "category": "음식점",
+      "menu": "오징어볶음"
+    },
+    {
+      "spotId": 1237,
+      "title": "산전수전",
+      "category": "음식점",
+      "menu": "모듬전"
+    },
+    {
+      "spotId": 1236,
+      "title": "숙성돈가",
+      "category": "음식점",
+      "menu": "돼지고기구이"
+    },
+    {
+      "spotId": 1235,
+      "title": "미림헌",
+      "category": "음식점",
+      "menu": "콩국수"
+    },
+    {
+      "spotId": 1234,
+      "title": "계륵장군 강릉점",
+      "category": "음식점",
+      "menu": "숯불 닭갈비"
+    },
+    {
+      "spotId": 1228,
+      "title": "소풍레스토랑",
+      "category": "음식점",
+      "menu": "수제돈까스"
+    },
+    {
+      "spotId": 1226,
+      "title": "라보엠",
+      "category": "음식점",
+      "menu": "라보엠 정식"
+    },
+    {
+      "spotId": 1220,
+      "title": "진재골식당",
+      "category": "음식점",
+      "menu": "토종닭백숙"
+    },
+    {
+      "spotId": 1213,
+      "title": "청수",
+      "category": "음식점",
+      "menu": "소머리곰탕"
+    },
+    {
+      "spotId": 1211,
+      "title": "사천 010",
+      "category": "음식점",
+      "menu": "바질순두부 돈가스 파스타"
+    },
+    {
+      "spotId": 1210,
+      "title": "강남흑염소전문점",
+      "category": "음식점",
+      "menu": "흑염소탕"
+    },
+    {
+      "spotId": 1206,
+      "title": "강릉사임당인절미",
+      "category": "음식점",
+      "menu": "콩고물 인절미"
+    },
+    {
+      "spotId": 1204,
+      "title": "코바코 강릉사천점",
+      "category": "음식점",
+      "menu": "적셔먹는돈까스"
+    },
+    {
+      "spotId": 1200,
+      "title": "한끼밥집",
+      "category": "음식점",
+      "menu": "매운 해물순두부"
+    },
+    {
+      "spotId": 1194,
+      "title": "파머스키친 강릉점",
+      "category": "음식점",
+      "menu": "치즈버거"
+    },
+    {
+      "spotId": 1188,
+      "title": "삼미식당",
+      "category": "음식점",
+      "menu": "곰치"
+    },
+    {
+      "spotId": 1186,
+      "title": "예당",
+      "category": "음식점",
+      "menu": "간장게장 정식(국내산암꽃게)"
+    },
+    {
+      "spotId": 1180,
+      "title": "육반장 주문진점",
+      "category": "음식점",
+      "menu": "전통 육개장"
+    },
+    {
+      "spotId": 1178,
+      "title": "영진댁",
+      "category": "음식점",
+      "menu": "대왕철판요리"
+    },
+    {
+      "spotId": 1177,
+      "title": "13월의강릉",
+      "category": "음식점",
+      "menu": "조개구이+차돌구이"
+    },
+    {
+      "spotId": 1175,
+      "title": "산촌식당",
+      "category": "음식점",
+      "menu": "황태뚝배기"
+    },
+    {
+      "spotId": 1174,
+      "title": "새마을영양탕",
+      "category": "음식점",
+      "menu": "영양전골(1인분)"
+    },
+    {
+      "spotId": 1173,
+      "title": "태흥루1호점",
+      "category": "음식점",
+      "menu": "탕수육"
+    },
+    {
+      "spotId": 1169,
+      "title": "유광회관 1호점",
+      "category": "음식점",
+      "menu": "한우불고기"
+    },
+    {
+      "spotId": 1165,
+      "title": "순남시래기",
+      "category": "음식점",
+      "menu": "시래기국"
+    },
+    {
+      "spotId": 1156,
+      "title": "고봉민김밥인 강릉역점",
+      "category": "음식점",
+      "menu": "돈까스김밥"
+    },
+    {
+      "spotId": 1151,
+      "title": "동해바다샾1971",
+      "category": "음식점",
+      "menu": "모둠회 코스"
+    },
+    {
+      "spotId": 1147,
+      "title": "십원집 청송점",
+      "category": "음식점",
+      "menu": "삼겹살"
+    },
+    {
+      "spotId": 1144,
+      "title": "찜대감",
+      "category": "음식점",
+      "menu": "가오리찜"
+    },
+    {
+      "spotId": 1142,
+      "title": "용장군",
+      "category": "음식점",
+      "menu": "용장군 감자탕"
+    },
+    {
+      "spotId": 1136,
+      "title": "피자에땅 포남점",
+      "category": "음식점",
+      "menu": "울트라콤비네이션"
+    },
+    {
+      "spotId": 1133,
+      "title": "원조집",
+      "category": "음식점",
+      "menu": "모둠회"
+    },
+    {
+      "spotId": 1132,
+      "title": "미성식당",
+      "category": "음식점",
+      "menu": "추어탕"
+    },
+    {
+      "spotId": 1131,
+      "title": "주문진식당",
+      "category": "음식점",
+      "menu": "생선구이"
+    },
+    {
+      "spotId": 1123,
+      "title": "경성포차",
+      "category": "음식점",
+      "menu": "조개구이"
+    },
+    {
+      "spotId": 1120,
+      "title": "주문진밤바다",
+      "category": "음식점",
+      "menu": "모둠회(소) 5줄"
+    },
+    {
+      "spotId": 1116,
+      "title": "우정회관",
+      "category": "음식점",
+      "menu": "곱창전골"
+    },
+    {
+      "spotId": 1111,
+      "title": "혜진식당1호점",
+      "category": "음식점",
+      "menu": "매운탕"
+    },
+    {
+      "spotId": 1101,
+      "title": "해안로라운지",
+      "category": "음식점",
+      "menu": "코젤다크 시나몬"
+    },
+    {
+      "spotId": 1099,
+      "title": "송천휴게소식당",
+      "category": "음식점",
+      "menu": "능이백숙"
+    },
+    {
+      "spotId": 1096,
+      "title": "주문진전주식당",
+      "category": "음식점",
+      "menu": "김치찌개"
+    },
+    {
+      "spotId": 1093,
+      "title": "김여사네",
+      "category": "음식점",
+      "menu": "동태탕"
+    },
+    {
+      "spotId": 1090,
+      "title": "자스민레스토랑",
+      "category": "음식점",
+      "menu": "명란돈가스"
+    },
+    {
+      "spotId": 1087,
+      "title": "홍가홍",
+      "category": "음식점",
+      "menu": "짬뽕"
+    },
+    {
+      "spotId": 1085,
+      "title": "빛고을식당",
+      "category": "음식점",
+      "menu": "빛고을 정식"
+    },
+    {
+      "spotId": 1074,
+      "title": "영진항",
+      "category": "음식점",
+      "menu": "대왕해물철판 大(4~5인)"
+    },
+    {
+      "spotId": 1073,
+      "title": "연곡전주식당",
+      "category": "음식점",
+      "menu": "김치찌개"
+    },
+    {
+      "spotId": 1066,
+      "title": "옛카네이션집",
+      "category": "음식점",
+      "menu": "대구머리찜"
+    },
+    {
+      "spotId": 1064,
+      "title": "보리향기",
+      "category": "음식점",
+      "menu": "보리밥정식"
+    },
+    {
+      "spotId": 1060,
+      "title": "100브랜드",
+      "category": "음식점",
+      "menu": "잠봉 루꼴라 바질페스토 피자"
+    },
+    {
+      "spotId": 1059,
+      "title": "빙고주막",
+      "category": "음식점",
+      "menu": "오삼불고기"
+    },
+    {
+      "spotId": 1051,
+      "title": "봉봉키친",
+      "category": "음식점",
+      "menu": "봉봉수제돈가스"
+    },
+    {
+      "spotId": 1047,
+      "title": "돈미소",
+      "category": "음식점",
+      "menu": "수제양념소갈비"
+    },
+    {
+      "spotId": 1046,
+      "title": "넉살집",
+      "category": "음식점",
+      "menu": "생삼겹"
+    },
+    {
+      "spotId": 1045,
+      "title": "해안선",
+      "category": "음식점",
+      "menu": "물회"
+    },
+    {
+      "spotId": 1043,
+      "title": "낭만포차",
+      "category": "음식점",
+      "menu": "삼겹두루치기"
+    },
+    {
+      "spotId": 1041,
+      "title": "오감",
+      "category": "음식점",
+      "menu": "능이백숙"
+    },
+    {
+      "spotId": 1040,
+      "title": "해뜨는맛집",
+      "category": "음식점",
+      "menu": "닭볶음탕"
+    },
+    {
+      "spotId": 1039,
+      "title": "서울족발",
+      "category": "음식점",
+      "menu": "구운족발"
+    },
+    {
+      "spotId": 1034,
+      "title": "솥고집 주문진점",
+      "category": "음식점",
+      "menu": "솥고집삼겹구이"
+    },
+    {
+      "spotId": 1033,
+      "title": "주문진 돈의맛",
+      "category": "음식점",
+      "menu": "삼겹살"
+    },
+    {
+      "spotId": 1032,
+      "title": "대찬맛집",
+      "category": "음식점",
+      "menu": "제육볶음정식"
+    },
+    {
+      "spotId": 1024,
+      "title": "꼭지네식당",
+      "category": "음식점",
+      "menu": "칡냉면"
+    },
+    {
+      "spotId": 1021,
+      "title": "강릉꼬막비빔밥풍호맛뜨락",
+      "category": "음식점",
+      "menu": "꼬막비빔밥"
+    },
+    {
+      "spotId": 1011,
+      "title": "강릉꼬막집 독도네 본점",
+      "category": "음식점",
+      "menu": "꼬막무침"
+    },
+    {
+      "spotId": 1008,
+      "title": "메시56",
+      "category": "음식점",
+      "menu": "오늘의 추천 덮밥"
+    },
+    {
+      "spotId": 1004,
+      "title": "월성식당",
+      "category": "음식점",
+      "menu": "장치찜"
+    },
+    {
+      "spotId": 1003,
+      "title": "여왕개미식당",
+      "category": "음식점",
+      "menu": "감자옹심"
+    },
+    {
+      "spotId": 1002,
+      "title": "솔담",
+      "category": "음식점",
+      "menu": "연잎밥정식"
+    },
+    {
+      "spotId": 990,
+      "title": "강문가",
+      "category": "음식점",
+      "menu": "강문가 홍게세트"
+    },
+    {
+      "spotId": 987,
+      "title": "소도리",
+      "category": "음식점",
+      "menu": "고추장돼지불고기"
+    },
+    {
+      "spotId": 379,
+      "title": "농가",
+      "category": "음식점",
+      "menu": "양념 숯불닭갈비"
+    },
+    {
+      "spotId": 377,
+      "title": "곰배령",
+      "category": "음식점",
+      "menu": "곰배령 한정식"
+    },
+    {
+      "spotId": 364,
+      "title": "[백년가게] 도지골등나무집",
+      "category": "음식점",
+      "menu": "자연산쏘가리매운탕"
+    },
+    {
+      "spotId": 360,
+      "title": "고산가",
+      "category": "음식점",
+      "menu": "고산가정식"
+    },
+    {
+      "spotId": 359,
+      "title": "아일래나라운지",
+      "category": "음식점",
+      "menu": "뷔페 또는 정식"
+    },
+    {
+      "spotId": 353,
+      "title": "탑골가든",
+      "category": "음식점",
+      "menu": "숯불닭갈비"
+    },
+    {
+      "spotId": 334,
+      "title": "란",
+      "category": "음식점",
+      "menu": "런치코스"
+    },
+    {
+      "spotId": 333,
+      "title": "들꽃가든 남춘천",
+      "category": "음식점",
+      "menu": "소머리국밥"
+    },
+    {
+      "spotId": 327,
+      "title": "장가네더덕밥",
+      "category": "음식점",
+      "menu": "수라상"
+    },
+    {
+      "spotId": 301,
+      "title": "어반스트릿",
+      "category": "음식점",
+      "menu": "규카츠"
+    }
+  ]
+}
