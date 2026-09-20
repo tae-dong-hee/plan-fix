@@ -54,10 +54,10 @@ export default function CourseListPage() {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen bg-muted/20 pb-28 sm:pb-32 md:pb-16 md:pt-16">
+    <div className="app-page min-h-screen bg-muted/20 pb-28 sm:pb-32 md:pb-16">
       <AppNav />
 
-      <main className="mx-auto max-w-7xl px-5 pt-7 sm:px-8 sm:pt-10 lg:px-10">
+      <main className="app-page-content mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
         <nav aria-label="현재 위치" className="mb-6 flex items-center gap-1.5 text-xs text-muted-foreground">
           <Link to="/main" className="transition-colors hover:text-primary">여행</Link>
           <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />

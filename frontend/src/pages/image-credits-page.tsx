@@ -34,9 +34,9 @@ export default function ImageCreditsPage() {
   }, [hash, key]);
 
   return (
-    <div className="min-h-screen bg-muted/20 pb-28 text-foreground md:pb-16 md:pt-20">
+    <div className="app-page min-h-screen bg-muted/20 pb-28 text-foreground md:pb-16">
       <AppNav />
-      <main className="mx-auto max-w-6xl px-4 pt-6 sm:px-6 sm:pt-8 lg:px-8">
+      <main className="app-page-content mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <Link
           to="/main"
           className="inline-flex items-center gap-1.5 rounded text-sm text-muted-foreground transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"

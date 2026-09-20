@@ -643,7 +643,7 @@ export default function CourseCreatePage() {
   };
 
   return (
-    <div className="min-h-screen bg-muted/20 pb-20 md:pt-16">
+    <div className="app-page min-h-screen bg-muted/20 pb-20">
       <AppNav />
 
       {loadingCourse ? (
@@ -652,7 +652,7 @@ export default function CourseCreatePage() {
           <p className="text-sm text-muted-foreground">코스 정보를 불러오는 중입니다...</p>
         </div>
       ) : (
-        <main className="mx-auto max-w-4xl px-4 pt-6 sm:px-6 sm:pt-8">
+        <main className="app-page-content mx-auto max-w-4xl px-4 sm:px-6">
         {/* 상단 브레드크럼 */}
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <span>여행</span>

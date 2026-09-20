@@ -270,7 +270,7 @@ export default function BoardDetailPage() {
     board?.thumbnail || (board?.images && board.images.length > 0 ? board.images[0].imageUrl : null) || FALLBACK_BOARD_IMAGE;
 
   return (
-    <div className="min-h-screen bg-background pb-28 text-foreground md:pb-16 md:pt-16">
+    <div className="app-page min-h-screen bg-background pb-28 text-foreground md:pb-16">
       <AppNav />
 
       <header className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur-md md:static md:z-auto md:border-b-0 md:bg-transparent md:backdrop-blur-none">
@@ -302,7 +302,7 @@ export default function BoardDetailPage() {
           </button>
         </div>
       ) : (
-        <main className="mx-auto max-w-3xl px-5 pb-16 sm:px-8">
+        <main className="app-page-content mx-auto max-w-3xl px-5 pb-16 sm:px-8">
           <article className="overflow-hidden">
             {/* 히어로 이미지 */}
             <div className="relative aspect-[16/10] w-full overflow-hidden rounded-2xl bg-muted shadow-panel sm:aspect-[16/9]">

@@ -29,6 +29,8 @@
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
     --radius: 0.75rem;
+    --app-header-offset: 0px;
+    --page-content-gap: 2rem;
   }
 
   .dark {
@@ -70,6 +72,37 @@
   button,
   input {
     font: inherit;
+  }
+}
+
+@layer components {
+  /* The app menu is at the bottom on mobile and fixed at the top on desktop. */
+  .app-page {
+    padding-top: var(--app-header-offset);
+  }
+
+  /* Use the same breathing room below the viewport edge or a page header. */
+  .app-page-content {
+    padding-top: var(--page-content-gap);
+  }
+
+  .app-page-sticky-header {
+    top: var(--app-header-offset);
+  }
+}
+
+@layer base {
+  @media (min-width: 640px) {
+    :root {
+      --page-content-gap: 2.5rem;
+    }
+  }
+
+  @media (min-width: 768px) {
+    :root {
+      /* AppNav's 4rem content plus its bottom border. */
+      --app-header-offset: calc(4rem + 1px);
+    }
   }
 }
 

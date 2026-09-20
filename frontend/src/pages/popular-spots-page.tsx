@@ -230,7 +230,7 @@ export default function PopularSpotsPage({ mode = "popular" }: PopularSpotsPageP
   };
 
   return (
-    <div className="min-h-screen bg-background pb-28 text-foreground md:pb-16 md:pt-16">
+    <div className="app-page min-h-screen bg-background pb-28 text-foreground md:pb-16">
       <AppNav />
 
       <header className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur-md md:static md:z-auto md:border-b-0 md:bg-transparent md:backdrop-blur-none">
@@ -276,7 +276,7 @@ export default function PopularSpotsPage({ mode = "popular" }: PopularSpotsPageP
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-5 pt-8 sm:px-8 md:pt-6 lg:px-10">
+      <main className="app-page-content mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
         <div
           role="group"
           aria-label="카테고리 필터"

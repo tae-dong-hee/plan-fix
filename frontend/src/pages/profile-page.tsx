@@ -92,9 +92,9 @@ export default function ProfilePage() {
   if (!profile) return null;
 
   return (
-    <div className="min-h-screen bg-muted/20 pb-28 md:pb-16 md:pt-20">
+    <div className="app-page min-h-screen bg-muted/20 pb-28 md:pb-16">
       <AppNav />
-      <main className="mx-auto max-w-2xl px-4 pt-6 sm:px-6 sm:pt-8">
+      <main className="app-page-content mx-auto max-w-2xl px-4 sm:px-6">
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <Link to="/main">홈</Link><ChevronRight className="h-3.5 w-3.5" /><span className="font-medium text-foreground">프로필</span>
         </div>

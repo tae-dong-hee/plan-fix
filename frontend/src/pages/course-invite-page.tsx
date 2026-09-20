@@ -109,7 +109,7 @@ function CourseInvitation({ token }: { token: string }) {
         </Link>
       </header>
 
-      <main className="mx-auto max-w-lg px-4 pb-12 pt-4 sm:px-5 sm:pb-16 sm:pt-9">
+      <main className="app-page-content mx-auto max-w-lg px-4 pb-12 sm:px-5 sm:pb-16">
         <section className="overflow-hidden rounded-[28px] border border-primary/10 bg-background shadow-[0_20px_60px_-30px_hsl(var(--primary)/0.2)]" aria-label="여행 코스 초대">
           {failure ? (
             <div className="px-6 pb-8 pt-10 text-center sm:px-8 sm:pb-9 sm:pt-12">

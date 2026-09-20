@@ -36,9 +36,9 @@ export default function PublicCourseListPage() {
   }, [sort]);
 
   return (
-    <div className="min-h-screen bg-background pb-28 sm:pb-32 md:pb-16 md:pt-16">
+    <div className="app-page min-h-screen bg-background pb-28 sm:pb-32 md:pb-16">
       <AppNav />
-      <main className="mx-auto max-w-7xl px-5 pt-7 sm:px-8 sm:pt-10 lg:px-10">
+      <main className="app-page-content mx-auto max-w-7xl px-5 sm:px-8 lg:px-10">
         <Link to="/main" className="inline-flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4" /> 메인으로
         </Link>
