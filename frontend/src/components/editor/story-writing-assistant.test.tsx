@@ -44,8 +44,8 @@ const chuncheonCourse: StoryCourse = {
   ],
 };
 
-function setup({ html = "<p></p>", initialFiles = [], initialCourse }: {
-  html?: string; initialFiles?: File[]; initialCourse?: StoryCourse;
+function setup({ html = "<p></p>", initialFiles = [], initialCourse, initialTitle = "강릉 여행" }: {
+  html?: string; initialFiles?: File[]; initialCourse?: StoryCourse; initialTitle?: string;
 } = {}) {
   let currentHtml = html;
   const editor = {
@@ -60,13 +60,14 @@ function setup({ html = "<p></p>", initialFiles = [], initialCourse }: {
   const editorRef = { current: editor as unknown as Editor } as MutableRefObject<Editor | null>;
   const onBusyChange = vi.fn();
   const onFilesChange = vi.fn();
+  const onTitleChange = vi.fn();
 
-  let currentTitle = "강릉 여행";
+  let currentTitle = initialTitle;
   let currentCourse = initialCourse;
 
   function Harness({ title = currentTitle, course = currentCourse }: { title?: string; course?: StoryCourse }) {
     const [files, setFiles] = useState(initialFiles);
-    return <StoryWritingAssistant title={title} course={course} files={files} editorRef={editorRef} onBusyChange={onBusyChange}
+    return <StoryWritingAssistant title={title} onTitleChange={(next) => { onTitleChange(next); currentTitle = next; rendered.rerender(<Harness />); }} course={course} files={files} editorRef={editorRef} onBusyChange={onBusyChange}
       onFilesChange={(next) => { onFilesChange(next); setFiles(next); }} />;
   }
 
@@ -76,6 +77,7 @@ function setup({ html = "<p></p>", initialFiles = [], initialCourse }: {
     editor,
     onBusyChange,
     onFilesChange,
+    onTitleChange,
     changeTitle(title: string) {
       currentTitle = title;
       rendered.rerender(<Harness />);
@@ -110,6 +112,41 @@ afterEach(() => {
 });
 
 describe("StoryWritingAssistant", () => {
+  test.each(["", "내가 쓴 제목"])("AI 제목은 직접 선택할 때만 적용하고 본문 초안을 유지한다: %s", async (initialTitle) => {
+    generateMock.mockResolvedValueOnce({ title: "경포에서 보낸 오후", content: "경포에서 오래 앉아 있었어요." });
+    const { onTitleChange, editor } = setup({ initialTitle, html: "<p>내 원래 본문</p>" });
+    selectPhotos([photo()]);
+    await screen.findByText("AI가 제안한 제목");
+    expect(onTitleChange).not.toHaveBeenCalled();
+    expect(editor.commands.setContent).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "이 제목 사용하기" }));
+    expect(onTitleChange).toHaveBeenCalledWith("경포에서 보낸 오후");
+    expect(screen.getByText("새로 쓴 AI 초안")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "이 초안으로 본문 바꾸기" }));
+    expect(editor.commands.setContent).toHaveBeenCalledTimes(1);
+  });
+
+  test("사용자가 제목을 고치면 이전 AI 제목 제안을 지운다", async () => {
+    generateMock.mockResolvedValueOnce({ title: "예전 제안", content: "새 본문" });
+    const { changeTitle } = setup();
+    selectPhotos([photo()]);
+    await screen.findByText("AI가 제안한 제목");
+    changeTitle("직접 바꾼 제목");
+    expect(screen.queryByText("예전 제안")).not.toBeInTheDocument();
+  });
+
+  test("생성 도중 제목을 바꾸면 늦게 도착한 제목과 본문을 적용하지 않는다", async () => {
+    const pending = deferred<{ title: string; content: string }>();
+    generateMock.mockReturnValueOnce(pending.promise);
+    const { changeTitle, onTitleChange, editor } = setup();
+    selectPhotos([photo()]);
+    changeTitle("직접 바꾼 제목");
+    await act(async () => pending.resolve({ title: "뒤늦은 제목", content: "뒤늦은 본문" }));
+    expect(onTitleChange).not.toHaveBeenCalled();
+    expect(editor.commands.setContent).not.toHaveBeenCalled();
+    expect(screen.queryByText("AI가 제안한 제목")).not.toBeInTheDocument();
+  });
+
   test("코스의 중복 장소를 한 번씩 보여주고 방문을 자동으로 선택하지 않는다", async () => {
     const { editor } = setup({ initialCourse: chuncheonCourse });
     const places = within(screen.getByRole("group", { name: "다녀온 장소 선택" }));

@@ -17,6 +17,7 @@ export type BoardDraftRequest = {
 
 export type BoardDraft = {
   content: string;
+  title?: string;
 };
 
 /** 생성에 사용할 전체 사진 목록을 검사한다. 서버에서도 같은 제한을 검증한다. */
@@ -30,7 +31,7 @@ export function validateStoryPhotos(files: File[]): string | null {
   return null;
 }
 
-/** 사진을 바탕으로 편집 가능한 본문 초안만 생성하며 게시글을 저장하지 않는다. */
+/** 사진을 바탕으로 편집 가능한 제목과 본문 초안을 생성하며 게시글을 저장하지 않는다. */
 export async function generateBoardDraft(request: BoardDraftRequest, signal?: AbortSignal): Promise<BoardDraft> {
   const validationError = validateStoryPhotos(request.files);
   if (validationError) throw new Error(validationError);
@@ -90,7 +91,12 @@ export async function generateBoardDraft(request: BoardDraftRequest, signal?: Ab
   if (!isRecord(result) || typeof result.content !== "string" || !result.content.trim()) {
     throw new Error(INVALID_DRAFT_MESSAGE);
   }
-  return { content: result.content.trim() };
+  if (result.title !== undefined && (typeof result.title !== "string" || !result.title.trim()
+    || result.title.trim().length > 100 || /[\r\n]/.test(result.title.trim())
+    || /<[/A-Za-z][^>]*>|```/.test(result.title))) {
+    throw new Error(INVALID_DRAFT_MESSAGE);
+  }
+  return { content: result.content.trim(), ...(typeof result.title === "string" ? { title: result.title.trim() } : {}) };
 }
 
 function isPositiveId(value: number): boolean {
