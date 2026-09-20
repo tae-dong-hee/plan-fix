@@ -33,9 +33,10 @@ public class BoardAiDraftController {
             @RequestParam(required = false) Long courseId,
             @RequestParam(required = false) List<Long> visitedSpotIds) {
         if (principal == null) throw new CoreException(ErrorType.UNAUTHORIZED);
+        var draft = drafts.generate(principal.id(), files, title, note, courseId, visitedSpotIds);
         return ResponseEntity.ok().cacheControl(CacheControl.noStore())
-                .body(new DraftResponse(drafts.generate(principal.id(), files, title, note, courseId, visitedSpotIds)));
+                .body(new DraftResponse(draft.content(), draft.title()));
     }
 
-    public record DraftResponse(String content) { }
+    public record DraftResponse(String content, String title) { }
 }

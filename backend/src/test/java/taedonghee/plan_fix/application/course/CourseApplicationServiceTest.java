@@ -98,6 +98,53 @@ class CourseApplicationServiceTest {
     }
 
     @Test
+    @DisplayName("공개 코스에서 선택한 일차만 순서와 메모를 유지해 새 비공개 코스로 가져온다")
+    void importDays_copies_only_selected_days_into_private_course() {
+        Fixture fixture = new Fixture();
+        SpotModel firstSpot = fixture.spots.save(spot("첫 장소", "관광지", SpotStatus.ACTIVE));
+        SpotModel lastSpot = fixture.spots.save(spot("마지막 장소", "음식점", SpotStatus.ACTIVE));
+        CourseApplicationService service = fixture.service();
+        CourseResult source = service.create(10L, new CourseCommand.Create(
+                "원본 코스", "원본 설명", "cover.jpg", CourseVisibility.PUBLIC,
+                LocalDate.of(2026, 9, 10), LocalDate.of(2026, 9, 12),
+                List.of(
+                        new CourseDayModel(1, List.of(new CourseSpotModel(firstSpot.spotId(), "첫 메모"))),
+                        new CourseDayModel(2, List.of()),
+                        new CourseDayModel(3, List.of(new CourseSpotModel(lastSpot.spotId(), "마지막 메모")))
+                )));
+
+        CourseResult imported = service.importDays(20L, source.courseId(), List.of(1, 3));
+
+        assertThat(imported.userId()).isEqualTo(20L);
+        assertThat(imported.title()).isEqualTo("원본 코스");
+        assertThat(imported.description()).isEqualTo("원본 설명");
+        assertThat(imported.thumbnail()).isEqualTo("cover.jpg");
+        assertThat(imported.visibility()).isEqualTo(CourseVisibility.PRIVATE);
+        assertThat(imported.startDate()).isNull();
+        assertThat(imported.endDate()).isNull();
+        assertThat(imported.days()).extracting(CourseResult.Day::dayNumber).containsExactly(1, 2);
+        assertThat(imported.days().get(0).spots().getFirst().spotId()).isEqualTo(firstSpot.spotId());
+        assertThat(imported.days().get(0).spots().getFirst().memo()).isEqualTo("첫 메모");
+        assertThat(imported.days().get(1).spots().getFirst().spotId()).isEqualTo(lastSpot.spotId());
+        assertThat(imported.days().get(1).spots().getFirst().memo()).isEqualTo("마지막 메모");
+    }
+
+    @Test
+    @DisplayName("다른 사용자의 비공개 코스는 가져올 수 없다")
+    void importDays_rejects_other_users_private_course() {
+        Fixture fixture = new Fixture();
+        SpotModel spot = fixture.spots.save(spot("장소", "관광지", SpotStatus.ACTIVE));
+        CourseApplicationService service = fixture.service();
+        CourseResult source = service.create(10L, new CourseCommand.Create(
+                "비공개 코스", null, null, CourseVisibility.PRIVATE, null, null,
+                List.of(new CourseDayModel(1, List.of(new CourseSpotModel(spot.spotId(), null))))));
+
+        assertThatThrownBy(() -> service.importDays(20L, source.courseId(), List.of(1)))
+                .isInstanceOf(CoreException.class)
+                .hasMessageContaining("공개된 코스만");
+    }
+
+    @Test
     @DisplayName("코스 수정 시 작성자 본인이 아니면 예외가 발생한다")
     void update_requires_course_owner() {
         Fixture fixture = new Fixture();

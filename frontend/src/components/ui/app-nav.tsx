@@ -123,7 +123,7 @@ export default function AppNav({ className = "", courseIsOwner }: AppNavProps) {
       ) : null}
 
       <nav
-        className={`fixed inset-x-0 bottom-0 z-40 border-t border-border/70 bg-background md:bottom-auto md:top-0 md:border-t-0 md:border-b ${className}`}
+        className={`app-nav fixed inset-x-0 bottom-0 z-40 border-t border-border/70 md:bottom-auto md:top-0 md:border-t-0 md:border-b ${className}`}
         aria-label="하단 메뉴"
       >
         <div className="mx-auto h-20 max-w-7xl px-5 sm:h-24 sm:px-8 md:flex md:h-16 md:items-center md:justify-between lg:px-10">

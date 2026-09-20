@@ -42,6 +42,21 @@ public class CourseController {
     }
 
     /**
+     * 공개 코스에서 선택한 일차만 로그인 사용자의 새 비공개 코스로 복사한다.
+     */
+    @PostMapping("/{courseId}/imports")
+    public ResponseEntity<CourseResponse> importDays(
+            @AuthenticationPrincipal AuthenticatedUser principal,
+            @PathVariable Long courseId,
+            @RequestBody CourseRequest.CopyDays request
+    ) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(CourseResponse.from(
+                        courseApplicationService.importDays(principal.id(), courseId, request.dayNumbers()),
+                        principal.id(), true));
+    }
+
+    /**
      * 로그인 사용자의 코스 목록 조회 API
      */
     @GetMapping

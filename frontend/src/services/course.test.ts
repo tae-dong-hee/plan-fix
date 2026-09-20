@@ -1,5 +1,5 @@
 import { CourseAccessError, CourseConflictError } from "@/lib/course-errors";
-import { createCourse, deleteCourse, fetchCourse, fetchMyCourses, fetchPublicCourses, updateCourse } from "./course";
+import { createCourse, deleteCourse, fetchCourse, fetchMyCourses, fetchPublicCourses, importCourseDays, updateCourse } from "./course";
 import { UnauthorizedError } from "./spots";
 import { setApiBaseUrl } from "@/test-utils/env";
 
@@ -80,6 +80,31 @@ describe("course service", () => {
       });
 
       await expect(fetchMyCourses()).rejects.toThrow(CourseAccessError);
+    });
+  });
+
+  describe("importCourseDays", () => {
+    it("선택한 일차 번호를 코스 가져오기 API에 전송한다", async () => {
+      const imported = { courseId: 42, title: "가져온 코스" };
+      global.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => imported });
+
+      await expect(importCourseDays(10, [1, 3])).resolves.toEqual(imported);
+      expect(global.fetch).toHaveBeenCalledWith("http://localhost:8080/api/v1/courses/10/imports", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ dayNumbers: [1, 3] }),
+      });
+    });
+
+    it("서버의 가져오기 실패 사유를 사용자 메시지로 전달한다", async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        status: 400,
+        ok: false,
+        json: async () => ({ code: "BAD_REQUEST", message: "가져올 일정을 선택해 주세요." }),
+      });
+
+      await expect(importCourseDays(10, [])).rejects.toThrow("가져올 일정을 선택해 주세요.");
     });
   });
 
