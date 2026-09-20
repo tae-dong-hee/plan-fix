@@ -77,10 +77,10 @@ export default function MainTravelHeader({
             <h1 className="travel-hero-title">어디로 떠나볼까요?</h1>
             <p className="travel-hero-description">좋아하는 장소를 발견하고, 나만의 여행을 만들어 보세요.</p>
             <div className="travel-hero-actions">
-              <Link to="/courses/create?mode=ai" className="travel-hero-primary"><Sparkles size={15} aria-hidden="true" />AI로 여행 만들기<ArrowUpRight size={16} aria-hidden="true" /></Link>
+              <Link to="/courses/create?mode=ai" className="travel-hero-primary"><Sparkles size={22} strokeWidth={2.5} aria-hidden="true" />AI로 여행 만들기<ArrowUpRight size={18} strokeWidth={2.5} aria-hidden="true" /></Link>
               <div className="travel-hero-shortcuts">
-                <Link to="/courses/create?mode=ai&trip=daytrip" className="travel-hero-secondary travel-hero-daytrip"><Sun size={15} aria-hidden="true" />당일치기 떠나기<ArrowUpRight size={14} aria-hidden="true" /></Link>
-                <Link to="/courses/create" className="travel-hero-secondary">직접 코스 짜기<ArrowUpRight size={14} aria-hidden="true" /></Link>
+                <Link to="/courses/create?mode=ai&trip=daytrip" className="travel-hero-secondary travel-hero-daytrip"><Sun size={22} strokeWidth={2.5} aria-hidden="true" />당일치기 떠나기<ArrowUpRight size={18} strokeWidth={2.5} aria-hidden="true" /></Link>
+                <Link to="/courses/create" className="travel-hero-secondary"><Map size={22} strokeWidth={2.5} aria-hidden="true" />직접 코스 짜기<ArrowUpRight size={18} strokeWidth={2.5} aria-hidden="true" /></Link>
               </div>
             </div>
           </div>
