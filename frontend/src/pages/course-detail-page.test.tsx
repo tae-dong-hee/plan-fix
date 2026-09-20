@@ -1,7 +1,7 @@
 import { CourseAccessError } from "@/lib/course-errors";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { Mock } from "vitest";
-import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { Link, MemoryRouter, Route, Routes } from "react-router-dom";
 import CourseDetailPage from "./course-detail-page";
 import * as courseService from "@/services/course";
 import { UnauthorizedError } from "@/services/spots";
@@ -69,6 +69,13 @@ const mockInvite: courseService.CourseInvite = {
   expiresAt: "2026-09-20T12:00:00Z",
 };
 
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason: unknown) => void;
+  const promise = new Promise<T>((resolvePromise, rejectPromise) => { resolve = resolvePromise; reject = rejectPromise; });
+  return { promise, resolve, reject };
+}
+
 describe("CourseDetailPage", () => {
   beforeEach(() => {
     vi.resetAllMocks();
@@ -92,6 +99,7 @@ describe("CourseDetailPage", () => {
   const renderComponent = (courseId = "10") => {
     return render(
       <MemoryRouter initialEntries={[`/courses/${courseId}`]} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <Link to="/courses/20">다른 코스 열기</Link>
         <Routes>
           <Route path="/courses/:courseId" element={<CourseDetailPage />} />
         </Routes>
@@ -465,5 +473,107 @@ describe("CourseDetailPage", () => {
     fireEvent.change(selector, { target: { value: "EDITOR" } });
     await waitFor(() => expect(selector).toHaveValue("EDITOR"));
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it.each(["권한 변경", "멤버 회수"])("%s 이후 늦은 초기 멤버 조회가 이전 권한을 복원하지 않는다", async (action) => {
+    const member: courseService.CourseMember = { userId: 2, username: "friend", role: "EDITOR", joinedAt: "2026-09-19" };
+    const oldRequest = deferred<courseService.CourseMember[]>();
+    vi.mocked(courseService.fetchCourseMembers).mockReturnValueOnce(oldRequest.promise).mockResolvedValue([member]);
+    renderComponent();
+    fireEvent.click(await screen.findByRole("button", { name: "멤버 관리" }));
+    const selector = await screen.findByRole("combobox", { name: "friend 참여 권한" });
+    if (action === "권한 변경") {
+      fireEvent.change(selector, { target: { value: "VIEWER" } });
+      await waitFor(() => expect(selector).toHaveValue("VIEWER"));
+    } else {
+      fireEvent.click(screen.getByRole("button", { name: "friend 멤버 삭제" }));
+      await screen.findByText("참여 중인 멤버가 없습니다.");
+    }
+    await act(async () => oldRequest.resolve([member]));
+    if (action === "권한 변경") expect(screen.getByRole("combobox", { name: "friend 참여 권한" })).toHaveValue("VIEWER");
+    else expect(screen.queryByRole("combobox", { name: "friend 참여 권한" })).not.toBeInTheDocument();
+  });
+
+  it.each(["멤버 회수", "초대 취소"])("%s 실패는 기존 목록을 보존하고 재시도로 완료한다", async (action) => {
+    vi.mocked(courseService.fetchCourseMembers).mockResolvedValue([{ userId: 2, username: "friend", role: "EDITOR", joinedAt: "2026-09-19" }]);
+    vi.mocked(courseService.fetchPendingCourseInvites).mockResolvedValue([{ token: mockInvite.token, role: "EDITOR", createdAt: "2026-09-19", expiresAt: mockInvite.expiresAt }]);
+    const mutation = action === "멤버 회수" ? courseService.removeCourseMember : courseService.cancelCourseInvite;
+    vi.mocked(mutation).mockRejectedValueOnce(new Error("저장에 실패했습니다."));
+    renderComponent();
+    fireEvent.click(await screen.findByRole("button", { name: "멤버 관리" }));
+    const button = await screen.findByRole("button", { name: action === "멤버 회수" ? "friend 멤버 삭제" : "초대 취소" });
+    fireEvent.click(button);
+    expect(await screen.findByRole("alert")).toHaveTextContent("저장에 실패했습니다.");
+    expect(button).toBeEnabled();
+    expect(screen.getByRole("combobox", { name: "friend 참여 권한" })).toHaveValue("EDITOR");
+    expect(screen.getByRole("button", { name: "초대 취소" })).toBeInTheDocument();
+    fireEvent.click(button);
+    await screen.findByText(action === "멤버 회수" ? "참여 중인 멤버가 없습니다." : "사용 가능한 초대 링크가 없습니다.");
+    expect(mutation).toHaveBeenCalledTimes(2);
+    // 링크 취소는 기존 멤버를 제거하지 않고, 멤버 회수는 다른 사람에게 보낼 링크를 삭제하지 않는다.
+    if (action === "멤버 회수") expect(screen.getByRole("button", { name: "초대 취소" })).toBeInTheDocument();
+    else expect(screen.getByRole("combobox", { name: "friend 참여 권한" })).toHaveValue("EDITOR");
+  });
+
+  it("권한 변경 중 중복 변경·회수를 막고 관리창을 다시 열어도 늦은 조회와 경합하지 않는다", async () => {
+    const change = deferred<void>();
+    vi.mocked(courseService.fetchCourseMembers).mockResolvedValue([{ userId: 2, username: "friend", role: "EDITOR", joinedAt: "2026-09-19" }]);
+    vi.mocked(courseService.updateCourseMemberRole).mockReturnValue(change.promise);
+    renderComponent();
+    fireEvent.click(await screen.findByRole("button", { name: "멤버 관리" }));
+    const selector = await screen.findByRole("combobox", { name: "friend 참여 권한" });
+    fireEvent.change(selector, { target: { value: "VIEWER" } });
+    fireEvent.change(selector, { target: { value: "VIEWER" } });
+    fireEvent.click(screen.getByRole("button", { name: "friend 멤버 삭제" }));
+    expect(selector).toBeDisabled();
+    expect(courseService.updateCourseMemberRole).toHaveBeenCalledExactlyOnceWith("10", 2, "VIEWER");
+    expect(courseService.removeCourseMember).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "닫기" }));
+    fireEvent.click(screen.getByRole("button", { name: "멤버 관리" }));
+    expect(screen.getByRole("combobox", { name: "friend 참여 권한" })).toBeDisabled();
+    expect(courseService.fetchCourseMembers).toHaveBeenCalledTimes(2);
+    await act(async () => change.resolve());
+    expect(screen.getByRole("combobox", { name: "friend 참여 권한" })).toHaveValue("VIEWER");
+    expect(screen.getByRole("combobox", { name: "friend 참여 권한" })).toBeEnabled();
+  });
+
+  it("멤버 관리 요청에서 인증이 만료되면 목록을 유지하며 로그인으로 이동한다", async () => {
+    vi.mocked(courseService.fetchCourseMembers).mockResolvedValue([{ userId: 2, username: "friend", role: "EDITOR", joinedAt: "2026-09-19" }]);
+    vi.mocked(courseService.removeCourseMember).mockRejectedValue(new UnauthorizedError());
+    renderComponent();
+    fireEvent.click(await screen.findByRole("button", { name: "멤버 관리" }));
+    fireEvent.click(await screen.findByRole("button", { name: "friend 멤버 삭제" }));
+    await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith("/login"));
+    expect(screen.getByRole("combobox", { name: "friend 참여 권한" })).toHaveValue("EDITOR");
+  });
+
+  it("다른 코스로 이동하면 이전 관리창과 늦은 초대 생성 성공을 무시한다", async () => {
+    const creating = deferred<courseService.CourseInvite>();
+    vi.mocked(courseService.createCourseInvite).mockReturnValue(creating.promise);
+    vi.mocked(courseService.fetchCourse).mockResolvedValueOnce(mockCourse).mockResolvedValue({ ...mockCourse, courseId: 20, title: "새 여행" });
+    renderComponent();
+    fireEvent.click(await openInviteDialog());
+    fireEvent.click(screen.getByRole("link", { name: "다른 코스 열기" }));
+    await screen.findByRole("heading", { name: "새 여행" });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    await act(async () => creating.resolve(mockInvite));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(writeClipboard).not.toHaveBeenCalled();
+    expect(mockNavigate).not.toHaveBeenCalled();
+  });
+
+  it("다른 코스로 이동한 뒤 이전 권한 변경 인증 오류가 새 화면을 이동시키지 않는다", async () => {
+    const changing = deferred<void>();
+    vi.mocked(courseService.fetchCourseMembers).mockResolvedValue([{ userId: 2, username: "friend", role: "EDITOR", joinedAt: "2026-09-19" }]);
+    vi.mocked(courseService.updateCourseMemberRole).mockReturnValue(changing.promise);
+    vi.mocked(courseService.fetchCourse).mockResolvedValueOnce(mockCourse).mockResolvedValue({ ...mockCourse, courseId: 20, title: "새 여행" });
+    renderComponent();
+    fireEvent.click(await screen.findByRole("button", { name: "멤버 관리" }));
+    fireEvent.change(await screen.findByRole("combobox", { name: "friend 참여 권한" }), { target: { value: "VIEWER" } });
+    fireEvent.click(screen.getByRole("link", { name: "다른 코스 열기" }));
+    await screen.findByRole("heading", { name: "새 여행" });
+    await act(async () => changing.reject(new UnauthorizedError()));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(mockNavigate).not.toHaveBeenCalled();
   });
 });

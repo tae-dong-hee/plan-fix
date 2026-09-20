@@ -1,5 +1,5 @@
 import { setApiBaseUrl } from "@/test-utils/env";
-import { acceptCourseInvite, CourseInviteError, fetchCourseInvite } from "./course-invites";
+import { fetchCourseInviteShareStatus, acceptCourseInvite, CourseInviteError, fetchCourseInvite } from "./course-invites";
 
 describe("course invite service", () => {
   const originalEnv = import.meta.env.VITE_API_BASE_URL;
@@ -30,6 +30,16 @@ describe("course invite service", () => {
     expect(fetchMock).toHaveBeenCalledExactlyOnceWith(
       "http://localhost:8080/api/v1/course-invites/token%2Fwith%3Fspecial%23characters",
       { method: "GET", credentials: "include", signal: controller.signal },
+    );
+  });
+
+  it("전송 확인은 인증 쿠키와 시도 ID를 보내고 캐시를 사용하지 않는다", async () => {
+    fetchMock.mockResolvedValue({ ok: true, json: async () => ({ shared: true }) });
+    const controller = new AbortController();
+    await expect(fetchCourseInviteShareStatus("friend-token", "request-id", controller.signal)).resolves.toEqual({ shared: true });
+    expect(fetchMock).toHaveBeenCalledExactlyOnceWith(
+      "http://localhost:8080/api/v1/course-invites/friend-token/kakao-shares/request-id",
+      { method: "GET", credentials: "include", cache: "no-store", signal: controller.signal },
     );
   });
 

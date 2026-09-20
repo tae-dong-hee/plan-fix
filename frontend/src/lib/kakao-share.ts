@@ -5,6 +5,7 @@ type KakaoTextMessage = {
   text: string;
   link: { mobileWebUrl: string; webUrl: string };
   buttonTitle: string;
+  serverCallbackArgs: { invite_token: string; share_request_id: string };
 };
 
 type KakaoShareSdk = {
@@ -90,7 +91,7 @@ export function shareCourseInvite({ inviteUrl, courseTitle, memberRole }: {
   inviteUrl: string;
   courseTitle: string;
   memberRole: CourseInviteRole;
-}): void {
+}): { inviteToken: string; requestId: string } {
   const sdk = (window as KakaoShareWindow).Kakao;
   if (!sdk || typeof sdk.isInitialized !== "function" || !sdk.isInitialized()
     || typeof sdk.Share?.sendDefault !== "function") {
@@ -101,12 +102,17 @@ export function shareCourseInvite({ inviteUrl, courseTitle, memberRole }: {
   const title = Array.from(courseTitle.trim() || "여행 코스").slice(0, 70).join("");
   const role = memberRole === "EDITOR" ? "함께 편집" : "읽기 전용";
   try {
+    const inviteToken = new URL(inviteUrl).pathname.match(/^\/course-invites\/([^/]+)\/?$/)?.[1];
+    if (!inviteToken) throw new Error("Invalid invite URL");
+    const requestId = crypto.randomUUID();
     sdk.Share.sendDefault({
       objectType: "text",
       text: `[PlanFix] ${title}\n${role} 초대가 도착했어요. 초대를 확인하고 여행에 참여해 주세요.`,
       link: { mobileWebUrl: inviteUrl, webUrl: inviteUrl },
       buttonTitle: "초대 확인하기",
+      serverCallbackArgs: { invite_token: decodeURIComponent(inviteToken), share_request_id: requestId },
     });
+    return { inviteToken: decodeURIComponent(inviteToken), requestId };
   } catch {
     throw new Error("카카오톡 공유 창을 열지 못했어요. 다시 시도하거나 초대 링크를 복사해 주세요.");
   }

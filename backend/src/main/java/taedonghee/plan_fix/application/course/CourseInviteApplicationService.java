@@ -37,6 +37,11 @@ public class CourseInviteApplicationService {
         if (memberRole == null || memberRole == CourseMemberRole.OWNER) {
             throw new CoreException(ErrorType.BAD_REQUEST, "초대 권한은 VIEWER 또는 EDITOR만 가능합니다.");
         }
+        // Protect legacy memberships from links issued before this policy was introduced.
+        // Baseline before saving the new invitation so that this new link can change roles.
+        long previousInviteId = inviteRepository.latestInviteId(courseId);
+        memberRepository.findByCourseIdOrderByCreatedAtAsc(courseId)
+                .forEach(member -> member.initializeInviteBaseline(previousInviteId));
         OffsetDateTime now = OffsetDateTime.now();
         String token = newToken();
         CourseInviteJpaEntity invite = inviteRepository.save(CourseInviteJpaEntity.builder()
@@ -58,14 +63,27 @@ public class CourseInviteApplicationService {
             throw new CoreException(ErrorType.BAD_REQUEST, "만료된 초대 링크입니다.");
         }
         if (course.userId().equals(userId)) return new CourseInviteAcceptResult(course.courseId(), false, true);
-        if (memberRepository.existsByCourseIdAndUserId(course.courseId(), userId)) return new CourseInviteAcceptResult(course.courseId(), false, true);
         Long inviteId = invite.getCourseInviteId();
+        CourseMemberJpaEntity member = memberRepository.findByCourseIdAndUserId(course.courseId(), userId).orElse(null);
+        if (member != null && member.getLastAppliedInviteId() == null) {
+            member.initializeInviteBaseline(inviteRepository.latestInviteId(course.courseId()));
+        }
+        // A duplicate/older link never rolls back a newer invite or an owner's role change.
+        if (member != null && inviteId <= member.getLastAppliedInviteId()) {
+            return new CourseInviteAcceptResult(course.courseId(), false, true);
+        }
         if (revocationRepository.findByCourseIdAndUserId(course.courseId(), userId)
                 .filter(revocation -> inviteId <= revocation.getRevokedThroughInviteId()).isPresent()) {
             throw new CoreException(ErrorType.FORBIDDEN, "이 초대로 다시 참여할 수 없습니다. 코스 작성자에게 새 초대를 요청해 주세요.");
         }
-        memberRepository.save(CourseMemberJpaEntity.builder().courseId(course.courseId()).userId(userId)
-                .role(invite.getMemberRole()).createdAt(OffsetDateTime.now()).build());
+        if (member != null) {
+            member.applyInviteRole(invite.getMemberRole(), inviteId);
+            return new CourseInviteAcceptResult(course.courseId(), false, true);
+        }
+        member = CourseMemberJpaEntity.builder().courseId(course.courseId()).userId(userId)
+                .role(invite.getMemberRole()).createdAt(OffsetDateTime.now()).build();
+        member.applyInviteRole(invite.getMemberRole(), inviteId);
+        memberRepository.save(member);
         return new CourseInviteAcceptResult(course.courseId(), true, false);
     }
 
@@ -104,8 +122,11 @@ public class CourseInviteApplicationService {
         CourseModel course = activeCourseForUpdate(courseId); course.ensureOwner(ownerId);
         ensurePublicForSharing(course);
         if (role == null || role == CourseMemberRole.OWNER) throw new CoreException(ErrorType.BAD_REQUEST, "멤버 권한은 VIEWER 또는 EDITOR만 가능합니다.");
-        CourseMemberJpaEntity member = memberRepository.findByCourseIdOrderByCreatedAtAsc(courseId).stream().filter(m -> m.getUserId().equals(memberUserId)).findFirst().orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "멤버를 찾을 수 없습니다."));
-        member.changeRole(role);
+        CourseMemberJpaEntity member = memberRepository.findByCourseIdAndUserId(courseId, memberUserId)
+                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "멤버를 찾을 수 없습니다."));
+        // Links already issued at the time of the owner's decision cannot undo it.
+        member.applyInviteRole(role, Math.max(inviteRepository.latestInviteId(courseId),
+                member.getLastAppliedInviteId() == null ? 0 : member.getLastAppliedInviteId()));
     }
 
     @Transactional public void cancelInvite(Long ownerId, Long courseId, String token) {

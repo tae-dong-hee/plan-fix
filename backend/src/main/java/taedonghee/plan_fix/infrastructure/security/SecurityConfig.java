@@ -79,6 +79,8 @@ public class SecurityConfig {
                         // 카카오톡 초대 링크를 연 비회원도 코스 제목·초대 권한을 확인할 수 있다.
                         // 실제 참여(POST /accept)는 인증이 필요하다.
                         .requestMatchers(HttpMethod.GET, "/api/v1/course-invites/*").permitAll()
+                        // Kakao authenticates the delivery webhook with its admin key.
+                        .requestMatchers(HttpMethod.POST, "/api/v1/webhooks/kakao/share").permitAll()
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/api/v1/admin/**").permitAll()
                         .requestMatchers("/api/v1/ai/**").permitAll()

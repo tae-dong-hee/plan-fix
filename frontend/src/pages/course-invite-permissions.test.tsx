@@ -71,6 +71,23 @@ it.each(["VIEWER", "EDITOR"] as const)("%s 초대를 수락하면 일정·메모
   expect(screen.getByText("아직 계획이 없어요.")).toBeInTheDocument();
 });
 
+it.each([
+  ["EDITOR", false],
+  ["VIEWER", true],
+] as const)("기존 멤버가 오래된 %s 링크를 수락하면 링크 표시가 아닌 서버의 현재 권한을 사용한다", async (memberRole, canEdit) => {
+  vi.mocked(fetchCourseInvite).mockResolvedValue({
+    courseId: course.courseId, courseTitle: course.title, memberRole, expiresAt: "2026-09-22T00:00:00Z",
+  });
+  vi.mocked(acceptCourseInvite).mockResolvedValue({ courseId: course.courseId, joined: false, alreadyMember: true });
+  vi.mocked(courseService.fetchCourse).mockResolvedValue({ ...course, canEdit });
+  renderInvite();
+  fireEvent.click(await screen.findByRole("button", { name: "초대 수락하고 참여하기" }));
+  await screen.findByText(accommodation.name);
+  expect(Boolean(screen.queryByRole("link", { name: "코스 수정" }))).toBe(canEdit);
+  expect(courseService.fetchCourse).toHaveBeenCalledExactlyOnceWith("42");
+  expect(acceptCourseInvite).toHaveBeenCalledExactlyOnceWith("friend-token");
+});
+
 it("편집 멤버가 읽기 권한으로 변경되면 다시 돌아온 화면에서 편집을 차단하고 숙소는 유지한다", async () => {
   vi.mocked(courseService.fetchCourse)
     .mockResolvedValueOnce({ ...course, canEdit: true })

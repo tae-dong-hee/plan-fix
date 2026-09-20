@@ -30,7 +30,11 @@ export function acceptCourseInvite(token: string): Promise<CourseInviteAcceptRes
   return requestInvite(token, true);
 }
 
-async function requestInvite<T>(token: string, accepting: boolean, signal?: AbortSignal): Promise<T> {
+export function fetchCourseInviteShareStatus(token: string, requestId: string, signal?: AbortSignal): Promise<{ shared: boolean }> {
+  return requestInvite(token, false, signal, `/kakao-shares/${encodeURIComponent(requestId)}`);
+}
+
+async function requestInvite<T>(token: string, accepting: boolean, signal?: AbortSignal, subpath = ""): Promise<T> {
   const base = import.meta.env.VITE_API_BASE_URL?.trim().replace(/\/$/, "");
   if (!base) {
     throw new CourseInviteError(0, "초대 서비스를 사용할 수 없습니다. 잠시 후 다시 시도해 주세요.");
@@ -38,9 +42,10 @@ async function requestInvite<T>(token: string, accepting: boolean, signal?: Abor
 
   let response: Response;
   try {
-    response = await fetch(`${base}/course-invites/${encodeURIComponent(token)}${accepting ? "/accept" : ""}`, {
+    response = await fetch(`${base}/course-invites/${encodeURIComponent(token)}${accepting ? "/accept" : subpath}`, {
       method: accepting ? "POST" : "GET",
       credentials: "include",
+      ...(subpath ? { cache: "no-store" as const } : {}),
       ...(signal ? { signal } : {}),
     });
   } catch (error) {

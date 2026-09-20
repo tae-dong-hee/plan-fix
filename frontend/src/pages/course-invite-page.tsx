@@ -155,9 +155,10 @@ function CourseInvitation({ token }: { token: string }) {
                     <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-background text-primary shadow-sm">
                       {invite.memberRole === "EDITOR" ? <Pencil className="h-4 w-4" strokeWidth={1.8} aria-hidden="true" /> : <Eye className="h-4 w-4" strokeWidth={1.8} aria-hidden="true" />}
                     </span>
-                    <h2 className="break-keep text-sm font-semibold">{invite.memberRole === "EDITOR" ? "편집 권한으로 참여해요" : "읽기 권한으로 참여해요"}</h2>
+                    <h2 className="break-keep text-sm font-semibold">{invite.memberRole === "EDITOR" ? "편집 권한 초대" : "읽기 권한 초대"}</h2>
                   </div>
                   <p className="mt-2.5 break-keep text-[13px] leading-[1.7] text-muted-foreground">{invite.memberRole === "EDITOR" ? "여행 일정을 확인하고 장소와 메모를 함께 수정할 수 있어요." : "공유된 여행 일정과 장소, 메모를 확인할 수 있어요."}</p>
+                  <p className="mt-3 border-t border-primary/10 pt-3 text-xs leading-5 text-muted-foreground">권한은 하나만 적용돼요. 새로 만든 초대를 수락하면 해당 권한으로 바뀌어요. 더 최신 초대를 수락했거나 작성자가 이후 권한을 변경했다면 현재 권한이 유지돼요.</p>
                 </div>
                 <div className="mt-4 flex items-start gap-2.5 px-0.5 text-muted-foreground">
                   <CalendarClock className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={1.7} aria-hidden="true" />
