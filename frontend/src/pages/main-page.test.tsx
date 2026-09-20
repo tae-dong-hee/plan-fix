@@ -161,7 +161,7 @@ describe("MainPage public course carousel", () => {
     renderMainPage();
     await screen.findByText(publicCourse.title);
 
-    fireEvent.click(screen.getByRole("button", { name: "여행 지역 선택: 강원도 / 지역 선택" }));
+    fireEvent.click(screen.getByRole("button", { name: "지도에서 지역 선택: 강원도 전체" }));
     fireEvent.click(screen.getByRole("button", { name: region }));
     fireEvent.click(screen.getByRole("button", { name: `${region} 선택하기` }));
 
@@ -554,7 +554,7 @@ describe("MainPage popular spots carousel", () => {
     renderMainPage();
     await screen.findByText("표시할 인기 장소가 없어요.");
 
-    fireEvent.click(screen.getByRole("button", { name: "여행 지역 선택: 강원도 / 지역 선택" }));
+    fireEvent.click(screen.getByRole("button", { name: "지도에서 지역 선택: 강원도 전체" }));
     fireEvent.click(screen.getByRole("button", { name: "속초" }));
     fireEvent.click(screen.getByRole("button", { name: "속초 선택하기" }));
 
@@ -574,7 +574,7 @@ describe("MainPage popular spots carousel", () => {
       totalCount: 1,
     }));
     expect(screen.getByText("속초해수욕장")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "여행 지역 선택: 강원도 / 속초" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "지도에서 지역 선택: 강원도 속초" })).toBeInTheDocument();
     expect(screen.queryByText(/인기 장소를 불러오는 중/)).not.toBeInTheDocument();
   });
 
@@ -587,7 +587,7 @@ describe("MainPage popular spots carousel", () => {
       totalCount: 1,
     });
     renderMainPage();
-    fireEvent.click(screen.getByRole("button", { name: "여행 지역 선택: 강원도 / 지역 선택" }));
+    fireEvent.click(screen.getByRole("button", { name: "지도에서 지역 선택: 강원도 전체" }));
     fireEvent.click(screen.getByRole("button", { name: "속초" }));
     fireEvent.click(screen.getByRole("button", { name: "속초 선택하기" }));
     await screen.findByText("속초해수욕장");
@@ -613,7 +613,7 @@ describe("MainPage popular spots carousel", () => {
 
     renderMainPage();
 
-    fireEvent.click(screen.getByRole("button", { name: "여행 지역 선택: 강원도 / 지역 선택" }));
+    fireEvent.click(screen.getByRole("button", { name: "지도에서 지역 선택: 강원도 전체" }));
     fireEvent.click(screen.getByRole("button", { name: "강릉" }));
     fireEvent.click(screen.getByRole("button", { name: "강릉 선택하기" }));
 
@@ -1325,7 +1325,7 @@ describe("MainPage weather section", () => {
     renderMainPage();
 
     // Open region map
-    fireEvent.click(screen.getByRole("button", { name: "여행 지역 선택: 강원도 / 지역 선택" }));
+    fireEvent.click(screen.getByRole("button", { name: "지도에서 지역 선택: 강원도 전체" }));
     // Select 강릉
     fireEvent.click(screen.getByRole("button", { name: "강릉" }));
     fireEvent.click(screen.getByRole("button", { name: "강릉 선택하기" }));
@@ -1391,7 +1391,7 @@ describe("MainPage travel header", () => {
     expect(mockedFetch5DayWeather).toHaveBeenCalledTimes(3);
     expect(screen.getByRole("button", { name: "강원도 전체 둘러보기" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("button", { name: "강릉 바로 선택" })).toHaveAttribute("aria-pressed", "false");
-    expect(screen.getByRole("button", { name: "여행 지역 선택: 강원도 / 지역 선택" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "지도에서 지역 선택: 강원도 전체" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "강원도 주간 날씨" })).toBeInTheDocument();
     expect(mockedFetchPublicCourses).toHaveBeenCalledExactlyOnceWith({ sort: "random", size: 20 });
     expect(mockedFetchLikedCourses).toHaveBeenCalledTimes(1);

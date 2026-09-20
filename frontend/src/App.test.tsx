@@ -402,7 +402,7 @@ test("renders the main screen", () => {
 
   expect(screen.getByRole("heading", { name: "강원도 주간 날씨" })).toBeInTheDocument();
   expect(
-    screen.getByRole("button", { name: "여행 지역 선택: 강원도 / 지역 선택" }),
+    screen.getByRole("button", { name: "지도에서 지역 선택: 강원도 전체" }),
   ).toBeInTheDocument();
   expect(screen.getByRole("navigation", { name: "하단 메뉴" })).toBeInTheDocument();
 });
@@ -418,7 +418,7 @@ test("opens the Gangwon map and applies the selected region", () => {
   );
 
   fireEvent.click(
-    screen.getByRole("button", { name: "여행 지역 선택: 강원도 / 지역 선택" }),
+    screen.getByRole("button", { name: "지도에서 지역 선택: 강원도 전체" }),
   );
 
   expect(screen.getByRole("dialog", { name: "어디로 떠나볼까요?" })).toBeInTheDocument();
@@ -471,7 +471,7 @@ test("opens the Gangwon map and applies the selected region", () => {
   expect(screen.queryByRole("dialog", { name: "어디로 떠나볼까요?" })).not.toBeInTheDocument();
   expect(screen.getByRole("heading", { name: "강릉 주간 날씨" })).toBeInTheDocument();
   expect(
-    screen.getByRole("button", { name: "여행 지역 선택: 강원도 / 강릉" }),
+    screen.getByRole("button", { name: "지도에서 지역 선택: 강원도 강릉" }),
   ).toBeInTheDocument();
 });
 
@@ -486,7 +486,7 @@ test("touch selects a region without a hover preview moving the map before the c
   );
 
   fireEvent.click(
-    screen.getByRole("button", { name: "여행 지역 선택: 강원도 / 지역 선택" }),
+    screen.getByRole("button", { name: "지도에서 지역 선택: 강원도 전체" }),
   );
   const region = screen.getByRole("button", { name: "정선" });
 
@@ -519,7 +519,7 @@ test("shows region guidance with keyboard selection", () => {
   );
 
   fireEvent.click(
-    screen.getByRole("button", { name: "여행 지역 선택: 강원도 / 지역 선택" }),
+    screen.getByRole("button", { name: "지도에서 지역 선택: 강원도 전체" }),
   );
 
   const jeongseonRegion = screen.getByRole("button", { name: "정선" });
@@ -550,7 +550,7 @@ test("closes the region map without changing the initial location", () => {
   );
 
   fireEvent.click(
-    screen.getByRole("button", { name: "여행 지역 선택: 강원도 / 지역 선택" }),
+    screen.getByRole("button", { name: "지도에서 지역 선택: 강원도 전체" }),
   );
   fireEvent.keyDown(document, { key: "Escape" });
 
