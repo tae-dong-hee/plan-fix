@@ -1,0 +1,13 @@
+/* Keep the reference map palette identical across pages and device themes. */
+.gangwon-map-canvas {
+  color-scheme: only light;
+  --background: 270 33% 99%;
+  --foreground: 253 27% 18%;
+  --muted: 260 30% 96%;
+  --muted-foreground: 254 9% 46%;
+  --border: 260 24% 91%;
+  --primary: 258 72% 56%;
+  --primary-foreground: 0 0% 100%;
+  background: linear-gradient(hsl(var(--muted) / 0.4), hsl(var(--muted) / 0.4)),
+    hsl(var(--background));
+}
