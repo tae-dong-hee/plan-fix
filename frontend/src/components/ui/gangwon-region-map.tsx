@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useRef,
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
@@ -8,6 +9,8 @@ import {
 import { Check, Compass, Landmark, MapPinned, UtensilsCrossed, X } from "lucide-react";
 
 import { gangwonMapPaths } from "@/assets/gangwon-map-paths";
+
+import "./gangwon-region-map.css";
 
 export type GangwonRegion =
   | "철원"
@@ -242,6 +245,27 @@ export default function GangwonRegionMap({
 }: GangwonRegionMapProps) {
   const [hoveredRegion, setHoveredRegion] = useState<GangwonRegion | null>(null);
   const [pendingRegion, setPendingRegion] = useState<GangwonRegion | null>(selectedRegion);
+  const mapStageRef = useRef<HTMLDivElement>(null);
+  const [labelFontSize, setLabelFontSize] = useState(20);
+
+  useEffect(() => {
+    const stage = mapStageRef.current;
+    if (!open || !stage) return;
+
+    // Keep the original SVG coordinates while preventing tiny text on narrow screens.
+    const measure = () => {
+      const { width } = stage.getBoundingClientRect();
+      if (width > 0) setLabelFontSize(Math.max(20, (12 * 800) / width));
+    };
+    measure();
+    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(measure);
+    observer?.observe(stage);
+    window.addEventListener("resize", measure);
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, [open]);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -323,7 +347,7 @@ export default function GangwonRegionMap({
           </button>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-5 sm:px-7 sm:pb-7">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 pb-5 sm:px-7 sm:pb-7">
           <header className="mx-auto max-w-2xl text-center">
             <h2
               id="region-dialog-title"
@@ -337,13 +361,12 @@ export default function GangwonRegionMap({
           </header>
 
           <div className="mt-5 grid content-start gap-4 sm:mt-6 sm:gap-5 lg:grid-cols-[1fr_260px] lg:items-stretch">
-            <div className="relative overflow-hidden rounded-xl bg-muted/40 p-3 sm:p-4">
+            <div className="gangwon-map-canvas relative overflow-hidden rounded-xl p-2 sm:p-4">
               <style>{`
                 #gangwon-boundary-map path {
                   fill: hsl(var(--muted));
                   stroke: hsl(var(--border));
-                  stroke-width: 1.5px;
-                  vector-effect: non-scaling-stroke;
+                  stroke-width: 2px;
                   transform-box: fill-box;
                   transform-origin: center;
                   cursor: pointer;
@@ -374,7 +397,7 @@ export default function GangwonRegionMap({
                     ? `#gangwon-boundary-map path#${hoveredMapId} {
                         fill: url(#hovered-region-fill);
                         stroke: hsl(var(--primary));
-                        stroke-width: 2.25px;
+                        stroke-width: 3px;
                         transform: translateY(-8px) scale(${(
                           (mapScaleByMapId[hoveredMapId] ?? 1) * 1.018
                         ).toFixed(3)});
@@ -384,7 +407,7 @@ export default function GangwonRegionMap({
                 }
               `}</style>
 
-              <div className="relative mx-auto aspect-[800/699] w-full max-w-[620px]">
+              <div ref={mapStageRef} className="relative mx-auto aspect-[800/699] w-full max-w-[620px]">
                 <svg className="pointer-events-none absolute h-0 w-0" aria-hidden="true">
                   <defs>
                     <linearGradient id="hovered-region-fill" x1="0" y1="0" x2="0" y2="1">
@@ -492,10 +515,10 @@ export default function GangwonRegionMap({
                         onKeyDown={(event) => handleRegionKeyDown(event, region.name)}
                       >
                         <rect
-                          x={region.label[0] - 30}
-                          y={region.label[1] - 18}
-                          width="60"
-                          height="36"
+                          x={region.label[0] - Math.max(30, labelFontSize + 6)}
+                          y={region.label[1] - Math.max(18, (labelFontSize + 12) / 2)}
+                          width={Math.max(60, labelFontSize * 2 + 12)}
+                          height={Math.max(36, labelFontSize + 12)}
                           rx="10"
                           fill="transparent"
                         />
@@ -507,7 +530,7 @@ export default function GangwonRegionMap({
                           fill={isActive ? "hsl(var(--primary-foreground))" : "hsl(var(--foreground))"}
                           stroke={isActive ? "hsl(var(--primary))" : "hsl(var(--background))"}
                           strokeWidth={isActive ? 5.5 : 4.5}
-                          fontSize={20}
+                          fontSize={labelFontSize}
                           letterSpacing={region.labelLetterSpacing}
                           paintOrder="stroke"
                           className="pointer-events-none select-none font-semibold transition-colors duration-200"
