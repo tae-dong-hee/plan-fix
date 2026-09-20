@@ -4,6 +4,7 @@ import SpotImage from "@/components/ui/spot-image";
 import { Link } from "react-router-dom";
 
 import { sigunguCodeByRegion } from "@/components/ui/gangwon-region-map";
+import { getSimilarSpotImage } from "@/lib/similar-spot-images";
 import type { PopularSpot } from "@/services/spots";
 
 const cityByCode = Object.fromEntries(
@@ -48,6 +49,7 @@ export default function MainSpotCard({
           <SpotImage
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 motion-reduce:transform-none motion-reduce:transition-none"
             src={spot.thumbnail}
+            similarImage={getSimilarSpotImage(spot)}
             alt={spot.title}
             loading="lazy"
           />

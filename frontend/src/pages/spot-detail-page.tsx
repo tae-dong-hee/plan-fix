@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   CalendarDays,
@@ -23,6 +23,7 @@ import AppNav from "@/components/ui/app-nav";
 import SpotImage from "@/components/ui/spot-image";
 import GooglePlacePhotoCard from "@/components/ui/google-place-photo-card";
 import { getVerifiedSpotImageCredit } from "@/lib/verified-spot-images";
+import { getSimilarSpotImage } from "@/lib/similar-spot-images";
 import {
   hasSpotCoordinates,
   MISSING_SPOT_ADDRESS,
@@ -82,6 +83,7 @@ export default function SpotDetailPage() {
   // undefined = 로딩 중, null = 없음(404) 또는 에러
   const [spot, setSpot] = useState<SpotDetail | null | undefined>(undefined);
   const [selectedImage, setSelectedImage] = useState(0);
+  const [displayedImage, setDisplayedImage] = useState<{ key: string; source: string } | null>(null);
 
   // 이 API는 호출할 때마다 조회수를 늘린다. React.StrictMode는 개발 모드에서 effect를
   // 마운트→클린업→재마운트로 일부러 두 번 실행하는데, 이때 매번 fetch를 새로 호출하면
@@ -138,7 +140,16 @@ export default function SpotDetailPage() {
     [spot?.info],
   );
   const activeImage = galleryImages[selectedImage];
-  const activeImageCredit = getVerifiedSpotImageCredit(activeImage);
+  const similarImage = spot ? getSimilarSpotImage(spot) : undefined;
+  const imageKey = JSON.stringify([spot?.spotId, activeImage, similarImage?.url]);
+  const displayedSource = displayedImage?.key === imageKey
+    ? displayedImage.source
+    : activeImage ?? similarImage?.url;
+  const activeImageCredit = getVerifiedSpotImageCredit(displayedSource);
+  const isSimilarImage = !!similarImage && displayedSource === similarImage.url;
+  const handleImageSourceChange = useCallback((source: string) => {
+    setDisplayedImage({ key: imageKey, source });
+  }, [imageKey]);
 
   const goBack = () => navigate(-1);
 
@@ -271,6 +282,8 @@ export default function SpotDetailPage() {
                       className="h-full w-full object-cover"
                       src={activeImage}
                       alt={spot.title}
+                      similarImage={similarImage}
+                      onSourceChange={handleImageSourceChange}
                     />
                     {galleryImages.length > 1 ? (
                       <>
@@ -283,6 +296,14 @@ export default function SpotDetailPage() {
                       </>
                     ) : null}
                   </div>
+                  {isSimilarImage ? (
+                    <p className="px-2 pb-1 pt-3 text-xs leading-5 text-muted-foreground sm:px-3">
+                      ‘유사 이미지’는 실제 장소 사진이 아닙니다.{" "}
+                      <Link to="/image-credits#similar-images" className={`rounded underline underline-offset-4 hover:text-primary ${FOCUS_RING}`}>
+                        유사 이미지 출처
+                      </Link>
+                    </p>
+                  ) : null}
                 </GooglePlacePhotoCard>
                 {galleryImages.length > 1 ? (
                   <div className="flex items-center justify-end gap-1.5 px-2 pt-3 text-xs font-medium text-muted-foreground sm:px-3" role="status" aria-label="현재 사진">

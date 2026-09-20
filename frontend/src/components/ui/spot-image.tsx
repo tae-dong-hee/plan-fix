@@ -1,4 +1,4 @@
-import { useState, type ImgHTMLAttributes } from "react";
+import { useEffect, useState, type ImgHTMLAttributes } from "react";
 import fallbackSpotImage from "@/assets/spot-placeholder.svg";
 import { getVerifiedSpotImageCredit, getVerifiedSpotImageTitle } from "@/lib/verified-spot-images";
 import { cn } from "@/lib/utils";
@@ -8,6 +8,8 @@ export const FALLBACK_SPOT_IMAGE = fallbackSpotImage;
 type SpotImageProps = Omit<ImgHTMLAttributes<HTMLImageElement>, "src" | "onError"> & {
   src?: string | null;
   alt: string;
+  compactSimilarLabel?: boolean;
+  onSourceChange?: (source: string) => void;
   similarImage?: {
     url: string;
     title: string;
@@ -22,7 +24,7 @@ export default function SpotImage(props: SpotImageProps) {
   return <SpotImageContent key={JSON.stringify([props.src?.trim(), props.similarImage?.url])} {...props} />;
 }
 
-function SpotImageContent({ src, alt, title, className, similarImage, ...props }: SpotImageProps) {
+function SpotImageContent({ src, alt, title, className, similarImage, compactSimilarLabel = false, onSourceChange, ...props }: SpotImageProps) {
   const [failedSources, setFailedSources] = useState<string[]>([]);
   const displayedSource = [src?.trim(), similarImage?.url].find(
     (source): source is string => !!source && !failedSources.includes(source),
@@ -32,6 +34,10 @@ function SpotImageContent({ src, alt, title, className, similarImage, ...props }
   const similarTitle = similarImage
     ? `유사 이미지: ${similarImage.title} · 실제 장소 사진이 아닙니다. · 사진: ${similarImage.author} · ${similarImage.license} · 출처: ${similarImage.sourceUrl}`
     : undefined;
+
+  useEffect(() => {
+    onSourceChange?.(displayedSource);
+  }, [displayedSource, onSourceChange]);
 
   return (
     <>
@@ -49,10 +55,13 @@ function SpotImageContent({ src, alt, title, className, similarImage, ...props }
       />
       {isSimilar ? (
         <span
-          className="pointer-events-none absolute bottom-2 left-2 rounded-md bg-black/60 px-2 py-1 text-[10px] font-medium leading-none text-white sm:text-[11px]"
+          className={cn(
+            "pointer-events-none absolute rounded-md bg-black/60 font-medium leading-none text-white",
+            compactSimilarLabel ? "bottom-0.5 left-0.5 px-1 py-0.5 text-[9px]" : "bottom-2 left-2 px-2 py-1 text-[10px] sm:text-[11px]",
+          )}
           aria-hidden="true"
         >
-          유사 이미지
+          {compactSimilarLabel ? "유사" : "유사 이미지"}
         </span>
       ) : null}
     </>
