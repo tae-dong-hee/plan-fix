@@ -69,29 +69,28 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  column-gap: 16px;
-  row-gap: 4px;
+  gap: 10px;
   margin-top: 21px;
 }
 
 .travel-hero-shortcuts {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  column-gap: 16px;
+  display: contents;
 }
 
 .travel-hero-primary,
 .travel-hero-secondary {
   display: inline-flex;
-  min-height: 44px;
+  min-height: 52px;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  border-radius: 10px;
-  padding: 9px 13px;
-  font-size: 11px;
-  font-weight: 600;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  padding: 13px 16px;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.4;
+  white-space: nowrap;
   transition: background 150ms ease, box-shadow 150ms ease;
 }
 
@@ -107,20 +106,18 @@
 }
 
 .travel-hero-secondary {
-  gap: 5px;
-  padding: 9px 0;
-  color: var(--hero-secondary-ink);
-  white-space: nowrap;
+  border-color: #d1c1e8;
+  background: #ffffffc7;
+  color: var(--hero-ink);
 }
 
 .travel-hero-secondary:hover {
-  color: var(--hero-ink);
-  text-decoration: underline;
-  text-underline-offset: 4px;
+  background: #fff;
+  box-shadow: 0 4px 12px #6a3fb21a;
 }
 
-.travel-hero-daytrip {
-  color: var(--hero-ink);
+.travel-hero-actions svg {
+  flex-shrink: 0;
 }
 
 .travel-hero-actions a:focus-visible {
@@ -282,6 +279,8 @@
 }
 
 .dark .travel-hero-eyebrow { color: #bb9eea; }
+.dark .travel-hero-secondary { border-color: #70558f; background: #3a2b50; }
+.dark .travel-hero-secondary:hover { background: #493661; }
 .dark .travel-hero-orbit { border-color: #63468566; background: #392c493d; }
 .dark .travel-hero-art { opacity: 0.88; }
 
@@ -326,9 +325,9 @@
     content: "";
     pointer-events: none;
   }
-  .travel-hero-actions { align-items: flex-start; flex-direction: column; gap: 4px; }
-  .travel-hero-primary { padding: 10px 13px; font-size: 12px; }
-  .travel-hero-secondary { font-size: 11px; }
+  .travel-hero-actions { align-items: stretch; flex-direction: column; }
+  .travel-hero-primary, .travel-hero-secondary { justify-content: flex-start; }
+  .travel-hero-actions a > svg:last-child { margin-left: auto; }
   .travel-weather-icon { width: 29px; height: 29px; border-radius: 9px; }
   .travel-weather-icon > svg { width: 18px; height: 18px; }
 }
