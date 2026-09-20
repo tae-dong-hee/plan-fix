@@ -4,6 +4,7 @@ import {
   AlertCircle,
   Calendar,
   ChevronRight,
+  CopyPlus,
   Eye,
   Globe,
   Heart,
@@ -21,6 +22,7 @@ import AppNav from "@/components/ui/app-nav";
 import CourseRouteMap from "@/components/ui/course-route-map";
 import CourseMetadata from "@/components/ui/course-metadata";
 import { CourseInviteDialog, CourseInviteShareDialog } from "@/components/ui/course-invite-dialog";
+import CourseImportDialog from "@/components/ui/course-import-dialog";
 import {
   CourseResponse,
   cancelCourseInvite,
@@ -30,6 +32,7 @@ import {
   fetchCourseMembers,
   fetchDayAccommodations,
   fetchPendingCourseInvites,
+  importCourseDays,
   removeCourseMember,
   updateCourseMemberRole,
   type CourseInviteRole,
@@ -66,6 +69,9 @@ export default function CourseDetailPage() {
   const memberActionInFlight = useRef(false);
   const [memberError, setMemberError] = useState<string | null>(null);
   const [pendingInvites, setPendingInvites] = useState<PendingCourseInvite[]>([]);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
   const isOwner = !loading && !error && String(course?.courseId) === courseId && course?.isOwner === true;
   const canEdit = course?.canEdit ?? isOwner;
   const courseListPath = isOwner ? "/courses" : "/courses/public";
@@ -88,6 +94,25 @@ export default function CourseDetailPage() {
       }
       alert(err instanceof Error ? err.message : "코스 삭제에 실패했습니다.");
       setDeleting(false);
+    }
+  };
+
+  const handleImport = async (dayNumbers: number[]) => {
+    if (!courseId || importing) return;
+    setImporting(true);
+    setImportError(null);
+    try {
+      const imported = await importCourseDays(courseId, dayNumbers);
+      setImportDialogOpen(false);
+      navigate(`/courses/${imported.courseId}`);
+    } catch (err) {
+      if (err instanceof UnauthorizedError) {
+        navigate("/login");
+        return;
+      }
+      setImportError(err instanceof Error ? err.message : "코스를 가져오지 못했습니다.");
+    } finally {
+      setImporting(false);
     }
   };
 
@@ -395,13 +420,24 @@ export default function CourseDetailPage() {
               >
                 코스 목록
               </Link>
-              <Link
-                to="/courses/create"
-                className="flex items-center gap-1.5 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow"
-              >
-                <Plus className="h-4 w-4" />
-                새 코스 만들기
-              </Link>
+              {isOwner ? (
+                <Link
+                  to="/courses/create"
+                  className="flex items-center gap-1.5 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow"
+                >
+                  <Plus className="h-4 w-4" />
+                  새 코스 만들기
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => { setImportError(null); setImportDialogOpen(true); }}
+                  className="flex items-center gap-1.5 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow"
+                >
+                  <CopyPlus className="h-4 w-4" />
+                  코스 가져오기
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -462,6 +498,15 @@ export default function CourseDetailPage() {
           onCreate={() => void handleInvite()}
           onClose={() => setInviteDialogOpen(false)}
           onDismissError={() => setInviteToast(null)}
+        />
+      )}
+      {importDialogOpen && course && !isOwner && (
+        <CourseImportDialog
+          course={course}
+          importing={importing}
+          error={importError}
+          onImport={(dayNumbers) => void handleImport(dayNumbers)}
+          onClose={() => { if (!importing) setImportDialogOpen(false); }}
         />
       )}
     </div>

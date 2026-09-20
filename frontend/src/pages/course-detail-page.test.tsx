@@ -78,6 +78,7 @@ describe("CourseDetailPage", () => {
     vi.mocked(courseService.fetchDayAccommodations).mockResolvedValue([]);
     vi.mocked(courseService.fetchPendingCourseInvites).mockResolvedValue([]);
     vi.mocked(courseService.createCourseInvite).mockResolvedValue(mockInvite);
+    vi.mocked(courseService.importCourseDays).mockResolvedValue({ ...mockCourse, courseId: 99, isOwner: true });
     writeClipboard.mockResolvedValue(undefined);
     Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: writeClipboard } });
   });
@@ -150,6 +151,30 @@ describe("CourseDetailPage", () => {
     expect(screen.queryByText("참여 멤버")).not.toBeInTheDocument();
     expect(courseService.fetchCourseMembers).not.toHaveBeenCalled();
     expect(courseService.fetchDayAccommodations).not.toHaveBeenCalled();
+  });
+
+  it("다른 여행자의 코스는 일차를 골라 내 코스로 가져올 수 있다", async () => {
+    vi.mocked(courseService.fetchCourse).mockResolvedValue({ ...mockCourse, isOwner: false, canEdit: false });
+    renderComponent();
+
+    fireEvent.click(await screen.findByRole("button", { name: "코스 가져오기" }));
+    const dialog = screen.getByRole("dialog", { name: "코스 가져오기" });
+    expect(within(dialog).getByRole("checkbox", { name: "Day 1 일정 선택" })).toBeChecked();
+    expect(within(dialog).getByRole("checkbox", { name: "Day 2 일정 선택" })).toBeChecked();
+    expect(within(dialog).getByText("1박 2일")).toBeInTheDocument();
+
+    fireEvent.click(within(dialog).getByRole("checkbox", { name: "Day 2 일정 선택" }));
+    expect(within(dialog).getByText("당일치기 여행")).toBeInTheDocument();
+    fireEvent.click(within(dialog).getByRole("button", { name: "선택한 1일 가져오기" }));
+
+    await waitFor(() => expect(courseService.importCourseDays).toHaveBeenCalledExactlyOnceWith("10", [1]));
+    expect(mockNavigate).toHaveBeenCalledWith("/courses/99");
+  });
+
+  it("본인 코스에는 기존 새 코스 만들기 버튼을 유지한다", async () => {
+    renderComponent();
+    expect(await screen.findByRole("link", { name: "새 코스 만들기" })).toHaveAttribute("href", "/courses/create");
+    expect(screen.queryByRole("button", { name: "코스 가져오기" })).not.toBeInTheDocument();
   });
 
   it("코스 정보를 성공적으로 로드하여 Day별 장소를 렌더링한다", async () => {

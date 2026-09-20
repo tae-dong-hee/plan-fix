@@ -113,6 +113,48 @@ public class CourseApplicationService {
     }
 
     /**
+     * 다른 사용자의 공개 코스에서 선택한 일차만 새 코스로 가져온다.
+     * 원본 일정의 장소 순서와 메모, 일차별 테마는 유지하되 선택한 순서대로 Day 1부터 다시 번호를 붙인다.
+     */
+    @Transactional
+    public CourseResult importDays(Long userId, Long sourceCourseId, List<Integer> dayNumbers) {
+        if (dayNumbers == null || dayNumbers.isEmpty()) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "가져올 일정을 한 개 이상 선택해 주세요.");
+        }
+        if (dayNumbers.stream().anyMatch(dayNumber -> dayNumber == null || dayNumber < 1)
+                || new HashSet<>(dayNumbers).size() != dayNumbers.size()) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "가져올 일정 번호가 올바르지 않습니다.");
+        }
+
+        CourseModel source = getActiveCourseForUpdateOrThrow(sourceCourseId);
+        if (!userId.equals(source.userId()) && source.visibility() != CourseVisibility.PUBLIC) {
+            throw new CoreException(ErrorType.FORBIDDEN, "공개된 코스만 가져올 수 있습니다.");
+        }
+
+        Map<Integer, CourseDayModel> sourceDays = source.days().stream()
+                .collect(Collectors.toMap(CourseDayModel::dayNumber, Function.identity()));
+        List<CourseDayModel> copiedDays = new ArrayList<>();
+        for (Integer sourceDayNumber : dayNumbers) {
+            CourseDayModel sourceDay = sourceDays.get(sourceDayNumber);
+            if (sourceDay == null) {
+                throw new CoreException(ErrorType.BAD_REQUEST, "원본 코스에 없는 일정이 포함되어 있습니다.");
+            }
+            copiedDays.add(new CourseDayModel(copiedDays.size() + 1, sourceDay.spots(),
+                    sourceDay.themes(), sourceDay.tripIdeas()));
+        }
+        if (copiedDays.stream().allMatch(day -> day.spots().isEmpty())) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "장소가 있는 일정을 한 개 이상 선택해 주세요.");
+        }
+
+        CourseModel imported = CourseModel.create(userId, source.title(), source.description(), source.thumbnail(),
+                CourseVisibility.PRIVATE, null, null, copiedDays, source.generatedBy(), source.themes());
+        Set<Long> spotIds = collectSpotIds(imported.days());
+        Map<Long, SpotModel> spotsById = validateAndGetActiveSpots(spotIds);
+        CourseModel saved = courseRepository.save(imported);
+        return CourseResult.from(saved, spotsById, spotThumbnailResolver.resolve(spotsById.values()));
+    }
+
+    /**
      * 로그인 사용자의 코스 목록 조회 처리 (N+1 방지를 위해 전체 spot 일괄 조회)
      */
     public List<CourseResult> listMine(Long userId) {
