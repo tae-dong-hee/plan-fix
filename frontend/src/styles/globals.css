@@ -28,6 +28,7 @@
     --ring: 258 82% 61%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
+    --app-header-background: 258 55% 97%;
     --radius: 0.75rem;
     --app-header-offset: 0px;
     --page-content-gap: 2rem;
@@ -46,6 +47,7 @@
     --ring: 263 84% 70%;
     --destructive: 0 63% 42%;
     --destructive-foreground: 0 0% 100%;
+    --app-header-background: 248 28% 13%;
   }
 
   * {
@@ -77,6 +79,12 @@
 
 @layer components {
   /* The app menu is at the bottom on mobile and fixed at the top on desktop. */
+  .app-nav {
+    background: hsl(var(--app-header-background) / 0.96);
+    box-shadow: 0 1px 18px hsl(var(--primary) / 0.05);
+    backdrop-filter: blur(18px);
+  }
+
   .app-page {
     padding-top: var(--app-header-offset);
   }
