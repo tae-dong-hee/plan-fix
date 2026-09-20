@@ -248,11 +248,11 @@
 }
 
 .travel-region-select {
-  background: hsl(var(--background));
-  box-shadow: inset 0 0 0 1px hsl(var(--border) / 0.8);
+  background: hsl(var(--primary) / 0.05);
+  box-shadow: inset 0 0 0 1px hsl(var(--primary) / 0.2);
 }
 
-.travel-region-tabs {
+.travel-region-shortcuts {
   padding-left: 20px;
   border-left: 1px solid hsl(var(--border));
 }
@@ -293,7 +293,7 @@
   .travel-hero-art-tag { left: 147px; bottom: 25px; }
   .travel-hero-copy { padding-left: 28px; }
   .travel-region-bar { gap: 14px; }
-  .travel-region-tabs { padding-left: 12px; }
+  .travel-region-shortcuts { padding-left: 12px; }
 }
 
 @media (max-width: 767px) {
@@ -306,7 +306,7 @@
   .travel-hero-title { font-size: 31px; }
   .travel-hero-description { max-width: 290px; }
   .travel-region-bar { align-items: flex-start; flex-direction: column; gap: 10px; margin: 15px 0; }
-  .travel-region-tabs { width: calc(100% + 8px); padding-left: 4px; border-left: 0; }
+  .travel-region-shortcuts { width: 100%; padding-left: 0; border-left: 0; }
 }
 
 @media (max-width: 559px) {

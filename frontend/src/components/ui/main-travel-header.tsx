@@ -1,4 +1,4 @@
-import { ArrowUpRight, ChevronDown, CloudSun, Compass, Loader2, Sparkles, Sun } from "lucide-react";
+import { ArrowUpRight, ChevronDown, CloudSun, Compass, Loader2, Map, Sparkles, Sun } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import type { GangwonRegion } from "@/components/ui/gangwon-region-map";
@@ -65,7 +65,7 @@ export default function MainTravelHeader({
   weatherError,
 }: MainTravelHeaderProps) {
   const locationName = selectedRegion ?? "강원도";
-  const locationLabel = selectedRegion ? `강원도 / ${selectedRegion}` : "강원도 / 지역 선택";
+  const locationLabel = selectedRegion ? `강원도 ${selectedRegion}` : "강원도 전체";
 
   return (
     <section className="main-travel-header">
@@ -91,24 +91,30 @@ export default function MainTravelHeader({
           <button
             type="button"
             onClick={onOpenRegions}
-            aria-label={`여행 지역 선택: ${locationLabel}`}
+            aria-label={`지도에서 지역 선택: ${locationLabel}`}
             aria-haspopup="dialog"
             aria-expanded={isRegionMapOpen}
-            className="travel-region-select inline-flex min-h-11 w-fit shrink-0 items-center gap-2.5 rounded-xl px-3.5 py-2 text-sm transition hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            className="travel-region-select inline-flex min-h-11 w-full shrink-0 md:w-fit items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-sm transition hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
           >
-            <GangwonRegionSymbol region={selectedRegion} className="h-6 w-6 text-primary" />
-            <span className="font-semibold">{selectedRegion ? `강원도 · ${selectedRegion}` : "강원도 전체"}</span>
-            <ChevronDown className="ml-1 h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+            <Map className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+            <span className="flex flex-col gap-0.5 text-left">
+              <span className="font-semibold text-primary">지도에서 지역 선택</span>
+              <span className="text-[11px] text-muted-foreground">{selectedRegion ? `선택한 지역 · ${selectedRegion}` : "강원도 18개 시·군"}</span>
+            </span>
+            <ChevronDown className="ml-auto h-3.5 w-3.5 text-primary" aria-hidden="true" />
           </button>
 
-          <div role="group" aria-label="지역 바로 선택" className="travel-region-tabs -mx-1 flex min-w-0 items-center gap-1 overflow-x-auto px-1 py-1 scrollbar-hide sm:gap-2">
-            <button type="button" onClick={() => onSelectRegion(null)} aria-label="강원도 전체 둘러보기" aria-pressed={!selectedRegion} className={`min-h-10 shrink-0 rounded-full px-4 text-[13px] font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset ${!selectedRegion ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>전체</button>
-            {quickRegions.map((region) => (
-              <button key={region} type="button" onClick={() => onSelectRegion(region)} aria-label={`${region} 바로 선택`} aria-pressed={selectedRegion === region} className={`inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-full px-3 text-[13px] font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset ${selectedRegion === region ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
-                <GangwonRegionSymbol region={region} className="h-[18px] w-[18px]" />
-                {region}
-              </button>
-            ))}
+          <div role="group" aria-label="지역 바로 선택" className="travel-region-shortcuts flex min-w-0 items-center gap-3">
+            <span className="shrink-0 text-[11px] font-medium text-muted-foreground">빠른 선택</span>
+            <div className="travel-region-tabs -mx-1 flex min-w-0 items-center gap-1 overflow-x-auto px-1 py-1 scrollbar-hide sm:gap-2">
+              <button type="button" onClick={() => onSelectRegion(null)} aria-label="강원도 전체 둘러보기" aria-pressed={!selectedRegion} className={`min-h-10 shrink-0 rounded-full px-4 text-[13px] font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset ${!selectedRegion ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>전체</button>
+              {quickRegions.map((region) => (
+                <button key={region} type="button" onClick={() => onSelectRegion(region)} aria-label={`${region} 바로 선택`} aria-pressed={selectedRegion === region} className={`inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-full px-3 text-[13px] font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset ${selectedRegion === region ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
+                  <GangwonRegionSymbol region={region} className="h-[18px] w-[18px]" />
+                  {region}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
