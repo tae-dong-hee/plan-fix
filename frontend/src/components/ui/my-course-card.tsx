@@ -2,7 +2,10 @@ import { useState } from "react";
 import { ArrowUpRight, Calendar, Eye, Globe, Heart, Lock, MapPin, Mountain, Sun } from "lucide-react";
 import { Link } from "react-router-dom";
 
+import courseCoverCatalog from "@/constants/course-cover-images.json";
 import { getCourseCoverCredit, getCourseCoverImageSrc } from "@/lib/course-cover-images";
+import { getVerifiedSpotImageCredit, getVerifiedSpotImageTitle } from "@/lib/verified-spot-images";
+import { cn } from "@/lib/utils";
 import type { CourseResponse } from "@/services/course";
 import CourseMetadata, { CourseSummaryBadges } from "@/components/ui/course-metadata";
 
@@ -38,10 +41,13 @@ function CourseCoverArtwork({ variant }: { variant: number }) {
 export default function MyCourseCard({ course }: MyCourseCardProps) {
   const [failedThumbnails, setFailedThumbnails] = useState<string[]>([]);
   const spots = course.days.flatMap((day) => day.spots);
-  const thumbnail = [course.thumbnail, ...spots.map((spot) => spot.thumbnail)]
+  // 코스마다 다른 기본 사진을 고정해 다시 렌더링해도 사진이 바뀌지 않게 한다.
+  const fallbackThumbnail = courseCoverCatalog.images[Math.abs(course.courseId) % courseCoverCatalog.images.length]?.url;
+  const thumbnail = [course.thumbnail, ...spots.map((spot) => spot.thumbnail), fallbackThumbnail]
     .map((value) => value?.trim())
     .find((value): value is string => !!value && !failedThumbnails.includes(value));
-  const credit = getCourseCoverCredit(thumbnail);
+  const spotCredit = getVerifiedSpotImageCredit(thumbnail);
+  const credit = getCourseCoverCredit(thumbnail) ?? spotCredit;
   const description = course.description?.trim() || spots.slice(0, 3).map((spot) => spot.title).join(" · ") || "가고 싶은 곳을 담아 나만의 여행을 완성해 보세요.";
 
   return (
@@ -49,7 +55,7 @@ export default function MyCourseCard({ course }: MyCourseCardProps) {
       <Link to={`/courses/${course.courseId}`} aria-label={`${course.title} 코스 상세 보기`} className="flex flex-1 flex-col focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary">
         <div className="relative aspect-[2/1] overflow-hidden bg-muted">
           {thumbnail ? (
-            <img src={getCourseCoverImageSrc(thumbnail)} alt="" loading="lazy" onError={() => setFailedThumbnails((previous) => [...previous, thumbnail])} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 motion-reduce:transform-none motion-reduce:transition-none" />
+            <img src={getCourseCoverImageSrc(thumbnail)} alt="" title={getVerifiedSpotImageTitle(thumbnail)} loading="lazy" onError={() => setFailedThumbnails((previous) => [...previous, thumbnail])} className={cn("h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 motion-reduce:transform-none motion-reduce:transition-none", spotCredit && "object-contain scale-100 hover:scale-100 group-hover:scale-100")} />
           ) : <CourseCoverArtwork variant={course.courseId} />}
         </div>
 

@@ -1,4 +1,5 @@
 import { CourseAccessError } from "@/lib/course-errors";
+import { selectCoursesWithUniqueCovers } from "@/lib/course-cover-images";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
@@ -168,7 +169,7 @@ export default function MainPage() {
     fetchPublicCourses({ sort: "random", size: 20 })
       .then((res) => {
         if (!ignore) {
-          setGuideCourses(res.items);
+          setGuideCourses(selectCoursesWithUniqueCovers(res.items));
         }
       })
       .catch(() => {

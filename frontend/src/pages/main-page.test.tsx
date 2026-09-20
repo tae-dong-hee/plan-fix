@@ -16,6 +16,7 @@ import {
 } from "@/services/spots";
 import { fetch5DayWeather } from "@/services/weather";
 import { fetchLikedBoards, fetchLikedCourses, fetchLikedSpots } from "@/services/wishlist";
+import { verifiedSpotImages } from "@/lib/verified-spot-images";
 
 const mockedNavigate = vi.fn();
 vi.mock("react-router-dom", async () => {
@@ -192,6 +193,37 @@ describe("MainPage public course carousel", () => {
       "href",
       "/courses/public",
     );
+  });
+
+  test("장소 사진을 대표 이미지로 쓸 때도 기존 사진 출처와 원본 비율을 유지한다", async () => {
+    const image = verifiedSpotImages[0];
+    mockedFetchPublicCourses.mockResolvedValue({
+      ...publicCourseResult, items: [{ ...publicCourse, thumbnail: image.url }],
+    });
+    renderMainPage();
+
+    const cover = await screen.findByRole("img", { name: publicCourse.title });
+    expect(cover).toHaveAttribute("src", image.url);
+    expect(cover).toHaveAttribute("title", expect.stringContaining(image.author));
+    expect(cover).toHaveClass("object-contain", "group-hover:scale-100");
+    expect(cover).not.toHaveClass("object-cover", "group-hover:scale-105");
+    expect(screen.getByRole("link", { name: `${publicCourse.title} 사진 출처` })).toHaveAttribute("href", `/image-credits#${image.id}`);
+  });
+
+  test("같은 대표 사진의 코스는 하나만 노출하고 서로 다른 사진의 코스는 유지한다", async () => {
+    const duplicate = { ...publicCourse, courseId: 32, title: "대표 사진이 겹치는 코스", thumbnail: ` ${publicCourse.thumbnail}#cover ` };
+    const distinct = { ...publicCourse, courseId: 33, title: "서로 다른 장소 사진의 코스", thumbnail: "https://example.com/another-spot.jpg" };
+    mockedFetchPublicCourses.mockResolvedValue({
+      ...publicCourseResult, items: [publicCourse, duplicate, distinct], totalCount: 3,
+    });
+    renderMainPage();
+
+    expect(await screen.findByText(publicCourse.title)).toBeInTheDocument();
+    expect(screen.getByText(distinct.title)).toBeInTheDocument();
+    expect(screen.queryByText(duplicate.title)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: `${duplicate.title} 좋아요` })).not.toBeInTheDocument();
+    expect(screen.getByRole("img", { name: distinct.title })).toHaveAttribute("src", distinct.thumbnail);
+    expect(screen.getByRole("link", { name: "강원도에서 뭐 하지? 전체보기" })).toHaveAttribute("href", "/courses/public");
   });
 
   test("다른 페이지에서 돌아오거나 메인으로 다시 이동하면 코스와 추천 장소를 새로 조회한다", async () => {

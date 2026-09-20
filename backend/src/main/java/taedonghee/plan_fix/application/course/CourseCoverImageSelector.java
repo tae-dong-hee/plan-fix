@@ -13,10 +13,12 @@ import taedonghee.plan_fix.domain.spot.SpotModel;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
@@ -96,8 +98,17 @@ public class CourseCoverImageSelector {
     }
 
     public String select(CourseModel course, Map<Long, SpotModel> spotsById) {
+        return select(course, spotsById, Map.of());
+    }
+
+    public String select(CourseModel course, Map<Long, SpotModel> spotsById, Map<Long, String> spotThumbnails) {
         if (course.thumbnail() != null && !course.thumbnail().isBlank()) {
             return course.thumbnail();
+        }
+
+        List<String> spotImages = courseSpotImages(course, spotsById, spotThumbnails);
+        if (!spotImages.isEmpty()) {
+            return spotImages.get(new SplittableRandom(course.courseId()).nextInt(spotImages.size()));
         }
 
         CandidatePool pool = candidates(course, spotsById);
@@ -119,15 +130,26 @@ public class CourseCoverImageSelector {
      * 페이지 크기/구성이 달라지면 배분은 달라질 수 있으며 DB thumbnail은 변경하지 않는다.
      */
     public Map<Long, String> selectForCourses(List<CourseModel> courses, Map<Long, SpotModel> spotsById) {
+        return selectForCourses(courses, spotsById, Map.of());
+    }
+
+    public Map<Long, String> selectForCourses(List<CourseModel> courses, Map<Long, SpotModel> spotsById,
+                                             Map<Long, String> spotThumbnails) {
         Map<Long, String> selected = new HashMap<>();
         Map<String, Integer> usage = new HashMap<>();
-        Map<Long, List<Image>> choices = new HashMap<>();
+        Map<Long, List<String>> choices = new HashMap<>();
+        Map<Long, Map<String, String>> candidateUrls = new HashMap<>();
         for (CourseModel course : courses) {
             if (course.thumbnail() != null && !course.thumbnail().isBlank()) {
                 selected.put(course.courseId(), course.thumbnail());
-                usage.merge(course.thumbnail(), 1, Integer::sum);
+                usage.merge(imageIdentity(course.thumbnail()), 1, Integer::sum);
             } else {
-                choices.put(course.courseId(), rankedCandidates(course, spotsById));
+                Map<String, String> urls = new LinkedHashMap<>();
+                for (String url : rankedCandidates(course, spotsById, spotThumbnails)) {
+                    urls.putIfAbsent(imageIdentity(url), url);
+                }
+                candidateUrls.put(course.courseId(), urls);
+                choices.put(course.courseId(), List.copyOf(urls.keySet()));
             }
         }
         Set<String> reserved = Set.copyOf(usage.keySet());
@@ -139,22 +161,42 @@ public class CourseCoverImageSelector {
             assignUnique(courseId, choices, owners, reserved, new HashSet<>());
         }
         owners.forEach((url, courseId) -> {
-            selected.put(courseId, url);
+            selected.put(courseId, candidateUrls.get(courseId).get(url));
             usage.merge(url, 1, Integer::sum);
         });
         // 후보가 부족할 때만 재사용하며, 사용 횟수가 같으면 관련도와 고정 시드 순서를 따른다.
         for (Long courseId : order) {
             if (selected.containsKey(courseId)) continue;
-            Image image = choices.get(courseId).stream()
-                    .min(Comparator.comparingInt(candidate -> usage.getOrDefault(candidate.url(), 0)))
+            String image = choices.get(courseId).stream()
+                    .min(Comparator.comparingInt(candidate -> usage.getOrDefault(candidate, 0)))
                     .orElseThrow();
-            selected.put(courseId, image.url());
-            usage.merge(image.url(), 1, Integer::sum);
+            selected.put(courseId, candidateUrls.get(courseId).get(image));
+            usage.merge(image, 1, Integer::sum);
         }
         return Map.copyOf(selected);
     }
 
-    private List<Image> rankedCandidates(CourseModel course, Map<Long, SpotModel> spotsById) {
+    /** 표시 URL은 보존하고, 사진 자체와 관계없는 fragment/쿼리 순서만 중복 판정에서 제외한다. */
+    private static String imageIdentity(String url) {
+        String normalized = url.strip().split("#", 2)[0];
+        int queryStart = normalized.indexOf('?');
+        if (queryStart < 0) return normalized;
+        String query = Arrays.stream(normalized.substring(queryStart + 1).split("&", -1))
+                .sorted(Comparator.comparing(parameter -> parameter.split("=", 2)[0]))
+                .collect(Collectors.joining("&"));
+        return normalized.substring(0, queryStart + 1) + query;
+    }
+
+    private List<String> rankedCandidates(CourseModel course, Map<Long, SpotModel> spotsById,
+                                          Map<Long, String> spotThumbnails) {
+        List<String> spotImages = courseSpotImages(course, spotsById, spotThumbnails);
+        if (!spotImages.isEmpty()) {
+            SplittableRandom random = new SplittableRandom(course.courseId());
+            Map<String, Long> tieBreaks = new HashMap<>();
+            for (String image : spotImages) tieBreaks.put(image, random.nextLong());
+            return spotImages.stream().sorted(Comparator.comparingLong(tieBreaks::get)).toList();
+        }
+
         CandidatePool pool = candidates(course, spotsById);
         List<Image> eligible = pool.images().stream()
                 .filter(image -> pool.regional().contains(image) || pool.scores().get(image).hasMatch())
@@ -167,22 +209,41 @@ public class CourseCoverImageSelector {
         return eligible.stream().sorted(Comparator
                 .<Image, MatchScore>comparing(image -> pool.scores().get(image), MATCH_ORDER).reversed()
                 .thenComparingLong(image -> tieBreaks.get(image.id()))
-                .thenComparing(Image::id)).toList();
+                .thenComparing(Image::id)).map(Image::url).distinct().toList();
+    }
+
+    /** 업로드가 없으면 코스에 포함된 장소의 대표/상세 사진만 후보로 쓰고, 모두 없을 때만 카탈로그를 쓴다. */
+    private static List<String> courseSpotImages(CourseModel course, Map<Long, SpotModel> spotsById,
+                                                 Map<Long, String> spotThumbnails) {
+        return course.days().stream()
+                .flatMap(day -> day.spots().stream())
+                .map(CourseSpotModel::spotId)
+                .distinct()
+                .map(spotId -> {
+                    String resolved = spotThumbnails.get(spotId);
+                    if (resolved != null && !resolved.isBlank()) return resolved;
+                    SpotModel spot = spotsById.get(spotId);
+                    return spot == null ? null : spot.thumbnail();
+                })
+                .filter(Objects::nonNull)
+                .map(String::strip)
+                .filter(image -> !image.isEmpty())
+                .distinct()
+                .sorted()
+                .toList();
     }
 
     /** 증가 경로를 찾아 이미 배정된 코스를 다른 후보로 옮기므로 단순 선착순 중복을 피한다. */
-    private static boolean assignUnique(Long courseId, Map<Long, List<Image>> choices,
+    private static boolean assignUnique(Long courseId, Map<Long, List<String>> choices,
                                         Map<String, Long> owners, Set<String> reserved, Set<String> visited) {
         // 기존 배정을 움직이기 전에 아직 사용되지 않은 관련 후보부터 찾는다.
-        for (Image image : choices.get(courseId)) {
-            String url = image.url();
+        for (String url : choices.get(courseId)) {
             if (!reserved.contains(url) && !visited.contains(url) && !owners.containsKey(url)) {
                 owners.put(url, courseId);
                 return true;
             }
         }
-        for (Image image : choices.get(courseId)) {
-            String url = image.url();
+        for (String url : choices.get(courseId)) {
             if (reserved.contains(url) || !visited.add(url)) continue;
             Long previous = owners.get(url);
             if (previous != null && assignUnique(previous, choices, owners, reserved, visited)) {
