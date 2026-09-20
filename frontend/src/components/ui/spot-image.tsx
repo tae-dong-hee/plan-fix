@@ -1,4 +1,4 @@
-import { useState, type ImgHTMLAttributes } from "react";
+import { useEffect, useState, type ImgHTMLAttributes } from "react";
 import fallbackSpotImage from "@/assets/spot-placeholder.svg";
 import { getVerifiedSpotImageCredit, getVerifiedSpotImageTitle } from "@/lib/verified-spot-images";
 import { cn } from "@/lib/utils";
@@ -9,6 +9,7 @@ type SpotImageProps = Omit<ImgHTMLAttributes<HTMLImageElement>, "src" | "onError
   src?: string | null;
   alt: string;
   compactSimilarLabel?: boolean;
+  onSourceChange?: (source: string) => void;
   similarImage?: {
     url: string;
     title: string;
@@ -23,7 +24,7 @@ export default function SpotImage(props: SpotImageProps) {
   return <SpotImageContent key={JSON.stringify([props.src?.trim(), props.similarImage?.url])} {...props} />;
 }
 
-function SpotImageContent({ src, alt, title, className, similarImage, compactSimilarLabel = false, ...props }: SpotImageProps) {
+function SpotImageContent({ src, alt, title, className, similarImage, compactSimilarLabel = false, onSourceChange, ...props }: SpotImageProps) {
   const [failedSources, setFailedSources] = useState<string[]>([]);
   const displayedSource = [src?.trim(), similarImage?.url].find(
     (source): source is string => !!source && !failedSources.includes(source),
@@ -33,6 +34,10 @@ function SpotImageContent({ src, alt, title, className, similarImage, compactSim
   const similarTitle = similarImage
     ? `유사 이미지: ${similarImage.title} · 실제 장소 사진이 아닙니다. · 사진: ${similarImage.author} · ${similarImage.license} · 출처: ${similarImage.sourceUrl}`
     : undefined;
+
+  useEffect(() => {
+    onSourceChange?.(displayedSource);
+  }, [displayedSource, onSourceChange]);
 
   return (
     <>

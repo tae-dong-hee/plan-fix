@@ -45,6 +45,8 @@ test("shows an approved Google card inside the missing-photo section without enc
   expect(screen.queryByRole("img", { name: /임계식당/ })).not.toBeInTheDocument();
   expect(screen.queryByText("유사 이미지")).not.toBeInTheDocument();
   expect(screen.queryByRole("link", { name: "유사 이미지 출처" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("link", { name: "사진 출처" })).not.toBeInTheDocument();
+  expect(screen.getByRole("link", { name: "출처 및 이용 안내" })).toHaveAttribute("href", "/image-credits#google-maps");
   expect(vi.mocked(loadGooglePlacesUiKit)).toHaveBeenCalledTimes(1);
 });
 

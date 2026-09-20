@@ -30,7 +30,7 @@ function renderAt(spotId: string, { strict = false }: { strict?: boolean } = {})
   return render(strict ? <StrictMode>{tree}</StrictMode> : tree);
 }
 
-test("links to the current photo's credit and removes it for an unregistered gallery photo", async () => {
+test("follows the displayed photo's credit through failures and gallery navigation", async () => {
   mockedFetchSpotDetail.mockResolvedValue({
     spotId: 526,
     title: "임당동 성당",
@@ -55,10 +55,24 @@ test("links to the current photo's credit and removes it for an unregistered gal
   expect(credit).toHaveAttribute("href", "/image-credits#verified-spot-526");
   expect(credit.parentElement?.closest("a, button")).toBeNull();
 
+  const representative = screen.getByRole("img", { name: "임당동 성당" });
+  fireEvent.error(representative);
+  expect(representative).toHaveAccessibleName(/임당동 성당 유사 이미지:/);
+  expect(screen.queryByRole("link", { name: "사진 출처" })).not.toBeInTheDocument();
+  expect(screen.queryByText(/사진: Trainholic/)).not.toBeInTheDocument();
+  expect(screen.getByRole("link", { name: "유사 이미지 출처" })).toHaveAttribute("href", "/image-credits#similar-images");
+
+  fireEvent.error(representative);
+  expect(representative).toHaveAttribute("src", FALLBACK_SPOT_IMAGE);
+  expect(screen.queryByRole("link", { name: /사진 출처|유사 이미지 출처/ })).not.toBeInTheDocument();
+  expect(screen.queryByText("‘유사 이미지’는 실제 장소 사진이 아닙니다.")).not.toBeInTheDocument();
+
   fireEvent.click(screen.getByRole("button", { name: "다음 사진" }));
   expect(screen.queryByRole("link", { name: "사진 출처" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("link", { name: "유사 이미지 출처" })).not.toBeInTheDocument();
 
   fireEvent.click(screen.getByRole("button", { name: "이전 사진" }));
+  expect(screen.getByRole("img", { name: "임당동 성당" })).toHaveAttribute("src", "https://planfix.cloud/images/verified-spots/526.jpg");
   expect(screen.getByRole("link", { name: "사진 출처" })).toHaveAttribute("href", "/image-credits#verified-spot-526");
 });
 
@@ -504,9 +518,11 @@ test("recovers a failed representative photo with a similar image, then the plac
   expect(mainImage).toHaveAttribute("src", getSimilarSpotImage(spotFixture({})).url);
   expect(mainImage).toHaveAccessibleName(/정동진 유사 이미지:/);
   expect(screen.getByText("유사 이미지")).toBeInTheDocument();
+  expect(screen.getByRole("link", { name: "유사 이미지 출처" })).toHaveAttribute("href", "/image-credits#similar-images");
   fireEvent.error(mainImage);
   expect(mainImage).toHaveAttribute("src", FALLBACK_SPOT_IMAGE);
   expect(screen.queryByText("유사 이미지")).not.toBeInTheDocument();
+  expect(screen.queryByRole("link", { name: "유사 이미지 출처" })).not.toBeInTheDocument();
 
   const galleryImage = screen.getByAltText("정동진 사진 2");
   fireEvent.error(galleryImage);
