@@ -68,6 +68,18 @@ describe("generateBoardDraft", () => {
     expect(form.get("note")).toBe("친구와 다녀왔어요.");
   });
 
+  test("서버가 제안한 제목을 본문과 함께 반환한다", async () => {
+    global.fetch = vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ title: " 경포에서 보낸 오후 ", content: " 본문 " }) }) as unknown as typeof fetch;
+    const { generateBoardDraft } = await import("./board-ai");
+    await expect(generateBoardDraft({ files: [photo()] })).resolves.toEqual({ title: "경포에서 보낸 오후", content: "본문" });
+  });
+
+  test.each([null, 7, " ", "가".repeat(101), "첫 줄\n둘째 줄", "<img src=x>"])("잘못된 제목 제안을 거절한다: %j", async (title) => {
+    global.fetch = vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ title, content: "본문" }) }) as unknown as typeof fetch;
+    const { generateBoardDraft } = await import("./board-ai");
+    await expect(generateBoardDraft({ files: [photo()] })).rejects.toThrow("AI가 본문을 완성하지 못했습니다");
+  });
+
   test("빈 선택 입력은 보내지 않는다", async () => {
     const fetchSpy = vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({ content: "여행 이야기" }) });
     global.fetch = fetchSpy as unknown as typeof fetch;

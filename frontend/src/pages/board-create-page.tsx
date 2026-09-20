@@ -315,6 +315,7 @@ export default function BoardCreatePage() {
 
           <StoryWritingAssistant
             title={title}
+            onTitleChange={setTitle}
             course={selectedCourse}
             files={storyPhotos}
             onFilesChange={setStoryPhotos}

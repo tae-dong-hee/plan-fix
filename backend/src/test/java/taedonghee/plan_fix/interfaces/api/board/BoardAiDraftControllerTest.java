@@ -65,12 +65,13 @@ class BoardAiDraftControllerTest {
         var photo = photo();
         var second = new MockMultipartFile("files", "two.jpg", "image/jpeg", new byte[]{2});
         when(service.generate(7L, List.of(photo, second), "여행", "바닷가", null, null))
-                .thenReturn("사진에 담긴 바다예요.\n\n푸른빛이 펼쳐져요.");
+                .thenReturn(new BoardAiDraftApplicationService.Draft("담백한 여행 제목", "사진에 담긴 바다예요.\n\n푸른빛이 펼쳐져요."));
 
         mvc.perform(multipart(PATH).file(photo).file(second).param("title", "여행").param("note", "바닷가")
                         .header("Authorization", "Bearer valid-token"))
                 .andExpect(status().isOk()).andExpect(header().string("Cache-Control", "no-store"))
-                .andExpect(jsonPath("$.content").value("사진에 담긴 바다예요.\n\n푸른빛이 펼쳐져요."));
+                .andExpect(jsonPath("$.content").value("사진에 담긴 바다예요.\n\n푸른빛이 펼쳐져요."))
+                .andExpect(jsonPath("$.title").value("담백한 여행 제목"));
         verify(service).generate(7L, List.of(photo, second), "여행", "바닷가", null, null);
     }
 
@@ -78,7 +79,7 @@ class BoardAiDraftControllerTest {
         authenticate();
         var photo = photo();
         when(service.generate(7L, List.of(photo), "춘천여행 2박3일", "레일바이크를 탔어요", 42L, List.of(11L, 22L, 33L)))
-                .thenReturn("춘천에서 레일바이크를 탔다.");
+                .thenReturn(new BoardAiDraftApplicationService.Draft("담백한 여행 제목", "춘천에서 레일바이크를 탔다."));
 
         mvc.perform(multipart(PATH).file(photo)
                         .param("title", "춘천여행 2박3일").param("note", "레일바이크를 탔어요")
@@ -108,7 +109,7 @@ class BoardAiDraftControllerTest {
         authenticate();
         mvc.perform(multipart(PATH).header("Authorization", "Bearer valid-token"))
                 .andExpect(status().isBadRequest()).andExpect(jsonPath("$.message").isNotEmpty());
-        when(service.generate(eq(7L), anyList(), isNull(), isNull(), isNull(), isNull())).thenReturn("사진으로 남긴 여행이에요.");
+        when(service.generate(eq(7L), anyList(), isNull(), isNull(), isNull(), isNull())).thenReturn(new BoardAiDraftApplicationService.Draft("담백한 여행 제목", "사진으로 남긴 여행이에요."));
         mvc.perform(multipart(PATH).file(photo()).header("Authorization", "Bearer valid-token"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.content").value("사진으로 남긴 여행이에요."));
     }

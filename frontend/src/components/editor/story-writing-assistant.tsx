@@ -9,6 +9,7 @@ const TITLE_CHANGED_MESSAGE = "제목이 바뀌었어요. 다시 써주기를 �
 
 interface Props {
   title: string;
+  onTitleChange: (title: string) => void;
   files: File[];
   onFilesChange: (files: File[]) => void;
   onBusyChange: (busy: boolean) => void;
@@ -25,13 +26,14 @@ function draftParagraphs(content: string) {
   }));
 }
 
-export default function StoryWritingAssistant({ title, files, onFilesChange, onBusyChange, editorRef, disabled = false, course }: Props) {
+export default function StoryWritingAssistant({ title, onTitleChange, files, onFilesChange, onBusyChange, editorRef, disabled = false, course }: Props) {
   const [mode, setMode] = useState<"ai" | "manual">("ai");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [draft, setDraft] = useState("");
+  const [suggestedTitle, setSuggestedTitle] = useState("");
   const [previews, setPreviews] = useState<string[]>([]);
   const [confirmedPlaces, setConfirmedPlaces] = useState<{ courseId: number | null; ids: number[] }>({ courseId: null, ids: [] });
   const coursePlaces = Array.from(new Map((course?.days.flatMap((day) => day.spots) ?? [])
@@ -51,6 +53,7 @@ export default function StoryWritingAssistant({ title, files, onFilesChange, onB
     if (previousTitle.current === title) return;
     previousTitle.current = title;
     setDraft("");
+    setSuggestedTitle("");
     setError("");
     setMessage(files.length ? TITLE_CHANGED_MESSAGE : "");
   }, [title, files.length]);
@@ -58,6 +61,7 @@ export default function StoryWritingAssistant({ title, files, onFilesChange, onB
   useEffect(() => {
     setConfirmedPlaces({ courseId: course?.courseId ?? null, ids: [] });
     setDraft("");
+    setSuggestedTitle("");
     setMessage("");
   }, [course?.courseId]);
 
@@ -82,6 +86,7 @@ export default function StoryWritingAssistant({ title, files, onFilesChange, onB
   const generate = async (photos: File[]) => {
     cancelRequest();
     setDraft("");
+    setSuggestedTitle("");
     setMessage("");
     const validationError = validateStoryPhotos(photos);
     if (validationError) { setError(validationError); return; }
@@ -107,6 +112,7 @@ export default function StoryWritingAssistant({ title, files, onFilesChange, onB
         setMessage("코스나 다녀온 장소가 바뀌었어요. 다시 써주기를 눌러 새 정보로 작성해 주세요.");
         return;
       }
+      setSuggestedTitle(result.title && result.title !== title.trim() ? result.title : "");
       const editor = editorRef.current;
       if (editor && editor.isEmpty && editor.getHTML() === initialHtml) {
         editor.commands.setContent({ type: "doc", content: draftParagraphs(result.content) });
@@ -141,6 +147,7 @@ export default function StoryWritingAssistant({ title, files, onFilesChange, onB
     cancelRequest();
     setError("");
     setDraft("");
+    setSuggestedTitle("");
     setMessage("");
     onFilesChange(next);
     if (mode === "ai" && next.length) void generate(next);
@@ -151,6 +158,7 @@ export default function StoryWritingAssistant({ title, files, onFilesChange, onB
     cancelRequest();
     setError("");
     setDraft("");
+    setSuggestedTitle("");
     setMessage("");
     setMode(next);
   };
@@ -163,6 +171,15 @@ export default function StoryWritingAssistant({ title, files, onFilesChange, onB
     else editor.commands.setContent({ type: "doc", content: paragraphs });
     setDraft("");
     setMessage("본문에 적용했어요. 발행 전에 내용을 확인해 주세요.");
+  };
+
+  const applySuggestedTitle = () => {
+    if (!suggestedTitle) return;
+    // Applying the title from this draft keeps the corresponding body preview available.
+    previousTitle.current = suggestedTitle;
+    onTitleChange(suggestedTitle);
+    setSuggestedTitle("");
+    setMessage("제목을 적용했어요. 마음에 맞게 더 다듬어도 좋아요.");
   };
 
   return (
@@ -182,7 +199,7 @@ export default function StoryWritingAssistant({ title, files, onFilesChange, onB
       {mode === "ai" ? (
         <div className="story-ai-intro">
           <strong>내가 다녀온 여행, 짧고 담백하게</strong>
-          <p>장소와 기억을 먼저 알려주세요. 사진을 고르면 짧고 자연스러운 후기 초안을 써드려요.</p>
+          <p>장소와 기억을 먼저 알려주세요. 사진을 고르면 담백한 제목과 자연스러운 후기 초안을 써드려요.</p>
         </div>
       ) : <p className="story-manual-intro">나만의 말로 여행을 기록해 보세요. 언제든 AI의 도움을 받을 수 있어요.</p>}
 
@@ -200,6 +217,7 @@ export default function StoryWritingAssistant({ title, files, onFilesChange, onB
                     setConfirmedPlaces({ courseId: course.courseId, ids: selected
                       ? visitedSpotIds.filter((id) => id !== spot.spotId) : [...visitedSpotIds, spot.spotId] });
                     setDraft("");
+                    setSuggestedTitle("");
                     setMessage(files.length ? "다녀온 장소를 바꿨어요. 다시 써주기를 누르면 반영돼요." : "");
                   }}>
                   {selected && <Check size={12} aria-hidden="true" />}{spot.title}
@@ -213,7 +231,7 @@ export default function StoryWritingAssistant({ title, files, onFilesChange, onB
         {mode === "ai" && <label className="story-ai-note">
           <span>직접 겪은 일이나 기억 <small>선택</small></span>
           <textarea value={note} rows={2} disabled={busy} maxLength={500} placeholder="예: 춘천 2박 3일, 레일바이크를 탔고 카누는 구경만 했어요"
-            onChange={(event) => { cancelRequest(); setDraft(""); setMessage(""); setNote(event.target.value); }} />
+            onChange={(event) => { cancelRequest(); setDraft(""); setSuggestedTitle(""); setMessage(""); setNote(event.target.value); }} />
         </label>}
 
         <div className="story-photo-label"><span>여행 사진 <b>{files.length}/{MAX_STORY_PHOTOS}</b></span><small>JPG · PNG · WebP, 장당 5MB · 전체 15MB</small></div>
@@ -245,6 +263,14 @@ export default function StoryWritingAssistant({ title, files, onFilesChange, onB
         </button>}
       </div>}
       {error && <p role="alert" className="story-ai-error">{error}</p>}
+      {suggestedTitle && <div className="story-draft-preview">
+        <strong><Sparkles size={15} aria-hidden="true" /> AI가 제안한 제목</strong>
+        <p>{suggestedTitle}</p>
+        <div className="story-draft-buttons">
+          <button type="button" className="story-ai-generate" onClick={applySuggestedTitle}>이 제목 사용하기</button>
+          <button type="button" onClick={() => setSuggestedTitle("")}>제목 제안 닫기</button>
+        </div>
+      </div>}
       {draft && <div className="story-draft-preview">
         <strong><Sparkles size={15} aria-hidden="true" /> 새로 쓴 AI 초안</strong>
         <p>{draft}</p>
