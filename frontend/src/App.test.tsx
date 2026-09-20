@@ -440,9 +440,9 @@ test("opens the Gangwon map and applies the selected region", () => {
   const sokchoLabel = screen.getByRole("button", { name: "속초" }).querySelector("text");
   const yangyangLabel = screen.getByRole("button", { name: "양양" }).querySelector("text");
   expect(sokchoLabel).toHaveAttribute("font-size", "20");
-  expect(sokchoLabel).not.toHaveAttribute("stroke-width");
+  expect(sokchoLabel).toHaveAttribute("stroke-width", "4.5");
   expect(sokchoLabel?.getAttribute("font-size")).toBe(yangyangLabel?.getAttribute("font-size"));
-  expect(sokchoLabel).not.toHaveAttribute("stroke");
+  expect(sokchoLabel).toHaveAttribute("stroke", "hsl(var(--background))");
 
   const gangneungRegion = screen.getByRole("button", { name: "강릉" });
   const gangwonMap = screen.getByTestId("gangwon-boundary-map");
