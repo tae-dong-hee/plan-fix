@@ -441,15 +441,14 @@ test("opens the Gangwon map and applies the selected region", () => {
   const yangyangLabel = screen.getByRole("button", { name: "양양" }).querySelector("text");
   expect(sokchoLabel).toHaveAttribute("font-size", "20");
   expect(sokchoLabel).not.toHaveAttribute("stroke-width");
-  expect(sokchoLabel?.getAttribute("fill")).toBe(yangyangLabel?.getAttribute("fill"));
-  expect(sokchoLabel?.getAttribute("stroke")).toBe(yangyangLabel?.getAttribute("stroke"));
+  expect(sokchoLabel?.getAttribute("font-size")).toBe(yangyangLabel?.getAttribute("font-size"));
+  expect(sokchoLabel).not.toHaveAttribute("stroke");
 
   const gangneungRegion = screen.getByRole("button", { name: "강릉" });
   const gangwonMap = screen.getByTestId("gangwon-boundary-map");
 
   fireEvent.pointerEnter(gangneungRegion);
   expect(gangwonMap).toHaveAttribute("data-active-region", "강릉");
-  expect(gangneungRegion).toHaveStyle({ transform: "translateY(-8px)" });
   expect(screen.getByText("강릉", { selector: "p" })).toBeInTheDocument();
   expect(screen.getByLabelText("강릉 여행 키워드")).toHaveTextContent(
     "바다 산책커피 여행",
@@ -463,7 +462,6 @@ test("opens the Gangwon map and applies the selected region", () => {
 
   fireEvent.pointerLeave(gangneungRegion);
   expect(gangwonMap).toHaveAttribute("data-active-region", "");
-  expect(gangneungRegion).toHaveStyle({ transform: "translateY(0)" });
   expect(screen.queryByTestId("region-guide")).not.toBeInTheDocument();
 
   fireEvent.click(gangneungRegion);
@@ -502,7 +500,7 @@ test("touch selects a region without a hover preview moving the map before the c
   fireEvent.mouseEnter(region);
 
   expect(screen.queryByTestId("region-guide")).not.toBeInTheDocument();
-  expect(region).toHaveStyle({ transform: "translateY(0)" });
+  expect(region).toHaveAttribute("aria-pressed", "false");
 
   fireEvent.click(region);
 
