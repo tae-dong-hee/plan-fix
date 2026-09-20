@@ -199,6 +199,32 @@ export async function createCourse(payload: CreateCoursePayload): Promise<Course
   return (await response.json()) as CourseResponse;
 }
 
+/** 공개 코스에서 선택한 일차만 새 내 코스로 가져온다. */
+export async function importCourseDays(
+  courseId: number | string,
+  dayNumbers: number[],
+): Promise<CourseResponse> {
+  const apiBaseUrl = getApiBaseUrl();
+  if (!apiBaseUrl) throw new UnauthorizedError();
+
+  const response = await fetch(`${apiBaseUrl}/courses/${encodeURIComponent(courseId)}/imports`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ dayNumbers }),
+  });
+
+  if (response.status === 401) throw new UnauthorizedError();
+  if (response.status === 403) throw new CourseAccessError("공개된 코스만 가져올 수 있습니다.");
+  if (!response.ok) {
+    const errorBody: unknown = await response.json().catch(() => null);
+    const message = errorBody && typeof errorBody === "object" && "message" in errorBody
+      && typeof errorBody.message === "string" ? errorBody.message : null;
+    throw new Error(message || "코스를 가져오지 못했습니다.");
+  }
+  return (await response.json()) as CourseResponse;
+}
+
 /** 내 코스 목록 조회 API 호출 */
 export async function fetchMyCourses(): Promise<CourseResponse[]> {
   const apiBaseUrl = getApiBaseUrl();

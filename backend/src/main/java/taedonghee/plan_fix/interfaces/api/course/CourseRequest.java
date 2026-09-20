@@ -49,6 +49,12 @@ public final class CourseRequest {
     }
 
     /**
+     * 공개 코스에서 내 코스로 가져올 일차 번호 목록
+     */
+    public record CopyDays(List<Integer> dayNumbers) {
+    }
+
+    /**
      * 코스 수정 요청
      */
     public record Update(

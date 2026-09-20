@@ -69,6 +69,18 @@ class CourseControllerTest {
     }
 
     @Test
+    void import_days_uses_principal_source_course_and_selected_days() {
+        CourseRequest.CopyDays request = new CourseRequest.CopyDays(List.of(1, 3));
+        when(courseApplicationService.importDays(10L, 7L, List.of(1, 3))).thenReturn(result());
+
+        ResponseEntity<CourseResponse> response = controller.importDays(principal, 7L, request);
+
+        assertThat(response.getStatusCode().value()).isEqualTo(201);
+        assertThat(response.getBody()).isNotNull();
+        verify(courseApplicationService).importDays(10L, 7L, List.of(1, 3));
+    }
+
+    @Test
     void update_uses_principal_id_and_course_id() {
         LocalDate start = LocalDate.of(2026, 9, 12);
         LocalDate end = LocalDate.of(2026, 9, 12);
