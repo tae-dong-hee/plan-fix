@@ -979,10 +979,15 @@ describe("MainPage travel story sorting and carousel", () => {
       .mockResolvedValueOnce(publicBoardResult);
     renderMainPage();
     const stories = screen.getByRole("region", { name: "여행 후기" });
+    const controls = within(stories).getByRole("group", { name: "여행 후기 목록 제어" });
     const sorting = within(stories).getByRole("group", { name: "여행 후기 정렬" });
     const popularButton = within(sorting).getByRole("button", { name: "인기순" });
     const latestButton = within(sorting).getByRole("button", { name: "최신순" });
+    const writeLink = within(controls).getByRole("link", { name: "후기 올리기" });
+    expect(sorting.compareDocumentPosition(writeLink) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(within(controls).queryByRole("link", { name: "여행 후기 전체보기" })).not.toBeInTheDocument();
     expect(popularButton).toHaveAttribute("aria-pressed", "true");
+    expect(popularButton).toHaveClass("min-h-9", "px-3", "text-xs");
     expect(latestButton).toHaveAttribute("aria-pressed", "false");
     await within(stories).findByRole("heading", { name: publicBoard.title });
 

@@ -678,7 +678,7 @@ export default function MainPage() {
         </section>
 
         <section className="travel-section travel-section-stories mx-auto max-w-7xl px-5 pb-12 sm:px-8 lg:px-10" aria-labelledby="travel-stories-title">
-          <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center justify-between gap-4">
             <div className="travel-section-title">
               <span className="travel-section-icon travel-section-icon-peach"><BookOpen aria-hidden="true" /></span>
               <div>
@@ -686,38 +686,38 @@ export default function MainPage() {
                 <h2 id="travel-stories-title" className="text-xl font-bold tracking-tight sm:text-2xl">여행 후기</h2>
               </div>
             </div>
-            <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
-              <Link
-                to={`/boards?sort=${boardSort}`}
-                className="travel-section-link inline-flex min-h-11 items-center gap-1 rounded-full px-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:text-sm"
-                aria-label="여행 후기 전체보기"
-              >
-                전체보기
-                <ArrowRight className="h-4 w-4" aria-hidden="true" />
-              </Link>
+            <Link
+              to={`/boards?sort=${boardSort}`}
+              className="travel-section-link inline-flex min-h-11 shrink-0 items-center gap-1 rounded-full px-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:text-sm"
+              aria-label="여행 후기 전체보기"
+            >
+              전체보기
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </Link>
+          </div>
+          <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-5">
+            <p className="text-[13px] leading-relaxed text-muted-foreground sm:text-sm">마음에 드는 후기에 좋아요를 누르면 위시리스트의 여행 후기에서 다시 볼 수 있어요.</p>
+            <div role="group" aria-label="여행 후기 목록 제어" className="flex w-full shrink-0 items-center justify-end gap-2 sm:w-auto">
+              <div role="group" aria-label="여행 후기 정렬" className="flex rounded-full bg-muted p-0.5">
+                {(["popular", "latest"] as const).map((sort) => (
+                  <button
+                    key={sort}
+                    type="button"
+                    aria-pressed={boardSort === sort}
+                    onClick={() => setBoardSort(sort)}
+                    className={`min-h-9 rounded-full px-3 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${boardSort === sort ? "bg-primary/10 text-primary dark:bg-primary/5" : "text-muted-foreground hover:bg-primary/5 hover:text-primary"}`}
+                  >
+                    {sort === "popular" ? "인기순" : "최신순"}
+                  </button>
+                ))}
+              </div>
               <Link
                 to="/boards/create"
-                className="travel-story-write inline-flex min-h-11 items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:text-sm"
+                className="travel-story-write inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:text-sm"
               >
                 <span>후기 올리기</span>
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
-            </div>
-          </div>
-          <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-5">
-            <p className="text-[13px] leading-relaxed text-muted-foreground sm:text-sm">마음에 드는 후기에 좋아요를 누르면 위시리스트의 여행 후기에서 다시 볼 수 있어요.</p>
-            <div role="group" aria-label="여행 후기 정렬" className="flex shrink-0 self-start rounded-full bg-muted p-1 sm:self-auto">
-              {(["popular", "latest"] as const).map((sort) => (
-                <button
-                  key={sort}
-                  type="button"
-                  aria-pressed={boardSort === sort}
-                  onClick={() => setBoardSort(sort)}
-                  className={`min-h-10 rounded-full px-4 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${boardSort === sort ? "bg-primary/10 text-primary dark:bg-primary/5" : "text-muted-foreground hover:bg-primary/5 hover:text-primary"}`}
-                >
-                  {sort === "popular" ? "인기순" : "최신순"}
-                </button>
-              ))}
             </div>
           </div>
           {boardLikeError && <p role="alert" className="mt-4 text-sm text-destructive">{boardLikeError}</p>}
