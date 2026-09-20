@@ -1,7 +1,5 @@
 import {
   useEffect,
-  useMemo,
-  useRef,
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
@@ -10,7 +8,6 @@ import {
 import { Check, Compass, Landmark, MapPinned, UtensilsCrossed, X } from "lucide-react";
 
 import { gangwonMapPaths } from "@/assets/gangwon-map-paths";
-import { layoutRegionMapLabels } from "@/lib/region-map-label-layout";
 
 import "./gangwon-region-map.css";
 
@@ -38,6 +35,7 @@ type RegionMapItem = {
   name: GangwonRegion;
   mapId: string;
   label: [number, number];
+  labelLetterSpacing?: number;
   mapScale?: number;
 };
 
@@ -172,6 +170,7 @@ const regionMapItems: RegionMapItem[] = [
     name: "속초",
     mapId: "속초시",
     label: [486, 197],
+    labelLetterSpacing: -1.5,
     mapScale: 1.08,
   },
   { name: "양양", mapId: "양양군", label: [525, 275] },
@@ -245,26 +244,6 @@ export default function GangwonRegionMap({
 }: GangwonRegionMapProps) {
   const [hoveredRegion, setHoveredRegion] = useState<GangwonRegion | null>(null);
   const [pendingRegion, setPendingRegion] = useState<GangwonRegion | null>(selectedRegion);
-  const mapStageRef = useRef<HTMLDivElement>(null);
-  const [mapSize, setMapSize] = useState({ width: 800, height: 699 });
-
-  useEffect(() => {
-    const stage = mapStageRef.current;
-    if (!open || !stage) return;
-
-    const measure = () => {
-      const { width, height } = stage.getBoundingClientRect();
-      if (width > 0 && height > 0) setMapSize({ width, height });
-    };
-    measure();
-    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(measure);
-    observer?.observe(stage);
-    window.addEventListener("resize", measure);
-    return () => {
-      observer?.disconnect();
-      window.removeEventListener("resize", measure);
-    };
-  }, [open]);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -285,23 +264,6 @@ export default function GangwonRegionMap({
       document.removeEventListener("keydown", handleEscape);
     };
   }, [open, onClose, selectedRegion]);
-
-  // Position labels in screen pixels so fitting the map never makes its text unreadable.
-  const { labelFontSize, labelWidth, labelHeight, labelAnchors, labelPositions } = useMemo(() => {
-    const mapScale = Math.min(mapSize.width / 800, mapSize.height / 699);
-    const labelFontSize = Math.max(12, 20 * mapScale);
-    const labelWidth = labelFontSize * 2 + 8;
-    const labelHeight = labelFontSize + 12;
-    const labelAnchors = regionMapItems.map(({ label: [x, y] }) => ({
-      x: (mapSize.width - 800 * mapScale) / 2 + x * mapScale,
-      y: (mapSize.height - 699 * mapScale) / 2 + y * mapScale,
-    }));
-    const labelPositions = layoutRegionMapLabels(labelAnchors, mapSize, {
-      width: labelWidth,
-      height: labelHeight,
-    });
-    return { labelFontSize, labelWidth, labelHeight, labelAnchors, labelPositions };
-  }, [mapSize]);
 
   if (!open) return null;
 
@@ -424,7 +386,7 @@ export default function GangwonRegionMap({
                 }
               `}</style>
 
-              <div ref={mapStageRef} className="region-map-stage relative mx-auto w-full max-w-[620px]">
+              <div className="region-map-stage relative mx-auto w-full max-w-[620px]">
                 <svg className="pointer-events-none absolute h-0 w-0" aria-hidden="true">
                   <defs>
                     <linearGradient id="hovered-region-fill" x1="0" y1="0" x2="0" y2="1">
@@ -495,28 +457,14 @@ export default function GangwonRegionMap({
 
                 <svg
                   className="pointer-events-none absolute inset-0 h-full w-full"
-                  viewBox={`0 0 ${mapSize.width} ${mapSize.height}`}
+                  viewBox="0 0 800 699"
                   role="group"
                   aria-label="강원도 18개 시군 선택 지도"
                 >
-                  {labelPositions.map((position, index) => {
-                    const anchor = labelAnchors[index];
-                    if (Math.hypot(position.x - anchor.x, position.y - anchor.y) <= 4) return null;
-                    return (
-                      <line
-                        key={regionMapItems[index].name}
-                        x1={anchor.x}
-                        y1={anchor.y}
-                        x2={position.x}
-                        y2={position.y}
-                        className="region-map-label-connector"
-                      />
-                    );
-                  })}
-                  {regionMapItems.map((region, index) => {
+                  {regionMapItems.map((region) => {
                     const isActive = activeRegion === region.name;
                     const isSelected = pendingRegion === region.name;
-                    const position = labelPositions[index];
+                    const isHovered = hoveredRegion === region.name;
 
                     return (
                       <g
@@ -525,8 +473,13 @@ export default function GangwonRegionMap({
                         tabIndex={0}
                         aria-label={region.name}
                         aria-pressed={isSelected}
-                        className="region-map-region pointer-events-auto cursor-pointer outline-none"
-                        data-active={isActive}
+                        className="pointer-events-auto cursor-pointer outline-none"
+                        style={{
+                          transform: isHovered ? "translateY(-8px)" : "translateY(0)",
+                          transformBox: "fill-box",
+                          transformOrigin: "center",
+                          transition: "transform 220ms cubic-bezier(0.22, 1, 0.36, 1)",
+                        }}
                         onPointerEnter={(event) => {
                           if (event.pointerType !== "touch") setHoveredRegion(region.name);
                         }}
@@ -541,20 +494,22 @@ export default function GangwonRegionMap({
                         onKeyDown={(event) => handleRegionKeyDown(event, region.name)}
                       >
                         <rect
-                          x={position.x - labelWidth / 2}
-                          y={position.y - labelHeight / 2}
-                          width={labelWidth}
-                          height={labelHeight}
-                          rx="5"
-                          className="region-map-label-backdrop"
+                          x={region.label[0] - 30}
+                          y={region.label[1] - 18}
+                          width="60"
+                          height="36"
+                          rx="10"
+                          fill="transparent"
                         />
                         <text
-                          x={position.x}
-                          y={position.y}
+                          x={region.label[0]}
+                          y={region.label[1]}
                           textAnchor="middle"
                           dominantBaseline="middle"
-                          fontSize={labelFontSize}
-                          className="region-map-label pointer-events-none select-none font-semibold"
+                          fill={isActive ? "hsl(var(--primary-foreground))" : "hsl(var(--foreground))"}
+                          fontSize={20}
+                          letterSpacing={region.labelLetterSpacing}
+                          className="region-map-label pointer-events-none select-none font-semibold transition-colors duration-200"
                         >
                           {region.name}
                         </text>
