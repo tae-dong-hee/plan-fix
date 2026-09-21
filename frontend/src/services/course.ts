@@ -56,6 +56,7 @@ export type CourseInvite = {
 };
 export type CourseMember = { userId: number; name?: string | null; username?: string; role: "OWNER" | "VIEWER" | "EDITOR"; joinedAt: string };
 export type PendingCourseInvite = { token: string; role: "VIEWER" | "EDITOR"; createdAt: string; expiresAt: string };
+export type CourseInviteGroup = { role: CourseInviteRole; createdAt: string; expiresAt: string };
 
 /** 소유자가 공동 코스 초대 링크를 생성한다. */
 export async function createCourseInvite(courseId: number | string, memberRole: CourseInviteRole): Promise<CourseInvite> {
@@ -101,6 +102,25 @@ export async function fetchPendingCourseInvites(courseId: number | string): Prom
   if (response.status === 403) throw new CourseAccessError();
   if (!response.ok) throw new Error("승인 대기 초대 목록을 불러오지 못했습니다.");
   return (await response.json()) as PendingCourseInvite[];
+}
+
+/** 기존 링크가 여러 개여도 권한별로 하나의 초대 항목을 조회한다. */
+export async function fetchCourseInviteGroups(courseId: number | string): Promise<CourseInviteGroup[]> {
+  const base = requireMemberManagementApi();
+  const response = await fetch(`${base}/courses/${encodeURIComponent(courseId)}/invite-groups`, { credentials: "include" });
+  if (response.status === 401) throw new UnauthorizedError();
+  if (response.status === 403) throw new CourseAccessError();
+  if (!response.ok) throw new Error("사용 가능한 초대 링크를 불러오지 못했습니다.");
+  return (await response.json()) as CourseInviteGroup[];
+}
+
+/** 해당 권한으로 발급한 기존 링크를 서버에서 모두 취소한다. */
+export async function cancelCourseInviteGroup(courseId: number | string, role: CourseInviteRole): Promise<void> {
+  const base = requireMemberManagementApi();
+  const response = await fetch(`${base}/courses/${encodeURIComponent(courseId)}/invite-groups/${role}`, { method: "DELETE", credentials: "include" });
+  if (response.status === 401) throw new UnauthorizedError();
+  if (response.status === 403) throw new CourseAccessError();
+  if (!response.ok) throw new Error("초대를 취소하지 못했습니다.");
 }
 
 export async function updateCourseMemberRole(courseId: number | string, userId: number, role: CourseInviteRole) {

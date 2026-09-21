@@ -83,7 +83,7 @@ describe("CourseDetailPage", () => {
     vi.mocked(courseService.fetchCourse).mockResolvedValue(mockCourse);
     vi.mocked(courseService.fetchCourseMembers).mockResolvedValue([]);
     vi.mocked(courseService.fetchDayAccommodations).mockResolvedValue([]);
-    vi.mocked(courseService.fetchPendingCourseInvites).mockResolvedValue([]);
+    vi.mocked(courseService.fetchCourseInviteGroups).mockResolvedValue([]);
     vi.mocked(courseService.createCourseInvite).mockResolvedValue(mockInvite);
     vi.mocked(courseService.importCourseDays).mockResolvedValue({ ...mockCourse, courseId: 99, isOwner: true });
     writeClipboard.mockResolvedValue(undefined);
@@ -457,7 +457,7 @@ describe("CourseDetailPage", () => {
 
   it("멤버 관리에서 읽기·편집 권한 변경과 기존 초대 취소가 동작한다", async () => {
     vi.mocked(courseService.fetchCourseMembers).mockResolvedValue([{ userId: 2, name: "친구", username: "friend", role: "VIEWER", joinedAt: "2026-09-19" }]);
-    vi.mocked(courseService.fetchPendingCourseInvites).mockResolvedValue([{ token: mockInvite.token, role: "EDITOR", createdAt: "2026-09-19", expiresAt: mockInvite.expiresAt }]);
+    vi.mocked(courseService.fetchCourseInviteGroups).mockResolvedValue([{ role: "EDITOR", createdAt: "2026-09-19", expiresAt: mockInvite.expiresAt }]);
     renderComponent();
     fireEvent.click(await screen.findByRole("button", { name: "멤버 관리" }));
     const selector = await screen.findByRole("combobox", { name: "friend 참여 권한" });
@@ -467,52 +467,116 @@ describe("CourseDetailPage", () => {
     fireEvent.change(selector, { target: { value: "VIEWER" } });
     await waitFor(() => expect(selector).toHaveValue("VIEWER"));
     expect(courseService.updateCourseMemberRole).toHaveBeenLastCalledWith("10", 2, "VIEWER");
-    fireEvent.click(screen.getByRole("button", { name: "초대 취소" }));
+    fireEvent.click(screen.getByRole("button", { name: "편집 초대 취소" }));
     await screen.findByText("사용 가능한 초대 링크가 없습니다.");
-    expect(courseService.cancelCourseInvite).toHaveBeenCalledExactlyOnceWith("10", mockInvite.token);
+    expect(courseService.cancelCourseInviteGroup).toHaveBeenCalledExactlyOnceWith("10", "EDITOR");
     fireEvent.click(screen.getByRole("button", { name: "friend 멤버 삭제" }));
     await screen.findByText("참여 중인 멤버가 없습니다.");
     expect(courseService.removeCourseMember).toHaveBeenCalledExactlyOnceWith("10", 2);
   });
 
-  it("같은 권한의 기존 링크가 여러 개여도 한 그룹에서 개수와 발급 시각을 보여준다", async () => {
+  it("기존 편집 링크가 세 개여도 관리 화면에는 권한별 한 항목만 표시한다", async () => {
     vi.mocked(courseService.fetchCourseMembers).mockResolvedValue([{ userId: 2, username: "friend", role: "EDITOR", joinedAt: "2026-09-19" }]);
-    const invites = ["2026-09-19T12:00:00Z", "2026-09-19T11:00:00Z", "2026-09-19T10:00:00Z"].map((createdAt, index) => ({
+    const legacyInvites = ["2026-09-19T12:00:00Z", "2026-09-19T11:00:00Z", "2026-09-19T10:00:00Z"].map((createdAt, index) => ({
       token: `existing-${index}`, role: "EDITOR" as const, createdAt, expiresAt: mockInvite.expiresAt,
     }));
-    vi.mocked(courseService.fetchPendingCourseInvites).mockResolvedValue(invites);
+    vi.mocked(courseService.fetchPendingCourseInvites).mockResolvedValue(legacyInvites);
+    const editorGroup = { role: "EDITOR" as const, createdAt: legacyInvites[0].createdAt, expiresAt: mockInvite.expiresAt };
+    const viewerGroup = { role: "VIEWER" as const, createdAt: "2026-09-19T13:00:00Z", expiresAt: mockInvite.expiresAt };
+    vi.mocked(courseService.fetchCourseInviteGroups).mockResolvedValue([editorGroup, viewerGroup]);
     renderComponent();
     fireEvent.click(await screen.findByRole("button", { name: "멤버 관리" }));
 
-    const group = await screen.findByText("편집 초대 링크 · 3개");
+    const list = await screen.findByRole("list", { name: "사용 가능한 초대 링크" });
+    expect(within(list).getAllByRole("listitem")).toHaveLength(2);
+    const editor = within(list).getByRole("listitem", { name: "편집 초대 링크" });
+    expect(within(editor).getAllByRole("button", { name: "다시 공유" })).toHaveLength(1);
+    expect(Array.from(editor.querySelectorAll("time")).map((time) => time.dateTime)).toEqual([editorGroup.createdAt, editorGroup.expiresAt]);
+    expect(screen.queryByText(/3개/)).not.toBeInTheDocument();
     expect(screen.getAllByRole("combobox", { name: "friend 참여 권한" })).toHaveLength(1);
-    expect(screen.getByText(/공유 가능한 링크는 3개예요/)).toBeInTheDocument();
-    const details = group.closest("details")!;
-    expect(details).not.toHaveAttribute("open");
-    fireEvent.click(group);
-    await waitFor(() => expect(details).toHaveAttribute("open"));
-    expect(within(details).getAllByRole("button", { name: "다시 공유" })).toHaveLength(3);
-    expect(Array.from(details.querySelectorAll("time")).map((time) => time.dateTime)).toEqual(invites.flatMap((invite) => [invite.createdAt, invite.expiresAt]));
-    fireEvent.click(within(details).getAllByRole("button", { name: "초대 취소" })[1]);
-    await screen.findByText("편집 초대 링크 · 2개");
-    expect(courseService.cancelCourseInvite).toHaveBeenCalledExactlyOnceWith("10", "existing-1");
+    expect(screen.getByText(/같은 권한으로 보낸 기존 링크도 모두 사용할 수 없어요/)).toBeInTheDocument();
+    expect(courseService.fetchCourseInviteGroups).toHaveBeenCalledExactlyOnceWith("10");
+    expect(courseService.fetchPendingCourseInvites).not.toHaveBeenCalled();
+    fireEvent.click(within(editor).getByRole("button", { name: "편집 초대 취소" }));
+    await waitFor(() => expect(within(list).queryByRole("listitem", { name: "편집 초대 링크" })).not.toBeInTheDocument());
+    expect(within(list).getAllByRole("listitem")).toHaveLength(1);
+    expect(within(list).getByRole("listitem", { name: "읽기 초대 링크" })).toBeInTheDocument();
+    expect(courseService.cancelCourseInviteGroup).toHaveBeenCalledExactlyOnceWith("10", "EDITOR");
+    expect(courseService.cancelCourseInvite).not.toHaveBeenCalled();
+    expect(screen.getByRole("combobox", { name: "friend 참여 권한" })).toHaveValue("EDITOR");
   });
 
-  it("멤버 관리의 기존 링크를 새로 생성하지 않고 복사와 카카오톡으로 다시 공유한다", async () => {
-    vi.mocked(courseService.fetchPendingCourseInvites).mockResolvedValue([{ token: mockInvite.token, role: "VIEWER", createdAt: "2026-09-19T12:00:00Z", expiresAt: mockInvite.expiresAt }]);
+  it.each(["EDITOR", "VIEWER"] as const)("%s 초대를 다시 공유하면 서버에서 준비한 해당 권한의 링크를 사용한다", async (role) => {
+    vi.mocked(courseService.fetchCourseInviteGroups).mockResolvedValue([{ role, createdAt: "2026-09-19T12:00:00Z", expiresAt: mockInvite.expiresAt }]);
+    const inviteUrl = "https://planfix.example/course-invites/new-current-token";
+    vi.mocked(courseService.createCourseInvite).mockResolvedValue({ ...mockInvite, token: "new-current-token", inviteUrl, memberRole: role });
     renderComponent();
     fireEvent.click(await screen.findByRole("button", { name: "멤버 관리" }));
     fireEvent.click(await screen.findByRole("button", { name: "다시 공유" }));
 
-    const inviteUrl = `${window.location.origin}/course-invites/${mockInvite.token}`;
     expect(await screen.findByLabelText("초대 링크")).toHaveValue(inviteUrl);
     expect(screen.queryByRole("dialog", { name: "멤버 및 초대 관리" })).not.toBeInTheDocument();
     await waitFor(() => expect(writeClipboard).toHaveBeenCalledExactlyOnceWith(inviteUrl));
     const kakaoButton = screen.getByRole("button", { name: "카카오톡으로 초대" });
     await waitFor(() => expect(kakaoButton).toBeEnabled());
     fireEvent.click(kakaoButton);
-    expect(shareCourseInvite).toHaveBeenCalledExactlyOnceWith({ inviteUrl, courseTitle: mockCourse.title, memberRole: "VIEWER" });
-    expect(courseService.createCourseInvite).not.toHaveBeenCalled();
+    expect(shareCourseInvite).toHaveBeenCalledExactlyOnceWith({ inviteUrl, courseTitle: mockCourse.title, memberRole: role });
+    expect(courseService.createCourseInvite).toHaveBeenCalledExactlyOnceWith("10", role);
+  });
+
+  it("다시 공유 준비 중에는 중복 요청과 초대 취소·멤버 변경을 막는다", async () => {
+    const preparing = deferred<courseService.CourseInvite>();
+    vi.mocked(courseService.createCourseInvite).mockReturnValue(preparing.promise);
+    vi.mocked(courseService.fetchCourseMembers).mockResolvedValue([{ userId: 2, username: "friend", role: "EDITOR", joinedAt: "2026-09-19" }]);
+    vi.mocked(courseService.fetchCourseInviteGroups).mockResolvedValue([{ role: "EDITOR", createdAt: "2026-09-19", expiresAt: mockInvite.expiresAt }]);
+    renderComponent();
+    fireEvent.click(await screen.findByRole("button", { name: "멤버 관리" }));
+    const shareButton = await screen.findByRole("button", { name: "다시 공유" });
+    fireEvent.click(shareButton);
+    fireEvent.click(shareButton);
+    const cancelButton = screen.getByRole("button", { name: "편집 초대 취소" });
+    fireEvent.click(cancelButton);
+    const selector = screen.getByRole("combobox", { name: "friend 참여 권한" });
+    fireEvent.change(selector, { target: { value: "VIEWER" } });
+    expect(shareButton).toBeDisabled();
+    expect(cancelButton).toBeDisabled();
+    expect(selector).toBeDisabled();
+    expect(courseService.createCourseInvite).toHaveBeenCalledExactlyOnceWith("10", "EDITOR");
+    expect(courseService.cancelCourseInviteGroup).not.toHaveBeenCalled();
+    expect(courseService.updateCourseMemberRole).not.toHaveBeenCalled();
+    await act(async () => preparing.resolve(mockInvite));
+    expect(await screen.findByLabelText("초대 링크")).toHaveValue(mockInvite.inviteUrl);
+  });
+
+  it("다시 공유 준비 실패는 목록을 유지하고 같은 권한으로 재시도할 수 있다", async () => {
+    vi.mocked(courseService.fetchCourseInviteGroups).mockResolvedValue([{ role: "VIEWER", createdAt: "2026-09-19", expiresAt: mockInvite.expiresAt }]);
+    vi.mocked(courseService.createCourseInvite).mockRejectedValueOnce(new Error("링크 준비에 실패했습니다.")).mockResolvedValue({ ...mockInvite, memberRole: "VIEWER" });
+    renderComponent();
+    fireEvent.click(await screen.findByRole("button", { name: "멤버 관리" }));
+    const shareButton = await screen.findByRole("button", { name: "다시 공유" });
+    fireEvent.click(shareButton);
+    expect(await screen.findByRole("alert")).toHaveTextContent("링크 준비에 실패했습니다.");
+    expect(screen.getByRole("listitem", { name: "읽기 초대 링크" })).toBeInTheDocument();
+    expect(shareButton).toBeEnabled();
+    expect(writeClipboard).not.toHaveBeenCalled();
+    fireEvent.click(shareButton);
+    expect(await screen.findByLabelText("초대 링크")).toHaveValue(mockInvite.inviteUrl);
+    expect(courseService.createCourseInvite).toHaveBeenNthCalledWith(1, "10", "VIEWER");
+    expect(courseService.createCourseInvite).toHaveBeenNthCalledWith(2, "10", "VIEWER");
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("권한별 초대 조회 실패는 안내하고 관리창을 다시 열면 재시도한다", async () => {
+    vi.mocked(courseService.fetchCourseInviteGroups).mockRejectedValueOnce(new Error("초대 목록을 불러오지 못했습니다.")).mockResolvedValue([{ role: "EDITOR", createdAt: "2026-09-19", expiresAt: mockInvite.expiresAt }]);
+    renderComponent();
+    fireEvent.click(await screen.findByRole("button", { name: "멤버 관리" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("초대 목록을 불러오지 못했습니다.");
+    fireEvent.click(screen.getByRole("button", { name: "닫기" }));
+    fireEvent.click(screen.getByRole("button", { name: "멤버 관리" }));
+    expect(await screen.findByRole("listitem", { name: "편집 초대 링크" })).toBeInTheDocument();
+    expect(courseService.fetchCourseInviteGroups).toHaveBeenCalledTimes(2);
+    expect(courseService.fetchPendingCourseInvites).not.toHaveBeenCalled();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
   it("권한 변경이 실패하면 기존 권한을 유지하고 다시 시도할 수 있다", async () => {
@@ -551,22 +615,22 @@ describe("CourseDetailPage", () => {
 
   it.each(["멤버 회수", "초대 취소"])("%s 실패는 기존 목록을 보존하고 재시도로 완료한다", async (action) => {
     vi.mocked(courseService.fetchCourseMembers).mockResolvedValue([{ userId: 2, username: "friend", role: "EDITOR", joinedAt: "2026-09-19" }]);
-    vi.mocked(courseService.fetchPendingCourseInvites).mockResolvedValue([{ token: mockInvite.token, role: "EDITOR", createdAt: "2026-09-19", expiresAt: mockInvite.expiresAt }]);
-    const mutation = action === "멤버 회수" ? courseService.removeCourseMember : courseService.cancelCourseInvite;
+    vi.mocked(courseService.fetchCourseInviteGroups).mockResolvedValue([{ role: "EDITOR", createdAt: "2026-09-19", expiresAt: mockInvite.expiresAt }]);
+    const mutation = action === "멤버 회수" ? courseService.removeCourseMember : courseService.cancelCourseInviteGroup;
     vi.mocked(mutation).mockRejectedValueOnce(new Error("저장에 실패했습니다."));
     renderComponent();
     fireEvent.click(await screen.findByRole("button", { name: "멤버 관리" }));
-    const button = await screen.findByRole("button", { name: action === "멤버 회수" ? "friend 멤버 삭제" : "초대 취소" });
+    const button = await screen.findByRole("button", { name: action === "멤버 회수" ? "friend 멤버 삭제" : "편집 초대 취소" });
     fireEvent.click(button);
     expect(await screen.findByRole("alert")).toHaveTextContent("저장에 실패했습니다.");
     expect(button).toBeEnabled();
     expect(screen.getByRole("combobox", { name: "friend 참여 권한" })).toHaveValue("EDITOR");
-    expect(screen.getByRole("button", { name: "초대 취소" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "편집 초대 취소" })).toBeInTheDocument();
     fireEvent.click(button);
     await screen.findByText(action === "멤버 회수" ? "참여 중인 멤버가 없습니다." : "사용 가능한 초대 링크가 없습니다.");
     expect(mutation).toHaveBeenCalledTimes(2);
     // 링크 취소는 기존 멤버를 제거하지 않고, 멤버 회수는 다른 사람에게 보낼 링크를 삭제하지 않는다.
-    if (action === "멤버 회수") expect(screen.getByRole("button", { name: "초대 취소" })).toBeInTheDocument();
+    if (action === "멤버 회수") expect(screen.getByRole("button", { name: "편집 초대 취소" })).toBeInTheDocument();
     else expect(screen.getByRole("combobox", { name: "friend 참여 권한" })).toHaveValue("EDITOR");
   });
 
@@ -612,6 +676,22 @@ describe("CourseDetailPage", () => {
     await screen.findByRole("heading", { name: "새 여행" });
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     await act(async () => creating.resolve(mockInvite));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(writeClipboard).not.toHaveBeenCalled();
+    expect(mockNavigate).not.toHaveBeenCalled();
+  });
+
+  it.each(["성공", "인증 오류"])("다른 코스로 이동하면 늦은 다시 공유 %s 결과를 무시한다", async (result) => {
+    const preparing = deferred<courseService.CourseInvite>();
+    vi.mocked(courseService.createCourseInvite).mockReturnValue(preparing.promise);
+    vi.mocked(courseService.fetchCourseInviteGroups).mockResolvedValue([{ role: "EDITOR", createdAt: "2026-09-19", expiresAt: mockInvite.expiresAt }]);
+    vi.mocked(courseService.fetchCourse).mockResolvedValueOnce(mockCourse).mockResolvedValue({ ...mockCourse, courseId: 20, title: "새 여행" });
+    renderComponent();
+    fireEvent.click(await screen.findByRole("button", { name: "멤버 관리" }));
+    fireEvent.click(await screen.findByRole("button", { name: "다시 공유" }));
+    fireEvent.click(screen.getByRole("link", { name: "다른 코스 열기" }));
+    await screen.findByRole("heading", { name: "새 여행" });
+    await act(async () => result === "성공" ? preparing.resolve(mockInvite) : preparing.reject(new UnauthorizedError()));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(writeClipboard).not.toHaveBeenCalled();
     expect(mockNavigate).not.toHaveBeenCalled();

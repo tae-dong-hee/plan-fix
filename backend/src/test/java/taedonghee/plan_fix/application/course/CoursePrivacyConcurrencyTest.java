@@ -213,6 +213,50 @@ class CoursePrivacyConcurrencyTest {
         }
     }
 
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void groupCancellationAndAcceptanceSerializeWithoutRestoringCancelledLinks(boolean cancelFirst) throws Exception {
+        String viewer = inviteService.createInvite(ownerId, courseId, CourseMemberRole.VIEWER, "https://example.test").token();
+        String newestEditor = inviteService.createInvite(ownerId, courseId, CourseMemberRole.EDITOR, "https://example.test").token();
+        Supplier<Boolean> cancel = () -> {
+            inviteService.cancelInviteGroup(ownerId, courseId, CourseMemberRole.EDITOR);
+            return true;
+        };
+        if (cancelFirst) {
+            assertThatThrownBy(() -> runAfterBlocked(cancel, () -> inviteService.accept(inviteeId, newestEditor)))
+                    .isInstanceOf(ExecutionException.class).hasCauseInstanceOf(CoreException.class)
+                    .satisfies(error -> assertThat(((CoreException) error.getCause()).getErrorType()).isEqualTo(ErrorType.NOT_FOUND));
+            assertThat(members.findByCourseIdOrderByCreatedAtAsc(courseId)).isEmpty();
+        } else {
+            runAfterBlocked(() -> inviteService.accept(inviteeId, newestEditor), cancel);
+            assertOneMemberWithRole(CourseMemberRole.EDITOR);
+        }
+        assertThat(invites.findByToken(inviteToken)).isEmpty();
+        assertThat(invites.findByToken(newestEditor)).isEmpty();
+        assertThat(invites.findByToken(viewer)).isPresent();
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void groupCancellationAndPreparationRespectTheirCourseLockOrder(boolean cancelFirst) throws Exception {
+        inviteService.createInvite(ownerId, courseId, CourseMemberRole.VIEWER, "https://example.test");
+        var preparedToken = new java.util.concurrent.atomic.AtomicReference<String>();
+        Supplier<Boolean> cancel = () -> {
+            inviteService.cancelInviteGroup(ownerId, courseId, CourseMemberRole.EDITOR);
+            return true;
+        };
+        Supplier<String> prepare = () -> {
+            String token = inviteService.createInvite(ownerId, courseId, CourseMemberRole.EDITOR, "https://example.test").token();
+            preparedToken.set(token);
+            return token;
+        };
+        if (cancelFirst) runAfterBlocked(cancel, prepare);
+        else runAfterBlocked(prepare, cancel);
+        assertThat(invites.findByToken(inviteToken)).isEmpty();
+        assertThat(invites.findByToken(preparedToken.get()).isPresent()).isEqualTo(cancelFirst);
+        assertThat(inviteService.inviteGroups(ownerId, courseId)).hasSize(cancelFirst ? 2 : 1);
+    }
+
     @Test
     void simultaneousInvitePreparationCreatesOneLinkUnderTheCourseLock() throws Exception {
         inviteService.cancelInvite(ownerId, courseId, inviteToken);

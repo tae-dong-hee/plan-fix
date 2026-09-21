@@ -56,6 +56,113 @@ class CourseInvitePermissionsIntegrationTest {
     private Long courseId;
     private Long spotId;
 
+    @Test
+    void legacyDuplicateLinksHaveOneManagedRoleWhileOriginalLinksKeepTheirAuthority() throws Exception {
+        String firstEditor = invite("EDITOR");
+        String secondEditor = legacyDuplicate(firstEditor);
+        String latestEditor = legacyDuplicate(secondEditor);
+        entityManager.flush();
+        // Issuance ID, not a skewed timestamp, determines the representative.
+        jdbc.update("UPDATE course_invites SET created_at = created_at - interval '1 day' WHERE token = ?", latestEditor);
+        entityManager.clear();
+        JsonNode originalRows = read(as(owner, get(path() + "/invites")).andExpect(status().isOk()));
+        JsonNode latestRow = java.util.stream.StreamSupport.stream(originalRows.spliterator(), false)
+                .filter(row -> row.path("token").asText().equals(latestEditor)).findFirst().orElseThrow();
+
+        as(owner, get(path() + "/invite-groups")).andExpect(status().isOk())
+                .andExpect(header().string("Cache-Control", "no-store"))
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].role").value("EDITOR"))
+                .andExpect(jsonPath("$[0].createdAt").value(latestRow.path("createdAt").asText()))
+                .andExpect(jsonPath("$[0].expiresAt").value(latestRow.path("expiresAt").asText()))
+                .andExpect(jsonPath("$[0].token").doesNotExist());
+        assertThat(read(as(owner, get(path() + "/invites")))).isEqualTo(originalRows);
+        for (String token : List.of(firstEditor, secondEditor, latestEditor)) {
+            mvc.perform(get(invitePath(token))).andExpect(status().isOk())
+                    .andExpect(jsonPath("$.memberRole").value("EDITOR"));
+        }
+        accept(firstEditor).andExpect(status().isOk());
+        String viewer = invite("VIEWER");
+        accept(viewer).andExpect(status().isOk());
+        as(owner, get(path() + "/invite-groups")).andExpect(jsonPath("$.length()").value(2));
+        for (String token : List.of(firstEditor, secondEditor, latestEditor)) accept(token).andExpect(status().isOk());
+        assertSingleMembershipAndEditing("VIEWER");
+    }
+
+    @Test
+    void groupCancellationRemovesAllSameRoleLinksAndReceiptsWithoutChangingOtherAccess() throws Exception {
+        String firstEditor = invite("EDITOR");
+        String expiredEditor = legacyDuplicate(firstEditor);
+        String latestEditor = legacyDuplicate(expiredEditor);
+        String viewer = invite("VIEWER");
+        accept(firstEditor).andExpect(status().isOk());
+        String requestId = UUID.randomUUID().toString();
+        String payload = mapper.writeValueAsString(Map.of("invite_token", firstEditor, "share_request_id", requestId));
+        mvc.perform(post("/api/v1/webhooks/kakao/share").header("Authorization", "KakaoAK share-webhook-test-key")
+                .contentType(MediaType.APPLICATION_JSON).content(payload)).andExpect(status().isNoContent());
+        entityManager.flush();
+        jdbc.update("UPDATE course_invites SET expires_at = now() - interval '1 minute' WHERE token = ?", expiredEditor);
+        entityManager.clear();
+        Long otherCourse = read(as(owner, post("/api/v1/courses").contentType(MediaType.APPLICATION_JSON)
+                .content(mapper.writeValueAsString(Map.of("title", "Other trip", "visibility", "PUBLIC",
+                        "days", List.of(Map.of("dayNumber", 1, "spots", List.of(Map.of("spotId", spotId, "memo", "Other"))))))))
+                .andExpect(status().isCreated()))
+                .path("courseId").asLong();
+        String otherToken = read(as(owner, post("/api/v1/courses/" + otherCourse + "/invites")
+                .contentType(MediaType.APPLICATION_JSON).content("{\"memberRole\":\"EDITOR\"}"))
+                .andExpect(status().isOk())).path("token").asText();
+
+        as(owner, delete(path() + "/invite-groups/EDITOR")).andExpect(status().isNoContent());
+        entityManager.flush();
+        entityManager.clear();
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM course_invites WHERE course_id = ? AND member_role = 'EDITOR'", Long.class, courseId)).isZero();
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM course_invite_kakao_shares WHERE share_request_id = ?::uuid", Long.class, requestId)).isZero();
+        as(owner, get(path() + "/invite-groups")).andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].role").value("VIEWER"));
+        for (String token : List.of(firstEditor, expiredEditor, latestEditor)) {
+            mvc.perform(get(invitePath(token))).andExpect(status().isNotFound());
+            accept(token).andExpect(status().isNotFound());
+        }
+        mvc.perform(get(invitePath(viewer))).andExpect(status().isOk());
+        mvc.perform(get(invitePath(otherToken))).andExpect(status().isOk());
+        assertSingleMembershipAndEditing("EDITOR");
+        as(owner, delete(path() + "/invite-groups/EDITOR")).andExpect(status().isNoContent());
+        mvc.perform(post("/api/v1/webhooks/kakao/share").header("Authorization", "KakaoAK share-webhook-test-key")
+                .contentType(MediaType.APPLICATION_JSON).content(payload)).andExpect(status().isNoContent());
+        String fresh = invite("EDITOR");
+        assertThat(fresh).isNotIn(firstEditor, expiredEditor, latestEditor);
+        as(owner, get(path() + "/invite-groups")).andExpect(jsonPath("$.length()").value(2));
+    }
+
+    @Test
+    void cancellingLatestRoleGroupNeverRevivesOlderPermissionAndResharingCanIssueNewerPermission() throws Exception {
+        String oldEditor = invite("EDITOR");
+        accept(oldEditor).andExpect(status().isOk());
+        String viewer = invite("VIEWER");
+        accept(viewer).andExpect(status().isOk());
+        as(owner, delete(path() + "/invite-groups/VIEWER")).andExpect(status().isNoContent());
+        setRole("VIEWER");
+        accept(oldEditor).andExpect(status().isOk());
+        assertSingleMembershipAndEditing("VIEWER");
+        String freshEditor = invite("EDITOR");
+        assertThat(freshEditor).isNotEqualTo(oldEditor);
+        accept(freshEditor).andExpect(status().isOk());
+        assertSingleMembershipAndEditing("EDITOR");
+    }
+
+    @Test
+    void groupManagementIsOwnerOnlyAndRejectsInvalidRoles() throws Exception {
+        String token = invite("EDITOR");
+        mvc.perform(get(path() + "/invite-groups")).andExpect(status().isUnauthorized());
+        mvc.perform(delete(path() + "/invite-groups/EDITOR")).andExpect(status().isUnauthorized());
+        as(visitor, get(path() + "/invite-groups")).andExpect(status().isForbidden());
+        as(visitor, delete(path() + "/invite-groups/EDITOR")).andExpect(status().isForbidden());
+        for (String invalid : List.of("OWNER", "UNKNOWN")) {
+            as(owner, delete(path() + "/invite-groups/" + invalid)).andExpect(status().isBadRequest());
+        }
+        mvc.perform(get(invitePath(token))).andExpect(status().isOk());
+    }
+
     @ParameterizedTest
     @ValueSource(strings = {"VIEWER", "EDITOR"})
     void preparingSameRoleRepeatedlyReusesOneLinkEvenAfterAcceptance(String role) throws Exception {
@@ -523,6 +630,16 @@ class CourseInvitePermissionsIntegrationTest {
     private void setRole(String role) throws Exception {
         as(owner, patch(path() + "/members/" + memberId).contentType(MediaType.APPLICATION_JSON)
                 .content(mapper.writeValueAsString(Map.of("role", role)))).andExpect(status().isNoContent());
+    }
+
+    private String legacyDuplicate(String originalToken) {
+        entityManager.flush();
+        String duplicate = "legacy-" + UUID.randomUUID();
+        jdbc.update("INSERT INTO course_invites (course_id, created_by_user_id, token, member_role, expires_at, created_at) "
+                + "SELECT course_id, created_by_user_id, ?, member_role, expires_at, created_at + interval '1 minute' "
+                + "FROM course_invites WHERE token = ?", duplicate, originalToken);
+        entityManager.clear();
+        return duplicate;
     }
 
     private String invite(String role) throws Exception {
