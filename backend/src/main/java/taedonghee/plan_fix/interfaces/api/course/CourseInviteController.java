@@ -54,6 +54,20 @@ public class CourseInviteController {
     @GetMapping("/api/v1/courses/{courseId}/invites")
     public ResponseEntity<List<CourseInviteApplicationService.PendingInviteResult>> pending(@AuthenticationPrincipal AuthenticatedUser principal, @PathVariable Long courseId) { return ResponseEntity.ok(inviteService.pendingInvites(principal.id(), courseId)); }
 
+    @GetMapping("/api/v1/courses/{courseId}/invite-groups")
+    public ResponseEntity<List<CourseInviteApplicationService.InviteGroupResult>> groups(
+            @AuthenticationPrincipal AuthenticatedUser principal, @PathVariable Long courseId) {
+        return ResponseEntity.ok().cacheControl(org.springframework.http.CacheControl.noStore())
+                .body(inviteService.inviteGroups(principal.id(), courseId));
+    }
+
+    @DeleteMapping("/api/v1/courses/{courseId}/invite-groups/{role}")
+    public ResponseEntity<Void> cancelGroup(@AuthenticationPrincipal AuthenticatedUser principal,
+                                           @PathVariable Long courseId, @PathVariable CourseMemberRole role) {
+        inviteService.cancelInviteGroup(principal.id(), courseId, role);
+        return ResponseEntity.noContent().build();
+    }
+
     @PatchMapping("/api/v1/courses/{courseId}/members/{memberUserId}")
     public ResponseEntity<Void> updateRole(@AuthenticationPrincipal AuthenticatedUser principal, @PathVariable Long courseId, @PathVariable Long memberUserId, @RequestBody UpdateRoleRequest request) {
         inviteService.updateMemberRole(principal.id(), courseId, memberUserId, request.role()); return ResponseEntity.noContent().build();

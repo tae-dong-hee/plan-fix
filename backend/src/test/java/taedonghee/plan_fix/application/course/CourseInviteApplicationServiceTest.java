@@ -204,6 +204,7 @@ class CourseInviteApplicationServiceTest {
             assertThat(member.role()).isEqualTo(CourseMemberRole.OWNER);
         });
         assertThat(service.pendingInvites(OWNER_ID, COURSE_ID)).isEmpty();
+        assertThat(service.inviteGroups(OWNER_ID, COURSE_ID)).isEmpty();
         verifyNoInteractions(members, invites);
     }
 

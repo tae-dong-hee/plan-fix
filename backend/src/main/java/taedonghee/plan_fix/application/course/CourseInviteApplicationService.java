@@ -15,6 +15,7 @@ import taedonghee.plan_fix.support.error.ErrorType;
 import java.security.SecureRandom;
 import java.time.OffsetDateTime;
 import java.util.Base64;
+import java.util.EnumMap;
 import java.util.List;
 
 @Service
@@ -115,6 +116,41 @@ public class CourseInviteApplicationService {
                 .map(i -> new PendingInviteResult(i.getToken(), i.getMemberRole(), i.getCreatedAt(), i.getExpiresAt())).toList();
     }
 
+    /** One managed invitation per role, including links issued before deduplication. */
+    public List<InviteGroupResult> inviteGroups(Long ownerId, Long courseId) {
+        CourseModel course = activeCourse(courseId);
+        course.ensureOwner(ownerId);
+        if (course.visibility() != CourseVisibility.PUBLIC) return List.of();
+        OffsetDateTime now = OffsetDateTime.now();
+        var latestByRole = new EnumMap<CourseMemberRole, CourseInviteJpaEntity>(CourseMemberRole.class);
+        for (CourseInviteJpaEntity invite : inviteRepository.findByCourseIdOrderByCreatedAtDesc(courseId)) {
+            if (!invite.getExpiresAt().isAfter(now) || invite.getMemberRole() == CourseMemberRole.OWNER) continue;
+            latestByRole.merge(invite.getMemberRole(), invite,
+                    (existing, candidate) -> existing.getCourseInviteId() > candidate.getCourseInviteId() ? existing : candidate);
+        }
+        // Original tokens keep their own order, role and expiry when recipients accept them.
+        // Sharing a group goes through createInvite so a role change can issue a fresh link.
+        return List.of(CourseMemberRole.EDITOR, CourseMemberRole.VIEWER).stream()
+                .filter(latestByRole::containsKey)
+                .map(role -> {
+                    CourseInviteJpaEntity invite = latestByRole.get(role);
+                    return new InviteGroupResult(role, invite.getCreatedAt(), invite.getExpiresAt());
+                }).toList();
+    }
+
+    @Transactional
+    public void cancelInviteGroup(Long ownerId, Long courseId, CourseMemberRole role) {
+        CourseModel course = activeCourseForUpdate(courseId);
+        course.ensureOwner(ownerId);
+        if (role == null || role == CourseMemberRole.OWNER) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "초대 권한은 VIEWER 또는 EDITOR만 가능합니다.");
+        }
+        // Delete every original link, including expired ones and their Kakao receipts.
+        // Group cancellation must not leave an older hidden link available to join again.
+        inviteRepository.deleteAll(inviteRepository.findByCourseIdOrderByCreatedAtDesc(courseId).stream()
+                .filter(invite -> invite.getMemberRole() == role).toList());
+    }
+
 
     @Transactional
     public void removeMember(Long ownerId, Long courseId, Long memberUserId) {
@@ -206,5 +242,6 @@ public class CourseInviteApplicationService {
     public record CourseInviteAcceptResult(Long courseId, boolean joined, boolean alreadyMember) { }
     public record CourseMemberResult(Long userId, String name, String username, CourseMemberRole role, OffsetDateTime joinedAt) { }
     public record PendingInviteResult(String token, CourseMemberRole role, OffsetDateTime createdAt, OffsetDateTime expiresAt) { }
+    public record InviteGroupResult(CourseMemberRole role, OffsetDateTime createdAt, OffsetDateTime expiresAt) { }
     public record CourseInvitePreview(Long courseId, String courseTitle, CourseMemberRole memberRole, OffsetDateTime expiresAt) { }
 }
